@@ -1,5 +1,5 @@
 /*
-	PROJECTNAME : PROJECTDESCRIPTION
+	restcl : PROJECTDESCRIPTION
 
 	BSD 3-Clause License
 
@@ -33,12 +33,26 @@
  */
 
 #pragma once
-#ifndef PROJECTNAME_HPP
-#define PROJECTNAME_HPP
+#ifndef RESTCL_HPP
+#define RESTCL_HPP
 
+#include <chrono>
+#include <string>
+#include <functional>
+#include <memory>
+
+#include "nlohmann/json.hpp"
+
+#if defined __cpp_lib_format
+#include <format>
+#endif
+
+#include "RestMethod.hpp"
 
 namespace siddiqsoft
 {
+
+
 } // namespace siddiqsoft
 
-#endif // !PROJECTNAME_HPP
+#endif // !RESTCL_HPP

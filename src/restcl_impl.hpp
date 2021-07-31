@@ -1,6 +1,5 @@
 /*
-	restcl
-	PROJECTDESCRIPTION
+	restcl : PROJECTDESCRIPTION
 
 	BSD 3-Clause License
 
@@ -11,15 +10,15 @@
 	modification, are permitted provided that the following conditions are met:
 
 	1. Redistributions of source code must retain the above copyright notice, this
-	list of conditions and the following disclaimer.
+	   list of conditions and the following disclaimer.
 
 	2. Redistributions in binary form must reproduce the above copyright notice,
-	this list of conditions and the following disclaimer in the documentation
-	and/or other materials provided with the distribution.
+	   this list of conditions and the following disclaimer in the documentation
+	   and/or other materials provided with the distribution.
 
 	3. Neither the name of the copyright holder nor the names of its
-	contributors may be used to endorse or promote products derived from
-	this software without specific prior written permission.
+	   contributors may be used to endorse or promote products derived from
+	   this software without specific prior written permission.
 
 	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -33,21 +32,16 @@
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "gtest/gtest.h"
-#include <iostream>
-
-#include "nlohmann/json.hpp"
-#include "../src/restcl.hpp"
+#pragma once
+#ifndef RESTCL_HPP
+#define RESTCL_HPP
 
 
-TEST(serializers, test_RestMethod_Enum)
+namespace siddiqsoft
 {
-	nlohmann::json restMethods {siddiqsoft::RESTMethod::Get,
-	                            siddiqsoft::RESTMethod::Put,
-	                            siddiqsoft::RESTMethod::Post,
-	                            siddiqsoft::RESTMethod::Patch,
-	                            siddiqsoft::RESTMethod::Delete,
-	                            siddiqsoft::RESTMethod::Info};
+	class restcl_impl
+	{
+	};
+} // namespace siddiqsoft
 
-	std::cerr << "Methods supported: " << restMethods.dump() << std::endl;
-}
+#endif // !RESTCL_HPP

@@ -8,12 +8,12 @@
 	-->
 	<metadata>
 		<!-- required: -->
-		<id>SiddiqSoft.RWLContainer</id>
+		<id>SiddiqSoft.restcl</id>
 		<version>$VERSION$</version>
 		<authors>SiddiqSoft</authors>
-		<description>stdcpp reader-writer lock container class</description>
-		<tags>unique_lock shared_lock reader-writer container lock native nativepackage cpp</tags>
-		<projectUrl>https://github.com/SiddiqSoft/RWLContainer</projectUrl>
+		<description>Focussed REST Client for modern C++</description>
+		<tags>REST HTTP windows winhttp async cpp17 cpp20 native nativepackage cpp</tags>
+		<projectUrl>https://github.com/SiddiqSoft/restcl</projectUrl>
 		<requireLicenseAcceptance>true</requireLicenseAcceptance>
 		<license type="expression">BSD-3-Clause</license>
     <icon>docs\Siddiq-Software-Avatar.png</icon>
@@ -22,7 +22,8 @@
 		<copyright>Copyright (c) 2021 Siddiq Software LLC</copyright>
 		<!-- Dependencies -->
 		<dependencies>
-		</dependencies>
+      <dependency id="nlohmann.json" version="3.9.1"/>
+    </dependencies>
 	</metadata>
 
 	<!--
@@ -38,6 +39,6 @@
 		<file src="..\README.md" target="docs\" />
     
 		<!-- MSBuild .targets files -->
-		<file src="SiddiqSoft.RWLContainer.targets" target="build\native" />
+		<file src="SiddiqSoft.restcl.targets" target="build\native" />
 	</files>
 </package>
