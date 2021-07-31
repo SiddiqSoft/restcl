@@ -40,14 +40,36 @@
 #include "../src/restcl.hpp"
 
 
-TEST(serializers, test_RestMethod_Enum)
+TEST(serializers, test_RESTMethodType_Enum)
 {
-	nlohmann::json restMethods {siddiqsoft::RESTMethod::Get,
-	                            siddiqsoft::RESTMethod::Put,
-	                            siddiqsoft::RESTMethod::Post,
-	                            siddiqsoft::RESTMethod::Patch,
-	                            siddiqsoft::RESTMethod::Delete,
-	                            siddiqsoft::RESTMethod::Info};
+	nlohmann::json RESTMethodTypes {siddiqsoft::RESTMethodType::Get,
+	                                siddiqsoft::RESTMethodType::Put,
+	                                siddiqsoft::RESTMethodType::Post,
+	                                siddiqsoft::RESTMethodType::Patch,
+	                                siddiqsoft::RESTMethodType::Delete,
+	                                siddiqsoft::RESTMethodType::Info};
 
-	std::cerr << "Methods supported: " << restMethods.dump() << std::endl;
+	std::cerr << "Methods supported: " << RESTMethodTypes.dump() << std::endl;
+}
+
+
+TEST(serializers, test_HttpRequestLineType)
+{
+	siddiqsoft::HttpRequestLineType rl {};
+
+	std::cerr << nlohmann::json(rl).dump() << std::endl;
+}
+
+TEST(serializers, test_HttpRequestType)
+{
+	siddiqsoft::HttpRequestType req {};
+
+	std::cerr << nlohmann::json(req).dump() << std::endl;
+}
+
+TEST(serializers, test_HttpRequestType2)
+{
+	siddiqsoft::HttpRequestType req {siddiqsoft::HttpRequestLineType {siddiqsoft::RESTMethodType::Get, "/"}};
+
+	std::cerr << std::string(req) << std::endl;
 }

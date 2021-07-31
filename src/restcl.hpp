@@ -47,12 +47,12 @@
 #include <format>
 #endif
 
-#include "RestMethod.hpp"
+#include "RESTMethodType.hpp"
+#include "HttpRequestType.hpp"
+
 
 namespace siddiqsoft
 {
-
-
 } // namespace siddiqsoft
 
 #endif // !RESTCL_HPP
