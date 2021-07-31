@@ -1,0 +1,82 @@
+# Visual Studio generated .clang-format file
+
+# The style options in this file are a best effort attempt to replicate the
+# current IDE formatting configuration from Tools > Options. The following
+# style options, however, should be verified:
+# AfterClass, AfterControlStatement, AfterEnum, AfterFunction, AfterNamespace, 
+# AfterStruct, AfterUnion
+
+AccessModifierOffset: -4
+
+AlignAfterOpenBracket: Align # ours is Align
+AlignConsecutiveDeclarations: true
+AlignOperands: true
+AlignTrailingComments: true
+AlignConsecutiveAssignments: true
+AlignEscapedNewlines: DontAlign
+
+AllowShortBlocksOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakBeforeMultilineStrings : false
+AllowAllParametersOfDeclarationOnNextLine : false
+AllowShortCaseLabelsOnASingleLine : true
+
+BinPackArguments : false
+BinPackParameters : false
+
+BasedOnStyle: WebKit
+BraceWrapping:
+  AfterClass: true    # TODO: verify
+#  AfterControlStatement: true    # TODO: verify
+#  AfterEnum: true    # TODO: verify
+  AfterFunction: true    # TODO: verify
+#  AfterNamespace: true    # TODO: verify
+#  AfterStruct: true    # TODO: verify
+#  AfterUnion: true    # TODO: verify
+  BeforeCatch: true
+  BeforeElse: true
+#  IndentBraces: false
+#  SplitEmptyFunction: true
+#  SplitEmptyRecord: true
+
+BreakBeforeBraces: Allman
+BreakConstructorInitializers: BeforeComma
+BreakBeforeTernaryOperators : true
+BreakBeforeBinaryOperators : None
+BreakInheritanceList : BeforeComma
+
+ContinuationIndentWidth : 8
+ColumnLimit: 132
+Cpp11BracedListStyle: true
+IndentCaseLabels: false
+IndentPPDirectives: None
+IndentWidth: 4
+PointerAlignment: Left
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInCStyleCastParentheses: false
+SpacesInSquareBrackets: false
+MaxEmptyLinesToKeep: 2
+NamespaceIndentation: All
+CompactNamespaces : false
+FixNamespaceComments : true
+Standard: Cpp11
+TabWidth: 4
+UseTab: AlignWithSpaces
+SortIncludes: false
+SortUsingDeclarations: false
+IncludeBlocks : Preserve
+ReflowComments:  false
+
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerIndentWidth: 4
+SpacesInParentheses: false
+KeepEmptyLinesAtTheStartOfBlocks : false
+
+#StatmentMacros: ['TEST_CLASS', 'TEST_CLASS_INITIALIZE', 'TEST_CLASS_CLEANUP', 'TEST_METHOD']
+ 

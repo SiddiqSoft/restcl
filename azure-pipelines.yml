@@ -1,0 +1,91 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - main
+    - develop
+    - release/*
+  paths:
+    exclude:
+    - README.md
+
+pool:
+  name: Default
+  demands:
+  - msbuild
+  - visualstudio
+  - vstest
+
+variables:
+  buildPlatform: 'x64'
+  
+steps:
+- task: NuGetToolInstaller@1
+  displayName: 'Use NuGet 5.10.0'
+  inputs:
+    versionSpec: '5.10.0'
+    checkLatest: true
+
+- task: GitVersion@5
+  inputs:
+    runtime: 'core'
+    configFilePath: 'GitVersion.yml'
+
+- script: echo %Action%%BuildVersion%
+  displayName: 'Set build version'
+  env:
+    Action: '##vso[build.updatebuildnumber]'
+    BuildVersion: $(GitVersion.NugetVersionV2)
+
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+  inputs:
+    command: 'restore'
+    restoreSolution: '**/*.sln'
+    feedsToUse: 'select'
+    vstsFeed: 'ec2759e0-0587-4306-8a8d-8695f15e2336'
+  continueOnError: true
+
+- task: VSBuild@1
+  displayName: 'Build solution RELEASE'
+  inputs:
+    solution: '**/*.sln'
+    platform: 'x64'
+    configuration: 'Release'
+    maximumCpuCount: true
+    msbuildArchitecture: 'x64'
+
+- task: CmdLine@2
+  inputs:
+    script: |
+      echo Running googletest
+      cd output\Release
+      basic_tests.exe --gtest_output=xml:..\..\TestResults\
+
+- task: PublishTestResults@2
+  displayName: 'Publish Release Test Results **/TEST-*.xml'
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/TestResults/basic_tests.xml'
+    mergeTestResults: true
+    buildPlatform: 'x64'
+    buildConfiguration: 'Release'
+  continueOnError: true
+
+- task: NuGetCommand@2
+  displayName: 'NuGet pack'
+  inputs:
+    command: 'pack'
+    packagesToPack: 'nuget/*.nuspec'
+    versioningScheme: 'off'
+    buildProperties: 'VERSION=$(build.buildNumber)'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+- task: NuGetCommand@2
+  displayName: 'NuGet push'
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg;build/*.nupkg;!build/*symbols.nupkg'
+    nuGetFeedType: 'external'
+    publishFeedCredentials: 'sqs-nuget'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
