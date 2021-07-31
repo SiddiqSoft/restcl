@@ -1,12 +1,13 @@
 restcl : PROJECTDESCRIPTION
 -------------------------------------------
 <!-- badges -->
-[![CodeQL](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml)
-[![Build Status](https://dev.azure.com/siddiqsoft/siddiqsoft/_apis/build/status/SiddiqSoft.restcl?branchName=main)](https://dev.azure.com/siddiqsoft/siddiqsoft/_build/latest?definitionId=DEFINITIONID&branchName=main)
+<!--[![CodeQL](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml)-->
+[![Build Status](https://dev.azure.com/siddiqsoft/siddiqsoft/_apis/build/status/SiddiqSoft.restcl?branchName=main)](https://dev.azure.com/siddiqsoft/siddiqsoft/_build/latest?definitionId=13&branchName=main)
+[![Build Status](https://dev.azure.com/siddiqsoft/siddiqsoft/_apis/build/status/SiddiqSoft.restcl?branchName=develop)](https://dev.azure.com/siddiqsoft/siddiqsoft/_build/latest?definitionId=13&branchName=develop)
 ![](https://img.shields.io/nuget/v/SiddiqSoft.restcl)
 ![](https://img.shields.io/github/v/tag/SiddiqSoft/restcl)
-![](https://img.shields.io/azure-devops/tests/siddiqsoft/siddiqsoft/DEFINITIONID)
-![](https://img.shields.io/azure-devops/coverage/siddiqsoft/siddiqsoft/DEFINITIONID)
+![](https://img.shields.io/azure-devops/tests/siddiqsoft/siddiqsoft/13)
+<!--![](https://img.shields.io/azure-devops/coverage/siddiqsoft/siddiqsoft/13)-->
 <!-- end badges -->
 
 # Objective
@@ -21,17 +22,6 @@ restcl : PROJECTDESCRIPTION
 
 <hr/>
 
-- [x] Replace "restcl" with your new project name
-  - [ ] nuspec
-  - [ ] targets
-  - [ ] solution
-  - [ ] pipelines
-  - [ ] src header
-- [ ] Replace "PROJECTDESCRIPTION" with your project description
-- [ ] Replace "DEFINITIONID" in the badges to reflect the Azure Pipelines definition id
-- [ ] Renamed the nuget files to replace the restcl
-- [ ] Update the nuspec file
-- [ ] Update the README (pay attention to the badge links)
 
 
 <hr/>
