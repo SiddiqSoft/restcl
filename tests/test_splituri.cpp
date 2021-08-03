@@ -46,6 +46,13 @@ TEST(helpers_splituri, test_1)
 	EXPECT_EQ("search.msn.com", uri.authority.host);
 	EXPECT_EQ(8080, uri.authority.port);
 	EXPECT_EQ("/results.asp?RS=CHECKED&FORM=MSNH&v=1&q=wininet", uri.url);
+
+	std::cerr << "Re-serialized: " << std::string(uri) << std::endl;
+
+	nlohmann::json doc = uri;
+	EXPECT_TRUE(doc.is_object());
+	std::cerr << doc.dump(3) << std::endl;
+	EXPECT_EQ("results.asp", doc.value("/path/0"_json_pointer, ""));
 }
 
 TEST(helpers_splituri, test_2)
@@ -54,6 +61,8 @@ TEST(helpers_splituri, test_2)
 	EXPECT_EQ("search.msn.com", uri.authority.host);
 	EXPECT_EQ(8080, uri.authority.port);
 	EXPECT_EQ("", uri.url);
+
+	std::cerr << "Re-serialized: " << std::string(uri) << std::endl;
 }
 
 TEST(helpers_splituri, test_3)
@@ -62,6 +71,8 @@ TEST(helpers_splituri, test_3)
 	EXPECT_EQ("search.msn.com", uri.authority.host);
 	EXPECT_EQ(80, uri.authority.port);
 	EXPECT_EQ("", uri.url);
+
+	std::cerr << "Re-serialized: " << std::string(uri) << std::endl;
 }
 
 
@@ -71,10 +82,12 @@ TEST(helpers_splituri, test_4)
 	EXPECT_EQ("m.co", uri.authority.host);
 	EXPECT_EQ(80, uri.authority.port);
 	EXPECT_EQ("", uri.url);
+
+	std::cerr << "Re-serialized: " << std::string(uri) << std::endl;
 }
 
 
-TEST(helpers_splituri, test_5)
+TEST(helpers_splituri, test_5a)
 {
 	// http://<ServerName>/_vti_bin/ExcelRest.aspx/Docs/Documents/sampleWorkbook.xlsx/model/Charts('Chart%201')?Ranges('Sheet1!A1')=5.5
 	auto uri = siddiqsoft::SplitUri<std::string>("http://<ServerName>/_vti_bin/ExcelRest.aspx/Docs/Documents/sampleWorkbook.xlsx/"
@@ -83,8 +96,32 @@ TEST(helpers_splituri, test_5)
 	EXPECT_EQ(80, uri.authority.port);
 	EXPECT_EQ("/_vti_bin/ExcelRest.aspx/Docs/Documents/sampleWorkbook.xlsx/model/Charts('Chart%201')?Ranges('Sheet1!A1')=5.5",
 	          uri.url);
+
+	std::cerr << "Re-serialized: " << std::string(uri) << std::endl;
+
+	nlohmann::json doc = uri;
+	EXPECT_TRUE(doc.is_object());
+	std::cerr << doc.dump(3) << std::endl;
+	EXPECT_EQ("Charts('Chart%201')", doc.value("/path/6"_json_pointer, ""));
 }
 
+TEST(helpers_splituri, test_5b)
+{
+	// http://<ServerName>/_vti_bin/ExcelRest.aspx/Docs/Documents/sampleWorkbook.xlsx/model/Charts('Chart%201')/?Ranges('Sheet1!A1')=5.5
+	auto uri = siddiqsoft::SplitUri<std::string>("http://<ServerName>/_vti_bin/ExcelRest.aspx/Docs/Documents/sampleWorkbook.xlsx/"
+	                                             "model/Charts('Chart%201')/?Ranges('Sheet1!A1')=5.5");
+	EXPECT_EQ("<ServerName>", uri.authority.host);
+	EXPECT_EQ(80, uri.authority.port);
+	EXPECT_EQ("/_vti_bin/ExcelRest.aspx/Docs/Documents/sampleWorkbook.xlsx/model/Charts('Chart%201')/?Ranges('Sheet1!A1')=5.5",
+	          uri.url);
+
+	std::cerr << "Re-serialized: " << std::string(uri) << std::endl;
+
+	nlohmann::json doc = uri;
+	EXPECT_TRUE(doc.is_object());
+	std::cerr << doc.dump(3) << std::endl;
+	EXPECT_EQ("Charts('Chart%201')", doc.value("/path/6"_json_pointer, ""));
+}
 
 TEST(helpers_splituri, test_6a)
 {
@@ -98,6 +135,8 @@ TEST(helpers_splituri, test_6a)
 	EXPECT_EQ(2, uri.path.size());
 	EXPECT_EQ(2, uri.query.size());
 	EXPECT_EQ("top", uri.fragment);
+
+	std::cerr << "Re-serialized: " << std::string(uri) << std::endl;
 }
 
 
@@ -113,4 +152,11 @@ TEST(helpers_splituri, test_6b)
 	EXPECT_EQ(2, uri.path.size());
 	EXPECT_EQ(2, uri.query.size());
 	EXPECT_EQ("top", uri.fragment);
+
+	std::cerr << "Re-serialized: " << std::string(uri) << std::endl;
+
+	nlohmann::json doc = uri;
+	EXPECT_TRUE(doc.is_object());
+	std::cerr << doc.dump(3) << std::endl;
+	EXPECT_EQ("questions", doc.value("/path/1"_json_pointer, ""));
 }

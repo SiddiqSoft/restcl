@@ -54,15 +54,17 @@ namespace siddiqsoft
 		T        separatorColon {":"};
 		uint16_t port {0};
 
-		operator std::string()
+		operator T() const
 		{
 			return std::format("{}{}{}{}{}",
 			                   userInfo,
 			                   !userInfo.empty() ? seperatorAt : T {},
 			                   host,
 			                   port > 0 ? separatorColon : T {},
-			                   port > 0 ? port : T {});
+			                   port > 0 ? std::to_string(port) : T {});
 		}
+
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE(Authority<T>, userInfo, host, port);
 	};
 
 	enum class UriScheme
@@ -93,15 +95,28 @@ namespace siddiqsoft
 
 	template <class T> struct Uri
 	{
-		UriScheme                          scheme;
-		T                                  separatorColonSlashSlash {"://"};
-		Authority<T>                       authority;
-		T                                  url {}; // contains the "balance" post Authority section
-		T                                  separatorSlash {"/"};
-		std::vector<T>                     path {};
-		T                                  separatorQuestion {"?"};
-		std::map<std::string, std::string> query {};
-		std::string                        fragment {};
+		UriScheme      scheme;
+		T              separatorColonSlashSlash {"://"};
+		Authority<T>   authority;
+		T              separatorSlash {"/"};
+		std::vector<T> path {};
+		T              separatorQuestion {"?"};
+		std::map<T, T> query {};
+		T              fragment {};
+
+		T url {}; // contains the "balance" post Authority section
+
+		operator T()
+		{
+			// Build the url back
+
+			// Compose the final uri
+			return std::format(
+					"{}{}{}{}{}", scheme, separatorColonSlashSlash, authority, url.starts_with("/") ? "" : separatorSlash, url);
+		}
+
+
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE(Uri<T>, scheme, authority, url, path, query, fragment);
 	};
 
 
@@ -220,25 +235,46 @@ namespace siddiqsoft
 				if (posFragment != std::string::npos)
 				{
 					// We have a fragment
-					uri.fragment = aEndpoint.substr(posFragment+1);
+					uri.fragment = aEndpoint.substr(posFragment + 1);
 				}
 
 				auto posQueryPart = aEndpoint.find(matchQuestion, pos2);
 
 				auto pathSegment =
-						aEndpoint.substr(pos2, posQueryPart != std::string::npos ? posQueryPart - (pos2 + 1) : std::string::npos);
+						aEndpoint.substr(pos2, posQueryPart != std::string::npos ? posQueryPart - (pos2) : std::string::npos);
 				if (!pathSegment.empty()) uri.path = siddiqsoft::string2vector::parse<T>(pathSegment, matchSlash);
 
-				auto querySegment = aEndpoint.substr(posQueryPart+1,
-				                                     posFragment != std::string::npos ? (posFragment) - (posQueryPart + 1)
-				                                                                      : std::string::npos);
+				auto querySegment =
+						aEndpoint.substr(posQueryPart + 1,
+				                         posFragment != std::string::npos ? (posFragment) - (posQueryPart + 1) : std::string::npos);
 				if (!querySegment.empty()) uri.query = siddiqsoft::string2map::parse<T>(querySegment, matchEq, matchAmp);
 			}
 		}
 
 		return uri;
 	}
-
 } // namespace siddiqsoft
+
+
+template <class T> struct std::formatter<siddiqsoft::Authority<T>> : std::formatter<T>
+{
+	auto format(const siddiqsoft::Authority<T>& sv, std::format_context& ctx) { return std::formatter<T>::format(T(sv), ctx); }
+};
+
+
+template <> struct std::formatter<siddiqsoft::UriScheme> : std::formatter<std::string>
+{
+	auto format(const siddiqsoft::UriScheme& sv, std::format_context& ctx)
+	{
+		return std::formatter<std::string>::format(nlohmann::json(sv).dump(), ctx);
+	}
+};
+
+
+template <class T> struct std::formatter<siddiqsoft::Uri<T>> : std::formatter<T>
+{
+	auto format(const siddiqsoft::Uri<T>& sv, std::format_context& ctx) { return std::formatter<T>::format(T(sv), ctx); }
+};
+
 
 #endif // !SPLITURI_HPP
