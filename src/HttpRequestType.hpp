@@ -97,7 +97,7 @@ namespace siddiqsoft
 	};
 
 
-	void to_json(nlohmann::json& dest, const HttpRequestType& src) { dest = src.data; }
+	static void to_json(nlohmann::json& dest, const HttpRequestType& src) { dest = src.data; }
 
 	//void from_json(const nlohmann::json& src, HttpRequestType& dest)
 	//{

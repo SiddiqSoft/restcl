@@ -49,10 +49,29 @@
 
 #include "RESTMethodType.hpp"
 #include "HttpRequestType.hpp"
-
+#include "Helpers.hpp"
+#include "Helper_SplitUri.hpp"
 
 namespace siddiqsoft
 {
+	template <RESTMethodType ReqType> class SimpleRestRequestType
+	{
+		nlohmann::json data {{"request", null}, {"headers", null}, {"content", null}};
+
+	public:
+		SimpleRestRequestType(const std::string& uri, const nlohmann::json& h = {}, const nlohmann::json& c = {})
+		{
+			// Decode the uri which has http(s)://x.y.z:port/section/arg?param=&param2
+			auto [server, port, query] = SplitUri<std::string>(uri);
+
+			data["headers"]         = h;
+			data["content"]         = c;
+			data["request"]         = {{"method", ReqType}, {"uri", query}, {"version", "HTTP/1.1"}};
+			data["headers"]["Host"] = std::format("{}:{}", server, port);
+		}
+	};
+
+
 } // namespace siddiqsoft
 
 #endif // !RESTCL_HPP

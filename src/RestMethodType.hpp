@@ -18,15 +18,19 @@ namespace siddiqsoft
 		Unknown
 	};
 
-	NLOHMANN_JSON_SERIALIZE_ENUM(RESTMethodType,
-	                             {{RESTMethodType::Get, "GET"},
-	                              {RESTMethodType::Patch, "PATCH"},
-	                              {RESTMethodType::Post, "POST"},
-	                              {RESTMethodType::Put, "PUT"},
-	                              {RESTMethodType::Delete, "DELETE"},
-	                              {RESTMethodType::Info, "INFO"},
-	                              {RESTMethodType::Unknown, nullptr}});
-
+	static void to_json(nlohmann::json& dest, const RESTMethodType& src)
+	{
+		switch (src)
+		{
+		case RESTMethodType::Get: dest = "GET"; break;
+		case RESTMethodType::Patch: dest = "PATCH"; break;
+		case RESTMethodType::Post: dest = "POST"; break;
+		case RESTMethodType::Put: dest = "PUT"; break;
+		case RESTMethodType::Delete: dest = "DELETE"; break;
+		case RESTMethodType::Info: dest = "INFO"; break;
+		default: dest = nullptr;
+		}
+	}
 
 } // namespace siddiqsoft
 

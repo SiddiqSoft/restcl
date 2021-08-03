@@ -38,7 +38,7 @@
 
 #include "nlohmann/json.hpp"
 #include "../src/restcl.hpp"
-
+#include "../src/RestMethodType.hpp"
 
 TEST(serializers, test_RESTMethodType_Enum)
 {
