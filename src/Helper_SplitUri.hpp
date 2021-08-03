@@ -266,7 +266,7 @@ template <> struct std::formatter<siddiqsoft::UriScheme> : std::formatter<std::s
 {
 	auto format(const siddiqsoft::UriScheme& sv, std::format_context& ctx)
 	{
-		return std::formatter<std::string>::format(nlohmann::json(sv).dump(), ctx);
+		return std::formatter<std::string>::format(nlohmann::json(sv).get<std::string>(), ctx);
 	}
 };
 
