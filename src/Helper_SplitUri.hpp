@@ -67,6 +67,7 @@ namespace siddiqsoft
 		NLOHMANN_DEFINE_TYPE_INTRUSIVE(Authority<T>, userInfo, host, port);
 	};
 
+
 	enum class UriScheme
 	{
 		WebHttp,
@@ -120,6 +121,10 @@ namespace siddiqsoft
 	};
 
 
+	/// @brief Given an endpoint Uri, decompose it into the Uri object
+	/// @tparam T Specify std::string or std::wstring
+	/// @param aEndpoint The endpoint uri
+	/// @return Object of Uri with base std::string or std::wstring
 	template <class T> Uri<T> static SplitUri(const T& aEndpoint)
 	{
 		Uri<T> uri {};
@@ -251,7 +256,7 @@ namespace siddiqsoft
 			}
 		}
 
-		return uri;
+		return std::move(uri);
 	}
 } // namespace siddiqsoft
 
