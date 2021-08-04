@@ -23,7 +23,7 @@
     <!-- Dependencies -->
     <dependencies>
       <dependency id="nlohmann.json" version="3.9.1"/>
-      <dependency id="SiddiqSoft.string2map" version="2"/>
+      <dependency id="SiddiqSoft.SplitUri" version="1"/>
     </dependencies>
   </metadata>
 

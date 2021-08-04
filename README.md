@@ -12,8 +12,13 @@ restcl : PROJECTDESCRIPTION
 
 # Objective
 
+Design a library where JSON is a first-class API metaphor for interacting with RESTful servers.
+
+Your client should not have to worry about the details of the underlying transport protocol or even the 
 
 # Requirements
+- C++20 with support for `concepts`, `format`
+- The library `nlohmann.json` is used as the primary interface
 - The build and tests are for Visual Studio 2019 under x64.
 
 # Usage

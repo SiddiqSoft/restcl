@@ -38,38 +38,36 @@
 
 #include "nlohmann/json.hpp"
 #include "../src/restcl.hpp"
-#include "../src/RestMethodType.hpp"
 
-TEST(serializers, test_RESTMethodType_Enum)
+
+namespace siddiqsoft
 {
-	nlohmann::json RESTMethodTypes {siddiqsoft::RESTMethodType::Get,
-	                                siddiqsoft::RESTMethodType::Put,
-	                                siddiqsoft::RESTMethodType::Post,
-	                                siddiqsoft::RESTMethodType::Patch,
-	                                siddiqsoft::RESTMethodType::Delete,
-	                                siddiqsoft::RESTMethodType::Info};
+	TEST(basics, test1a)
+	{
+		SimpleRestRequestType<RESTMethodType::Get> srt {"https://www.siddiqsoft.com/"};
 
-	std::cerr << "Methods supported: " << RESTMethodTypes.dump() << std::endl;
-}
+		nlohmann::json doc(srt);
+
+		// Checks the implementation of the json implementation
+		std::cerr << "Serialized SimpleRequestType: " << doc.dump(3) << std::endl;
+	}
 
 
-TEST(serializers, test_HttpRequestLineType)
-{
-	siddiqsoft::HttpRequestLineType rl {};
+	TEST(basics, test1b)
+	{
+		SimpleRestRequestType<RESTMethodType::Get> srt {"https://www.siddiqsoft.com/"};
 
-	std::cerr << nlohmann::json(rl).dump() << std::endl;
-}
+		// Checks the implementation of the encode() implementation
+		std::cerr << "Wire serialize              : " << srt.encode() << std::endl;
+	}
 
-TEST(serializers, test_HttpRequestType)
-{
-	siddiqsoft::HttpRequestType req {};
 
-	std::cerr << nlohmann::json(req).dump() << std::endl;
-}
+	TEST(basics, test1c)
+	{
+		SimpleRestRequestType<RESTMethodType::Get> srt {"https://www.siddiqsoft.com/"};
 
-TEST(serializers, test_HttpRequestType2)
-{
-	siddiqsoft::HttpRequestType req {siddiqsoft::HttpRequestLineType {siddiqsoft::RESTMethodType::Get, "/"}};
+		// Checks the implementation of the std::format implementation
+		std::cerr << std::format("Wire serialize              : {}\n", srt);
+	}
 
-	std::cerr << std::string(req) << std::endl;
-}
+} // namespace siddiqsoft
