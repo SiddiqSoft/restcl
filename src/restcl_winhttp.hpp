@@ -205,7 +205,7 @@ namespace siddiqsoft
 	         std::string_view("ERROR_HTTP_REDIRECT_FAILED: The redirection failed because either the scheme changed (for example, "
 	                          "HTTP to FTP) or "
 	                          "all attempts made to redirect failed (default is five attempts). ")},
-			{12175, std::string_view("ERROR_INTERNET_DECODING_FAILED: WinINet failed to perform content decoding on the response. For more information, see the Content Encoding topic.")}};
+			{12175, std::string_view("ERROR_WINHTTP_SECURE_FAILURE: Port specification might be invalid.")}};
 
 	static std::string messageFromWininetCode(uint32_t errCode)
 	{
