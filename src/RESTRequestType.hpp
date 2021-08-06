@@ -89,9 +89,21 @@ namespace siddiqsoft
 	                              {RESTMethodType::Head, "HEAD"},
 	                              {RESTMethodType::Options, "OPTIONS"}});
 
+	enum class HTTPProtocolVersion
+	{
+		Http2,
+		Http11,
+		Http10
+	};
+
+	NLOHMANN_JSON_SERIALIZE_ENUM(HTTPProtocolVersion,
+	                             {{HTTPProtocolVersion::Http2, "HTTP/2"},
+	                              {HTTPProtocolVersion::Http11, "HTTP/1.1"},
+	                              {HTTPProtocolVersion::Http10, "HTTP/1.0"}});
+
 
 	/// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
-	class RESTRequestType
+	template <HTTPProtocolVersion HttpVer = HTTPProtocolVersion::Http11> class RESTRequestType
 	{
 	public:
 		/// @brief Constructor with endpoint and optional headers and json content
@@ -99,21 +111,22 @@ namespace siddiqsoft
 		/// @param h Optional json containing the headers
 		RESTRequestType(const RESTMethodType& reqMethod, const std::string& endpoint, const nlohmann::json& h = nullptr)
 		{
-			uriHttp = SplitUri(endpoint);
+			uri = SplitUri(endpoint);
 
 			if (h.is_object() && !h.is_null()) { rrd["headers"] = h; }
 
-			rrd["request"]["uri"]    = uriHttp.urlPart;
+			rrd["request"]["uri"]    = uri.urlPart;
 			rrd["request"]["method"] = reqMethod;
 
 			// Enforce some default headers
 			auto& hs = rrd.at("headers");
 			if (!hs.contains("Date")) hs["Date"] = Date_rfc1123();
 			if (!hs.contains("Accept")) hs["Accept"] = "application/json";
-			if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uriHttp.authority.host, uriHttp.authority.port);
+			if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
 			if (!hs.contains("Content-Length")) hs["Content-Length"] = 0;
 			if (!hs.contains("User-Agent")) hs["User-Agent"] = "siddiqsoft/restcl";
 		}
+
 
 		RESTRequestType(const RESTMethodType& reqMethod,
 		                const std::string&    endpoint,
@@ -160,23 +173,15 @@ namespace siddiqsoft
 		/// @return Self
 		auto& setEndpoint(const std::string& e)
 		{
-			uriHttp = SplitUri(e);
+			uri = SplitUri(e);
 			return *this;
 		}
 
-		/// @brief Returns the mutable reference to the headers json
-		/// @return Json reference to headers element
-		nlohmann::json& headers() { return rrd.at("headers"); }
-		auto&           getHeaders() const { return rrd.at("headers"); }
 
-		/// @brief Returns the mutable reference to the request json
-		/// @return Json reference to request element
-		nlohmann::json& request() { return rrd.at("request"); }
-		auto&           getRequest() const { return rrd.at("request"); }
-
-		/// @brief Return the parsed endpoint into Uri
-		/// @return Uri structure
-		auto uri() const { return uriHttp; }
+		/// @brief Access the "headers", "request", "content" in the json object
+		/// @param key Allows access into the json object via string or json_pointer
+		/// @return Non-mutable reference to the specified element.
+		const auto& operator[](const auto& key) const { return rrd.at(key); }
 
 
 		/// @brief Set the content (non-JSON)
@@ -185,9 +190,12 @@ namespace siddiqsoft
 		/// @return Self
 		RESTRequestType& setContent(const std::string& ctype, const std::string& c)
 		{
-			rrd["headers"]["Content-Type"]   = ctype;
-			rrd["headers"]["Content-Length"] = c.length();
-			rrd["content"]                   = c;
+			if (!c.empty())
+			{
+				rrd["headers"]["Content-Type"]   = ctype;
+				rrd["headers"]["Content-Length"] = c.length();
+				rrd["content"]                   = c;
+			}
 			return *this;
 		}
 
@@ -196,9 +204,12 @@ namespace siddiqsoft
 		/// @return Self
 		RESTRequestType& setContent(const nlohmann::json& c)
 		{
-			rrd["content"]                   = c;
-			rrd["headers"]["Content-Length"] = c.dump().length();
-			rrd["headers"]["Content-Type"]   = "application/json";
+			if (!c.is_null())
+			{
+				rrd["content"]                   = c;
+				rrd["headers"]["Content-Length"] = c.dump().length();
+				rrd["headers"]["Content-Type"]   = "application/json";
+			}
 			return *this;
 		}
 
@@ -279,19 +290,20 @@ namespace siddiqsoft
 		}
 
 	public:
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE(RESTRequestType, uriHttp, sendAttempt, rrd);
-		friend std::ostream& operator<<(std::ostream&, const RESTRequestType&);
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE(RESTRequestType, uri, rrd);
+		friend std::ostream& operator<<(std::ostream&, const RESTRequestType<>&);
+
+	public:
+		Uri<std::string> uri;
 
 	protected:
-		Uri<std::string> uriHttp;
-		uint16_t         sendAttempt {1};
-		nlohmann::json   rrd {{"request", {{"method", RESTMethodType::Get}, {"uri", nullptr}, {"version", "HTTP/1.1"}}},
-                            {"headers", nullptr},
-                            {"content", nullptr}};
+		nlohmann::json rrd {{"request", {{"method", RESTMethodType::Get}, {"uri", nullptr}, {"version", HttpVer}}},
+		                    {"headers", nullptr},
+		                    {"content", nullptr}};
 	};
 
 
-	static std::ostream& operator<<(std::ostream& os, const RESTRequestType& src)
+	static std::ostream& operator<<(std::ostream& os, const RESTRequestType<>& src)
 	{
 		std::format_to(std::ostream_iterator<char>(os), "{}", src);
 		return os;
@@ -364,13 +376,16 @@ namespace siddiqsoft
 			return false;
 		}
 
-		nlohmann::json& response() { return rrd.at("response"); }
-		auto&           getResponse() const { return rrd.at("response"); }
+		/// @brief Access the "headers", "request", "content" in the json object
+		/// @param key Allows access into the json object via string or json_pointer
+		/// @return Non-mutable reference to the specified element.
+		const auto& operator[](const auto& key) const { return rrd.at(key); }
 
-		/// @brief Returns the mutable reference to the headers json
-		/// @return Json reference to headers element
-		nlohmann::json& headers() { return rrd.at("headers"); }
-		auto&           getHeaders() const { return rrd.at("headers"); }
+
+		/// @brief Mutable access to the underlying json object
+		/// @param key Allows access into the json object via string or json_pointer
+		/// @return Mutable reference to the specified element.
+		auto& operator[](const auto& key) { return rrd.at(key); }
 
 
 		/// @brief Encode the headers to the given argument
@@ -435,18 +450,22 @@ namespace siddiqsoft
 			return std::move(rs);
 		}
 
-		std::tuple<uint32_t, const std::string&> getIOError() const { return {ioErrorCode, std::cref(ioError)}; }
+		/// @brief Returns the IO error if present otherwise returns the HTTP status code and reason
+		/// @return tuple with the ioError/Error or StatusCode/Reason
+		std::tuple<uint32_t, std::string> getError() const
+		{
+			return {ioErrorCode > 0 ? ioErrorCode : statusCode, ioErrorCode > 0 ? ioError : rrd["response"].value("reason", "")};
+		}
 
 	public:
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE(RESTResponseType, statusCode, ioErrorCode, ioError, sendAttempt, rrd);
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE(RESTResponseType, statusCode, ioErrorCode, ioError, rrd);
 		friend std::ostream& operator<<(std::ostream&, const RESTResponseType&);
 
 	protected:
 		uint16_t       statusCode {0};
 		uint32_t       ioErrorCode {0};
 		std::string    ioError {};
-		uint16_t       sendAttempt {1};
-		nlohmann::json rrd {{"response", {{"status", statusCode}, {"reason", nullptr}, {"version", "HTTP/1.1"}}},
+		nlohmann::json rrd {{"response", {{"status", statusCode}, {"reason", ""}, {"version", HTTPProtocolVersion::Http11}}},
 		                    {"headers", nullptr},
 		                    {"content", nullptr}};
 	};
@@ -460,6 +479,15 @@ namespace siddiqsoft
 } // namespace siddiqsoft
 
 
+template <> struct std::formatter<siddiqsoft::HTTPProtocolVersion> : std::formatter<std::string>
+{
+	auto format(const siddiqsoft::HTTPProtocolVersion& sv, std::format_context& ctx)
+	{
+		return std::formatter<std::string>::format(nlohmann::json(sv).get<std::string>(), ctx);
+	}
+};
+
+
 /// @brief Formatters for the RESTMethodType
 template <> struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<std::string>
 {
@@ -471,9 +499,9 @@ template <> struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<s
 
 
 /// @brief Formatter for RESTRequestType
-template <> struct std::formatter<siddiqsoft::RESTRequestType> : std::formatter<std::string>
+template <> struct std::formatter<siddiqsoft::RESTRequestType<>> : std::formatter<std::string>
 {
-	auto format(const siddiqsoft::RESTRequestType& sv, std::format_context& ctx)
+	auto format(const siddiqsoft::RESTRequestType<>& sv, std::format_context& ctx)
 	{
 		return std::formatter<std::string>::format(sv.encode(), ctx);
 	}

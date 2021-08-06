@@ -72,6 +72,7 @@ namespace siddiqsoft
 		return std::move(rawAsciiToWstring);
 	}
 
+
 #pragma endregion
 
 #pragma region WinInet error code map
@@ -222,29 +223,29 @@ namespace siddiqsoft
 	static const wchar_t* RESTCL_ACCEPT_TYPES_W[] = {L"application/json", L"text/json", L"*/*", NULL};
 
 
-	static void SendRequest(const RESTRequestType&                                                 req,
-	                        std::function<void(const RESTRequestType&, const RESTResponseType&)>&& callback)
+	static void SendRequest(const RESTRequestType<>&                                                 req,
+	                        std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
 	{
 		HRESULT  hr {E_FAIL};
 		DWORD    dwBytesRead {0}, dwError {0};
 		uint32_t nRetry {0}, nError {0};
 		char     cBuf[MAXBUFSIZE] {};
 		DWORD    dwFlagsSize  = 0; //sizeof(SECURE_FLAGS);
-		auto     strUserAgent = req.getHeaders().value("User-Agent", "");
+		auto     strUserAgent = req["headers"].value("User-Agent", "");
 
 
 		if (ACW32HINTERNET hSession {
 					WinHttpOpen(asciiToWstringUpgrade(strUserAgent).c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)};
 		    hSession != NULL)
 		{
-			auto strServer = req.uri().authority.host;
+			auto& strServer = req.uri.authority.host;
 			if (ACW32HINTERNET hConnect {
-						WinHttpConnect(hSession, asciiToWstringUpgrade(strServer).c_str(), req.uri().authority.port, 0)};
+						WinHttpConnect(hSession, asciiToWstringUpgrade(strServer).c_str(), req.uri.authority.port, 0)};
 			    hConnect != NULL)
 			{
-				auto strMethod  = req.getRequest().value("method", "");
-				auto strUrl     = req.uri().urlPart;
-				auto strVersion = req.getRequest().value("version", "");
+				auto strMethod  = req["request"].value("method", "");
+				auto strUrl     = req.uri.urlPart;
+				auto strVersion = req["request"].value("version", "");
 
 				if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
 				                                                asciiToWstringUpgrade(strMethod).c_str(),
@@ -252,12 +253,12 @@ namespace siddiqsoft
 				                                                asciiToWstringUpgrade(strVersion).c_str(),
 				                                                NULL,
 				                                                RESTCL_ACCEPT_TYPES_W,
-				                                                (req.uri().scheme == UriScheme::WebHttps)
+				                                                (req.uri.scheme == UriScheme::WebHttps)
 				                                                        ? WINHTTP_FLAG_SECURE | WINHTTP_FLAG_REFRESH
 				                                                        : WINHTTP_FLAG_REFRESH)};
 				    hRequest != NULL)
 				{
-					auto        contentLength = req.getHeaders().value("Content-Length", 0);
+					auto        contentLength = req["headers"].value("Content-Length", 0);
 					std::string strHeaders;
 					req.encodeHeaders_to(strHeaders);
 					std::wstring requestHeaders = asciiToWstringUpgrade(strHeaders);
@@ -308,20 +309,37 @@ namespace siddiqsoft
 						else
 						{
 							// Get the HTTP respose status
-							byte  buff[BUFSIZ] = {};
-							DWORD szBuff       = sizeof(buff);
-							DWORD nextIndex    = 0;
+							std::wstring buff {};
+							DWORD        szBuff    = 256;
+							DWORD        nextIndex = 0;
 
+							buff.resize(szBuff);
 							if (TRUE == WinHttpQueryHeaders(hRequest,
 							                                WINHTTP_QUERY_STATUS_CODE,
 							                                WINHTTP_HEADER_NAME_BY_INDEX,
-							                                &buff,
+							                                buff.data(),
 							                                &szBuff,
 							                                &nextIndex))
 							{
-								// The response is wchar_t!
-								buff[szBuff + 1] = byte(0);
-								if (buff[0] != byte(0)) resp.setStatusCode(std::stoi(std::wstring((wchar_t*)buff, szBuff)));
+								buff.resize(szBuff);
+								if (!buff.empty()) resp.setStatusCode(std::stoi(buff));
+							}
+
+							// Get the reason phrase
+							szBuff = 256;
+							buff.resize(szBuff);
+							if (TRUE == WinHttpQueryHeaders(hRequest,
+							                                WINHTTP_QUERY_STATUS_TEXT,
+							                                WINHTTP_HEADER_NAME_BY_INDEX,
+							                                buff.data(),
+							                                &szBuff,
+							                                &nextIndex))
+							{
+								// Convert from wstring to string
+								thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+								buff.resize(szBuff);
+								if (!buff.empty()) resp["response"]["reason"] = converter.to_bytes(buff);
 							}
 
 							// Get the headers next..

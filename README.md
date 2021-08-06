@@ -25,11 +25,32 @@ Your client should not have to worry about the details of the underlying transpo
 - Use the nuget [SiddiqSoft.restcl](https://www.nuget.org/packages/SiddiqSoft.restcl/)
 - Copy paste..whatever works.
 
-<hr/>
+```cpp
+TEST(TSendRequest, test2a)
+{
+    bool passTest = false;
+
+    SendRequest(RESTRequestType {RESTMethodType::Options, "https://reqbin.com/echo/post/json"},
+                [&passTest](const auto& req, auto& resp) {
+                    // Checks the implementation of the encode() implementation
+                    std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+                    if (resp.isSuccessful())
+                    {
+                        passTest = true;
+                        std::cerr << "Response\n" << resp << std::endl;
+                    }
+                    else
+                    {
+                        auto [ec, emsg] = resp.getIOError();
+                        std::cerr << emsg << std::endl;
+                    }
+                });
+
+    EXPECT_TRUE(passTest);
+}
+```
 
 
-
-<hr/>
 
 
 <p align="right">
