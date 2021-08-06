@@ -45,50 +45,108 @@ namespace siddiqsoft
 {
 	TEST(TSendRequest, test1a)
 	{
-		SendRequest({RESTMethodType::Get, "https://www.siddiqsoft.com/"}, [](const RESTRequestType& req, const RESTResponseType& resp) {
-			nlohmann::json doc(req);
+		bool passTest = false;
 
-			// Checks the implementation of the json implementation
-			std::cerr << "From callback Serialized json: " << req << std::endl;
-			if (resp.isSuccessful()) { std::cerr << "Response\n" << resp << std::endl; }
-			else
-			{
-				auto [ec, emsg] = resp.getIOError();
-				std::cerr << emsg << std::endl;
-			}
-		});
+		SendRequest({RESTMethodType::Get, "https://www.siddiqsoft.com/"},
+		            [&passTest](const RESTRequestType& req, const RESTResponseType& resp) {
+						nlohmann::json doc(req);
+
+						// Checks the implementation of the json implementation
+						std::cerr << "From callback Serialized json: " << req << std::endl;
+						if (resp.isSuccessful())
+						{
+							passTest = true;
+							std::cerr << "Response\n" << resp << std::endl;
+						}
+						else
+						{
+							auto [ec, emsg] = resp.getIOError();
+							std::cerr << emsg << std::endl;
+						}
+					});
+
+		EXPECT_TRUE(passTest);
 	}
 
 
-	TEST(TSendRequest, test1b)
+	TEST(TSendRequest, test2a)
 	{
-		SendRequest(RESTRequestType {RESTMethodType::Info, "https://www.siddiqsoft.com/", {}, "Hello-world"},
-		            [](const auto& req, auto& resp) {
+		bool passTest = false;
+
+		SendRequest(RESTRequestType {RESTMethodType::Options, "https://reqbin.com/echo/post/json", {}, {}},
+		            [&passTest](const auto& req, auto& resp) {
 						// Checks the implementation of the encode() implementation
 						std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+						if (resp.isSuccessful())
+						{
+							passTest = true;
+							std::cerr << "Response\n" << resp << std::endl;
+						}
+						else
+						{
+							auto [ec, emsg] = resp.getIOError();
+							std::cerr << emsg << std::endl;
+						}
 					});
+
+		EXPECT_TRUE(passTest);
 	}
 
 
-	TEST(TSendRequest, test1c)
+	TEST(TSendRequest, test3a)
 	{
-		SendRequest(RESTRequestType {RESTMethodType::Info,
-		                             "https://www.siddiqsoft.com/",
-		                             {{"Content-Type", "application/xml"}},
-		                             std::string {"<root><p>Hello-world</></root>"}},
-		            [](const auto& req, auto& resp) {
+		bool passTest = false;
+
+		SendRequest(RESTRequestType {RESTMethodType::Post,
+		                             std::format("https://ptsv2.com/t/buzz2/post?function={}", __FUNCTION__),
+		                             {{"Authorization", "Basic YWF1OnBhYXU="},
+		                             {"Content-Type", "application/xml"}},
+		                             std::format("<root><p>Hello-world</p><p name=\"date\">{:%FT%TZ}</p></root>",
+		                                         std::chrono::system_clock::now())},
+		            [&passTest](const auto& req, const auto& resp) {
 						// Checks the implementation of the encode() implementation
 						std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+						if (resp.isSuccessful())
+						{
+							passTest = true;
+							std::cerr << "Response\n" << resp << std::endl;
+						}
+						else
+						{
+							auto [ec, emsg] = resp.getIOError();
+							std::cerr << emsg << std::endl;
+						}
 					});
+
+		EXPECT_TRUE(passTest);
 	}
 
-	TEST(TSendRequest, test1d)
+	TEST(TSendRequest, test3b)
 	{
-		SendRequest({RESTMethodType::Post, "https://www.siddiqsoft.com/", nullptr, {{"foo", "bar"}, {"hello", "world"}}},
-		            [](const auto& req, auto& resp) {
+		// https://ptsv2.com/t/buzz2
+		bool passTest = false;
+		//auto auth     = base64encode("aau:paau");
+
+		SendRequest({RESTMethodType::Post,
+		             "https://ptsv2.com/t/buzz2/post",
+		             {{"Authorization", "Basic YWF1OnBhYXU="}},
+		             {{"foo", "bar"}, {"hello", "world"}}},
+		            [&passTest](const auto& req, const auto& resp) {
 						// Checks the implementation of the std::format implementation
 						std::cerr << std::format("From callback Wire serialize              : {}\n", req);
+						if (resp.isSuccessful())
+						{
+							passTest = true;
+							std::cerr << "Response\n" << resp << std::endl;
+						}
+						else
+						{
+							auto [ec, emsg] = resp.getIOError();
+							std::cerr << emsg << std::endl;
+						}
 					});
+
+		EXPECT_TRUE(passTest);
 	}
 
 } // namespace siddiqsoft

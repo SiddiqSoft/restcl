@@ -76,7 +76,8 @@ namespace siddiqsoft
 		Post,
 		Put,
 		Delete,
-		Info
+		Head,
+		Options
 	};
 
 	NLOHMANN_JSON_SERIALIZE_ENUM(RESTMethodType,
@@ -85,7 +86,8 @@ namespace siddiqsoft
 	                              {RESTMethodType::Put, "PUT"},
 	                              {RESTMethodType::Post, "POST"},
 	                              {RESTMethodType::Delete, "DELETE"},
-	                              {RESTMethodType::Info, "INFO"}});
+	                              {RESTMethodType::Head, "HEAD"},
+	                              {RESTMethodType::Options, "OPTIONS"}});
 
 
 	/// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
@@ -101,7 +103,7 @@ namespace siddiqsoft
 
 			if (h.is_object() && !h.is_null()) { rrd["headers"] = h; }
 
-			rrd["request"]["uri"]    = uriHttp.url;
+			rrd["request"]["uri"]    = uriHttp.urlPart;
 			rrd["request"]["method"] = reqMethod;
 
 			// Enforce some default headers
@@ -140,9 +142,16 @@ namespace siddiqsoft
 		                         const char*           c)
 			: RESTRequestType(reqMethod, endpoint, h)
 		{
-			if (h.is_null() || (h.is_object() && !h.contains("Content-Type"))) rrd["headers"]["Content-Type"] = "text/plain";
-			rrd["headers"]["Content-Length"] = strlen(c);
-			rrd["content"]                   = c;
+			if (c != nullptr)
+			{
+				if (h.is_null() || (h.is_object() && !h.contains("Content-Type"))) rrd["headers"]["Content-Type"] = "text/plain";
+				rrd["headers"]["Content-Length"] = strlen(c);
+				rrd["content"]                   = c;
+			}
+			else
+			{
+				rrd["headers"]["Content-Length"] = 0;
+			}
 		}
 
 

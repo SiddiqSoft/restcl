@@ -243,7 +243,7 @@ namespace siddiqsoft
 			    hConnect != NULL)
 			{
 				auto strMethod  = req.getRequest().value("method", "");
-				auto strUrl     = req.uri().url;
+				auto strUrl     = req.uri().urlPart;
 				auto strVersion = req.getRequest().value("version", "");
 
 				if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
