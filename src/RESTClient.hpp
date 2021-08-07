@@ -447,6 +447,16 @@ namespace siddiqsoft
 	};
 
 
+	class RESTClient
+	{
+	public:
+		virtual void send(const RESTRequestType<>&,
+		                  std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)      = 0;
+		virtual void sendAsync(const RESTRequestType<>&,
+		                       std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback) = 0;
+	};
+
+
 	/// @brief Serializer to ostream for RESResponseType
 	static std::ostream& operator<<(std::ostream& os, const RESTResponseType& src)
 	{
@@ -455,6 +465,7 @@ namespace siddiqsoft
 	}
 
 
+#pragma region Literal Operators for RESTRequestType
 	static siddiqsoft::RESTRequestType<> operator"" _GET(const char* s, size_t sz)
 	{
 		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Get, siddiqsoft::SplitUri<>(std::string {s, sz})};
@@ -495,10 +506,11 @@ namespace siddiqsoft
 	{
 		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Put, siddiqsoft::SplitUri<>(std::string {s, sz})};
 	}
+#pragma endregion
 
 } // namespace siddiqsoft
 
-
+#pragma region Custom formatters
 /*
  * std::format custom implementation must be global scope
  */
@@ -538,6 +550,7 @@ template <> struct std::formatter<siddiqsoft::RESTResponseType> : std::formatter
 		return std::formatter<std::string>::format(sv.encode(), ctx);
 	}
 };
+#pragma endregion
 
 #else
 #pragma message(warning : "C++20 required with std::format support")

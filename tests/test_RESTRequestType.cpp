@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "nlohmann/json.hpp"
-#include "../src/restcl.hpp"
+#include "../src/RESTClient.hpp"
 
 namespace siddiqsoft
 {
