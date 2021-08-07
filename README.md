@@ -31,6 +31,11 @@ Simplicity (hide the underlying implementation)
     #include "siddiqsoft/restcl.hpp"
     #include "siddiqsoft/restcl_winhttp.hpp"
 
+    ...
+    ...
+
+    using namespace siddiqsoft;
+    
     // Create a simple GET request from the endpoint string
     auto myReq= "https://google.com"_GET;
 
@@ -75,6 +80,8 @@ Simplicity (hide the underlying implementation)
 ```cpp
 TEST(TSendRequest, test1a)
 {
+    using namespce siddiqsoft;
+
     bool passTest = false;
 
     SendRequest("https://www.siddiqsoft.com/"_GET,
