@@ -57,7 +57,7 @@ Simplicity (hide the underlying implementation)
     // Above is Equivalent to the following code:
     // myPost["content"]= {{"foo", "bar"}, {"goto", 99}};
     // myPost["headers"]["Content-Type"]= "application/json"; // the default so we can skip this
-    // myPost["headers"]["Content-Length"]= myPost["content"].get<std::string>().length();
+    // myPost["headers"]["Content-Length"]= myPost["content"].dump().length();
 
     // Send the request and invoke the callback
     SendRequest( myReq, [](auto& req, auto& resp){
