@@ -339,6 +339,7 @@ namespace siddiqsoft
 								// Get the reason phrase
 								szBuff = 256;
 								buff.resize(szBuff);
+								buff.clear();
 								if (TRUE == WinHttpQueryHeaders(hRequest,
 								                                WINHTTP_QUERY_STATUS_TEXT,
 								                                WINHTTP_HEADER_NAME_BY_INDEX,
@@ -349,7 +350,7 @@ namespace siddiqsoft
 									// Convert from wstring to string
 									thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
-									buff.resize(szBuff);
+									//buff.resize(szBuff);
 									if (!buff.empty()) resp["response"]["reason"] = converter.to_bytes(buff);
 								}
 

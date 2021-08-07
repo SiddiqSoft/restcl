@@ -230,7 +230,7 @@ namespace siddiqsoft
 			{
 				auto [ec, emsg] = resp.status();
 				passTest        = ec == 405;
-				std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+				std::cerr << "Got error: " << ec << " -- " << emsg << std::endl << nlohmann::json(resp).dump(3) << std::endl;
 			}
 		});
 
