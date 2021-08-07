@@ -37,7 +37,6 @@
 #include <iostream>
 
 #include "nlohmann/json.hpp"
-#include "../src/restcl.hpp"
 #include "../src/restcl_winhttp.hpp"
 
 
@@ -47,19 +46,18 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		SendRequest({RESTMethodType::Get, "https://www.siddiqsoft.com/"}, [&passTest](const auto& req, const auto& resp) {
+		SendRequest("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, const auto& resp) {
 			nlohmann::json doc(req);
 
-			// Checks the implementation of the json implementation
 			std::cerr << "From callback Serialized json: " << req << std::endl;
-			if (resp.isSuccessful())
+			if (resp.success())
 			{
 				passTest = true;
 				std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
 			}
 			else
 			{
-				auto [ec, emsg] = resp.getError();
+				auto [ec, emsg] = resp.status();
 				std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
 			}
 		});
@@ -72,17 +70,17 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		SendRequest({RESTMethodType::Options, "https://reqbin.com/echo/post/json"}, [&passTest](const auto& req, auto& resp) {
+		SendRequest("https://reqbin.com/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
 			// Checks the implementation of the encode() implementation
 			std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-			if (resp.isSuccessful())
+			if (resp.success())
 			{
 				passTest = true;
 				std::cerr << "Response\n" << resp << std::endl;
 			}
 			else
 			{
-				auto [ec, emsg] = resp.getError();
+				auto [ec, emsg] = resp.status();
 				std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
 			}
 		});
@@ -96,21 +94,21 @@ namespace siddiqsoft
 		bool passTest = false;
 
 		SendRequest(RESTRequestType {RESTMethodType::Post,
-		                             std::format("https://ptsv2.com/t/buzz2/post?function={}", __FUNCTION__),
+		                             SplitUri(std::format("https://ptsv2.com/t/buzz2/post?function={}", __FUNCTION__)),
 		                             {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/xml"}},
 		                             std::format("<root><p>Hello-world</p><p name=\"date\">{:%FT%TZ}</p></root>",
 		                                         std::chrono::system_clock::now())},
 		            [&passTest](const auto& req, const auto& resp) {
 						// Checks the implementation of the encode() implementation
 						std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-						if (resp.isSuccessful())
+						if (resp.success())
 						{
 							passTest = true;
 							std::cerr << "Response\n" << resp << std::endl;
 						}
 						else
 						{
-							auto [ec, emsg] = resp.getError();
+							auto [ec, emsg] = resp.status();
 							std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
 						}
 					});
@@ -125,20 +123,20 @@ namespace siddiqsoft
 		//auto auth     = base64encode("aau:paau");
 
 		SendRequest({RESTMethodType::Post,
-		             "https://ptsv2.com/t/buzz2/post",
+		             "https://ptsv2.com/t/buzz2/post"_Uri,
 		             {{"Authorization", "Basic YWF1OnBhYXU="}},
 		             {{"foo", "bar"}, {"hello", "world"}}},
 		            [&passTest](const auto& req, const auto& resp) {
 						// Checks the implementation of the std::format implementation
 						std::cerr << std::format("From callback Wire serialize              : {}\n", req);
-						if (resp.isSuccessful())
+						if (resp.success())
 						{
 							passTest = true;
 							std::cerr << "Response\n" << resp << std::endl;
 						}
 						else
 						{
-							auto [ec, emsg] = resp.getError();
+							auto [ec, emsg] = resp.status();
 							std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
 						}
 					});
@@ -151,15 +149,15 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		SendRequest({RESTMethodType::Get, "https://www.siddiqsoft.com:65535/"}, [&passTest](const auto& req, const auto& resp) {
+		SendRequest("https://www.siddiqsoft.com:65535/"_GET, [&passTest](const auto& req, const auto& resp) {
 			nlohmann::json doc(req);
 
 			// Checks the implementation of the json implementation
 			std::cerr << "From callback Serialized json: " << req << std::endl;
-			if (resp.isSuccessful()) { std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl; }
+			if (resp.success()) { std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl; }
 			else
 			{
-				auto [ec, emsg] = resp.getError();
+				auto [ec, emsg] = resp.status();
 				passTest        = ec == 12002;
 				std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
 			}
@@ -172,15 +170,15 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		SendRequest({RESTMethodType::Get, "https://localhost:65535/"}, [&passTest](const auto& req, const auto& resp) {
+		SendRequest("https://localhost:65535/"_GET, [&passTest](const auto& req, const auto& resp) {
 			nlohmann::json doc(req);
 
 			// Checks the implementation of the json implementation
 			std::cerr << "From callback Serialized json: " << req << std::endl;
-			if (resp.isSuccessful()) { std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl; }
+			if (resp.success()) { std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl; }
 			else
 			{
-				auto [ec, emsg] = resp.getError();
+				auto [ec, emsg] = resp.status();
 				passTest        = ec == 12029;
 				std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
 			}
@@ -193,12 +191,12 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		SendRequest({RESTMethodType::Options, "https://reqbin.com:9090/echo/post/json"}, [&passTest](const auto& req, auto& resp) {
+		SendRequest("https://reqbin.com:9090/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
 			std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-			if (resp.isSuccessful()) { std::cerr << "Response\n" << resp << std::endl; }
+			if (resp.success()) { std::cerr << "Response\n" << resp << std::endl; }
 			else
 			{
-				auto [ec, emsg] = resp.getError();
+				auto [ec, emsg] = resp.status();
 				passTest        = ec == 12002;
 				std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
 			}

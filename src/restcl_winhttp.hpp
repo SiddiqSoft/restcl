@@ -56,7 +56,7 @@
 
 
 #include "nlohmann/json.hpp"
-#include "RESTRequestType.hpp"
+#include "restcl.hpp"
 #include "siddiqsoft/acw32h.hpp"
 
 
@@ -322,7 +322,7 @@ namespace siddiqsoft
 							                                &nextIndex))
 							{
 								buff.resize(szBuff);
-								if (!buff.empty()) resp.setStatusCode(std::stoi(buff));
+								if (!buff.empty()) resp["response"]["status"] = std::stoi(buff);
 							}
 
 							// Get the reason phrase
@@ -372,9 +372,9 @@ namespace siddiqsoft
 									std::wstring src(static_cast<const wchar_t*>(lpOutBuffer.get()), dwSize);
 									auto         startOfHeaders = src.find(L"\r\n");
 									src.erase(0, startOfHeaders + 2);
-									resp.setHeaders(
+									resp["headers"] =
 											string2map::parse<std::wstring, std::string, std::map<std::string, std::string>>(
-													src, L": ", L"\r\n"));
+													src, L": ", L"\r\n");
 								}
 							}
 						}

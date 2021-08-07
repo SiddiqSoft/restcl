@@ -7,7 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8A6E91C4-25A
 	ProjectSection(SolutionItems) = preProject
 		src\restcl.hpp = src\restcl.hpp
 		src\restcl_winhttp.hpp = src\restcl_winhttp.hpp
-		src\RESTRequestType.hpp = src\RESTRequestType.hpp
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{179E7FDB-7795-456D-AC2D-66670D708FC3}"

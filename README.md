@@ -16,6 +16,53 @@ Design a library where JSON is a first-class API metaphor for interacting with R
 
 Your client should not have to worry about the details of the underlying transport protocol or even the 
 
+- Modern C++ features.
+- Header only.
+- Use native implementations for the actual IO: Windows support uses WinHttp library.
+- Support for literals to allow `_GET`, `_DELETE`, etc.
+- Support for std::format and concepts.
+- Be instructional and use as little code as necessary.
+- The focus is on the interface to the end user.
+- Performance is not the objective.
+
+Simplicity (hide the underlying implementation)
+
+  ```cpp
+    #include "siddiqsoft/restcl.hpp"
+    #include "siddiqsoft/restcl_winhttp.hpp"
+
+    // Create a simple GET request from the endpoint string
+    auto myReq= "https://google.com"_GET;
+
+    // Send the request and invoke the callback.
+    SendRequest( myReq, [](auto& req, auto& resp){
+                           if(resp.success())
+                              doSomething();
+                        });
+              ...
+              ...
+    // Create a POST request by parsing out the string
+    auto myPost= "https://server:999/path?q=hello-world"_POST;
+
+    // Add custom header
+    myPost["headers"]["X-MyHeader"]= "my-header-value";
+    // Adds the content with supplied json object and sets the 
+    // headers Content-Length and Content-Type
+    myPost.setContent( {{"foo", "bar"}, {"goto", 99}} );
+    // Above is Equivalent to the following code:
+    // myPost["content"]= {{"foo", "bar"}, {"goto", 99}};
+    // myPost["headers"]["Content-Type"]= "application/json"; // the default so we can skip this
+    // myPost["headers"]["Content-Length"]= myPost["content"].get<std::string>().length();
+
+    // Send the request and invoke the callback
+    SendRequest( myReq, [](auto& req, auto& resp){
+                           if(resp.success())
+                              doSomething();
+                           else
+                              logError(resp.error());
+                        });
+  ```
+
 # Requirements
 - C++20 with support for `concepts`, `format`
 - The library `nlohmann.json` is used as the primary interface
@@ -26,28 +73,28 @@ Your client should not have to worry about the details of the underlying transpo
 - Copy paste..whatever works.
 
 ```cpp
-TEST(TSendRequest, test2a)
+TEST(TSendRequest, test1a)
 {
     bool passTest = false;
 
-    SendRequest(RESTRequestType {RESTMethodType::Options, "https://reqbin.com/echo/post/json"},
-                [&passTest](const auto& req, auto& resp) {
-                    // Checks the implementation of the encode() implementation
-                    std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-                    if (resp.isSuccessful())
+    SendRequest("https://www.siddiqsoft.com/"_GET,
+                [&passTest](const auto& req, const auto& resp) {
+                    std::cerr << "From callback Serialized json: " << nlohmann::json(req).dump(3) << std::endl;
+                    if (resp.success())
                     {
                         passTest = true;
-                        std::cerr << "Response\n" << resp << std::endl;
+                        std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
                     }
                     else
                     {
-                        auto [ec, emsg] = resp.getIOError();
-                        std::cerr << emsg << std::endl;
+                        auto [ec, emsg] = resp.status();
+                        std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
                     }
                 });
 
     EXPECT_TRUE(passTest);
 }
+
 ```
 
 
