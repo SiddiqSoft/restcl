@@ -475,13 +475,6 @@ namespace siddiqsoft
 			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Get, siddiqsoft::SplitUri<>(std::string {s, sz})};
 		}
 
-		static siddiqsoft::RESTRequestType<> operator"" _GET(const wchar_t* s, size_t sz)
-		{
-			return siddiqsoft::RESTRequestType {
-					siddiqsoft::RESTMethodType::Get,
-					siddiqsoft::SplitUri<std::wstring, siddiqsoft::AuthorityHttp<std::wstring>>(std::wstring {s, sz})};
-		}
-
 
 		static siddiqsoft::RESTRequestType<> operator"" _DELETE(const char* s, size_t sz)
 		{
