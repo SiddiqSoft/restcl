@@ -1,5 +1,5 @@
 /*
-	restcl : PROJECTDESCRIPTION
+	restcl : WinHTTP implementation for Windows
 
 	BSD 3-Clause License
 

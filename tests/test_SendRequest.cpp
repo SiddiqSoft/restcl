@@ -1,6 +1,5 @@
 /*
-	restcl
-	PROJECTDESCRIPTION
+	restcl : Tests
 
 	BSD 3-Clause License
 
