@@ -42,6 +42,7 @@
 #include <memory>
 #include <format>
 
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include <windows.h>
 
@@ -57,6 +58,7 @@
 
 #include "nlohmann/json.hpp"
 #include "RESTClient.hpp"
+
 #include "siddiqsoft/acw32h.hpp"
 
 
@@ -348,10 +350,10 @@ namespace siddiqsoft
 								                                &nextIndex))
 								{
 									// Convert from wstring to string
-									thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+									thread_local std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 
 									//buff.resize(szBuff);
-									if (!buff.empty()) resp["response"]["reason"] = converter.to_bytes(buff);
+									if (!buff.empty()) resp["response"]["reason"] = converter.to_bytes(buff.data());
 								}
 
 								// Get the headers next..

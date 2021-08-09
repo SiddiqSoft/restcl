@@ -43,6 +43,8 @@
 #include <format>
 #include <iterator>
 
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 
@@ -466,46 +468,56 @@ namespace siddiqsoft
 
 
 #pragma region Literal Operators for RESTRequestType
-	static siddiqsoft::RESTRequestType<> operator"" _GET(const char* s, size_t sz)
+	namespace literals
 	{
-		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Get, siddiqsoft::SplitUri<>(std::string {s, sz})};
-	}
+		static siddiqsoft::RESTRequestType<> operator"" _GET(const char* s, size_t sz)
+		{
+			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Get, siddiqsoft::SplitUri<>(std::string {s, sz})};
+		}
+
+		static siddiqsoft::RESTRequestType<> operator"" _GET(const wchar_t* s, size_t sz)
+		{
+			return siddiqsoft::RESTRequestType {
+					siddiqsoft::RESTMethodType::Get,
+					siddiqsoft::SplitUri<std::wstring, siddiqsoft::AuthorityHttp<std::wstring>>(std::wstring {s, sz})};
+		}
 
 
-	static siddiqsoft::RESTRequestType<> operator"" _DELETE(const char* s, size_t sz)
-	{
-		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Delete, siddiqsoft::SplitUri<>(std::string {s, sz})};
-	}
+		static siddiqsoft::RESTRequestType<> operator"" _DELETE(const char* s, size_t sz)
+		{
+			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Delete, siddiqsoft::SplitUri<>(std::string {s, sz})};
+		}
 
 
-	static siddiqsoft::RESTRequestType<> operator"" _HEAD(const char* s, size_t sz)
-	{
-		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Head, siddiqsoft::SplitUri<>(std::string {s, sz})};
-	}
+		static siddiqsoft::RESTRequestType<> operator"" _HEAD(const char* s, size_t sz)
+		{
+			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Head, siddiqsoft::SplitUri<>(std::string {s, sz})};
+		}
 
 
-	static siddiqsoft::RESTRequestType<> operator"" _OPTIONS(const char* s, size_t sz)
-	{
-		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Options, siddiqsoft::SplitUri<>(std::string {s, sz})};
-	}
+		static siddiqsoft::RESTRequestType<> operator"" _OPTIONS(const char* s, size_t sz)
+		{
+			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Options, siddiqsoft::SplitUri<>(std::string {s, sz})};
+		}
 
 
-	static siddiqsoft::RESTRequestType<> operator"" _PATCH(const char* s, size_t sz)
-	{
-		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Patch, siddiqsoft::SplitUri<>(std::string {s, sz})};
-	}
+		static siddiqsoft::RESTRequestType<> operator"" _PATCH(const char* s, size_t sz)
+		{
+			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Patch, siddiqsoft::SplitUri<>(std::string {s, sz})};
+		}
 
 
-	static siddiqsoft::RESTRequestType<> operator"" _POST(const char* s, size_t sz)
-	{
-		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Post, siddiqsoft::SplitUri<>(std::string {s, sz})};
-	}
+		static siddiqsoft::RESTRequestType<> operator"" _POST(const char* s, size_t sz)
+		{
+			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Post, siddiqsoft::SplitUri<>(std::string {s, sz})};
+		}
 
 
-	static siddiqsoft::RESTRequestType<> operator"" _PUT(const char* s, size_t sz)
-	{
-		return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Put, siddiqsoft::SplitUri<>(std::string {s, sz})};
-	}
+		static siddiqsoft::RESTRequestType<> operator"" _PUT(const char* s, size_t sz)
+		{
+			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Put, siddiqsoft::SplitUri<>(std::string {s, sz})};
+		}
+	} // namespace literals
 #pragma endregion
 
 } // namespace siddiqsoft

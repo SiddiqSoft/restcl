@@ -1,3 +1,5 @@
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
 #include "gtest/gtest.h"
 #include <iostream>
 
@@ -6,6 +8,8 @@
 
 namespace siddiqsoft
 {
+	using namespace literals;
+
 	TEST(TRestRequest, test1a)
 	{
 		auto srt = "https://www.siddiqsoft.com/"_GET;
@@ -30,8 +34,7 @@ namespace siddiqsoft
 	{
 		auto srt = "https://www.siddiqsoft.com/"_GET;
 
-		// Checks the implementation of the std::format implementation
+		// Checks the implementation of the std::formatter implementation
 		std::cerr << std::format("Wire serialize              : {}\n", srt);
 	}
-
 } // namespace siddiqsoft
