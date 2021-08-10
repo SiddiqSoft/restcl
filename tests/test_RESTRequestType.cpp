@@ -1,6 +1,5 @@
 /*
-	PROJECTNAME
-	PROJECTDESCRIPTION
+	restcl : Tests
 
 	BSD 3-Clause License
 
@@ -33,14 +32,43 @@
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
 #include "gtest/gtest.h"
+#include <iostream>
 
 #include "nlohmann/json.hpp"
-#include "../src/projectname.hpp"
+#include "../src/RESTClient.hpp"
 
-
-TEST(projectname, test1)
+namespace siddiqsoft
 {
-	EXPECT_TRUE(false);
-}
+	using namespace literals;
 
+	TEST(TRestRequest, test1a)
+	{
+		auto srt = "https://www.siddiqsoft.com/"_GET;
+
+		nlohmann::json doc(srt);
+
+		// Checks the implementation of the json implementation
+		std::cerr << "Serialized json: " << doc.dump(3) << std::endl;
+	}
+
+
+	TEST(TRestRequest, test1b)
+	{
+		auto srt = "https://www.siddiqsoft.com/"_GET;
+
+		// Checks the implementation of the encode() implementation
+		std::cerr << "Wire serialize              : " << srt.encode() << std::endl;
+	}
+
+
+	TEST(TRestRequest, test1c)
+	{
+		auto srt = "https://www.siddiqsoft.com/"_GET;
+
+		// Checks the implementation of the std::formatter implementation
+		std::cerr << std::format("Wire serialize              : {}\n", srt);
+	}
+} // namespace siddiqsoft
