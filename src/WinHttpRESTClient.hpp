@@ -205,13 +205,6 @@ namespace siddiqsoft
 	}
 #pragma endregion
 
-	constexpr size_t      HEADER_SERIALIZE_BUFFER {4096};
-	constexpr DWORD       MAXBUFSIZE {8192};
-	constexpr DWORD       HTTPS_MAXRETRY {7};
-	static const char*    RESTCL_ACCEPT_TYPES[]   = {"application/json", "text/json", "*/*", NULL};
-	static const wchar_t* RESTCL_ACCEPT_TYPES_W[] = {L"application/json", L"text/json", L"*/*", NULL};
-
-
 	/// @brief Windows implementation of the RESTClient
 	class WinHttpRESTClient : public RESTClient
 	{
@@ -223,14 +216,23 @@ namespace siddiqsoft
 		/// Only use this for where there is a need to provide wstring and the underlying elements are ASCII.
 		/// @param src ASCII string. DO NOT USE utf-8
 		/// @return Upgraded wstring
-		auto asciiToWstringUpgrade(const std::string& src)
+		auto n2w(const std::string& src)
 		{
 			std::wstring rawAsciiToWstring {src.begin(), src.end()};
 			return std::move(rawAsciiToWstring);
 		}
 
+		static const size_t HEADER_SERIALIZE_BUFFER {4096};
+		static const DWORD  MAXBUFSIZE {8192};
+		static const DWORD  HTTPS_MAXRETRY {7};
+		const char*         RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+		const wchar_t*      RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
+		const std::string   UserAgent {"siddiqsoft/restcl/WinHttp-0.2.0"};
+		const std::wstring  UserAgentW {L"siddiqsoft/restcl/WinHttp-0.2.0"};
+		ACW32HINTERNET      hSession;
+
 	public:
-		WinHttpRESTClient() { }
+		WinHttpRESTClient() { hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)); }
 
 
 		/// @brief Implements a synchronous send of the request
@@ -244,27 +246,26 @@ namespace siddiqsoft
 			DWORD    dwBytesRead {0}, dwError {0};
 			uint32_t nRetry {0}, nError {0};
 			char     cBuf[MAXBUFSIZE] {};
-			DWORD    dwFlagsSize  = 0; //sizeof(SECURE_FLAGS);
-			auto     strUserAgent = req["headers"].value("User-Agent", "");
+			DWORD    dwFlagsSize  = 0;
+			auto&    hs           = req["headers"]; //shortcut
+			auto&    rs           = req["request"]; //shortcut
+			auto     strUserAgent = hs.value("User-Agent", "");
 
 
-			if (ACW32HINTERNET hSession {
-						WinHttpOpen(asciiToWstringUpgrade(strUserAgent).c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)};
-			    hSession != NULL)
+			if (hSession != NULL)
 			{
 				auto& strServer = req.uri.authority.host;
-				if (ACW32HINTERNET hConnect {
-							WinHttpConnect(hSession, asciiToWstringUpgrade(strServer).c_str(), req.uri.authority.port, 0)};
+				if (ACW32HINTERNET hConnect {WinHttpConnect(hSession, n2w(strServer).c_str(), req.uri.authority.port, 0)};
 				    hConnect != NULL)
 				{
-					auto strMethod  = req["request"].value("method", "");
+					auto strMethod  = rs.value("method", "");
 					auto strUrl     = req.uri.urlPart;
-					auto strVersion = req["request"].value("version", "");
+					auto strVersion = rs.value("version", "");
 
 					if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
-					                                                asciiToWstringUpgrade(strMethod).c_str(),
-					                                                asciiToWstringUpgrade(strUrl).c_str(),
-					                                                asciiToWstringUpgrade(strVersion).c_str(),
+					                                                n2w(strMethod).c_str(),
+					                                                n2w(strUrl).c_str(),
+					                                                n2w(strVersion).c_str(),
 					                                                NULL,
 					                                                RESTCL_ACCEPT_TYPES_W,
 					                                                (req.uri.scheme == UriScheme::WebHttps)
@@ -272,10 +273,10 @@ namespace siddiqsoft
 					                                                        : WINHTTP_FLAG_REFRESH)};
 					    hRequest != NULL)
 					{
-						auto        contentLength = req["headers"].value("Content-Length", 0);
+						auto        contentLength = hs.value("Content-Length", 0);
 						std::string strHeaders;
 						req.encodeHeaders_to(strHeaders);
-						std::wstring requestHeaders = asciiToWstringUpgrade(strHeaders);
+						std::wstring requestHeaders = n2w(strHeaders);
 						nError                      = WinHttpAddRequestHeaders(
                                 hRequest, requestHeaders.c_str(), requestHeaders.length(), WINHTTP_ADDREQ_FLAG_ADD);
 

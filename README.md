@@ -1,4 +1,4 @@
-restcl : PROJECTDESCRIPTION
+restcl : A focussed REST Client for Modern C++
 -------------------------------------------
 <!-- badges -->
 <!--[![CodeQL](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml)-->
@@ -16,9 +16,11 @@ Design a library where JSON is a first-class API metaphor for interacting with R
 
 Your client should not have to worry about the details of the underlying transport protocol or even the 
 
-- Modern C++ features.
+- Modern C++ features: C++20 is required!
 - Header only.
 - Use native implementations for the actual IO: Windows support uses WinHttp library.
+  - Initial implementation is for Windows using WinHTTP.
+  - Alternate implementation using OpenSSL tbd.
 - Support for literals to allow `_GET`, `_DELETE`, etc.
 - Support for std::format and concepts.
 - Be instructional and use as little code as necessary.
