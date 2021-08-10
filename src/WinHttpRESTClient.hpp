@@ -238,6 +238,8 @@ namespace siddiqsoft
 		/// @param callback Required callback
 		void send(const RESTRequestType<>& req, std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
 		{
+			thread_local std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+
 			HRESULT  hr {E_FAIL};
 			DWORD    dwBytesRead {0}, dwError {0};
 			uint32_t nRetry {0}, nError {0};
@@ -322,38 +324,37 @@ namespace siddiqsoft
 							else
 							{
 								// Get the HTTP respose status
-								std::wstring buff {};
-								DWORD        szBuff    = 256;
-								DWORD        nextIndex = 0;
+								wchar_t buff[256];
+								DWORD   szBuff    = 256;
+								DWORD   nextIndex = 0;
 
-								buff.resize(szBuff);
+
 								if (TRUE == WinHttpQueryHeaders(hRequest,
 								                                WINHTTP_QUERY_STATUS_CODE,
 								                                WINHTTP_HEADER_NAME_BY_INDEX,
-								                                buff.data(),
+								                                buff,
 								                                &szBuff,
 								                                &nextIndex))
 								{
-									buff.resize(szBuff);
-									if (!buff.empty()) resp["response"]["status"] = std::stoi(buff);
+									// The size is returned in bytes but the data is wchar_t so we need to adjust
+									szBuff /= sizeof(wchar_t);
+									buff[szBuff] = L'\0';
+									if (szBuff > 0) resp["response"]["status"] = std::stoi(std::wstring {buff, szBuff});
 								}
 
 								// Get the reason phrase
 								szBuff = 256;
-								buff.resize(szBuff);
-								buff.clear();
 								if (TRUE == WinHttpQueryHeaders(hRequest,
 								                                WINHTTP_QUERY_STATUS_TEXT,
 								                                WINHTTP_HEADER_NAME_BY_INDEX,
-								                                buff.data(),
-								                                &szBuff,
+								                                buff,
+								                                &szBuff, // this is in bytes
 								                                &nextIndex))
 								{
-									// Convert from wstring to string
-									thread_local std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-
-									//buff.resize(szBuff);
-									if (!buff.empty()) resp["response"]["reason"] = converter.to_bytes(buff.data());
+									// The size is returned in bytes but the data is wchar_t so we need to adjust
+									szBuff /= sizeof(wchar_t);
+									buff[szBuff] = L'\0';
+									if (szBuff > 0) resp["response"]["reason"] = converter.to_bytes(std::wstring {buff, szBuff});
 								}
 
 								// Get the headers next..
@@ -381,9 +382,11 @@ namespace siddiqsoft
 									                             WINHTTP_NO_HEADER_INDEX);
 									if (nError == TRUE && (lpOutBuffer != nullptr))
 									{
+										// The data is wchar_t but the dwSize returns bytes; adjustmend required.
+										dwSize /= sizeof(wchar_t);
 										// We need to skip the first line of the respose as it is the status response line.
 										// Decode the CRLF string into key-value elements.
-										std::wstring src(static_cast<const wchar_t*>(lpOutBuffer.get()), dwSize);
+										std::wstring src {lpOutBuffer.get(), dwSize};
 										auto         startOfHeaders = src.find(L"\r\n");
 										src.erase(0, startOfHeaders + 2);
 										resp["headers"] =
@@ -448,6 +451,7 @@ namespace siddiqsoft
 							do
 							{
 								//memset(cBuf, '\0', sizeof(cBuf));
+								// Returns byte stream; accumulate until we're out of data.
 								hr = WinHttpReadData(hRequest, cBuf, MAXBUFSIZE - 1, &dwBytesRead)
 											 ? S_OK
 											 : HRESULT_FROM_WIN32(GetLastError());
