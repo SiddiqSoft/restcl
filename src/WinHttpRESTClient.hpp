@@ -200,8 +200,8 @@ namespace siddiqsoft
 	static std::string messageFromWininetCode(uint32_t errCode)
 	{
 		return WinInetErrorCodes.find(errCode) != WinInetErrorCodes.end()
-					   ? std::format("{}-{}", errCode, WinInetErrorCodes[errCode])
-					   : std::to_string(errCode);
+		               ? std::format("{}-{}", errCode, WinInetErrorCodes[errCode])
+		               : std::to_string(errCode);
 	}
 #pragma endregion
 
@@ -241,6 +241,26 @@ namespace siddiqsoft
 		void send(const RESTRequestType<>& req, std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
 		{
 			thread_local std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+
+			/// @brief Lambda to Parse the first line from the HTTP response into its parts: version, status and the reason phrase
+			/// @param src The buffer as wstring
+			/// @return A tuple with httpVersion, statusCode, reasonPhrase and the last is the offset to the start of the header section just past the end of the response line.
+			auto extractResponseLine = [](const std::wstring& src) -> std::tuple<std::string, uint32_t, std::string, size_t>
+			{
+				// Given the first line is of the format: `HTTP_VERSION STATUS_CODE REASON_PHRASE\r\n`
+				// Return the particles.
+				std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+
+				// TODO: Optimize..
+				auto firstPart    = src.find_first_of(L' ');
+				auto httpVersion  = src.substr(0, firstPart);
+				auto secondPart   = src.find_first_of(L' ', ++firstPart);
+				auto statusCode   = src.substr(firstPart, secondPart - firstPart);
+				auto lastPart     = src.find_first_of(L"\r\n", ++secondPart);
+				auto reasonPhrase = src.substr(secondPart, lastPart - secondPart);
+
+				return {converter.to_bytes(httpVersion), std::stoi(statusCode), converter.to_bytes(reasonPhrase), lastPart + 2};
+			};
 
 			HRESULT  hr {E_FAIL};
 			DWORD    dwBytesRead {0}, dwError {0};
@@ -324,41 +344,7 @@ namespace siddiqsoft
 							if (nError == FALSE) { dwError = GetLastError(); }
 							else
 							{
-								// Get the HTTP respose status
-								wchar_t buff[256];
-								DWORD   szBuff    = 256;
-								DWORD   nextIndex = 0;
-
-
-								if (TRUE == WinHttpQueryHeaders(hRequest,
-								                                WINHTTP_QUERY_STATUS_CODE,
-								                                WINHTTP_HEADER_NAME_BY_INDEX,
-								                                buff,
-								                                &szBuff,
-								                                &nextIndex))
-								{
-									// The size is returned in bytes but the data is wchar_t so we need to adjust
-									szBuff /= sizeof(wchar_t);
-									buff[szBuff] = L'\0';
-									if (szBuff > 0) resp["response"]["status"] = std::stoi(std::wstring {buff, szBuff});
-								}
-
-								// Get the reason phrase
-								szBuff = 256;
-								if (TRUE == WinHttpQueryHeaders(hRequest,
-								                                WINHTTP_QUERY_STATUS_TEXT,
-								                                WINHTTP_HEADER_NAME_BY_INDEX,
-								                                buff,
-								                                &szBuff, // this is in bytes
-								                                &nextIndex))
-								{
-									// The size is returned in bytes but the data is wchar_t so we need to adjust
-									szBuff /= sizeof(wchar_t);
-									buff[szBuff] = L'\0';
-									if (szBuff > 0) resp["response"]["reason"] = converter.to_bytes(std::wstring {buff, szBuff});
-								}
-
-								// Get the headers next..
+								// Get the headers next.. including the response line
 								DWORD dwSize = 0;
 
 								// First, use WinHttpQueryHeaders to obtain the size of the buffer.
@@ -372,6 +358,11 @@ namespace siddiqsoft
 								// Allocate memory for the buffer.
 								if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
 								{
+									// A silly decision by the library to always return the headers as wchar_t
+									// despite the fact that over the wire we've got UTF-8/ASCII encoded headers
+									// The body is where encode varies and here in our library we focus on utf-8 json.
+									// The buffer must be wchar_t and we must adjust the size to account for the
+									// actual number of characters since the dwSize is in bytes not wchar_t characters!
 									auto lpOutBuffer = std::make_unique<wchar_t[]>(dwSize);
 
 									// Now, use WinHttpQueryHeaders to retrieve the header.
@@ -388,8 +379,17 @@ namespace siddiqsoft
 										// We need to skip the first line of the respose as it is the status response line.
 										// Decode the CRLF string into key-value elements.
 										std::wstring src {lpOutBuffer.get(), dwSize};
-										auto         startOfHeaders = src.find(L"\r\n");
-										src.erase(0, startOfHeaders + 2);
+
+#ifdef _DEBUG
+										std::wcerr << "Header buffer:\n" << src << std::endl;
+#endif
+
+										size_t startOfHeaders    = std::string::npos;
+										std::tie(resp["response"]["version"],
+										         resp["response"]["status"],
+										         resp["response"]["reason"],
+										         startOfHeaders) = extractResponseLine(src);
+										src.erase(0, startOfHeaders);
 										resp["headers"] =
 												string2map::parse<std::wstring, std::string, std::map<std::string, std::string>>(
 														src, L": ", L"\r\n");
@@ -454,8 +454,8 @@ namespace siddiqsoft
 								//memset(cBuf, '\0', sizeof(cBuf));
 								// Returns byte stream; accumulate until we're out of data.
 								hr = WinHttpReadData(hRequest, cBuf, MAXBUFSIZE - 1, &dwBytesRead)
-											 ? S_OK
-											 : HRESULT_FROM_WIN32(GetLastError());
+								             ? S_OK
+								             : HRESULT_FROM_WIN32(GetLastError());
 #pragma warning(suppress : 6102)
 								if (dwBytesRead)
 								{
