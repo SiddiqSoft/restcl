@@ -227,18 +227,32 @@ namespace siddiqsoft
 		static const DWORD  HTTPS_MAXRETRY {7};
 		const char*         RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
 		const wchar_t*      RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-		const std::string   UserAgent {"siddiqsoft/restcl/WinHttp-0.2.0"};
-		const std::wstring  UserAgentW {L"siddiqsoft/restcl/WinHttp-0.2.0"};
 		ACW32HINTERNET      hSession;
 
 	public:
-		WinHttpRESTClient() { hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)); }
+		WinHttpRESTClient()
+		{
+			UserAgent  = "siddiqsoft.restcl/0.3.0 (Windows NT; x64)";
+			UserAgentW = n2w(UserAgent);
+
+			hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
+		}
+
+		/// @brief Creates the Windows REST Client with given UserAgent string
+		/// @param ua User agent string
+		WinHttpRESTClient(const std::string& ua)
+		{
+			UserAgent  = ua;
+			UserAgentW = n2w(ua);
+
+			hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
+		}
 
 
-		/// @brief Implements a synchronous send of the request
-		/// @param req Request object
+		/// @brief Implements a synchronous send of the request. Note that the req param is 
+		/// @param req Request object; The parameter must be move-d
 		/// @param callback Required callback
-		void send(const RESTRequestType<>& req, std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
+		void send(RESTRequestType<>&& req, std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
 		{
 			thread_local std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
 
@@ -266,11 +280,13 @@ namespace siddiqsoft
 			DWORD    dwBytesRead {0}, dwError {0};
 			uint32_t nRetry {0}, nError {0};
 			char     cBuf[MAXBUFSIZE] {};
-			DWORD    dwFlagsSize  = 0;
-			auto&    hs           = req["headers"]; //shortcut
-			auto&    rs           = req["request"]; //shortcut
-			auto     strUserAgent = hs.value("User-Agent", "");
+			DWORD    dwFlagsSize = 0;
+			auto&    hs          = req["headers"]; //shortcut
+			auto&    rs          = req["request"]; //shortcut
 
+			// First order - adjust the UserAgent
+			if (!hs.contains("User-Agent")) req["headers"]["User-Agent"] = UserAgent;
+			auto strUserAgent = hs.contains("User-Agent") ? hs.value("User-Agent", UserAgent) : UserAgent;
 
 			if (hSession != NULL)
 			{
@@ -504,8 +520,7 @@ namespace siddiqsoft
 		/// @brief
 		/// @param req
 		/// @param callback
-		void sendAsync(const RESTRequestType<>&                                                 req,
-		               std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
+		void sendAsync(RESTRequestType<>&& req, std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
 		{
 			throw std::exception(std::format("{} Not implemented.", __FUNCTION__).c_str());
 		}

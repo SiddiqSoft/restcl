@@ -1,4 +1,4 @@
-restcl : A focussed REST Client for Modern C++
+restcl : A focused REST Client for Modern C++
 -------------------------------------------
 <!-- badges -->
 [![CodeQL](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml)
@@ -13,11 +13,9 @@ restcl : A focussed REST Client for Modern C++
 # Objective
 
 Design a library where JSON is a first-class API metaphor for interacting with RESTful servers.
-
-Your client should not have to worry about the details of the underlying transport protocol or even the 
-
+- Focused on REST interactions with JSON. Limiting allows us to simplify the usage and make it feel very C++ instead of the C-like API of Win32 or OpenSSL.
 - Modern C++ features: C++20 is required!
-- Header only.
+- Header only
 - Use native implementations for the actual IO: Windows support uses WinHttp library.
   - Initial implementation is for Windows using WinHTTP.
   - Alternate implementation using OpenSSL tbd.
@@ -34,7 +32,7 @@ Your client should not have to worry about the details of the underlying transpo
     using namespace siddiqsoft;
     using namespace siddiqsoft::literals;
 
-    WinHttpRESTClient wrc;
+    WinHttpRESTClient wrc("my-user-agent-string"); // optional UA; defaults to siddiqsoft.restcl/version
 
     // Create a simple GET request from the endpoint string
     // Send the request and invoke the callback.

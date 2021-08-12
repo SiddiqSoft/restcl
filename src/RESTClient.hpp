@@ -128,7 +128,6 @@ namespace siddiqsoft
 			if (!hs.contains("Accept")) hs["Accept"] = "application/json";
 			if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
 			if (!hs.contains("Content-Length")) hs["Content-Length"] = 0;
-			if (!hs.contains("User-Agent")) hs["User-Agent"] = "siddiqsoft/restcl";
 		}
 
 
@@ -186,6 +185,11 @@ namespace siddiqsoft
 		/// @param key Allows access into the json object via string or json_pointer
 		/// @return Non-mutable reference to the specified element.
 		const auto& operator[](const auto& key) const { return rrd.at(key); }
+
+		/// @brief Access the "headers", "request", "content" in the json object
+		/// @param key Allows access into the json object via string or json_pointer
+		/// @return Mutable reference to the specified element.
+		auto& operator[](const auto& key) { return rrd.at(key); }
 
 
 		/// @brief Set the content (non-JSON)
@@ -452,9 +456,13 @@ namespace siddiqsoft
 	class RESTClient
 	{
 	public:
-		virtual void send(const RESTRequestType<>&,
+		std::string  UserAgent {"siddiqsoft.restcl/0.3.0"};
+		std::wstring UserAgentW {L"siddiqsoft.restcl/0.3.0"};
+
+	public:
+		virtual void send(RESTRequestType<>&&,
 		                  std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)      = 0;
-		virtual void sendAsync(const RESTRequestType<>&,
+		virtual void sendAsync(RESTRequestType<>&&,
 		                       std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback) = 0;
 	};
 

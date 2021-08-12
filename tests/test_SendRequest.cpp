@@ -75,7 +75,7 @@ namespace siddiqsoft
 	TEST(TSendRequest, test2a)
 	{
 		bool              passTest = false;
-		WinHttpRESTClient wrc;
+		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__));
 
 		wrc.send("https://reqbin.com/echo/post/json"_OPTIONS,
 		         [&passTest](const auto& req, auto& resp)
@@ -104,26 +104,29 @@ namespace siddiqsoft
 
 		WinHttpRESTClient wrc;
 
-		wrc.send(RESTRequestType {RESTMethodType::Post,
-		                          SplitUri(std::format("https://ptsv2.com/t/buzz2/post?function={}", __FUNCTION__)),
-		                          {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/xml"}},
-		                          std::format("<root><p>Hello-world</p><p name=\"date\">{:%FT%TZ}</p></root>",
-		                                      std::chrono::system_clock::now())},
-		         [&passTest](const auto& req, const auto& resp)
-		         {
-					 // Checks the implementation of the encode() implementation
-					 std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-					 if (resp.success())
-					 {
-						 passTest = true;
-						 std::cerr << "Response\n" << resp << std::endl;
-					 }
-					 else
-					 {
-						 auto [ec, emsg] = resp.status();
-						 std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
-					 }
-				 });
+		wrc.send(
+				RESTRequestType {RESTMethodType::Post,
+		                         SplitUri(std::format("https://ptsv2.com/t/buzz2/post?function={}", __func__)),
+		                         {{"Authorization", "Basic YWF1OnBhYXU="},
+		                          {"Content-Type", "application/xml"},
+		                          {"User-Agent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}},
+		                         std::format("<root><p>Hello-world</p><p name=\"date\">{:%FT%TZ}</p></root>",
+		                                     std::chrono::system_clock::now())},
+				[&passTest](const auto& req, const auto& resp)
+				{
+					// Checks the implementation of the encode() implementation
+					std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+					if (resp.success())
+					{
+						passTest = true;
+						std::cerr << "Response\n" << resp << std::endl;
+					}
+					else
+					{
+						auto [ec, emsg] = resp.status();
+						std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+					}
+				});
 
 		EXPECT_TRUE(passTest);
 	}
@@ -134,7 +137,7 @@ namespace siddiqsoft
 		bool passTest = false;
 		//auto auth     = base64encode("aau:paau");
 
-		WinHttpRESTClient wrc;
+		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
 		wrc.send({RESTMethodType::Post,
 		          "https://ptsv2.com/t/buzz2/post"_Uri,
@@ -164,7 +167,7 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		WinHttpRESTClient wrc;
+		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
 		wrc.send("https://www.siddiqsoft.com:65535/"_GET,
 		         [&passTest](const auto& req, const auto& resp)
@@ -189,7 +192,7 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		WinHttpRESTClient wrc;
+		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
 		wrc.send("https://localhost:65535/"_GET,
 		         [&passTest](const auto& req, const auto& resp)
@@ -214,7 +217,7 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		WinHttpRESTClient wrc;
+		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
 		wrc.send("https://reqbin.com:9090/echo/post/json"_OPTIONS,
 		         [&passTest](const auto& req, auto& resp)
@@ -236,7 +239,7 @@ namespace siddiqsoft
 	{
 		bool passTest = false;
 
-		WinHttpRESTClient wrc;
+		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
 		wrc.send("https://google.com/"_OPTIONS,
 		         [&passTest](const auto& req, auto& resp)
