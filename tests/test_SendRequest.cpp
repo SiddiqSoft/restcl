@@ -38,7 +38,7 @@
 #include <iostream>
 
 #include "nlohmann/json.hpp"
-#include "../src/WinHttpRESTClient.hpp"
+#include "../src/restcl_winhttp.hpp"
 
 
 namespace siddiqsoft
