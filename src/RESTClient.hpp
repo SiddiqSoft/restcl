@@ -1,35 +1,35 @@
 /*
-	restcl : Focussed REST Client for Modern C++
+    restcl : Focussed REST Client for Modern C++
 
-	BSD 3-Clause License
+    BSD 3-Clause License
 
-	Copyright (c) 2021, Siddiq Software LLC
-	All rights reserved.
+    Copyright (c) 2021, Siddiq Software LLC
+    All rights reserved.
 
-	Redistribution and use in source and binary forms, with or without
-	modification, are permitted provided that the following conditions are met:
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
 
-	1. Redistributions of source code must retain the above copyright notice, this
-	   list of conditions and the following disclaimer.
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
 
-	2. Redistributions in binary form must reproduce the above copyright notice,
-	   this list of conditions and the following disclaimer in the documentation
-	   and/or other materials provided with the distribution.
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
 
-	3. Neither the name of the copyright holder nor the names of its
-	   contributors may be used to endorse or promote products derived from
-	   this software without specific prior written permission.
+    3. Neither the name of the copyright holder nor the names of its
+       contributors may be used to endorse or promote products derived from
+       this software without specific prior written permission.
 
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-	IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-	DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-	DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-	SERVICES; LOSS OF USE, rrd, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-	CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, rrd, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #pragma once
@@ -59,7 +59,7 @@ namespace siddiqsoft
 		// https://www.rfc-editor.org/info/rfc1123; https://www.rfc-editor.org/rfc/rfc1123.txt
 		// https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-date-and-time-format-strings#RFC1123
 		// std::Format: Thu, 10 Apr 2008 13:30:00.0000000 GMT
-		//return std::format("{:%a, %d %b %Y %H:%M:%S GMT}", std::chrono::utc_clock::now());
+		// return std::format("{:%a, %d %b %Y %H:%M:%S GMT}", std::chrono::utc_clock::now());
 
 		// Current version of the std::chrono formatters return nanoseconds which is not compliant
 		char buff[sizeof "Tue, 01 Nov 1994 08:12:31 GMT"] {};
@@ -106,18 +106,19 @@ namespace siddiqsoft
 
 
 	/// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
-	template <HTTPProtocolVersion HttpVer = HTTPProtocolVersion::Http11> class RESTRequestType
+	template <HTTPProtocolVersion HttpVer = HTTPProtocolVersion::Http11>
+	class RESTRequestType
 	{
 	public:
 		/// @brief Constructor with endpoint and optional headers and json content
 		/// @param endpoint Fully qualified http schema uri
 		/// @param h Optional json containing the headers
-		RESTRequestType(const RESTMethodType&                               reqMethod,
-		                const Uri<std::string, AuthorityHttp<std::string>>& endpoint,
-		                const nlohmann::json&                               h = nullptr)
-			: uri(endpoint)
+		RESTRequestType(const RESTMethodType& reqMethod, const Uri<char>& endpoint, const nlohmann::json& h = nullptr)
+		    : uri(endpoint)
 		{
-			if (h.is_object() && !h.is_null()) { rrd["headers"] = h; }
+			if (h.is_object() && !h.is_null()) {
+				rrd["headers"] = h;
+			}
 
 			rrd["request"]["uri"]    = uri.urlPart;
 			rrd["request"]["method"] = reqMethod;
@@ -131,21 +132,21 @@ namespace siddiqsoft
 		}
 
 
-		RESTRequestType(const RESTMethodType&                               reqMethod,
-		                const Uri<std::string, AuthorityHttp<std::string>>& endpoint,
-		                const nlohmann::json&                               h,
-		                const nlohmann::json&                               c)
-			: RESTRequestType(reqMethod, endpoint, h)
+		RESTRequestType(const RESTMethodType& reqMethod,
+		                const Uri<char>&      endpoint,
+		                const nlohmann::json& h,
+		                const nlohmann::json& c)
+		    : RESTRequestType(reqMethod, endpoint, h)
 		{
 			setContent(c);
 		}
 
 
-		explicit RESTRequestType(const RESTMethodType&                               reqMethod,
-		                         const Uri<std::string, AuthorityHttp<std::string>>& endpoint,
-		                         const nlohmann::json&                               h,
-		                         const std::string&                                  c)
-			: RESTRequestType(reqMethod, endpoint, h)
+		explicit RESTRequestType(const RESTMethodType& reqMethod,
+		                         const Uri<char>&      endpoint,
+		                         const nlohmann::json& h,
+		                         const std::string&    c)
+		    : RESTRequestType(reqMethod, endpoint, h)
 		{
 			if (h.is_null() || (h.is_object() && !h.contains("Content-Type"))) rrd["headers"]["Content-Type"] = "text/plain";
 			rrd["headers"]["Content-Length"] = c.length();
@@ -156,16 +157,14 @@ namespace siddiqsoft
 		                         const std::string&    endpoint,
 		                         const nlohmann::json& h,
 		                         const char*           c)
-			: RESTRequestType(reqMethod, endpoint, h)
+		    : RESTRequestType(reqMethod, endpoint, h)
 		{
-			if (c != nullptr)
-			{
+			if (c != nullptr) {
 				if (h.is_null() || (h.is_object() && !h.contains("Content-Type"))) rrd["headers"]["Content-Type"] = "text/plain";
 				rrd["headers"]["Content-Length"] = strlen(c);
 				rrd["content"]                   = c;
 			}
-			else
-			{
+			else {
 				rrd["headers"]["Content-Length"] = 0;
 			}
 		}
@@ -184,12 +183,18 @@ namespace siddiqsoft
 		/// @brief Access the "headers", "request", "content" in the json object
 		/// @param key Allows access into the json object via string or json_pointer
 		/// @return Non-mutable reference to the specified element.
-		const auto& operator[](const auto& key) const { return rrd.at(key); }
+		const auto& operator[](const auto& key) const
+		{
+			return rrd.at(key);
+		}
 
 		/// @brief Access the "headers", "request", "content" in the json object
 		/// @param key Allows access into the json object via string or json_pointer
 		/// @return Mutable reference to the specified element.
-		auto& operator[](const auto& key) { return rrd.at(key); }
+		auto& operator[](const auto& key)
+		{
+			return rrd.at(key);
+		}
 
 
 		/// @brief Set the content (non-JSON)
@@ -198,8 +203,7 @@ namespace siddiqsoft
 		/// @return Self
 		RESTRequestType& setContent(const std::string& ctype, const std::string& c)
 		{
-			if (!c.empty())
-			{
+			if (!c.empty()) {
 				rrd["headers"]["Content-Type"]   = ctype;
 				rrd["headers"]["Content-Length"] = c.length();
 				rrd["content"]                   = c;
@@ -212,8 +216,7 @@ namespace siddiqsoft
 		/// @return Self
 		RESTRequestType& setContent(const nlohmann::json& c)
 		{
-			if (!c.is_null())
-			{
+			if (!c.is_null()) {
 				rrd["content"]                   = c;
 				rrd["headers"]["Content-Length"] = c.dump().length();
 				rrd["headers"]["Content-Type"]   = "application/json";
@@ -225,9 +228,10 @@ namespace siddiqsoft
 		std::string getContent() const
 		{
 			// Build the content to ensure we have the content-type
-			if (rrd["content"].is_object()) { return rrd["content"].dump(); }
-			else if (rrd["content"].is_string())
-			{
+			if (rrd["content"].is_object()) {
+				return rrd["content"].dump();
+			}
+			else if (rrd["content"].is_string()) {
 				return rrd["content"].get<std::string>();
 			}
 
@@ -239,19 +243,17 @@ namespace siddiqsoft
 		/// @param rs String where the headers is "written-to".
 		void encodeHeaders_to(std::string& rs) const
 		{
-			for (auto& [k, v] : rrd["headers"].items())
-			{
-				if (v.is_string()) { std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>()); }
-				else if (v.is_number_unsigned())
-				{
+			for (auto& [k, v] : rrd["headers"].items()) {
+				if (v.is_string()) {
+					std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
+				}
+				else if (v.is_number_unsigned()) {
 					std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<uint64_t>());
 				}
-				else if (v.is_number_integer())
-				{
+				else if (v.is_number_integer()) {
 					std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<int>());
 				}
-				else
-				{
+				else {
 					std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.dump());
 				}
 			}
@@ -275,9 +277,10 @@ namespace siddiqsoft
 			               rl["version"].get<std::string>());
 
 			// Build the content to ensure we have the content-type
-			if (rrd["content"].is_object()) { body = rrd["content"].dump(); }
-			else if (rrd["content"].is_string())
-			{
+			if (rrd["content"].is_object()) {
+				body = rrd["content"].dump();
+			}
+			else if (rrd["content"].is_string()) {
 				body = rrd["content"].get<std::string>();
 			}
 
@@ -285,7 +288,9 @@ namespace siddiqsoft
 			encodeHeaders_to(rs);
 
 			// Finally the content..
-			if (!body.empty()) { std::format_to(std::back_inserter(rs), "{}", body); }
+			if (!body.empty()) {
+				std::format_to(std::back_inserter(rs), "{}", body);
+			}
 		}
 
 		/// @brief Encode the request to a byte stream ready to transfer to the remote server.
@@ -302,7 +307,7 @@ namespace siddiqsoft
 		friend std::ostream& operator<<(std::ostream&, const RESTRequestType<>&);
 
 	public:
-		Uri<std::string> uri;
+		Uri<char> uri;
 
 	protected:
 		nlohmann::json rrd {{"request", {{"method", RESTMethodType::Get}, {"uri", nullptr}, {"version", HttpVer}}},
@@ -338,18 +343,14 @@ namespace siddiqsoft
 		/// @return Self
 		RESTResponseType& setContent(const std::string& c)
 		{
-			if (!c.empty())
-			{
-				if (rrd["headers"].value("Content-Type", "").find("json") != std::string::npos)
-				{
-					try
-					{
+			if (!c.empty()) {
+				if (rrd["headers"].value("Content-Type", "").find("json") != std::string::npos) {
+					try {
 						rrd["content"] = nlohmann::json::parse(c);
 						if (!rrd["headers"].contains("Content-Length")) rrd["headers"]["Content-Length"] = c.length();
 						return *this;
 					}
-					catch (...)
-					{
+					catch (...) {
 					}
 				}
 
@@ -373,13 +374,19 @@ namespace siddiqsoft
 		/// @brief Access the "headers", "request", "content" in the json object
 		/// @param key Allows access into the json object via string or json_pointer
 		/// @return Non-mutable reference to the specified element.
-		const auto& operator[](const auto& key) const { return rrd.at(key); }
+		const auto& operator[](const auto& key) const
+		{
+			return rrd.at(key);
+		}
 
 
 		/// @brief Mutable access to the underlying json object
 		/// @param key Allows access into the json object via string or json_pointer
 		/// @return Mutable reference to the specified element.
-		auto& operator[](const auto& key) { return rrd.at(key); }
+		auto& operator[](const auto& key)
+		{
+			return rrd.at(key);
+		}
 
 
 		/// @brief Encode the request to a byte stream ready to transfer to the remote server.
@@ -399,26 +406,25 @@ namespace siddiqsoft
 			               rl["reason"].is_null() ? "" : rl["reason"].get<std::string>());
 
 			// Build the content to ensure we have the content-type
-			if (!rrd["content"].is_null() && rrd["content"].is_object()) { body = rrd["content"].dump(); }
-			else if (!rrd["content"].is_null() && rrd["content"].is_string())
-			{
+			if (!rrd["content"].is_null() && rrd["content"].is_object()) {
+				body = rrd["content"].dump();
+			}
+			else if (!rrd["content"].is_null() && rrd["content"].is_string()) {
 				body = rrd["content"].get<std::string>();
 			}
 
 			// Headers..
-			for (auto& [k, v] : rrd["headers"].items())
-			{
-				if (v.is_string()) { std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>()); }
-				else if (v.is_number_unsigned())
-				{
+			for (auto& [k, v] : rrd["headers"].items()) {
+				if (v.is_string()) {
+					std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
+				}
+				else if (v.is_number_unsigned()) {
 					std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<uint64_t>());
 				}
-				else if (v.is_number_integer())
-				{
+				else if (v.is_number_integer()) {
 					std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<int>());
 				}
-				else
-				{
+				else {
 					std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.dump());
 				}
 			}
@@ -426,7 +432,9 @@ namespace siddiqsoft
 			std::format_to(std::back_inserter(rs), "\r\n");
 
 			// Finally the content..
-			if (!body.empty()) { std::format_to(std::back_inserter(rs), "{}", body); }
+			if (!body.empty()) {
+				std::format_to(std::back_inserter(rs), "{}", body);
+			}
 
 			return std::move(rs);
 		}
@@ -480,43 +488,43 @@ namespace siddiqsoft
 	{
 		static siddiqsoft::RESTRequestType<> operator"" _GET(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Get, siddiqsoft::SplitUri<>(std::string {s, sz})};
+			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Get, siddiqsoft::SplitUri<>(std::string {s, sz}));
 		}
 
 
 		static siddiqsoft::RESTRequestType<> operator"" _DELETE(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Delete, siddiqsoft::SplitUri<>(std::string {s, sz})};
+			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Delete, siddiqsoft::SplitUri<>(std::string {s, sz}));
 		}
 
 
 		static siddiqsoft::RESTRequestType<> operator"" _HEAD(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Head, siddiqsoft::SplitUri<>(std::string {s, sz})};
+			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Head, siddiqsoft::SplitUri<>(std::string {s, sz}));
 		}
 
 
 		static siddiqsoft::RESTRequestType<> operator"" _OPTIONS(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Options, siddiqsoft::SplitUri<>(std::string {s, sz})};
+			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Options, siddiqsoft::SplitUri<>(std::string {s, sz}));
 		}
 
 
 		static siddiqsoft::RESTRequestType<> operator"" _PATCH(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Patch, siddiqsoft::SplitUri<>(std::string {s, sz})};
+			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Patch, siddiqsoft::SplitUri<>(std::string {s, sz}));
 		}
 
 
 		static siddiqsoft::RESTRequestType<> operator"" _POST(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Post, siddiqsoft::SplitUri<>(std::string {s, sz})};
+			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Post, siddiqsoft::SplitUri(std::string {s, sz}));
 		}
 
 
 		static siddiqsoft::RESTRequestType<> operator"" _PUT(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType {siddiqsoft::RESTMethodType::Put, siddiqsoft::SplitUri<>(std::string {s, sz})};
+			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Put, siddiqsoft::SplitUri(std::string {s, sz}));
 		}
 	} // namespace literals
 #pragma endregion
@@ -528,7 +536,8 @@ namespace siddiqsoft
  * std::format custom implementation must be global scope
  */
 
-template <> struct std::formatter<siddiqsoft::HTTPProtocolVersion> : std::formatter<std::string>
+template <>
+struct std::formatter<siddiqsoft::HTTPProtocolVersion> : std::formatter<std::string>
 {
 	auto format(const siddiqsoft::HTTPProtocolVersion& sv, std::format_context& ctx)
 	{
@@ -537,7 +546,8 @@ template <> struct std::formatter<siddiqsoft::HTTPProtocolVersion> : std::format
 };
 
 
-template <> struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<std::string>
+template <>
+struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<std::string>
 {
 	auto format(const siddiqsoft::RESTMethodType& sv, std::format_context& ctx)
 	{
@@ -547,7 +557,8 @@ template <> struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<s
 
 
 /// @brief Formatter for RESTRequestType
-template <> struct std::formatter<siddiqsoft::RESTRequestType<>> : std::formatter<std::string>
+template <>
+struct std::formatter<siddiqsoft::RESTRequestType<>> : std::formatter<std::string>
 {
 	auto format(const siddiqsoft::RESTRequestType<>& sv, std::format_context& ctx)
 	{
@@ -556,7 +567,8 @@ template <> struct std::formatter<siddiqsoft::RESTRequestType<>> : std::formatte
 };
 
 
-template <> struct std::formatter<siddiqsoft::RESTResponseType> : std::formatter<std::string>
+template <>
+struct std::formatter<siddiqsoft::RESTResponseType> : std::formatter<std::string>
 {
 	auto format(const siddiqsoft::RESTResponseType& sv, std::format_context& ctx)
 	{
