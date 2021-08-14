@@ -96,13 +96,12 @@ namespace siddiqsoft
 
 		WinHttpRESTClient wrc;
 
-		wrc.send(RESTRequestType {RESTMethodType::Post,
-		                          SplitUri(std::format("https://ptsv2.com/t/buzz2/post?function={}", __func__)),
-		                          {{"Authorization", "Basic YWF1OnBhYXU="},
-		                           {"Content-Type", "application/xml"},
-		                           {"User-Agent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}},
-		                          std::format("<root><p>Hello-world</p><p name=\"date\">{:%FT%TZ}</p></root>",
-		                                      std::chrono::system_clock::now())},
+		wrc.send(ReqPost {SplitUri(std::format("https://ptsv2.com/t/buzz2/post?function={}", __func__)),
+		                  {{"Authorization", "Basic YWF1OnBhYXU="},
+		                   {"Content-Type", "application/xml"},
+		                   {"User-Agent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}},
+		                  std::format("<root><p>Hello-world</p><p name=\"date\">{:%FT%TZ}</p></root>",
+		                              std::chrono::system_clock::now())},
 		         [&passTest](const auto& req, const auto& resp) {
 			         // Checks the implementation of the encode() implementation
 			         std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
@@ -127,10 +126,9 @@ namespace siddiqsoft
 
 		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
-		wrc.send({RESTMethodType::Post,
-		          "https://ptsv2.com/t/buzz2/post"_Uri,
-		          {{"Authorization", "Basic YWF1OnBhYXU="}},
-		          {{"foo", "bar"}, {"hello", "world"}}},
+		wrc.send(ReqPost {"https://ptsv2.com/t/buzz2/post"_Uri,
+		                  {{"Authorization", "Basic YWF1OnBhYXU="}},
+		                  {{"foo", "bar"}, {"hello", "world"}}},
 		         [&passTest](const auto& req, const auto& resp) {
 			         // Checks the implementation of the std::format implementation
 			         std::cerr << std::format("From callback Wire serialize              : {}\n", req);
@@ -151,6 +149,7 @@ namespace siddiqsoft
 	TEST(TSendRequest, Fails_1a)
 	{
 		bool passTest = false;
+		using namespace siddiqsoft::literals;
 
 		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
@@ -175,6 +174,7 @@ namespace siddiqsoft
 	TEST(TSendRequest, Fails_1b)
 	{
 		bool passTest = false;
+		using namespace siddiqsoft::literals;
 
 		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
@@ -199,6 +199,7 @@ namespace siddiqsoft
 	TEST(TSendRequest, Fails_1c)
 	{
 		bool passTest = false;
+		using namespace siddiqsoft::literals;
 
 		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
@@ -220,6 +221,7 @@ namespace siddiqsoft
 	TEST(TSendRequest, Fails_2a)
 	{
 		bool passTest = false;
+		using namespace siddiqsoft::literals;
 
 		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 

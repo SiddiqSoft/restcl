@@ -71,7 +71,7 @@ namespace siddiqsoft
 		return buff;
 	}
 
-
+	/// @brief REST Methods: GET, PATCH, POST, PUT, DELETE, HEAD, OPTIONS
 	enum class RESTMethodType
 	{
 		Get,
@@ -92,6 +92,7 @@ namespace siddiqsoft
 	                              {RESTMethodType::Head, "HEAD"},
 	                              {RESTMethodType::Options, "OPTIONS"}});
 
+	/// @brief HTTP Protocol version: Http2, Http11 and Http10
 	enum class HTTPProtocolVersion
 	{
 		Http2,
@@ -105,81 +106,19 @@ namespace siddiqsoft
 	                              {HTTPProtocolVersion::Http10, "HTTP/1.0"}});
 
 
-	/// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
-	template <HTTPProtocolVersion HttpVer = HTTPProtocolVersion::Http11>
-	class RESTRequestType
+	/// @brief Base for all RESTRequests
+	class basic_restrequest
 	{
+	protected:
+		/// @brief Not directly constructible; use the derived classes to build the request
+		basic_restrequest() { }
+
+		/// @brief Not directly constructible; use the derived classes to build the request
+		/// @param s The source Uri
+		basic_restrequest(const Uri<char>& s)
+		    : uri(s) {};
+
 	public:
-		/// @brief Constructor with endpoint and optional headers and json content
-		/// @param endpoint Fully qualified http schema uri
-		/// @param h Optional json containing the headers
-		RESTRequestType(const RESTMethodType& reqMethod, const Uri<char>& endpoint, const nlohmann::json& h = nullptr)
-		    : uri(endpoint)
-		{
-			if (h.is_object() && !h.is_null()) {
-				rrd["headers"] = h;
-			}
-
-			rrd["request"]["uri"]    = uri.urlPart;
-			rrd["request"]["method"] = reqMethod;
-
-			// Enforce some default headers
-			auto& hs = rrd.at("headers");
-			if (!hs.contains("Date")) hs["Date"] = Date_rfc1123();
-			if (!hs.contains("Accept")) hs["Accept"] = "application/json";
-			if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
-			if (!hs.contains("Content-Length")) hs["Content-Length"] = 0;
-		}
-
-
-		RESTRequestType(const RESTMethodType& reqMethod,
-		                const Uri<char>&      endpoint,
-		                const nlohmann::json& h,
-		                const nlohmann::json& c)
-		    : RESTRequestType(reqMethod, endpoint, h)
-		{
-			setContent(c);
-		}
-
-
-		explicit RESTRequestType(const RESTMethodType& reqMethod,
-		                         const Uri<char>&      endpoint,
-		                         const nlohmann::json& h,
-		                         const std::string&    c)
-		    : RESTRequestType(reqMethod, endpoint, h)
-		{
-			if (h.is_null() || (h.is_object() && !h.contains("Content-Type"))) rrd["headers"]["Content-Type"] = "text/plain";
-			rrd["headers"]["Content-Length"] = c.length();
-			rrd["content"]                   = c;
-		}
-
-		explicit RESTRequestType(const RESTMethodType& reqMethod,
-		                         const std::string&    endpoint,
-		                         const nlohmann::json& h,
-		                         const char*           c)
-		    : RESTRequestType(reqMethod, endpoint, h)
-		{
-			if (c != nullptr) {
-				if (h.is_null() || (h.is_object() && !h.contains("Content-Type"))) rrd["headers"]["Content-Type"] = "text/plain";
-				rrd["headers"]["Content-Length"] = strlen(c);
-				rrd["content"]                   = c;
-			}
-			else {
-				rrd["headers"]["Content-Length"] = 0;
-			}
-		}
-
-
-		/// @brief Set the Uri via the endpoint
-		/// @param e Fully qualified endpoint uri with http scheme
-		/// @return Self
-		auto& setEndpoint(const std::string& e)
-		{
-			uri = SplitUri(e);
-			return *this;
-		}
-
-
 		/// @brief Access the "headers", "request", "content" in the json object
 		/// @param key Allows access into the json object via string or json_pointer
 		/// @return Non-mutable reference to the specified element.
@@ -201,7 +140,7 @@ namespace siddiqsoft
 		/// @param ctype Content-Type
 		/// @param c The content
 		/// @return Self
-		RESTRequestType& setContent(const std::string& ctype, const std::string& c)
+		basic_restrequest& setContent(const std::string& ctype, const std::string& c)
 		{
 			if (!c.empty()) {
 				rrd["headers"]["Content-Type"]   = ctype;
@@ -214,7 +153,7 @@ namespace siddiqsoft
 		/// @brief Set the content to json
 		/// @param c JSON content
 		/// @return Self
-		RESTRequestType& setContent(const nlohmann::json& c)
+		basic_restrequest& setContent(const nlohmann::json& c)
 		{
 			if (!c.is_null()) {
 				rrd["content"]                   = c;
@@ -303,20 +242,106 @@ namespace siddiqsoft
 		}
 
 	public:
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE(RESTRequestType, uri, rrd);
-		friend std::ostream& operator<<(std::ostream&, const RESTRequestType<>&);
+		friend std::ostream& operator<<(std::ostream&, const basic_restrequest&);
+		friend void          to_json(nlohmann::json&, const basic_restrequest&);
 
 	public:
 		Uri<char> uri;
 
 	protected:
-		nlohmann::json rrd {{"request", {{"method", RESTMethodType::Get}, {"uri", nullptr}, {"version", HttpVer}}},
+		nlohmann::json rrd {{"request", {{"method", nullptr}, {"uri", nullptr}, {"version", nullptr}}},
 		                    {"headers", nullptr},
 		                    {"content", nullptr}};
 	};
 
+	/// @brief Explicit implementation is required due to the restriction on direct instantiation of the basic_restrequest class.
+	/// @param dest The destination json
+	/// @param src The basic_restrequest class (or derived)
+	static void to_json(nlohmann::json& dest, const basic_restrequest& src)
+	{
+		dest["uri"] = src.uri;
+		dest["rrd"] = src.rrd;
+	}
 
-	static std::ostream& operator<<(std::ostream& os, const RESTRequestType<>& src)
+
+	/// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
+	template <RESTMethodType RM, HTTPProtocolVersion HttpVer = HTTPProtocolVersion::Http11>
+	class RESTRequest : public basic_restrequest
+	{
+	public:
+		/// @brief Constructor with endpoint and optional headers and json content
+		/// @param endpoint Fully qualified http schema uri
+		/// @param h Optional json containing the headers
+		RESTRequest(const Uri<char>& endpoint, const nlohmann::json& h = nullptr) noexcept(false)
+		    : basic_restrequest(endpoint)
+		{
+			// Set the headers if present (we add some defaults below if not provided or missing param)
+			if (h.is_object() && !h.is_null()) {
+				rrd["headers"] = h;
+			}
+
+			// Build the request line data
+			rrd["request"] = {{"uri", uri.urlPart}, {"method", RM}, {"version", HttpVer}};
+
+			// Enforce some default headers
+			auto& hs = rrd.at("headers");
+			if (!hs.contains("Date")) hs["Date"] = Date_rfc1123();
+			if (!hs.contains("Accept")) hs["Accept"] = "application/json";
+			if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
+			if (!hs.contains("Content-Length")) hs["Content-Length"] = 0;
+		}
+
+		/// @brief Constructor with json content
+		/// @param endpoint Fully qualified http schema uri
+		/// @param h Required json containing the headers
+		/// @param c Required json containing the content
+		RESTRequest(const Uri<char>& endpoint, const nlohmann::json& h, const nlohmann::json& c) noexcept(false)
+		    : RESTRequest(endpoint, h)
+		{
+			setContent(c);
+		}
+
+		/// @brief Constructor with arbitrary content. If the header Content-Type is missing then we use text/plain
+		/// @param endpoint Fully qualified http schema uri
+		/// @param h Required json containing the headers. At least Content-Type should be set.
+		/// @param c Required string containing the content. Make sure to set "Content-Type"
+		explicit RESTRequest(const Uri<char>& endpoint, const nlohmann::json& h, const std::string& c) noexcept(false)
+		    : RESTRequest(endpoint, h)
+		{
+			if (h.is_null() || (h.is_object() && !h.contains("Content-Type"))) rrd["headers"]["Content-Type"] = "text/plain";
+			rrd["headers"]["Content-Length"] = c.length();
+			rrd["content"]                   = c;
+		}
+
+		/// @brief Constructor with arbitrary content. If the header Content-Type is missing then we use text/plain
+		/// @param endpoint Fully qualified http schema uri
+		/// @param h Required json containing the headers. At least Content-Type should be set.
+		/// @param c Required string containing the content. Make sure to set "Content-Type"
+		explicit RESTRequest(const std::string& endpoint, const nlohmann::json& h, const char* c) noexcept(false)
+		    : RESTRequest(endpoint, h)
+		{
+			if (c != nullptr) {
+				if (h.is_null() || (h.is_object() && !h.contains("Content-Type"))) rrd["headers"]["Content-Type"] = "text/plain";
+				rrd["headers"]["Content-Length"] = strlen(c);
+				rrd["content"]                   = c;
+			}
+			else {
+				rrd["headers"]["Content-Length"] = 0;
+			}
+		}
+	};
+
+
+	using ReqPost    = RESTRequest<RESTMethodType::Post>;
+	using ReqPut     = RESTRequest<RESTMethodType::Put>;
+	using ReqPatch   = RESTRequest<RESTMethodType::Patch>;
+	using ReqGet     = RESTRequest<RESTMethodType::Get>;
+	using ReqDelete  = RESTRequest<RESTMethodType::Delete>;
+	using ReqOptions = RESTRequest<RESTMethodType::Options>;
+	using ReqHead    = RESTRequest<RESTMethodType::Head>;
+
+
+	static std::ostream& operator<<(std::ostream& os, const basic_restrequest& src)
 	{
 		std::format_to(std::ostream_iterator<char>(os), "{}", src);
 		return os;
@@ -324,24 +349,16 @@ namespace siddiqsoft
 
 
 	/// @brief REST Response object
-	class RESTResponseType
+	class basic_restresponse
 	{
+	protected:
+		basic_restresponse() { }
+
 	public:
-		RESTResponseType() { }
-
-		/// @brief Construct a response object based on the given transport error
-		/// @param err Specifies the transport error.
-		RESTResponseType(const std::pair<uint32_t, std::string>& err)
-		{
-			ioErrorCode = std::get<0>(err);
-			ioError     = std::get<1>(err);
-		}
-
-
 		/// @brief Set the content of the response. An attempt is made to parse to json object
 		/// @param c Content from the receive
 		/// @return Self
-		RESTResponseType& setContent(const std::string& c)
+		basic_restresponse& setContent(const std::string& c)
 		{
 			if (!c.empty()) {
 				if (rrd["headers"].value("Content-Type", "").find("json") != std::string::npos) {
@@ -449,8 +466,8 @@ namespace siddiqsoft
 		}
 
 	public:
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE(RESTResponseType, ioErrorCode, ioError, rrd);
-		friend std::ostream& operator<<(std::ostream&, const RESTResponseType&);
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE(basic_restresponse, ioErrorCode, ioError, rrd);
+		friend std::ostream& operator<<(std::ostream&, const basic_restresponse&);
 
 	protected:
 		uint32_t       ioErrorCode {0};
@@ -461,70 +478,84 @@ namespace siddiqsoft
 	};
 
 
-	class RESTClient
+	/// @brief REST Response object
+	class RESTResponse : public basic_restresponse
 	{
 	public:
-		std::string  UserAgent {"siddiqsoft.restcl/0.3.0"};
-		std::wstring UserAgentW {L"siddiqsoft.restcl/0.3.0"};
+		RESTResponse() { }
+
+		/// @brief Construct a response object based on the given transport error
+		/// @param err Specifies the transport error.
+		RESTResponse(const std::pair<uint32_t, std::string>& err)
+		{
+			ioErrorCode = std::get<0>(err);
+			ioError     = std::get<1>(err);
+		}
+	};
+
+	/// @brief Base class for the rest client
+	class basic_restclient
+	{
+	public:
+		std::string  UserAgent {"siddiqsoft.restcl/0.5.0"};
+		std::wstring UserAgentW {L"siddiqsoft.restcl/0.5.0"};
 
 	public:
-		virtual void send(RESTRequestType<>&&,
-		                  std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)      = 0;
-		virtual void sendAsync(RESTRequestType<>&&,
-		                       std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback) = 0;
+		virtual void send(basic_restrequest&&,
+		                  std::function<void(const basic_restrequest&, const basic_restresponse&)>&& callback) = 0;
 	};
 
 
 	/// @brief Serializer to ostream for RESResponseType
-	static std::ostream& operator<<(std::ostream& os, const RESTResponseType& src)
+	static std::ostream& operator<<(std::ostream& os, const basic_restresponse& src)
 	{
 		std::format_to(std::ostream_iterator<char>(os), "{}", src);
 		return os;
 	}
 
 
-#pragma region Literal Operators for RESTRequestType
+#pragma region Literal Operators for RESTRequest
 	namespace literals
 	{
-		static siddiqsoft::RESTRequestType<> operator"" _GET(const char* s, size_t sz)
+		static RESTRequest<RESTMethodType::Get> operator"" _GET(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Get, siddiqsoft::SplitUri<>(std::string {s, sz}));
+			return RESTRequest<RESTMethodType::Get>(SplitUri<>(std::string {s, sz}));
 		}
 
 
-		static siddiqsoft::RESTRequestType<> operator"" _DELETE(const char* s, size_t sz)
+		static RESTRequest<RESTMethodType::Delete> operator"" _DELETE(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Delete, siddiqsoft::SplitUri<>(std::string {s, sz}));
+			return RESTRequest<RESTMethodType::Delete>(SplitUri<>(std::string {s, sz}));
 		}
 
 
-		static siddiqsoft::RESTRequestType<> operator"" _HEAD(const char* s, size_t sz)
+		static RESTRequest<RESTMethodType::Head> operator"" _HEAD(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Head, siddiqsoft::SplitUri<>(std::string {s, sz}));
+			return RESTRequest<RESTMethodType::Head>(SplitUri<>(std::string {s, sz}));
 		}
 
 
-		static siddiqsoft::RESTRequestType<> operator"" _OPTIONS(const char* s, size_t sz)
+		static RESTRequest<RESTMethodType::Options> operator"" _OPTIONS(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Options, siddiqsoft::SplitUri<>(std::string {s, sz}));
+			return RESTRequest<RESTMethodType::Options>(SplitUri<>(std::string {s, sz}));
 		}
 
 
-		static siddiqsoft::RESTRequestType<> operator"" _PATCH(const char* s, size_t sz)
+		static RESTRequest<RESTMethodType::Patch> operator"" _PATCH(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Patch, siddiqsoft::SplitUri<>(std::string {s, sz}));
+			return RESTRequest<RESTMethodType::Patch>(SplitUri<>(std::string {s, sz}));
 		}
 
 
-		static siddiqsoft::RESTRequestType<> operator"" _POST(const char* s, size_t sz)
+		static RESTRequest<RESTMethodType::Post> operator"" _POST(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Post, siddiqsoft::SplitUri(std::string {s, sz}));
+			return RESTRequest<RESTMethodType::Post>(SplitUri(std::string {s, sz}));
 		}
 
 
-		static siddiqsoft::RESTRequestType<> operator"" _PUT(const char* s, size_t sz)
+		static RESTRequest<RESTMethodType::Put> operator"" _PUT(const char* s, size_t sz)
 		{
-			return siddiqsoft::RESTRequestType(siddiqsoft::RESTMethodType::Put, siddiqsoft::SplitUri(std::string {s, sz}));
+			return RESTRequest<RESTMethodType::Put>(SplitUri(std::string {s, sz}));
 		}
 	} // namespace literals
 #pragma endregion
@@ -556,11 +587,22 @@ struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<std::string>
 };
 
 
-/// @brief Formatter for RESTRequestType
+/// @brief Formatter for RESTRequest
 template <>
-struct std::formatter<siddiqsoft::RESTRequestType<>> : std::formatter<std::string>
+struct std::formatter<siddiqsoft::basic_restrequest> : std::formatter<std::string>
 {
-	auto format(const siddiqsoft::RESTRequestType<>& sv, std::format_context& ctx)
+	auto format(const siddiqsoft::basic_restrequest& sv, std::format_context& ctx)
+	{
+		return std::formatter<std::string>::format(sv.encode(), ctx);
+	}
+};
+
+
+template <siddiqsoft::RESTMethodType RM>
+struct std::formatter<siddiqsoft::RESTRequest<RM>> : std::formatter<std::string>
+{
+	template <class FC>
+	auto format(const siddiqsoft::RESTRequest<RM>& sv, FC& ctx)
 	{
 		return std::formatter<std::string>::format(sv.encode(), ctx);
 	}
@@ -568,9 +610,9 @@ struct std::formatter<siddiqsoft::RESTRequestType<>> : std::formatter<std::strin
 
 
 template <>
-struct std::formatter<siddiqsoft::RESTResponseType> : std::formatter<std::string>
+struct std::formatter<siddiqsoft::basic_restresponse> : std::formatter<std::string>
 {
-	auto format(const siddiqsoft::RESTResponseType& sv, std::format_context& ctx)
+	auto format(const siddiqsoft::basic_restresponse& sv, std::format_context& ctx)
 	{
 		return std::formatter<std::string>::format(sv.encode(), ctx);
 	}

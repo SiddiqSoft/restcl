@@ -205,8 +205,8 @@ namespace siddiqsoft
 	}
 #pragma endregion
 
-	/// @brief Windows implementation of the RESTClient
-	class WinHttpRESTClient : public RESTClient
+	/// @brief Windows implementation of the basic_restclient
+	class WinHttpRESTClient : public basic_restclient
 	{
 		WinHttpRESTClient(const WinHttpRESTClient&) = delete;
 		WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
@@ -232,7 +232,7 @@ namespace siddiqsoft
 	public:
 		WinHttpRESTClient()
 		{
-			UserAgent  = "siddiqsoft.restcl/0.3.0 (Windows NT; x64)";
+			UserAgent  = "siddiqsoft.restcl/0.5.0 (Windows NT; x64)";
 			UserAgentW = n2w(UserAgent);
 
 			hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
@@ -252,10 +252,8 @@ namespace siddiqsoft
 		/// @brief Implements a synchronous send of the request. Note that the req param is
 		/// @param req Request object; The parameter must be move-d
 		/// @param callback Required callback
-		void send(RESTRequestType<>&& req, std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
+		void send(basic_restrequest&& req, std::function<void(const basic_restrequest&, const basic_restresponse&)>&& callback)
 		{
-			thread_local std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-
 			/// @brief Lambda to Parse the first line from the HTTP response into its parts: version, status and the reason phrase
 			/// @param src The buffer as wstring
 			/// @return A tuple with httpVersion, statusCode, reasonPhrase and the last is the offset to the start of the header
@@ -345,7 +343,7 @@ namespace siddiqsoft
 
 
 						// Receive phase
-						RESTResponseType resp;
+						RESTResponse resp;
 
 						// Get the "response" and the headers..
 						if (nError == FALSE) {
@@ -412,7 +410,7 @@ namespace siddiqsoft
 
 						// Next stage is to check for any errors and if none, get the body
 						if (dwError == ERROR_WINHTTP_NAME_NOT_RESOLVED) {
-							callback(req, {{dwError, messageFromWininetCode(dwError)}});
+							callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
 							// throw(invalid_argument(
 							//		std::format("HttpSendRequest() Failed Invalid host; dwError={}",
 							// messageFromWininetCode(dwError))));
@@ -422,7 +420,7 @@ namespace siddiqsoft
 						         (dwError == ERROR_WINHTTP_INVALID_SERVER_RESPONSE) || (dwError == ERROR_WINHTTP_RESEND_REQUEST) ||
 						         (dwError == ERROR_WINHTTP_SECURE_FAILURE) || (dwError == ERROR_WINHTTP_TIMEOUT))
 						{
-							callback(req, {{dwError, messageFromWininetCode(dwError)}});
+							callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
 							// throw io_exception(dwError,
 							//                   0,
 							//                   std::format("HttpSendRequest() Failed to {}; dwError={}",
@@ -430,7 +428,7 @@ namespace siddiqsoft
 							//                               messageFromWininetCode(dwError)));
 						}
 						else if (dwError == ERROR_WINHTTP_INVALID_URL) {
-							callback(req, {{dwError, messageFromWininetCode(dwError)}});
+							callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
 							// throw(invalid_argument(std::format("HttpSendRequest() Failed Invalid URL {}; dwError={}",
 							//                                   argEndpoint,
 							//                                   messageFromWininetCode(dwError))));
@@ -480,7 +478,7 @@ namespace siddiqsoft
 							callback(req, resp);
 						}
 						else {
-							callback(req, {{dwError, messageFromWininetCode(dwError)}});
+							callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
 							// hr = HRESULT_FROM_WIN32(dwError);
 							// throw io_exception(dwError,
 							//                   0,
@@ -490,27 +488,19 @@ namespace siddiqsoft
 						}
 					}
 					else {
-						callback(req, {{hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)}});
+						callback(req, RESTResponse {{hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)}});
 						// throw io_exception(hr, 0, std::format("HttpOpenRequest() Failed; dwError={}", hr));
 					}
 				}
 				else {
-					callback(req, {{hr, std::format("WinHttpConnect() failed; dwError:{}", hr)}});
+					callback(req, RESTResponse {{hr, std::format("WinHttpConnect() failed; dwError:{}", hr)}});
 					// throw io_exception(hr, 0, std::format("InternetConnect() Failed; dwError={}", hr));
 				}
 			}
 			else {
-				callback(req, {{hr, std::format("WinHttpOpen() failed; dwError:{}", hr)}});
+				callback(req, RESTResponse {{hr, std::format("WinHttpOpen() failed; dwError:{}", hr)}});
 				// throw io_exception(hr, 0, std::format("InternetOpen() Failed; dwError={}", hr));
 			}
-		}
-
-		/// @brief
-		/// @param req
-		/// @param callback
-		void sendAsync(RESTRequestType<>&& req, std::function<void(const RESTRequestType<>&, const RESTResponseType&)>&& callback)
-		{
-			throw std::exception(std::format("{} Not implemented.", __FUNCTION__).c_str());
 		}
 	};
 } // namespace siddiqsoft
