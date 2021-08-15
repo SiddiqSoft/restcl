@@ -113,9 +113,16 @@ namespace siddiqsoft
 		/// @brief Not directly constructible; use the derived classes to build the request
 		basic_restrequest() { }
 
+		/// @brief Constructs a request with endpoint string into internal Uri object
+		/// @param s Valid endpoint string
+		explicit basic_restrequest(const std::string& s) noexcept(false)
+		{
+			uri = SplitUri(s);
+		}
+
 		/// @brief Not directly constructible; use the derived classes to build the request
 		/// @param s The source Uri
-		basic_restrequest(const Uri<char>& s)
+		explicit basic_restrequest(const Uri<char>& s) noexcept(false)
 		    : uri(s) {};
 
 	public:
@@ -200,10 +207,12 @@ namespace siddiqsoft
 			std::format_to(std::back_inserter(rs), "\r\n");
 		}
 
-		/// @brief Encode the request to the given argument via the back_inserter
-		/// @param rs String where the request is "written-to".
-		void encode_to(std::string& rs) const
+
+		/// @brief Encode the request to a byte stream ready to transfer to the remote server.
+		/// @return String
+		std::string encode() const
 		{
+			std::string rs;
 			std::string body;
 			auto&       hs = rrd.at("headers");
 			auto&       rl = rrd.at("request");
@@ -230,16 +239,10 @@ namespace siddiqsoft
 			if (!body.empty()) {
 				std::format_to(std::back_inserter(rs), "{}", body);
 			}
-		}
 
-		/// @brief Encode the request to a byte stream ready to transfer to the remote server.
-		/// @return String
-		std::string encode() const
-		{
-			std::string rs;
-			encode_to(rs);
 			return std::move(rs);
 		}
+
 
 	public:
 		friend std::ostream& operator<<(std::ostream&, const basic_restrequest&);
@@ -269,6 +272,23 @@ namespace siddiqsoft
 	class RESTRequest : public basic_restrequest
 	{
 	public:
+		/// @brief Constructor with only endpoint as string argument
+		/// @param endpoint Valid endpoint string
+		RESTRequest(const std::string& endpoint) noexcept(false)
+		    : basic_restrequest(endpoint)
+		{
+			// Build the request line data
+			rrd["request"] = {{"uri", uri.urlPart}, {"method", RM}, {"version", HttpVer}};
+
+			// Enforce some default headers
+			auto& hs = rrd.at("headers");
+			if (!hs.contains("Date")) hs["Date"] = Date_rfc1123();
+			if (!hs.contains("Accept")) hs["Accept"] = "application/json";
+			if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
+			if (!hs.contains("Content-Length")) hs["Content-Length"] = 0;
+		}
+
+
 		/// @brief Constructor with endpoint and optional headers and json content
 		/// @param endpoint Fully qualified http schema uri
 		/// @param h Optional json containing the headers
@@ -317,7 +337,7 @@ namespace siddiqsoft
 		/// @param endpoint Fully qualified http schema uri
 		/// @param h Required json containing the headers. At least Content-Type should be set.
 		/// @param c Required string containing the content. Make sure to set "Content-Type"
-		explicit RESTRequest(const std::string& endpoint, const nlohmann::json& h, const char* c) noexcept(false)
+		explicit RESTRequest(const Uri<char>& endpoint, const nlohmann::json& h, const char* c) noexcept(false)
 		    : RESTRequest(endpoint, h)
 		{
 			if (c != nullptr) {
@@ -493,6 +513,7 @@ namespace siddiqsoft
 		}
 	};
 
+
 	/// @brief Base class for the rest client
 	class basic_restclient
 	{
@@ -500,9 +521,13 @@ namespace siddiqsoft
 		std::string  UserAgent {"siddiqsoft.restcl/0.5.0"};
 		std::wstring UserAgentW {L"siddiqsoft.restcl/0.5.0"};
 
+		/// @brief The function or lambda must accept const basic_restrequest& and const basic_restresponse&
+		using CallbackType = std::function<void(const basic_restrequest&, const basic_restresponse&)>;
+
 	public:
-		virtual void send(basic_restrequest&&,
-		                  std::function<void(const basic_restrequest&, const basic_restresponse&)>&& callback) = 0;
+		/// @brief Implements a synchronous send and invokes the callback
+		/// @param callback a function that accepts const basic_restrequst& and const basic_restresponse&
+		virtual void send(basic_restrequest&&, CallbackType&& callback) = 0;
 	};
 
 

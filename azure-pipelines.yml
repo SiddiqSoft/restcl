@@ -89,3 +89,16 @@ steps:
     nuGetFeedType: 'external'
     publishFeedCredentials: 'sqs-nuget'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+- task: GitHubRelease@1
+  inputs:
+    gitHubConnection: 'github-packages-sqs'
+    repositoryName: 'siddiqsoftware/simplrestcl'
+    action: 'create'
+    target: 'develop'
+    tagSource: 'userSpecifiedTag'
+    tag: 'v$(build.buildNumber)'
+    isPreRelease: true
+    changeLogCompareToRelease: 'lastFullRelease'
+    changeLogType: 'commitBased'
+
