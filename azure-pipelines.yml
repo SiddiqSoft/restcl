@@ -95,7 +95,7 @@ steps:
     gitHubConnection: 'github-packages-sqs'
     repositoryName: 'SiddiqSoft/restcl'
     action: 'create'
-    target: 'abdulkareem-siddiq-patch-1'
+    target: '$(Build.SourceVersion)'
     tagSource: 'userSpecifiedTag'
     tag: '$(build.buildNumber)'
     title: 'v$(build.buildNumber)'
