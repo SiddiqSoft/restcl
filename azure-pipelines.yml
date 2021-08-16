@@ -96,9 +96,10 @@ steps:
     repositoryName: 'siddiqsoftware/simplrestcl'
     action: 'create'
     target: '$(Build.SourceVersion)'
-    tagSource: 'gitTag'
-    tagPattern: '1.*'
+    tagSource: 'userSpecifiedTag'
+    tag: '$(build.buildNumber)'
     title: 'v$(build.buildNumber)'
+    releaseNotesSource: 'inline'
     isPreRelease: true
     changeLogCompareToRelease: 'lastFullRelease'
     changeLogType: 'commitBased'
