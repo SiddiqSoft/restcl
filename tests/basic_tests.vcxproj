@@ -58,7 +58,7 @@
     <Import Project="..\packages\SiddiqSoft.RunOnEnd.1.1.1\build\native\SiddiqSoft.RunOnEnd.targets" Condition="Exists('..\packages\SiddiqSoft.RunOnEnd.1.1.1\build\native\SiddiqSoft.RunOnEnd.targets')" />
     <Import Project="..\packages\SiddiqSoft.acw32h.2.6.1\build\native\SiddiqSoft.acw32h.targets" Condition="Exists('..\packages\SiddiqSoft.acw32h.2.6.1\build\native\SiddiqSoft.acw32h.targets')" />
     <Import Project="..\packages\SiddiqSoft.string2map.2.2.2\build\native\SiddiqSoft.string2map.targets" Condition="Exists('..\packages\SiddiqSoft.string2map.2.2.2\build\native\SiddiqSoft.string2map.targets')" />
-    <Import Project="..\packages\SiddiqSoft.SplitUri.1.5.1\build\native\SiddiqSoft.SplitUri.targets" Condition="Exists('..\packages\SiddiqSoft.SplitUri.1.5.1\build\native\SiddiqSoft.SplitUri.targets')" />
+    <Import Project="..\packages\SiddiqSoft.SplitUri.1.6.2\build\native\SiddiqSoft.SplitUri.targets" Condition="Exists('..\packages\SiddiqSoft.SplitUri.1.6.2\build\native\SiddiqSoft.SplitUri.targets')" />
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -119,6 +119,6 @@
     <Error Condition="!Exists('..\packages\SiddiqSoft.RunOnEnd.1.1.1\build\native\SiddiqSoft.RunOnEnd.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.RunOnEnd.1.1.1\build\native\SiddiqSoft.RunOnEnd.targets'))" />
     <Error Condition="!Exists('..\packages\SiddiqSoft.acw32h.2.6.1\build\native\SiddiqSoft.acw32h.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.acw32h.2.6.1\build\native\SiddiqSoft.acw32h.targets'))" />
     <Error Condition="!Exists('..\packages\SiddiqSoft.string2map.2.2.2\build\native\SiddiqSoft.string2map.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.string2map.2.2.2\build\native\SiddiqSoft.string2map.targets'))" />
-    <Error Condition="!Exists('..\packages\SiddiqSoft.SplitUri.1.5.1\build\native\SiddiqSoft.SplitUri.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.SplitUri.1.5.1\build\native\SiddiqSoft.SplitUri.targets'))" />
+    <Error Condition="!Exists('..\packages\SiddiqSoft.SplitUri.1.6.2\build\native\SiddiqSoft.SplitUri.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.SplitUri.1.6.2\build\native\SiddiqSoft.SplitUri.targets'))" />
   </Target>
 </Project>

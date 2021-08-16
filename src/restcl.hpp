@@ -116,9 +116,7 @@ namespace siddiqsoft
 		/// @brief Constructs a request with endpoint string into internal Uri object
 		/// @param s Valid endpoint string
 		explicit basic_restrequest(const std::string& s) noexcept(false)
-		{
-			uri = SplitUri(s);
-		}
+		    : uri(s) {};
 
 		/// @brief Not directly constructible; use the derived classes to build the request
 		/// @param s The source Uri
@@ -249,7 +247,7 @@ namespace siddiqsoft
 		friend void          to_json(nlohmann::json&, const basic_restrequest&);
 
 	public:
-		Uri<char> uri;
+		Uri<char, AuthorityHttp<char>> uri;
 
 	protected:
 		nlohmann::json rrd {{"request", {{"method", nullptr}, {"uri", nullptr}, {"version", nullptr}}},
@@ -518,8 +516,8 @@ namespace siddiqsoft
 	class basic_restclient
 	{
 	public:
-		std::string  UserAgent {"siddiqsoft.restcl/0.5.0"};
-		std::wstring UserAgentW {L"siddiqsoft.restcl/0.5.0"};
+		std::string  UserAgent {"siddiqsoft.restcl/0.5.2"};
+		std::wstring UserAgentW {L"siddiqsoft.restcl/0.5.2"};
 
 		/// @brief The function or lambda must accept const basic_restrequest& and const basic_restresponse&
 		using CallbackType = std::function<void(const basic_restrequest&, const basic_restresponse&)>;

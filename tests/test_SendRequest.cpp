@@ -96,7 +96,7 @@ namespace siddiqsoft
 
 		WinHttpRESTClient wrc;
 
-		wrc.send(ReqPost {SplitUri(std::format("https://ptsv2.com/t/buzz2/post?function={}", __func__)),
+		wrc.send(ReqPost {std::format("https://ptsv2.com/t/buzz2/post?function={}", __func__),
 		                  {{"Authorization", "Basic YWF1OnBhYXU="},
 		                   {"Content-Type", "application/xml"},
 		                   {"User-Agent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}},
