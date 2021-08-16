@@ -93,7 +93,7 @@ steps:
 - task: GitHubRelease@1
   inputs:
     gitHubConnection: 'github-packages-sqs'
-    repositoryName: 'siddiqsoftware/simplrestcl'
+    repositoryName: 'SiddiqSoft/restcl'
     action: 'create'
     target: 'abdulkareem-siddiq-patch-1'
     tagSource: 'userSpecifiedTag'
