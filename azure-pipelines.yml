@@ -95,7 +95,7 @@ steps:
     gitHubConnection: 'github-packages-sqs'
     repositoryName: 'siddiqsoftware/simplrestcl'
     action: 'create'
-    target: '$(Build.SourceVersion)'
+    target: 'abdulkareem-siddiq-patch-1'
     tagSource: 'userSpecifiedTag'
     tag: '$(build.buildNumber)'
     title: 'v$(build.buildNumber)'
