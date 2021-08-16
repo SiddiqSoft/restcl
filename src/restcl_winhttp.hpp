@@ -59,6 +59,7 @@
 #include "nlohmann/json.hpp"
 #include "restcl.hpp"
 
+#include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/acw32h.hpp"
 
 
@@ -232,7 +233,7 @@ namespace siddiqsoft
 	public:
 		WinHttpRESTClient()
 		{
-			UserAgent  = "siddiqsoft.restcl/0.5.0 (Windows NT; x64)";
+			UserAgent  = "siddiqsoft.restcl/0.5.2 (Windows NT; x64)";
 			UserAgentW = n2w(UserAgent);
 
 			hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));

@@ -93,12 +93,13 @@ steps:
 - task: GitHubRelease@1
   inputs:
     gitHubConnection: 'github-packages-sqs'
-    repositoryName: 'siddiqsoftware/simplrestcl'
+    repositoryName: 'SiddiqSoft/restcl'
     action: 'create'
-    target: 'develop'
+    target: '$(Build.SourceVersion)'
     tagSource: 'userSpecifiedTag'
-    tag: 'v$(build.buildNumber)'
+    tag: '$(build.buildNumber)'
+    title: 'v$(build.buildNumber)'
+    releaseNotesSource: 'inline'
     isPreRelease: true
     changeLogCompareToRelease: 'lastFullRelease'
     changeLogType: 'commitBased'
-
