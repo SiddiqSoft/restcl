@@ -95,10 +95,10 @@ steps:
     gitHubConnection: 'github-packages-sqs'
     repositoryName: 'siddiqsoftware/simplrestcl'
     action: 'create'
-    target: 'develop'
-    tagSource: 'userSpecifiedTag'
-    tag: 'v$(build.buildNumber)'
+    target: '$(Build.SourceVersion)'
+    tagSource: 'gitTag'
+    tagPattern: '1.*'
+    title: 'v$(build.buildNumber)'
     isPreRelease: true
     changeLogCompareToRelease: 'lastFullRelease'
     changeLogType: 'commitBased'
-
