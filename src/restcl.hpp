@@ -36,6 +36,9 @@
 #ifndef RESTCL_HPP
 #define RESTCL_HPP
 
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
+#include <iostream>
 #include <chrono>
 #include <string>
 #include <functional>
@@ -43,7 +46,6 @@
 #include <format>
 #include <iterator>
 
-#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"

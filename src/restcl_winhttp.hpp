@@ -36,13 +36,14 @@
 #ifndef RESTCLWINHTTP_HPP
 #define RESTCLWINHTTP_HPP
 
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
+#include <iostream>
 #include <chrono>
 #include <string>
 #include <functional>
 #include <memory>
 #include <format>
-
-#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include <windows.h>
 
