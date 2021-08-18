@@ -79,7 +79,6 @@ steps:
     packagesToPack: 'nuget/*.nuspec'
     versioningScheme: 'off'
     buildProperties: 'VERSION=$(build.buildNumber)'
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
 - task: NuGetCommand@2
   displayName: 'NuGet push'
@@ -103,3 +102,4 @@ steps:
     isPreRelease: true
     changeLogCompareToRelease: 'lastFullRelease'
     changeLogType: 'commitBased'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
