@@ -518,8 +518,8 @@ namespace siddiqsoft
 	class basic_restclient
 	{
 	public:
-		std::string  UserAgent {"siddiqsoft.restcl/0.5.2"};
-		std::wstring UserAgentW {L"siddiqsoft.restcl/0.5.2"};
+		std::string  UserAgent {"siddiqsoft.restcl/0.5.6"};
+		std::wstring UserAgentW {L"siddiqsoft.restcl/0.5.6"};
 
 		/// @brief The function or lambda must accept const basic_restrequest& and const basic_restresponse&
 		using CallbackType = std::function<void(const basic_restrequest&, const basic_restresponse&)>;

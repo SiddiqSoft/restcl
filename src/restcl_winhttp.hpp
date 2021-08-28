@@ -234,7 +234,7 @@ namespace siddiqsoft
 	public:
 		WinHttpRESTClient()
 		{
-			UserAgent  = "siddiqsoft.restcl/0.5.2 (Windows NT; x64)";
+			UserAgent  = "siddiqsoft.restcl_winhttp/0.5.6 (Windows NT; x64)";
 			UserAgentW = n2w(UserAgent);
 
 			hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
@@ -312,7 +312,7 @@ namespace siddiqsoft
 						req.encodeHeaders_to(strHeaders);
 						std::wstring requestHeaders = n2w(strHeaders);
 						nError                      = WinHttpAddRequestHeaders(
-                                hRequest, requestHeaders.c_str(), requestHeaders.length(), WINHTTP_ADDREQ_FLAG_ADD);
+                                hRequest, requestHeaders.c_str(), static_cast<DWORD>(requestHeaders.length()), WINHTTP_ADDREQ_FLAG_ADD);
 
 						// Set this option so we don't incur a roundtrip delay
 						// ll	   = __LINE__;
