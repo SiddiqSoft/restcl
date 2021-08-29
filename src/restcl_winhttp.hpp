@@ -36,7 +36,6 @@
 #ifndef RESTCLWINHTTP_HPP
 #define RESTCLWINHTTP_HPP
 
-#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include <iostream>
 #include <chrono>
@@ -48,12 +47,10 @@
 #include <windows.h>
 
 #if !_WINHTTPX_
-#pragma message("--- " __FILE__ "--- Doing include winhttp..")
 #include <winhttp.h>
 #else
 #pragma message("--- " __FILE__ "--- Skip include winhttp..")
 #endif
-
 #pragma comment(lib, "winhttp")
 
 
@@ -62,6 +59,7 @@
 
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/acw32h.hpp"
+#include "siddiqsoft/azure-cpp-utils.hpp"
 
 
 namespace siddiqsoft
@@ -263,7 +261,6 @@ namespace siddiqsoft
 			auto extractResponseLine = [](const std::wstring& src) -> std::tuple<std::string, uint32_t, std::string, size_t> {
 				// Given the first line is of the format: `HTTP_VERSION STATUS_CODE REASON_PHRASE\r\n`
 				// Return the particles.
-				std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
 
 				// TODO: Optimize..
 				auto firstPart    = src.find_first_of(L' ');
@@ -273,7 +270,11 @@ namespace siddiqsoft
 				auto lastPart     = src.find_first_of(L"\r\n", ++secondPart);
 				auto reasonPhrase = src.substr(secondPart, lastPart - secondPart);
 
-				return {converter.to_bytes(httpVersion), std::stoi(statusCode), converter.to_bytes(reasonPhrase), lastPart + 2};
+
+				return {ConversionUtils::asciiFromWide(httpVersion),
+				        std::stoi(statusCode),
+				        ConversionUtils::asciiFromWide(reasonPhrase),
+				        lastPart + 2};
 			};
 
 			HRESULT  hr {E_FAIL};
@@ -311,8 +312,10 @@ namespace siddiqsoft
 						std::string strHeaders;
 						req.encodeHeaders_to(strHeaders);
 						std::wstring requestHeaders = n2w(strHeaders);
-						nError                      = WinHttpAddRequestHeaders(
-                                hRequest, requestHeaders.c_str(), static_cast<DWORD>(requestHeaders.length()), WINHTTP_ADDREQ_FLAG_ADD);
+						nError                      = WinHttpAddRequestHeaders(hRequest,
+                                                          requestHeaders.c_str(),
+                                                          static_cast<DWORD>(requestHeaders.length()),
+                                                          WINHTTP_ADDREQ_FLAG_ADD);
 
 						// Set this option so we don't incur a roundtrip delay
 						// ll	   = __LINE__;

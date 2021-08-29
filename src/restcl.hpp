@@ -36,7 +36,6 @@
 #ifndef RESTCL_HPP
 #define RESTCL_HPP
 
-#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include <iostream>
 #include <chrono>
@@ -49,30 +48,12 @@
 
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
+#include "siddiqsoft/azure-cpp-utils.hpp"
 
 #if __cpp_lib_format
 
 namespace siddiqsoft
 {
-	/// @brief Create date as specified by RFC1123
-	/// @return RFC1123 specified date. Note that "GMT" here is treated as "UTC"
-	static std::string Date_rfc1123()
-	{
-		// https://www.rfc-editor.org/info/rfc1123; https://www.rfc-editor.org/rfc/rfc1123.txt
-		// https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-date-and-time-format-strings#RFC1123
-		// std::Format: Thu, 10 Apr 2008 13:30:00.0000000 GMT
-		// return std::format("{:%a, %d %b %Y %H:%M:%S GMT}", std::chrono::utc_clock::now());
-
-		// Current version of the std::chrono formatters return nanoseconds which is not compliant
-		char buff[sizeof "Tue, 01 Nov 1994 08:12:31 GMT"] {};
-		tm   timeInfo {};
-		auto rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-		// Get the UTC time packet.
-		if (gmtime_s(&timeInfo, &rawtime) != EINVAL) strftime(buff, sizeof(buff), "%a, %d %h %Y %T GMT", &timeInfo);
-
-		return buff;
-	}
-
 	/// @brief REST Methods: GET, PATCH, POST, PUT, DELETE, HEAD, OPTIONS
 	enum class RESTMethodType
 	{
@@ -282,7 +263,7 @@ namespace siddiqsoft
 
 			// Enforce some default headers
 			auto& hs = rrd.at("headers");
-			if (!hs.contains("Date")) hs["Date"] = Date_rfc1123();
+			if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
 			if (!hs.contains("Accept")) hs["Accept"] = "application/json";
 			if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
 			if (!hs.contains("Content-Length")) hs["Content-Length"] = 0;
@@ -305,7 +286,7 @@ namespace siddiqsoft
 
 			// Enforce some default headers
 			auto& hs = rrd.at("headers");
-			if (!hs.contains("Date")) hs["Date"] = Date_rfc1123();
+			if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
 			if (!hs.contains("Accept")) hs["Accept"] = "application/json";
 			if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
 			if (!hs.contains("Content-Length")) hs["Content-Length"] = 0;
