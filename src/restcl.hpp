@@ -146,7 +146,8 @@ namespace siddiqsoft
 			if (!c.is_null()) {
 				rrd["content"]                   = c;
 				rrd["headers"]["Content-Length"] = c.dump().length();
-				rrd["headers"]["Content-Type"]   = "application/json";
+				// Make sure we do not override existing value
+				if (!rrd["headers"].contains("Content-Type")) rrd["headers"]["Content-Type"] = "application/json";
 			}
 			return *this;
 		}

@@ -212,16 +212,6 @@ namespace siddiqsoft
 		WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
 	private:
-		/// @brief "Upgrades" a string to wstring by copying the chars without any actual conversion.
-		/// Only use this for where there is a need to provide wstring and the underlying elements are ASCII.
-		/// @param src ASCII string. DO NOT USE utf-8
-		/// @return Upgraded wstring
-		auto n2w(const std::string& src)
-		{
-			std::wstring rawAsciiToWstring {src.begin(), src.end()};
-			return std::move(rawAsciiToWstring);
-		}
-
 		static const size_t HEADER_SERIALIZE_BUFFER {4096};
 		static const DWORD  MAXBUFSIZE {8192};
 		static const DWORD  HTTPS_MAXRETRY {7};
@@ -232,8 +222,8 @@ namespace siddiqsoft
 	public:
 		WinHttpRESTClient()
 		{
-			UserAgent  = "siddiqsoft.restcl_winhttp/0.5.6 (Windows NT; x64)";
-			UserAgentW = n2w(UserAgent);
+			UserAgent  = "siddiqsoft.restcl_winhttp/0.6.1 (Windows NT; x64)";
+			UserAgentW = L"siddiqsoft.restcl_winhttp/0.6.1 (Windows NT; x64)";
 
 			hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
 		}
@@ -243,7 +233,7 @@ namespace siddiqsoft
 		WinHttpRESTClient(const std::string& ua)
 		{
 			UserAgent  = ua;
-			UserAgentW = n2w(ua);
+			UserAgentW = ConversionUtils::wideFromAscii(ua);
 
 			hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
 		}
@@ -291,16 +281,18 @@ namespace siddiqsoft
 
 			if (hSession != NULL) {
 				auto& strServer = req.uri.authority.host;
-				if (ACW32HINTERNET hConnect {WinHttpConnect(hSession, n2w(strServer).c_str(), req.uri.authority.port, 0)};
-				    hConnect != NULL) {
+				if (ACW32HINTERNET hConnect {
+				            WinHttpConnect(hSession, ConversionUtils::wideFromAscii(strServer).c_str(), req.uri.authority.port, 0)};
+				    hConnect != NULL)
+				{
 					auto strMethod  = rs.value("method", "");
 					auto strUrl     = req.uri.urlPart;
 					auto strVersion = rs.value("version", "");
 
 					if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
-					                                                n2w(strMethod).c_str(),
-					                                                n2w(strUrl).c_str(),
-					                                                n2w(strVersion).c_str(),
+					                                                ConversionUtils::wideFromAscii(strMethod).c_str(),
+					                                                ConversionUtils::wideFromAscii(strUrl).c_str(),
+					                                                ConversionUtils::wideFromAscii(strVersion).c_str(),
 					                                                NULL,
 					                                                RESTCL_ACCEPT_TYPES_W,
 					                                                (req.uri.scheme == UriScheme::WebHttps)
@@ -311,7 +303,7 @@ namespace siddiqsoft
 						auto        contentLength = hs.value("Content-Length", 0);
 						std::string strHeaders;
 						req.encodeHeaders_to(strHeaders);
-						std::wstring requestHeaders = n2w(strHeaders);
+						std::wstring requestHeaders = ConversionUtils::wideFromAscii(strHeaders);
 						nError                      = WinHttpAddRequestHeaders(hRequest,
                                                           requestHeaders.c_str(),
                                                           static_cast<DWORD>(requestHeaders.length()),

@@ -103,6 +103,7 @@ namespace siddiqsoft
 		                  std::format("<root><p>Hello-world</p><p name=\"date\">{:%FT%TZ}</p></root>",
 		                              std::chrono::system_clock::now())},
 		         [&passTest](const auto& req, const auto& resp) {
+			         EXPECT_EQ("application/xml", req["headers"].value("Content-Type", ""));
 			         // Checks the implementation of the encode() implementation
 			         std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
 			         if (resp.success()) {
@@ -127,9 +128,10 @@ namespace siddiqsoft
 		WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
 		wrc.send(ReqPost {"https://ptsv2.com/t/buzz2/post"_Uri,
-		                  {{"Authorization", "Basic YWF1OnBhYXU="}},
+		                  {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/json+custom"}},
 		                  {{"foo", "bar"}, {"hello", "world"}}},
 		         [&passTest](const auto& req, const auto& resp) {
+			         EXPECT_EQ("application/json+custom", req["headers"].value("Content-Type", ""));
 			         // Checks the implementation of the std::format implementation
 			         std::cerr << std::format("From callback Wire serialize              : {}\n", req);
 			         if (resp.success()) {
