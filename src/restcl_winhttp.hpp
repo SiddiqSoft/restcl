@@ -222,8 +222,8 @@ namespace siddiqsoft
 	public:
 		WinHttpRESTClient()
 		{
-			UserAgent  = "siddiqsoft.restcl_winhttp/0.6.1 (Windows NT; x64)";
-			UserAgentW = L"siddiqsoft.restcl_winhttp/0.6.1 (Windows NT; x64)";
+			UserAgent  = "siddiqsoft.restcl_winhttp/0.6.2 (Windows NT; x64)";
+			UserAgentW = L"siddiqsoft.restcl_winhttp/0.6.2 (Windows NT; x64)";
 
 			hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
 		}
@@ -386,10 +386,6 @@ namespace siddiqsoft
 										// We need to skip the first line of the respose as it is the status response line.
 										// Decode the CRLF string into key-value elements.
 										std::wstring src {lpOutBuffer.get(), dwSize};
-
-#ifdef _DEBUG
-										std::wcerr << "Header buffer:\n" << src << std::endl;
-#endif
 
 										size_t startOfHeaders    = std::string::npos;
 										std::tie(resp["response"]["version"],
