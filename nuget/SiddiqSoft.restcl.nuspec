@@ -18,7 +18,7 @@
     <license type="expression">BSD-3-Clause</license>
     <icon>docs\Siddiq-Software-Avatar.png</icon>
     <readme>docs\README.md</readme>
-    <releaseNotes></releaseNotes>
+    <releaseNotes>Documentation at https://siddiqsoft.github.io/restcl/html/index.html</releaseNotes>
     <copyright>Copyright (c) 2021 Siddiq Software LLC</copyright>
     <!-- Dependencies -->
     <dependencies>
