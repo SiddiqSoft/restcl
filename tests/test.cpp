@@ -39,6 +39,8 @@
 
 #include "nlohmann/json.hpp"
 #include "../src/restcl.hpp"
+#include "../src/restcl_winhttp.hpp"
+
 
 namespace siddiqsoft
 {
