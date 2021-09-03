@@ -58,19 +58,4 @@ Design a library where JSON is a first-class API metaphor for interacting with R
                                 });
   ```
 
-
-# Usage
-
-## Requirements
-- C++20 with support for `concepts`, `format`
-- The library `nlohmann.json` is used as the primary interface
-- The build and tests are for Visual Studio 2019 under x64.
-
-## Examples
-- Use the nuget [SiddiqSoft.restcl](https://www.nuget.org/packages/SiddiqSoft.restcl/)
-- Git submodule, Copy paste..whatever works.
-
-
-<p align="right">
-&copy; 2021 Siddiq Software LLC. All rights reserved.
-</p>
+  [API documentation](https://siddiqsoft.github.io/restcl/html/index.html) 
