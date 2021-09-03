@@ -38,8 +38,56 @@
 #include <iostream>
 
 #include "nlohmann/json.hpp"
-#include "../src/restcl_winhttp.hpp"
+#include "../src/restcl.hpp"
 
+namespace siddiqsoft
+{
+	using namespace literals;
+
+	TEST(Serializers, test1a)
+	{
+		auto srt = "https://www.siddiqsoft.com/"_GET;
+
+		nlohmann::json doc(srt);
+
+		// Checks the implementation of the json implementation
+		std::cerr << "Serialized json: " << doc.dump(3) << std::endl;
+	}
+
+
+	TEST(Serializers, test1b)
+	{
+		auto srt = "https://www.siddiqsoft.com/"_GET;
+
+		// Checks the implementation of the encode() implementation
+		std::cerr << "Wire serialize              : " << srt.encode() << std::endl;
+	}
+
+
+	TEST(Serializers, test1c)
+	{
+		auto srt = "https://www.siddiqsoft.com/"_GET;
+
+		// Checks the implementation of the std::formatter implementation
+		std::cerr << std::format("Wire serialize              : {}\n", srt);
+	}
+
+
+	TEST(Validate, test1)
+	{
+		auto r1 = "https://www.siddiqsoft.com:65535/"_GET;
+		EXPECT_EQ("GET", r1["request"].value("method", ""));
+		EXPECT_EQ(65535, r1.uri.authority.port);
+
+		auto r2 = "https://localhost:65535/"_GET;
+		EXPECT_EQ("GET", r2["request"].value("method", ""));
+		EXPECT_EQ(65535, r2.uri.authority.port);
+
+		auto r3 = "https://reqbin.com:9090/echo/post/json"_OPTIONS;
+		EXPECT_EQ("OPTIONS", r3["request"].value("method", ""));
+		EXPECT_EQ(9090, r3.uri.authority.port);
+	}
+} // namespace siddiqsoft
 
 namespace siddiqsoft
 {

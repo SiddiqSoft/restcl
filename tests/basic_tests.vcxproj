@@ -44,8 +44,7 @@
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="test_RESTRequestType.cpp" />
-    <ClCompile Include="test_SendRequest.cpp" />
+    <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

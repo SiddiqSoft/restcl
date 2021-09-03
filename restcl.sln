@@ -32,6 +32,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "basic_tests", "tests\basic_tests.vcxproj", "{025C9280-6302-401E-949F-F82DF4D47204}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{38935649-2D98-464A-9F3E-7689763EBF0F}"
+	ProjectSection(SolutionItems) = preProject
+		src\docs\Doxyfile = src\docs\Doxyfile
+		src\docs\doxygen-awesome-darkmode-toggle.js = src\docs\doxygen-awesome-darkmode-toggle.js
+		src\docs\doxygen-awesome-sidebar-only-darkmode-toggle.css = src\docs\doxygen-awesome-sidebar-only-darkmode-toggle.css
+		src\docs\doxygen-awesome-sidebar-only.css = src\docs\doxygen-awesome-sidebar-only.css
+		src\docs\doxygen-awesome.css = src\docs\doxygen-awesome.css
+		src\docs\footer.html = src\docs\footer.html
+		src\docs\header.html = src\docs\header.html
+		src\docs\mainpage.md = src\docs\mainpage.md
+		src\docs\rebuild-docs.ps1 = src\docs\rebuild-docs.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -48,6 +61,7 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{025C9280-6302-401E-949F-F82DF4D47204} = {179E7FDB-7795-456D-AC2D-66670D708FC3}
+		{38935649-2D98-464A-9F3E-7689763EBF0F} = {8A6E91C4-25AE-43E1-A2A8-6D020B8B3287}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {58ECAD81-0BE8-4DF7-8F5B-7098036D04E7}
