@@ -9,7 +9,7 @@ restcl : A focused REST Client for Modern C++
 <!--![](https://img.shields.io/azure-devops/coverage/siddiqsoft/siddiqsoft/13)-->
 <!-- end badges -->
 
-# Objective
+# Motivation
 
 Design a library where JSON is a first-class API metaphor for interacting with RESTful servers.
 - Focused on REST interactions with JSON. Limiting allows us to simplify the usage and make it feel very C++ instead of the C-like API of Win32 or OpenSSL.
@@ -24,38 +24,3 @@ Design a library where JSON is a first-class API metaphor for interacting with R
 - The focus is on the interface to the end user.
 - Performance is not the objective.
 - Simplicity (hide the underlying implementation)
-  ```cpp
-    #include "siddiqsoft/restcl.hpp"
-    #include "siddiqsoft/restcl_winhttp.hpp"
-    ...
-    using namespace siddiqsoft;
-    using namespace siddiqsoft::literals;
-
-    WinHttpRESTClient wrc("my-user-agent-string"); // optional UA; defaults to siddiqsoft.restcl/version
-
-    // Create a simple GET request from the endpoint string
-    // Send the request and invoke the callback.
-    wrc.send( "https://google.com"_GET,
-              [](const auto& req, const auto& resp) {
-                 if(resp.success())
-                    doSomething();
-              });
-     ...
-     ...
-    // Create a POST request by parsing out the string
-    auto myPost= "https://server:999/path?q=hello-world"_POST;
-    // Add custom header
-    myPost["headers"]["X-MyHeader"]= "my-header-value";
-    // Adds the content with supplied json object and sets the 
-    // headers Content-Length and Content-Type
-    myPost.setContent( {{"foo", "bar"}, {"goto", 99}} );
-    // Send the request and invoke the callback
-    wrc.send( std::move(myReq), [](auto& req, auto& resp){
-                                   if(resp.success())
-                                      doSomething();
-                                   else
-                                      logError(resp.error());
-                                });
-  ```
-
-  [API documentation](https://siddiqsoft.github.io/restcl/html/index.html) 
