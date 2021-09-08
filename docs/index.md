@@ -192,11 +192,11 @@ The code here focusses on the REST API and its structure as required by the [Cos
                                         cnxn.current().currentWriteUri(),
                                         dbName,
                                         collName),
-                            {{"Authorization", auth},
+                            { {"Authorization", auth},
                              {"x-ms-date", ts},
                              {"x-ms-documentdb-partitionkey", nlohmann::json {pkId}},
                              {"x-ms-version", config["apiVersion"]},
-                             {"x-ms-cosmos-allow-tentative-writes", "true"}},
+                             {"x-ms-cosmos-allow-tentative-writes", "true"} },
                             doc},
                          [&ret](const auto& req, const auto& resp) {
                             ret = {std::get<0>(resp.status()), resp.success() ? std::move(resp["content"])
