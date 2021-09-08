@@ -250,7 +250,7 @@ namespace siddiqsoft
 
 
 	/// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
-	template <RESTMethodType RM, HTTPProtocolVersion HttpVer = HTTPProtocolVersion::Http11>
+	template <RESTMethodType RM, HTTPProtocolVersion HttpVer = HTTPProtocolVersion::Http2>
 	class RESTRequest : public basic_restrequest
 	{
 	public:
@@ -500,8 +500,8 @@ namespace siddiqsoft
 	class basic_restclient
 	{
 	public:
-		std::string  UserAgent {"siddiqsoft.restcl/0.6.2"};
-		std::wstring UserAgentW {L"siddiqsoft.restcl/0.6.2"};
+		std::string  UserAgent {"siddiqsoft.restcl/0.7.2"};
+		std::wstring UserAgentW {L"siddiqsoft.restcl/0.7.2"};
 
 		/// @brief The function or lambda must accept const basic_restrequest& and const basic_restresponse&
 		using CallbackType = std::function<void(const basic_restrequest&, const basic_restresponse&)>;

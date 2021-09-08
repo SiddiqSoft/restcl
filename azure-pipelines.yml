@@ -7,7 +7,7 @@ trigger:
     - release/*
   paths:
     exclude:
-    - docs/
+    - docs/*
     - README.md
 
 pool:
@@ -99,7 +99,7 @@ steps:
     tag: '$(build.buildNumber)'
     title: 'v$(build.buildNumber)'
     releaseNotesSource: 'inline'
-    releaseNotesInline: 'Documentation https://siddiqsoft.github.io/restcl/html/index.html'
+    releaseNotesInline: 'Documentation https://siddiqsoft.github.io/restcl'
     isPreRelease: true
     changeLogCompareToRelease: 'lastFullRelease'
     changeLogType: 'commitBased'

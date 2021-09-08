@@ -220,22 +220,33 @@ namespace siddiqsoft
 		ACW32HINTERNET      hSession;
 
 	public:
-		WinHttpRESTClient()
-		{
-			UserAgent  = "siddiqsoft.restcl_winhttp/0.6.2 (Windows NT; x64)";
-			UserAgentW = L"siddiqsoft.restcl_winhttp/0.6.2 (Windows NT; x64)";
-
-			hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
-		}
-
 		/// @brief Creates the Windows REST Client with given UserAgent string
 		/// @param ua User agent string
-		WinHttpRESTClient(const std::string& ua)
+		WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.7.2 (Windows NT; x64)")
 		{
 			UserAgent  = ua;
 			UserAgentW = ConversionUtils::wideFromAscii(ua);
 
 			hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
+			if (hSession) {
+				const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+				const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
+				// Enable HTTP/2 protocol
+				if (!WinHttpSetOption(
+				            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+#ifdef _DEBUG
+					std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+#endif
+				}
+
+				// Enable decompression
+				if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
+#ifdef _DEBUG
+					std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+#endif
+				}
+			}
 		}
 
 
@@ -260,11 +271,10 @@ namespace siddiqsoft
 				auto lastPart     = src.find_first_of(L"\r\n", ++secondPart);
 				auto reasonPhrase = src.substr(secondPart, lastPart - secondPart);
 
-
 				return {ConversionUtils::asciiFromWide(httpVersion),
 				        std::stoi(statusCode),
 				        ConversionUtils::asciiFromWide(reasonPhrase),
-				        lastPart + 2};
+				        lastPart + 2}; // start of the header section
 			};
 
 			HRESULT  hr {E_FAIL};
@@ -404,9 +414,6 @@ namespace siddiqsoft
 						// Next stage is to check for any errors and if none, get the body
 						if (dwError == ERROR_WINHTTP_NAME_NOT_RESOLVED) {
 							callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
-							// throw(invalid_argument(
-							//		std::format("HttpSendRequest() Failed Invalid host; dwError={}",
-							// messageFromWininetCode(dwError))));
 						}
 						else if ((dwError == ERROR_WINHTTP_CANNOT_CONNECT) || (dwError == ERROR_WINHTTP_CONNECTION_ERROR) ||
 						         (dwError == ERROR_WINHTTP_OPERATION_CANCELLED) || (dwError == ERROR_WINHTTP_LOGIN_FAILURE) ||
@@ -414,17 +421,9 @@ namespace siddiqsoft
 						         (dwError == ERROR_WINHTTP_SECURE_FAILURE) || (dwError == ERROR_WINHTTP_TIMEOUT))
 						{
 							callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
-							// throw io_exception(dwError,
-							//                   0,
-							//                   std::format("HttpSendRequest() Failed to {}; dwError={}",
-							//                               argEndpoint,
-							//                               messageFromWininetCode(dwError)));
 						}
 						else if (dwError == ERROR_WINHTTP_INVALID_URL) {
 							callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
-							// throw(invalid_argument(std::format("HttpSendRequest() Failed Invalid URL {}; dwError={}",
-							//                                   argEndpoint,
-							//                                   messageFromWininetCode(dwError))));
 						}
 						else if (dwError != ERROR_FILE_NOT_FOUND) {
 							nRetry = 0;
@@ -472,27 +471,18 @@ namespace siddiqsoft
 						}
 						else {
 							callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
-							// hr = HRESULT_FROM_WIN32(dwError);
-							// throw io_exception(dwError,
-							//                   0,
-							//                   std::format("HttpSendRequest() Failed to {}; dwError={}",
-							//                               argEndpoint,
-							//                               messageFromWininetCode(dwError)));
 						}
 					}
 					else {
 						callback(req, RESTResponse {{hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)}});
-						// throw io_exception(hr, 0, std::format("HttpOpenRequest() Failed; dwError={}", hr));
 					}
 				}
 				else {
 					callback(req, RESTResponse {{hr, std::format("WinHttpConnect() failed; dwError:{}", hr)}});
-					// throw io_exception(hr, 0, std::format("InternetConnect() Failed; dwError={}", hr));
 				}
 			}
 			else {
 				callback(req, RESTResponse {{hr, std::format("WinHttpOpen() failed; dwError:{}", hr)}});
-				// throw io_exception(hr, 0, std::format("InternetOpen() Failed; dwError={}", hr));
 			}
 		}
 	};

@@ -32,7 +32,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include "gtest/gtest.h"
 #include <iostream>
@@ -295,4 +294,23 @@ namespace siddiqsoft
 		EXPECT_TRUE(passTest);
 	}
 
+	TEST(TSendRequest, test9a)
+	{
+		bool              passTest = false;
+		WinHttpRESTClient wrc;
+
+		wrc.send("https://www.google.com/"_GET, [&passTest](const auto& req, const auto& resp) {
+			std::cerr << "From callback Serialized json: " << req << std::endl;
+			if (resp.success()) {
+				passTest = resp["response"].value("status", 0) == 200;
+				std::cerr << "Response\n" << resp << std::endl;
+			}
+			else {
+				auto [ec, emsg] = resp.status();
+				std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+			}
+		});
+
+		EXPECT_TRUE(passTest);
+	}
 } // namespace siddiqsoft

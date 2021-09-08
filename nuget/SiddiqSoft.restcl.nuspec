@@ -18,12 +18,12 @@
     <license type="expression">BSD-3-Clause</license>
     <icon>docs\Siddiq-Software-Avatar.png</icon>
     <readme>docs\README.md</readme>
-    <releaseNotes>Documentation at https://siddiqsoft.github.io/restcl/html/index.html</releaseNotes>
+    <releaseNotes>Documentation at https://siddiqsoft.github.io/restcl</releaseNotes>
     <copyright>Copyright (c) 2021 Siddiq Software LLC</copyright>
     <!-- Dependencies -->
     <dependencies>
       <dependency id="nlohmann.json" version="3.10"/>
-      <dependency id="SiddiqSoft.SplitUri" version="1.7"/>
+      <dependency id="SiddiqSoft.SplitUri" version="1.8"/>
       <dependency id="SiddiqSoft.AzureCppUtils" version="1"/>
       <dependency id="SiddiqSoft.acw32h" version="2"/>
     </dependencies>
