@@ -19,8 +19,6 @@ restcl : A focused REST Client for Modern C++
 > **NOTE**
 > We are going to track VS 2022 and make full use of C++20 facilities and the API is subjec to change.
 
-```markdown
-Syntax highlighted code block
 
 ## Dependencies
 
