@@ -222,8 +222,8 @@ namespace siddiqsoft
     public:
         /// @brief Creates the Windows REST Client with given UserAgent string
         /// Sets the HTTP/2 option and the decompression options
-        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.7.2 (Windows NT; x64)`
-        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.7.2 (Windows NT; x64)")
+        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.7.4 (Windows NT; x64)`
+        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.7.4 (Windows NT; x64)")
         {
             UserAgent  = ua;
             UserAgentW = ConversionUtils::wideFromAscii(ua);

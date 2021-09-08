@@ -77,7 +77,7 @@ Sets the HTTP/2 option and the decompression options
 
 ##### Parameters
 
-- `ua` User agent string; defaults to `siddiqsoft.restcl_winhttp/0.7.2 (Windows NT; x64)`
+- `ua` User agent string; defaults to `siddiqsoft.restcl_winhttp/0.7.4 (Windows NT; x64)`
 
 
 #### `WinHttpRESTClient::send`

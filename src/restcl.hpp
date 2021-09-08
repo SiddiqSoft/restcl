@@ -357,6 +357,62 @@ namespace siddiqsoft
         basic_restresponse() { }
 
     public:
+        basic_restresponse(const basic_restresponse& src) noexcept
+        {
+            try {
+                ioError     = src.ioError;
+                ioErrorCode = src.ioErrorCode;
+                rrd         = src.rrd;
+            }
+            catch (const std::exception&) {
+            }
+        }
+
+
+        /// @brief Move constructor
+        basic_restresponse(basic_restresponse&& src) noexcept
+        {
+            try {
+                std::swap(ioError, src.ioError);
+                std::swap(ioErrorCode, src.ioErrorCode);
+                std::swap(rrd, src.rrd);
+            }
+            catch (const std::exception&) {
+            }
+        }
+
+
+        /// @brief Move assignment operator
+        /// @param src The source object
+        /// @return Self
+        basic_restresponse& operator=(basic_restresponse&& src) noexcept
+        {
+            try {
+                std::swap(ioError, src.ioError);
+                std::swap(ioErrorCode, src.ioErrorCode);
+                std::swap(rrd, src.rrd);
+            }
+            catch (const std::exception&) {
+            }
+
+            return *this;
+        }
+
+
+        basic_restresponse& operator=(const basic_restresponse& src) noexcept
+        {
+            try {
+                ioError     = src.ioError;
+                ioErrorCode = src.ioErrorCode;
+                rrd         = src.rrd;
+            }
+            catch (const std::exception&) {
+            }
+
+            return *this;
+        }
+
+
         /// @brief Set the content of the response. An attempt is made to parse to json object
         /// @param c Content from the receive
         /// @return Self
@@ -500,8 +556,8 @@ namespace siddiqsoft
     class basic_restclient
     {
     public:
-        std::string  UserAgent {"siddiqsoft.restcl/0.7.2"};
-        std::wstring UserAgentW {L"siddiqsoft.restcl/0.7.2"};
+        std::string  UserAgent {"siddiqsoft.restcl/0.7.4"};
+        std::wstring UserAgentW {L"siddiqsoft.restcl/0.7.4"};
 
         /// @brief The function or lambda must accept const basic_restrequest& and const basic_restresponse&
         using basic_callbacktype = std::function<void(const basic_restrequest&, const basic_restresponse&)>;
