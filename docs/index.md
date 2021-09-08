@@ -119,37 +119,37 @@ Parameter | Type | Description
 ## Examples
 
 ```cpp
-#include "siddiqsoft/restcl.hpp"
-#include "siddiqsoft/restcl_winhttp.hpp"
-...
-using namespace siddiqsoft;
-using namespace siddiqsoft::literals;
-
-WinHttpRESTClient wrc("my-user-agent-string");
-
-// Create a simple GET request from the endpoint string
-// Send the request and invoke the callback.
-wrc.send( "https://google.com"_GET,
-          [](const auto& req, const auto& resp) {
-             if(resp.success())
-                doSomething();
-          });
+    #include "siddiqsoft/restcl.hpp"
+    #include "siddiqsoft/restcl_winhttp.hpp"
     ...
-    ...
-// Create a POST request by parsing out the string
-auto myPost= "https://server:999/path?q=hello-world"_POST;
-// Add custom header
-myPost["headers"]["X-MyHeader"]= "my-header-value";
-// Adds the content with supplied json object and sets the 
-// headers Content-Length and Content-Type
-myPost.setContent( {{"foo", "bar"}, {"goto", 99}} );
-// Send the request and invoke the callback
-wrc.send( std::move(myReq), [](auto& req, auto& resp){
-                                if(resp.success())
-                                    doSomething();
-                                else
-                                    logError(resp.error());
-                            });
+    using namespace siddiqsoft;
+    using namespace siddiqsoft::literals;
+
+    WinHttpRESTClient wrc("my-user-agent-string");
+
+    // Create a simple GET request from the endpoint string
+    // Send the request and invoke the callback.
+    wrc.send( "https://google.com"_GET,
+              [](const auto& req, const auto& resp) {
+                 if(resp.success())
+                    doSomething();
+              });
+        ...
+        ...
+    // Create a POST request by parsing out the string
+    auto myPost= "https://server:999/path?q=hello-world"_POST;
+    // Add custom header
+    myPost["headers"]["X-MyHeader"]= "my-header-value";
+    // Adds the content with supplied json object and sets the 
+    // headers Content-Length and Content-Type
+    myPost.setContent( { {"foo", "bar"}, {"goto", 99} } );
+    // Send the request and invoke the callback
+    wrc.send( std::move(myReq), [](auto& req, auto& resp){
+                                    if(resp.success())
+                                        doSomething();
+                                    else
+                                        logError(resp.error());
+                                });
 ```
 
 ## Notes
