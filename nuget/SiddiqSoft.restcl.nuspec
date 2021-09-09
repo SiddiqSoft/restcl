@@ -26,6 +26,7 @@
       <dependency id="SiddiqSoft.SplitUri" version="1.8"/>
       <dependency id="SiddiqSoft.AzureCppUtils" version="1"/>
       <dependency id="SiddiqSoft.acw32h" version="2"/>
+      <dependency id="SiddiqSoft.string2map" version="2.3"/>
     </dependencies>
   </metadata>
 
