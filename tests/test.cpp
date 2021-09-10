@@ -208,14 +208,14 @@ namespace siddiqsoft
             nlohmann::json doc(req);
 
             // Checks the implementation of the json implementation
-            std::cerr << "From callback Serialized json: " << req << std::endl;
+            //std::cerr << "From callback Serialized json: " << req << std::endl;
             if (resp.success()) {
-                std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
+                //std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
                 passTest        = ec == 12002;
-                std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                //std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
             }
         });
 
@@ -233,14 +233,14 @@ namespace siddiqsoft
             nlohmann::json doc(req);
 
             // Checks the implementation of the json implementation
-            std::cerr << "From callback Serialized json: " << req << std::endl;
+            //std::cerr << "From callback Serialized json: " << req << std::endl;
             if (resp.success()) {
-                std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
+                //std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
                 passTest        = ec == 12029;
-                std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                //std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
             }
         });
 
@@ -255,14 +255,14 @@ namespace siddiqsoft
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send("https://reqbin.com:9090/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
-            std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+            //std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (resp.success()) {
-                std::cerr << "Response\n" << resp << std::endl;
+                //std::cerr << "Response\n" << resp << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
                 passTest        = ec == 12002;
-                std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                //std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
             }
         });
 
@@ -277,17 +277,17 @@ namespace siddiqsoft
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send("https://google.com/"_OPTIONS, [&passTest](const auto& req, auto& resp) {
-            std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+            //std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (resp.success()) {
-                std::cerr << "Response\n" << resp << std::endl;
+                //std::cerr << "Response\n" << resp << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
                 passTest        = ec == 405;
                 // This is a work-around for google which sometimes refuses to send the Reason Phrase!
                 if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
-                std::cerr << "Got error: [" << ec << ":" << emsg << "] -- " << emsg << std::endl
-                          << nlohmann::json(resp).dump(3) << std::endl;
+                //std::cerr << "Got error: [" << ec << ":" << emsg << "] -- " << emsg << std::endl
+                //          << nlohmann::json(resp).dump(3) << std::endl;
             }
         });
 
