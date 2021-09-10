@@ -212,14 +212,41 @@ namespace siddiqsoft
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
     private:
-        static const size_t HEADER_SERIALIZE_BUFFER {4096};
-        static const DWORD  MAXBUFSIZE {8192};
-        static const DWORD  HTTPS_MAXRETRY {7};
-        const char*         RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
-        const wchar_t*      RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-        ACW32HINTERNET      hSession;
+        static const DWORD           READBUFFERSIZE {8192};
+        static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+        static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
+        ACW32HINTERNET               hSession {};
 
     public:
+        /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
+        /// @param src Source object is "cleared"
+        WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
+            : hSession(std::move(src.hSession))
+        {
+            // If the source is null/empty then we should create our own instance!
+            if (hSession == NULL) {
+                if (hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)); hSession) {
+                    const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+                    const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
+                    // Enable HTTP/2 protocol
+                    if (!WinHttpSetOption(
+                                hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+#ifdef _DEBUG
+                        std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+#endif
+                    }
+
+                    // Enable decompression
+                    if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
+#ifdef _DEBUG
+                        std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+#endif
+                    }
+                }
+            }
+        }
+
         /// @brief Creates the Windows REST Client with given UserAgent string
         /// Sets the HTTP/2 option and the decompression options
         /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.7.4 (Windows NT; x64)`
@@ -281,7 +308,7 @@ namespace siddiqsoft
             HRESULT  hr {E_FAIL};
             DWORD    dwBytesRead {0}, dwError {0};
             uint32_t nRetry {0}, nError {0};
-            char     cBuf[MAXBUFSIZE] {};
+            char     cBuf[READBUFFERSIZE] {};
             DWORD    dwFlagsSize = 0;
             auto&    hs          = req["headers"]; // shortcut
             auto&    rs          = req["request"]; // shortcut
@@ -453,7 +480,7 @@ namespace siddiqsoft
                             do {
                                 // memset(cBuf, '\0', sizeof(cBuf));
                                 // Returns byte stream; accumulate until we're out of data.
-                                hr = WinHttpReadData(hRequest, cBuf, MAXBUFSIZE - 1, &dwBytesRead)
+                                hr = WinHttpReadData(hRequest, cBuf, READBUFFERSIZE - 1, &dwBytesRead)
                                            ? S_OK
                                            : HRESULT_FROM_WIN32(GetLastError());
 #pragma warning(suppress : 6102)

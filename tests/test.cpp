@@ -313,4 +313,34 @@ namespace siddiqsoft
 
         EXPECT_TRUE(passTest);
     }
+
+
+    TEST(restcl, MoveConstructor)
+    {
+        std::atomic_uint                           passTest {0};
+        std::vector<siddiqsoft::WinHttpRESTClient> clients;
+
+        for (auto i = 0; i < 4; i++) {
+            clients.push_back(siddiqsoft::WinHttpRESTClient {});
+        }
+
+        EXPECT_EQ(4, clients.size());
+
+        // Send data over each client (if we mess up the move constructors this will fail)
+        std::for_each(clients.begin(), clients.end(), [&](auto& wrc) {
+            wrc.send("https://www.google.com/"_GET, [&](const auto& req, const auto& resp) {
+                std::cerr << "From callback Serialized json: " << req << std::endl;
+                if (resp.success()) {
+                    passTest += resp["response"].value("status", 0) == 200;
+                    std::cerr << "Response\n" << resp << std::endl;
+                }
+                else {
+                    auto [ec, emsg] = resp.status();
+                    std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                }
+            });
+        });
+
+        EXPECT_EQ(4, passTest.load());
+    }
 } // namespace siddiqsoft
