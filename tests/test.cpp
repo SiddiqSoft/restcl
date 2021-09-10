@@ -214,7 +214,7 @@ namespace siddiqsoft
             }
             else {
                 auto [ec, emsg] = resp.status();
-                passTest        = ec == 12002;
+                passTest        = (ec == 12002) || (ec == 12029);
                 std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
             }
         });
@@ -261,7 +261,7 @@ namespace siddiqsoft
             }
             else {
                 auto [ec, emsg] = resp.status();
-                passTest        = ec == 12002;
+                passTest        = ((ec == 12002) || (ec == 12029));
                 std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
             }
         });
