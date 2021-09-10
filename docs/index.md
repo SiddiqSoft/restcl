@@ -43,6 +43,8 @@ _Unless otherwise noted, use the latest. We're quite aggressive updating depende
 Namespace: `siddiqsoft`<br/>
 File: `restcl_winhttp.hpp`
 
+> **NOTE** Internal helpers have been omitted for clarity and when not used by the client code.
+
 ## class `siddiqsoft::WinHttpRESTClient`
 
 This is the starting point for your client. We make extensive use of initializer list and json to make REST calls more JavaScript-like. Just take a look at the [example](#examples).
@@ -87,6 +89,11 @@ Sets the HTTP/2 option and the decompression options
 
 Uses the existing hSession to connect, send, receive data from the remote server and fire the callback.
 
+> _Why no "return object"?_
+>
+> Invoking a lambda and minimize the data-copy as well as lifetime of the underlying objects.
+> The callback has the original request as well as the response as `const` to minimize data race.
+
 ##### Parameters
 
 Parameter | Type | Description
@@ -97,7 +104,9 @@ Parameter | Type | Description
 See the [examples](#examples) section.
 
 
-#### alias `basic_callbacktype`
+## alias `basic_callbacktype`
+
+### Signature
 ```cpp
     using basic_callbacktype = std::function<void(const basic_restrequest&  req,
                                                   const basic_restresponse& resp)>;
@@ -110,8 +119,157 @@ Parameter | Type | Description
 `req` | [`const basic_request`]() | The Request to be sent to the remote server.
 `resp` | [`const basic_restresponse`]() | The Response from the remote server.
 
+<hr/>
+
+
+## class `basic_restrequest`
+
+### Signature
+```cpp
+class basic_restrequest
+{
+protected:
+    basic_restrequest();
+    explicit basic_restrequest(const std::string& endpoint);
+    explicit basic_restrequest(const Uri<char>& s);
+public:
+    const auto&        operator[](const auto& key) const;
+    auto&              operator[](const auto& key);
+    basic_restrequest& setContent(const std::string& contentType, const std::string& content);
+    basic_restrequest& setContent(const nlohmann::json& c);
+    std::string        getContent() const;
+    void               encodeHeaders_to(std::string& rs) const;
+    std::string        encode() const;
+
+    Uri<char, AuthorityHttp<char>> uri;
+
+protected:
+    nlohmann::json rrd;
+```
+
+#### Member Variables
+
+Parameter | Type | Description
+---------:|------|:-----------
+`uri` | [`Uri<char,AuthorityHttp<char>>`]() | The Uri for this client
+`rrd` | [`nlohmann::json`]() | The json contains the request data: `{"request": {"method": "GET", "uri": {}, "version": ""}, "headers": {}, "content": nullptr}`
+
+#### Member Functions
+
+```cpp
+    const auto&        operator[](const auto& key) const;
+```
+
+```cpp
+    auto&              operator[](const auto& key);
+```
+
+```cpp
+    basic_restrequest& setContent(const std::string& contentType, const std::string& content);
+```
+
+```cpp
+    basic_restrequest& setContent(const nlohmann::json& c);
+```
+
+```cpp
+    std::string        getContent() const;
+```
+
+```cpp
+    void               encodeHeaders_to(std::string& rs) const;
+```
+
+```cpp
+    std::string        encode() const;
+```
 
 <hr/>
+
+
+## class `basic_restresponse`
+
+### Signature
+```cpp
+class basic_restresponse
+{
+protected:
+    basic_restresponse();
+public:
+    basic_restresponse(const basic_restresponse& src);
+    basic_restresponse(basic_restresponse&& src);
+
+    basic_restresponse&              operator=(basic_restresponse&&);
+    basic_restresponse&              operator=(const basic_restresponse&);
+    basic_restresponse&              setContent(const std::string& content);
+    bool                             success() const;
+    const auto&                      operator[](const auto& key) const;
+    auto&                            operator[](const auto& key);
+    std::string                      encode() const;
+    std::tuple<uint32_t,std::string> status() const;
+
+protected:
+    uint32_t       ioErrorCode {0};
+    std::string    ioError {};
+    nlohmann::json rrd {{"response", {{"version", HTTPProtocolVersion::Http2},
+                                      {"status", 0},
+                                      {"reason", ""}}},
+                        {"headers", nullptr},
+                        {"content", nullptr}};
+```
+
+#### Member Variables
+
+Parameter | Type | Description
+---------:|------|:-----------
+`ioErrorCode` | `uint32_t` | The status code response from the server
+`ioError` | `std::string` | The reason phrase from the server
+`rrd` | [`nlohmann::json`]() | The json contains the response data: `{"response": {"reason": "OK", "status": 200, "version": ""}, "headers": {}, "content": nullptr}`
+
+#### Member Functions
+
+```cpp
+    basic_restresponse(const basic_restresponse& src);
+```
+
+```cpp
+    basic_restresponse(basic_restresponse&& src);
+```
+
+```cpp
+    basic_restresponse&              operator=(basic_restresponse&&);
+```
+
+```cpp
+    basic_restresponse&              operator=(const basic_restresponse&);
+```
+
+```cpp
+    basic_restresponse&              setContent(const std::string& content);
+```
+
+```cpp
+    bool                             success() const;
+```
+
+```cpp
+    const auto&                      operator[](const auto& key) const;
+```
+
+```cpp
+    auto&                            operator[](const auto& key);
+```
+
+```cpp
+    std::string                      encode() const;
+```
+
+```cpp
+    std::tuple<uint32_t,std::string> status() const;
+```
+
+<hr/>
+
 
 ## Examples
 

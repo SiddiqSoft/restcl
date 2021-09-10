@@ -431,6 +431,10 @@ namespace siddiqsoft
                                                  resp["response"]["reason"],
                                                  startOfHeaders) = extractResponseLine(src);
                                         src.erase(0, startOfHeaders);
+
+                                        // Parse the response into json object..
+                                        // Extract the heads into a map<string,string> where the source is wstring and the output is string
+                                        // This is then fed to the json which will create a headers object.
                                         resp["headers"] =
                                                 string2map::parse<std::wstring, std::string, std::map<std::string, std::string>>(
                                                         src, L": ", L"\r\n");
