@@ -102,10 +102,10 @@ namespace siddiqsoft
         wrc.send("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, const auto& resp) {
             nlohmann::json doc(req);
 
-            std::cerr << "From callback Serialized json: " << req << std::endl;
+            //std::cerr << "From callback Serialized json: " << req << std::endl;
             if (resp.success()) {
                 passTest = true;
-                std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
+                //std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
@@ -124,10 +124,10 @@ namespace siddiqsoft
 
         wrc.send("https://reqbin.com/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
             // Checks the implementation of the encode() implementation
-            std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+            //std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (resp.success()) {
                 passTest = true;
-                std::cerr << "Response\n" << resp << std::endl;
+                //std::cerr << "Response\n" << resp << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
@@ -154,10 +154,10 @@ namespace siddiqsoft
                  [&passTest](const auto& req, const auto& resp) {
                      EXPECT_EQ("application/xml", req["headers"].value("Content-Type", ""));
                      // Checks the implementation of the encode() implementation
-                     std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+                     //std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                      if (resp.success()) {
                          passTest = true;
-                         std::cerr << "Response\n" << resp << std::endl;
+                         //std::cerr << "Response\n" << resp << std::endl;
                      }
                      else {
                          auto [ec, emsg] = resp.status();
@@ -182,10 +182,10 @@ namespace siddiqsoft
                  [&passTest](const auto& req, const auto& resp) {
                      EXPECT_EQ("application/json+custom", req["headers"].value("Content-Type", ""));
                      // Checks the implementation of the std::format implementation
-                     std::cerr << std::format("From callback Wire serialize              : {}\n", req);
+                     //std::cerr << std::format("From callback Wire serialize              : {}\n", req);
                      if (resp.success()) {
                          passTest = true;
-                         std::cerr << "Response\n" << resp << std::endl;
+                         //std::cerr << "Response\n" << resp << std::endl;
                      }
                      else {
                          auto [ec, emsg] = resp.status();
@@ -210,7 +210,7 @@ namespace siddiqsoft
             // Checks the implementation of the json implementation
             //std::cerr << "From callback Serialized json: " << req << std::endl;
             if (resp.success()) {
-                //std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
+                std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
@@ -235,7 +235,7 @@ namespace siddiqsoft
             // Checks the implementation of the json implementation
             //std::cerr << "From callback Serialized json: " << req << std::endl;
             if (resp.success()) {
-                //std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
+                std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
@@ -257,7 +257,7 @@ namespace siddiqsoft
         wrc.send("https://reqbin.com:9090/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
             //std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (resp.success()) {
-                //std::cerr << "Response\n" << resp << std::endl;
+                std::cerr << "Response\n" << resp << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
@@ -279,7 +279,7 @@ namespace siddiqsoft
         wrc.send("https://google.com/"_OPTIONS, [&passTest](const auto& req, auto& resp) {
             //std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (resp.success()) {
-                //std::cerr << "Response\n" << resp << std::endl;
+                std::cerr << "Response\n" << resp << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
@@ -300,10 +300,10 @@ namespace siddiqsoft
         WinHttpRESTClient wrc;
 
         wrc.send("https://www.google.com/"_GET, [&passTest](const auto& req, const auto& resp) {
-            std::cerr << "From callback Serialized json: " << req << std::endl;
+            //std::cerr << "From callback Serialized json: " << req << std::endl;
             if (resp.success()) {
                 passTest = resp["response"].value("status", 0) == 200;
-                std::cerr << "Response\n" << resp << std::endl;
+                //std::cerr << "Response\n" << resp << std::endl;
             }
             else {
                 auto [ec, emsg] = resp.status();
@@ -329,10 +329,10 @@ namespace siddiqsoft
         // Send data over each client (if we mess up the move constructors this will fail)
         std::for_each(clients.begin(), clients.end(), [&](auto& wrc) {
             wrc.send("https://www.google.com/"_GET, [&](const auto& req, const auto& resp) {
-                std::cerr << "From callback Serialized json: " << req << std::endl;
+                //std::cerr << "From callback Serialized json: " << req << std::endl;
                 if (resp.success()) {
                     passTest += resp["response"].value("status", 0) == 200;
-                    std::cerr << "Response\n" << resp << std::endl;
+                    //std::cerr << "Response\n" << resp << std::endl;
                 }
                 else {
                     auto [ec, emsg] = resp.status();
