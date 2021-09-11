@@ -75,7 +75,7 @@ CompactNamespaces : false
 FixNamespaceComments : true
 Standard: Latest
 TabWidth: 4
-UseTab: ForIndentation
+UseTab: Never #ForIndentation
 SortIncludes: false
 SortUsingDeclarations: false
 IncludeBlocks : Preserve
