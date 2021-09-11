@@ -273,11 +273,11 @@ public:
 protected:
     uint32_t       ioErrorCode {0};
     std::string    ioError {};
-    nlohmann::json rrd {{"response", {{"version", HTTPProtocolVersion::Http2},
-                                      {"status", 0},
-                                      {"reason", ""}}},
-                        {"headers", nullptr},
-                        {"content", nullptr}};
+    nlohmann::json rrd { {"response", { {"version", HTTPProtocolVersion::Http2},
+                                        {"status", 0},
+                                        {"reason", ""}}},
+                         {"headers", nullptr},
+                         {"content", nullptr} };
 ```
 
 #### Member Variables
