@@ -415,7 +415,7 @@ namespace siddiqsoft
 #ifdef _DEBUG
             std::cerr << std::format("Finished adding {} items..queueCounter:{}\n", ITER_COUNT, wrc.queueCounter());
 #endif
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(2500));
         }
         // std::this_thread::sleep_for(std::chrono::seconds(5));
         EXPECT_EQ(ITER_COUNT, passTest.load());

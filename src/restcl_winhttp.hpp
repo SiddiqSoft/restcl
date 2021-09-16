@@ -153,7 +153,6 @@ namespace siddiqsoft
     {
         roundrobin_pool(roundrobin_pool&& src)
             : workers(std::move(src.workers))
-            , rrIndex(std::move(src.rrIndex))
         {
 #ifdef _DEBUG
             std::cerr << std::format("{} - Invoked.\n", __func__);
@@ -189,24 +188,33 @@ namespace siddiqsoft
                                      std::thread::hardware_concurrency(),
                                      workers.size());
 #endif // DEBUG
+
+            workersSize = workers.size();
         }
 
         void queue(T&& item)
         {
-            workers[nextWorkerIndex()].queue(std::move(item));
+            // Increment counter *before* we invoke nextWorkerIndex..
             ++queueCounter;
+            // Add into the thread's internal queue
+            workers[nextWorkerIndex()].queue(std::move(item));
         }
 
+#ifdef _DEBUG
+    public:
         std::atomic_uint64_t queueCounter {0};
+#else
+    private:
+        std::atomic_uint64_t queueCounter {0};
+#endif
 
     private:
         std::vector<basic_worker<T>> workers {};
-        std::atomic_uint16_t         rrIndex {0};
+        uint64_t                     workersSize {};
 
-        constexpr uint16_t nextWorkerIndex()
+        constexpr auto nextWorkerIndex()
         {
-            if (++rrIndex >= workers.size()) rrIndex = 0;
-            return rrIndex.load();
+            return queueCounter.load() % workersSize;
         }
     };
 
