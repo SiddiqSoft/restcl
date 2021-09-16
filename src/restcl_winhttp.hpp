@@ -43,6 +43,13 @@
 #include <functional>
 #include <memory>
 #include <format>
+#include <thread>
+#include <mutex>
+#include <shared_mutex>
+#include <deque>
+#include <semaphore>
+#include <stop_token>
+
 
 #include <windows.h>
 
@@ -64,6 +71,232 @@
 
 namespace siddiqsoft
 {
+    struct basic_pool_args_type
+    {
+        basic_request      request;
+        basic_callbacktype callback;
+
+        basic_pool_args_type(basic_pool_args_type&& src) noexcept
+            : request(std::move(src.request))
+            , callback(std::move(src.callback))
+        {
+        }
+
+        basic_pool_args_type(basic_request&& r, basic_callbacktype c) noexcept
+            : request(std::move(r))
+            , callback(c)
+        {
+        }
+    };
+
+    template <typename T>
+    struct basic_worker
+    {
+        basic_worker(basic_worker&& src) noexcept
+            : callback(std::move(src.callback))
+        {
+            // NOTE
+            // We do not move the items or the signal.. the use case is that we would use the move constructor to facilitate adding
+            // this object in std::vector
+#ifdef _DEBUG
+            std::cerr << std::format("{} - Invoked.\n", __func__);
+#endif // _DEBUG
+        }
+
+        /// @brief Constructor requires the callback for the thread
+        /// @param c The callback which accepts the type T as reference and performs action.
+        basic_worker(std::function<void(T&)> c) noexcept
+            : callback(c)
+        {
+#ifdef _DEBUG
+            std::cerr << std::format("{} - Invoked.\n", __func__);
+#endif // _DEBUG
+        }
+
+        basic_worker(basic_worker&) = delete;
+        auto operator=(basic_worker&) = delete;
+
+        /// @brief Queue item into this worker thread's deque
+        /// @param item This is move'd into the internal deque
+        void queue(T&& item)
+        {
+            items.emplace_back(std::move(item));
+            signal.release();
+        }
+
+    private:
+        std::deque<T>                items {};
+        std::counting_semaphore<128> signal {0};
+        std::function<void(T&)>      callback;
+        /// @brief Processor thread
+        /// The driver runs forever until signalled to stop
+        /// Tries to get next item ready in the queue (for max 1s cycle)
+        /// If we have an item, invoke the callback with the item
+        std::jthread processor {[&](std::stop_token st) {
+            while (!st.stop_requested()) {
+                try {
+                    if (signal.try_acquire_for(std::chrono::milliseconds(500))) {
+                        // Got something; item from front..
+                        callback(std::ref(items.front()));
+                        // Remove it
+                        items.pop_front();
+                    }
+                }
+                catch (...) {
+                }
+            } // while ..continue until we're asked to stop
+        }};
+    };
+
+    template <typename T>
+    struct roundrobin_pool
+    {
+        roundrobin_pool(roundrobin_pool&& src)
+            : workers(std::move(src.workers))
+            , rrIndex(std::move(src.rrIndex))
+        {
+#ifdef _DEBUG
+            std::cerr << std::format("{} - Invoked.\n", __func__);
+#endif // _DEBUG
+        }
+
+        roundrobin_pool(std::function<void(T&)> c)
+        {
+#ifdef _DEBUG
+            std::cerr << std::format("{} - Initializing with {} threads.\n", __func__, std::thread::hardware_concurrency());
+#endif // _DEBUG
+
+            // *CRITICAL*
+            // This is step is *critical* otherwise we will end up moving threads as we add elements to the vector.
+            workers.reserve(std::thread::hardware_concurrency());
+
+            // Create as many threads as reported by the system..
+            for (unsigned i = 0; i < std::thread::hardware_concurrency(); i++) {
+#ifdef _DEBUG
+                std::cerr << std::format("{} - Adding thread {}..\n", __func__, i);
+#endif // _DEBUG
+
+                workers.emplace_back(c);
+
+#ifdef _DEBUG
+                std::cerr << std::format("{} - Added  thread {}..\n", __func__, i);
+#endif // _DEBUG
+            }
+
+#ifdef _DEBUG
+            std::cerr << std::format("{} - Completed initializing {} threads, size:{}\n",
+                                     __func__,
+                                     std::thread::hardware_concurrency(),
+                                     workers.size());
+#endif // DEBUG
+        }
+
+        void queue(T&& item)
+        {
+            workers[nextWorkerIndex()].queue(std::move(item));
+            ++queueCounter;
+        }
+
+        std::atomic_uint64_t queueCounter {0};
+
+    private:
+        std::vector<basic_worker<T>> workers {};
+        std::atomic_uint16_t         rrIndex {0};
+
+        constexpr uint16_t nextWorkerIndex()
+        {
+            if (++rrIndex >= workers.size()) rrIndex = 0;
+            return rrIndex.load();
+        }
+    };
+
+
+    template <typename T>
+    struct basic_pool
+    {
+        ~basic_pool()
+        {
+            // Signal stop to all of the workers..
+            for (auto& t : workers) {
+                if (t.request_stop() && t.joinable()) t.join();
+            }
+        }
+
+
+        /// @brief Waits for a second to get an item
+        /// @param delta Amount of *microseconds* to wait for the signal to indicate item is available.
+        /// @return If there is an item, we return it otherwise we return empty
+        std::optional<T> tryGetNextItem(std::chrono::microseconds delta)
+        {
+            if (signal.try_acquire_for(delta)) {
+                // Got something!
+                try {
+                    std::unique_lock<std::shared_mutex> myWriterLock(items_mutex);
+
+                    // Grab the top item
+                    auto item = items.front();
+                    // Remove it
+                    items.pop_front();
+
+                    // Return to the caller
+                    return std::make_optional<T>(item);
+                }
+                catch (...) {
+                }
+            }
+
+            return {};
+        }
+
+
+        basic_pool(std::function<void(T&)> c)
+            : callback(c)
+        {
+            // Create as many threads as reported by the system..
+            for (unsigned i = 0; i < std::thread::hardware_concurrency(); i++) {
+                // Add the thread with the main driver
+                workers.emplace_back([&](std::stop_token st) {
+                    // The driver runs forever until signalled to stop
+                    // Tries to get next item ready in the queue (for max 1s cycle)
+                    // If we have an item, invoke the callback with the item
+                    while (!st.stop_requested()) {
+                        try {
+                            // Waits until there is something pushed into the queue for 1s
+                            if (std::optional<T> item = tryGetNextItem(std::chrono::seconds(1)); item) {
+                                // Delegate the callback..
+                                callback(*item);
+                            }
+                        }
+                        catch (...) {
+                        }
+                    } // while ..continue until we're asked to stop
+                });
+            }
+        }
+
+
+        void queue(T&& item)
+        {
+            {
+                std::unique_lock<std::shared_mutex> myWriterLock(items_mutex);
+
+                items.emplace_back(std::move(item));
+            }
+            signal.release();
+            ++queueCounter;
+        }
+
+        std::atomic_uint64_t queueCounter {0};
+
+    private:
+        std::vector<std::jthread>    workers {};
+        std::deque<T>                items {};
+        std::counting_semaphore<128> signal {0};
+        std::function<void(T&)>      callback;
+        std::shared_mutex            items_mutex;
+    };
+
+
 #pragma region WinInet error code map
     static std::map<uint32_t, std::string_view> WinInetErrorCodes {
             {12001, std::string_view("ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.")},
@@ -165,9 +398,9 @@ namespace siddiqsoft
                      "ERROR_INTERNET_POST_IS_NON_SECURE: The application is posting data to a server that is not secure.")},
             {12044, std::string_view("ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED: Client certificate is needed.")},
             {12110,
-             std::string_view(
-                     "ERROR_FTP_TRANSFER_IN_PROGRESS: The requested operation cannot be made on the FTP session handle because an "
-                     "operation is already in progress.")},
+             std::string_view("ERROR_FTP_TRANSFER_IN_PROGRESS: The requested operation cannot be made on the FTP session "
+                              "handle because an "
+                              "operation is already in progress.")},
             {12111, std::string_view("ERROR_FTP_DROPPED: The FTP operation was not completed because the session was aborted.")},
             {12130,
              std::string_view(
@@ -211,79 +444,126 @@ namespace siddiqsoft
         WinHttpRESTClient(const WinHttpRESTClient&) = delete;
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
+
     private:
         static const DWORD           READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-        ACW32HINTERNET               hSession {};
+        // ACW32HINTERNET                   hSession {};
+        roundrobin_pool<basic_pool_args_type> pool {[&](basic_pool_args_type& arg) -> void {
+// This function is invoked any time we have an item
+#ifdef _DEBUG0
+            std::cerr << std::format("Pool BEGIN handing request to: {}\n", arg.request.uri.authority.host);
+#endif
+            auto resp = send(arg.request);
+#ifdef _DEBUG
+            std::cerr << std::format("Pool.......handing request to: {}\n", arg.request.uri.authority.host);
+#endif
+            arg.callback(arg.request, resp);
+#ifdef _DEBUG
+            std::cerr << std::format("Pool..END..handing request to: {}\n", arg.request.uri.authority.host);
+#endif
+        }};
 
     public:
+#ifdef _DEBUG
+        auto queueCounter()
+        {
+            return pool.queueCounter.load();
+        }
+#endif
+
+
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
-            : hSession(std::move(src.hSession))
+        //: hSession(std::move(src.hSession))
         {
             // If the source is null/empty then we should create our own instance!
-            if (hSession == NULL) {
-                if (hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)); hSession) {
-                    const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
-                    const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
-
-                    // Enable HTTP/2 protocol
-                    if (!WinHttpSetOption(
-                                hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
-#ifdef _DEBUG
-                        std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
-#endif
-                    }
-
-                    // Enable decompression
-                    if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
-#ifdef _DEBUG
-                        std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
-#endif
-                    }
-                }
-            }
+            //            if (hSession == NULL) {
+            //                if (hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL,
+            //                0)); hSession) {
+            //                    const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+            //                    const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+            //
+            //                    // Enable HTTP/2 protocol
+            //                    if (!WinHttpSetOption(
+            //                                hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag,
+            //                                sizeof(enableHTTP2Flag))) {
+            //#ifdef _DEBUG
+            //                        std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+            //#endif
+            //                    }
+            //
+            //                    // Enable decompression
+            //                    if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression,
+            //                    sizeof(decompression))) {
+            //#ifdef _DEBUG
+            //                        std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__,
+            //                        GetLastError());
+            //#endif
+            //                    }
+            //                }
+            //            }
         }
+
 
         /// @brief Creates the Windows REST Client with given UserAgent string
         /// Sets the HTTP/2 option and the decompression options
-        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.7.4 (Windows NT; x64)`
-        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.7.4 (Windows NT; x64)")
+        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.8.0 (Windows NT; x64)`
+        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.8.0 (Windows NT; x64)")
         {
             UserAgent  = ua;
             UserAgentW = ConversionUtils::wideFromAscii(ua);
 
-            hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
-            if (hSession) {
-                const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
-                const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
-
-                // Enable HTTP/2 protocol
-                if (!WinHttpSetOption(
-                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
-#ifdef _DEBUG
-                    std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
-#endif
-                }
-
-                // Enable decompression
-                if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
-#ifdef _DEBUG
-                    std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
-#endif
-                }
-            }
+            //            hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
+            //            if (hSession) {
+            //                const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+            //                const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+            //
+            //                // Enable HTTP/2 protocol
+            //                if (!WinHttpSetOption(
+            //                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag,
+            //                            sizeof(enableHTTP2Flag))) {
+            //#ifdef _DEBUG
+            //                    std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+            //#endif
+            //                }
+            //
+            //                // Enable decompression
+            //                if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression,
+            //                sizeof(decompression))) {
+            //#ifdef _DEBUG
+            //                    std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+            //#endif
+            //                }
+            //            }
         }
 
 
-        /// @brief Implements a synchronous send of the request. Note that the req param is
-        /// @param req Request object; The parameter must be move-d
-        /// @param callback Required callback
-        void send(basic_restrequest&& req, basic_callbacktype&& callback)
+        /// @brief Implements an asynchronous invocation of the send() method
+        /// @param req Request object
+        /// @param callback The method will be async and there will not be a response object returned
+        ///
+        /// @note The implementation always creates a thread and detaches. The thread will clean itself once the callback
+        /// completes.
+        void send(basic_request&& req, const basic_callbacktype& callback)
         {
-            /// @brief Lambda to Parse the first line from the HTTP response into its parts: version, status and the reason phrase
+            // std::jthread t {callback, req, send(req)};
+            // t.detach();
+            pool.queue(basic_pool_args_type(std::move(req), callback));
+        }
+
+
+        /// @brief Implements a synchronous send of the request.
+        /// @param req Request object
+        /// @return Response object only if the callback is not provided to emulate synchronous invocation
+        basic_response send(basic_request& req)
+        {
+            rest_response resp {};
+
+            /// @brief Lambda to Parse the first line from the HTTP response into its parts: version, status and the reason
+            /// phrase
             /// @param src The buffer as wstring
             /// @return A tuple with httpVersion, statusCode, reasonPhrase and the last is the offset to the start of the header
             /// section just past the end of the response line.
@@ -317,7 +597,26 @@ namespace siddiqsoft
             if (!hs.contains("User-Agent")) req["headers"]["User-Agent"] = UserAgent;
             auto strUserAgent = hs.contains("User-Agent") ? hs.value("User-Agent", UserAgent) : UserAgent;
 
-            if (hSession != NULL) {
+            if (ACW32HINTERNET hSession {WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)};
+                hSession != NULL) {
+                const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+                const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
+                // Enable HTTP/2 protocol
+                if (!WinHttpSetOption(
+                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+#ifdef _DEBUG
+                    std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+#endif
+                }
+
+                // Enable decompression
+                if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
+#ifdef _DEBUG
+                    std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+#endif
+                }
+
                 auto& strServer = req.uri.authority.host;
                 if (ACW32HINTERNET hConnect {
                             WinHttpConnect(hSession, ConversionUtils::wideFromAscii(strServer).c_str(), req.uri.authority.port, 0)};
@@ -378,7 +677,7 @@ namespace siddiqsoft
 
 
                         // Receive phase
-                        RESTResponse resp;
+                        rest_response resp;
 
                         // Get the "response" and the headers..
                         if (nError == FALSE) {
@@ -433,8 +732,8 @@ namespace siddiqsoft
                                         src.erase(0, startOfHeaders);
 
                                         // Parse the response into json object..
-                                        // Extract the heads into a map<string,string> where the source is wstring and the output is string
-                                        // This is then fed to the json which will create a headers object.
+                                        // Extract the heads into a map<string,string> where the source is wstring and the
+                                        // output is string This is then fed to the json which will create a headers object.
                                         resp["headers"] =
                                                 string2map::parse<std::wstring, std::string, std::map<std::string, std::string>>(
                                                         src, L": ", L"\r\n");
@@ -445,17 +744,17 @@ namespace siddiqsoft
 
                         // Next stage is to check for any errors and if none, get the body
                         if (dwError == ERROR_WINHTTP_NAME_NOT_RESOLVED) {
-                            callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
+                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
                         }
                         else if ((dwError == ERROR_WINHTTP_CANNOT_CONNECT) || (dwError == ERROR_WINHTTP_CONNECTION_ERROR) ||
                                  (dwError == ERROR_WINHTTP_OPERATION_CANCELLED) || (dwError == ERROR_WINHTTP_LOGIN_FAILURE) ||
                                  (dwError == ERROR_WINHTTP_INVALID_SERVER_RESPONSE) || (dwError == ERROR_WINHTTP_RESEND_REQUEST) ||
                                  (dwError == ERROR_WINHTTP_SECURE_FAILURE) || (dwError == ERROR_WINHTTP_TIMEOUT))
                         {
-                            callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
+                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
                         }
                         else if (dwError == ERROR_WINHTTP_INVALID_URL) {
-                            callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
+                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
                         }
                         else if (dwError != ERROR_FILE_NOT_FOUND) {
                             nRetry = 0;
@@ -482,39 +781,36 @@ namespace siddiqsoft
                             std::string rawResponse {};
 
                             do {
-                                // memset(cBuf, '\0', sizeof(cBuf));
                                 // Returns byte stream; accumulate until we're out of data.
                                 hr = WinHttpReadData(hRequest, cBuf, READBUFFERSIZE - 1, &dwBytesRead)
                                            ? S_OK
                                            : HRESULT_FROM_WIN32(GetLastError());
-#pragma warning(suppress : 6102)
                                 if (dwBytesRead) {
                                     cBuf[dwBytesRead] = '\0';
                                     rawResponse.append(cBuf, dwBytesRead);
                                 }
                             } while (dwBytesRead > 0);
 
-                            // Log everything; DELETE usually does not return a body!
                             hr = S_OK;
                             resp.setContent(rawResponse);
 
                             // Invoke the callback
-                            callback(req, resp);
+                            return resp;
                         }
                         else {
-                            callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
+                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
                         }
                     }
                     else {
-                        callback(req, RESTResponse {{hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)}});
+                        return rest_response {hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)};
                     }
                 }
                 else {
-                    callback(req, RESTResponse {{hr, std::format("WinHttpConnect() failed; dwError:{}", hr)}});
+                    return rest_response {hr, std::format("WinHttpConnect() failed; dwError:{}", hr)};
                 }
             }
             else {
-                callback(req, RESTResponse {{hr, std::format("WinHttpOpen() failed; dwError:{}", hr)}});
+                return rest_response {hr, std::format("WinHttpOpen() failed; dwError:{}", hr)};
             }
         }
     };
