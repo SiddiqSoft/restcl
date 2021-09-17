@@ -68,240 +68,33 @@
 #include "siddiqsoft/acw32h.hpp"
 #include "siddiqsoft/azure-cpp-utils.hpp"
 
+#include "siddiqsoft/roundrobin_pool.hpp"
 
 namespace siddiqsoft
 {
-    struct basic_pool_args_type
+    struct RestPoolArgsType
     {
         basic_request      request;
         basic_callbacktype callback;
 
-        basic_pool_args_type(basic_pool_args_type&& src) noexcept
+        RestPoolArgsType(RestPoolArgsType&& src) noexcept
             : request(std::move(src.request))
             , callback(std::move(src.callback))
         {
         }
 
-        basic_pool_args_type(basic_request&& r, basic_callbacktype c) noexcept
+        RestPoolArgsType& operator=(RestPoolArgsType&& src) noexcept
+        {
+            request  = std::move(src.request);
+            callback = std::move(src.callback);
+            return *this;
+        }
+
+        RestPoolArgsType(basic_request&& r, basic_callbacktype c) noexcept
             : request(std::move(r))
             , callback(c)
         {
         }
-    };
-
-    template <typename T>
-    struct basic_worker
-    {
-        basic_worker(basic_worker&& src) noexcept
-            : callback(std::move(src.callback))
-        {
-            // NOTE
-            // We do not move the items or the signal.. the use case is that we would use the move constructor to facilitate adding
-            // this object in std::vector
-#ifdef _DEBUG
-            std::cerr << std::format("{} - Invoked.\n", __func__);
-#endif // _DEBUG
-        }
-
-        /// @brief Constructor requires the callback for the thread
-        /// @param c The callback which accepts the type T as reference and performs action.
-        basic_worker(std::function<void(T&)> c) noexcept
-            : callback(c)
-        {
-#ifdef _DEBUG
-            std::cerr << std::format("{} - Invoked.\n", __func__);
-#endif // _DEBUG
-        }
-
-        basic_worker(basic_worker&) = delete;
-        auto operator=(basic_worker&) = delete;
-
-        /// @brief Queue item into this worker thread's deque
-        /// @param item This is move'd into the internal deque
-        void queue(T&& item)
-        {
-            items.emplace_back(std::move(item));
-            signal.release();
-        }
-
-    private:
-        std::deque<T>                items {};
-        std::counting_semaphore<128> signal {0};
-        std::function<void(T&)>      callback;
-        /// @brief Processor thread
-        /// The driver runs forever until signalled to stop
-        /// Tries to get next item ready in the queue (for max 1s cycle)
-        /// If we have an item, invoke the callback with the item
-        std::jthread processor {[&](std::stop_token st) {
-            while (!st.stop_requested()) {
-                try {
-                    if (signal.try_acquire_for(std::chrono::milliseconds(500))) {
-                        // Got something; item from front..
-                        callback(std::ref(items.front()));
-                        // Remove it
-                        items.pop_front();
-                    }
-                }
-                catch (...) {
-                }
-            } // while ..continue until we're asked to stop
-        }};
-    };
-
-    template <typename T>
-    struct roundrobin_pool
-    {
-        roundrobin_pool(roundrobin_pool&& src)
-            : workers(std::move(src.workers))
-        {
-#ifdef _DEBUG
-            std::cerr << std::format("{} - Invoked.\n", __func__);
-#endif // _DEBUG
-        }
-
-        roundrobin_pool(std::function<void(T&)> c)
-        {
-#ifdef _DEBUG
-            std::cerr << std::format("{} - Initializing with {} threads.\n", __func__, std::thread::hardware_concurrency());
-#endif // _DEBUG
-
-            // *CRITICAL*
-            // This is step is *critical* otherwise we will end up moving threads as we add elements to the vector.
-            workers.reserve(std::thread::hardware_concurrency());
-
-            // Create as many threads as reported by the system..
-            for (unsigned i = 0; i < std::thread::hardware_concurrency(); i++) {
-#ifdef _DEBUG
-                std::cerr << std::format("{} - Adding thread {}..\n", __func__, i);
-#endif // _DEBUG
-
-                workers.emplace_back(c);
-
-#ifdef _DEBUG
-                std::cerr << std::format("{} - Added  thread {}..\n", __func__, i);
-#endif // _DEBUG
-            }
-
-#ifdef _DEBUG
-            std::cerr << std::format("{} - Completed initializing {} threads, size:{}\n",
-                                     __func__,
-                                     std::thread::hardware_concurrency(),
-                                     workers.size());
-#endif // DEBUG
-
-            workersSize = workers.size();
-        }
-
-        void queue(T&& item)
-        {
-            // Increment counter *before* we invoke nextWorkerIndex..
-            ++queueCounter;
-            // Add into the thread's internal queue
-            workers[nextWorkerIndex()].queue(std::move(item));
-        }
-
-#ifdef _DEBUG
-    public:
-        std::atomic_uint64_t queueCounter {0};
-#else
-    private:
-        std::atomic_uint64_t queueCounter {0};
-#endif
-
-    private:
-        std::vector<basic_worker<T>> workers {};
-        uint64_t                     workersSize {};
-
-        constexpr auto nextWorkerIndex()
-        {
-            return queueCounter.load() % workersSize;
-        }
-    };
-
-
-    template <typename T>
-    struct basic_pool
-    {
-        ~basic_pool()
-        {
-            // Signal stop to all of the workers..
-            for (auto& t : workers) {
-                if (t.request_stop() && t.joinable()) t.join();
-            }
-        }
-
-
-        /// @brief Waits for a second to get an item
-        /// @param delta Amount of *microseconds* to wait for the signal to indicate item is available.
-        /// @return If there is an item, we return it otherwise we return empty
-        std::optional<T> tryGetNextItem(std::chrono::microseconds delta)
-        {
-            if (signal.try_acquire_for(delta)) {
-                // Got something!
-                try {
-                    std::unique_lock<std::shared_mutex> myWriterLock(items_mutex);
-
-                    // Grab the top item
-                    auto item = items.front();
-                    // Remove it
-                    items.pop_front();
-
-                    // Return to the caller
-                    return std::make_optional<T>(item);
-                }
-                catch (...) {
-                }
-            }
-
-            return {};
-        }
-
-
-        basic_pool(std::function<void(T&)> c)
-            : callback(c)
-        {
-            // Create as many threads as reported by the system..
-            for (unsigned i = 0; i < std::thread::hardware_concurrency(); i++) {
-                // Add the thread with the main driver
-                workers.emplace_back([&](std::stop_token st) {
-                    // The driver runs forever until signalled to stop
-                    // Tries to get next item ready in the queue (for max 1s cycle)
-                    // If we have an item, invoke the callback with the item
-                    while (!st.stop_requested()) {
-                        try {
-                            // Waits until there is something pushed into the queue for 1s
-                            if (std::optional<T> item = tryGetNextItem(std::chrono::seconds(1)); item) {
-                                // Delegate the callback..
-                                callback(*item);
-                            }
-                        }
-                        catch (...) {
-                        }
-                    } // while ..continue until we're asked to stop
-                });
-            }
-        }
-
-
-        void queue(T&& item)
-        {
-            {
-                std::unique_lock<std::shared_mutex> myWriterLock(items_mutex);
-
-                items.emplace_back(std::move(item));
-            }
-            signal.release();
-            ++queueCounter;
-        }
-
-        std::atomic_uint64_t queueCounter {0};
-
-    private:
-        std::vector<std::jthread>    workers {};
-        std::deque<T>                items {};
-        std::counting_semaphore<128> signal {0};
-        std::function<void(T&)>      callback;
-        std::shared_mutex            items_mutex;
     };
 
 
@@ -458,7 +251,7 @@ namespace siddiqsoft
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
         // ACW32HINTERNET                   hSession {};
-        roundrobin_pool<basic_pool_args_type> pool {[&](basic_pool_args_type& arg) -> void {
+        roundrobin_pool<RestPoolArgsType> pool {[&](RestPoolArgsType& arg) -> void {
 // This function is invoked any time we have an item
 #ifdef _DEBUG0
             std::cerr << std::format("Pool BEGIN handing request to: {}\n", arg.request.uri.authority.host);
@@ -559,7 +352,7 @@ namespace siddiqsoft
         {
             // std::jthread t {callback, req, send(req)};
             // t.detach();
-            pool.queue(basic_pool_args_type(std::move(req), callback));
+            pool.queue(RestPoolArgsType(std::move(req), callback));
         }
 
 
