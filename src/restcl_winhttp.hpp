@@ -252,29 +252,12 @@ namespace siddiqsoft
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
         // ACW32HINTERNET                   hSession {};
         roundrobin_pool<RestPoolArgsType> pool {[&](RestPoolArgsType& arg) -> void {
-// This function is invoked any time we have an item
-#ifdef _DEBUG0
-            std::cerr << std::format("Pool BEGIN handing request to: {}\n", arg.request.uri.authority.host);
-#endif
+            // This function is invoked any time we have an item
             auto resp = send(arg.request);
-#ifdef _DEBUG
-            std::cerr << std::format("Pool.......handing request to: {}\n", arg.request.uri.authority.host);
-#endif
             arg.callback(arg.request, resp);
-#ifdef _DEBUG
-            std::cerr << std::format("Pool..END..handing request to: {}\n", arg.request.uri.authority.host);
-#endif
         }};
 
     public:
-#ifdef _DEBUG
-        auto queueCounter()
-        {
-            return pool.queueCounter.load();
-        }
-#endif
-
-
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         WinHttpRESTClient(WinHttpRESTClient&& src) noexcept

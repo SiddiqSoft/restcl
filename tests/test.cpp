@@ -35,6 +35,7 @@
 
 #include "gtest/gtest.h"
 #include <iostream>
+#include <barrier>
 
 #include "nlohmann/json.hpp"
 #include "../src/restcl.hpp"
@@ -369,8 +370,8 @@ namespace siddiqsoft
     {
         const unsigned   ITER_COUNT = 73;
         std::atomic_uint passTest   = 0;
-
         std::cerr << std::format("Starting..\n");
+
         {
             WinHttpRESTClient wrc;
 
@@ -389,31 +390,31 @@ namespace siddiqsoft
             };
 
 #ifdef _DEBUG
-            std::cerr << std::format("Adding {} items..queueCounter:{}\n", ITER_COUNT, wrc.queueCounter());
+            std::cerr << std::format("Adding {} items..\n", ITER_COUNT);
 #endif
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
                     wrc.send("https://www.yahoo.com/"_GET, valid);
 #ifdef _DEBUG
-                    std::cerr << std::format("Added i:{}  i%3:{}  qC:{}\n", i, (i % 3), wrc.queueCounter());
+                    std::cerr << std::format("Added i:{}  i%3:{}  \n", i, (i % 3));
 #endif
                 }
                 else if (i % 2 == 0) {
                     wrc.send("https://www.bing.com/"_GET, valid);
 #ifdef _DEBUG
-                    std::cerr << std::format("Added i:{}  i%2:{}  qC:{}\n", i, (i % 2), wrc.queueCounter());
+                    std::cerr << std::format("Added i:{}  i%2:{}  \n", i, (i % 2));
 #endif
                 }
                 else {
                     wrc.send("https://www.google.com/"_GET, valid);
 #ifdef _DEBUG
-                    std::cerr << std::format("Added i:{}  ......  qC:{}\n", i, wrc.queueCounter());
+                    std::cerr << std::format("Added i:{}  ......  \n", i);
 #endif
                 }
             }
 #ifdef _DEBUG
-            std::cerr << std::format("Finished adding {} items..queueCounter:{}\n", ITER_COUNT, wrc.queueCounter());
+            std::cerr << std::format("Finished adding {} items..\n", ITER_COUNT);
 #endif
             std::this_thread::sleep_for(std::chrono::milliseconds(3500));
         }
