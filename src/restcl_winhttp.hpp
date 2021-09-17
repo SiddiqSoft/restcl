@@ -247,10 +247,10 @@ namespace siddiqsoft
 
 
     private:
-        static const DWORD           READBUFFERSIZE {8192};
-        static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
-        static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-        // ACW32HINTERNET                   hSession {};
+        static const DWORD                READBUFFERSIZE {8192};
+        static inline const char*         RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+        static inline const wchar_t*      RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
+        ACW32HINTERNET                    hSession {};
         roundrobin_pool<RestPoolArgsType> pool {[&](RestPoolArgsType& arg) -> void {
             // This function is invoked any time we have an item
             auto resp = send(arg.request);
@@ -261,34 +261,30 @@ namespace siddiqsoft
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
-        //: hSession(std::move(src.hSession))
+            : hSession(std::move(src.hSession))
         {
             // If the source is null/empty then we should create our own instance!
-            //            if (hSession == NULL) {
-            //                if (hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL,
-            //                0)); hSession) {
-            //                    const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
-            //                    const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
-            //
-            //                    // Enable HTTP/2 protocol
-            //                    if (!WinHttpSetOption(
-            //                                hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag,
-            //                                sizeof(enableHTTP2Flag))) {
-            //#ifdef _DEBUG
-            //                        std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
-            //#endif
-            //                    }
-            //
-            //                    // Enable decompression
-            //                    if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression,
-            //                    sizeof(decompression))) {
-            //#ifdef _DEBUG
-            //                        std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__,
-            //                        GetLastError());
-            //#endif
-            //                    }
-            //                }
-            //            }
+            if (hSession == NULL) {
+                if (hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)); hSession) {
+                    const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+                    const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
+                    // Enable HTTP/2 protocol
+                    if (!WinHttpSetOption(
+                                hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+#ifdef _DEBUG
+                        std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+#endif
+                    }
+
+                    // Enable decompression
+                    if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
+#ifdef _DEBUG
+                        std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+#endif
+                    }
+                }
+            }
         }
 
 
@@ -300,28 +296,26 @@ namespace siddiqsoft
             UserAgent  = ua;
             UserAgentW = ConversionUtils::wideFromAscii(ua);
 
-            //            hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
-            //            if (hSession) {
-            //                const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
-            //                const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
-            //
-            //                // Enable HTTP/2 protocol
-            //                if (!WinHttpSetOption(
-            //                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag,
-            //                            sizeof(enableHTTP2Flag))) {
-            //#ifdef _DEBUG
-            //                    std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
-            //#endif
-            //                }
-            //
-            //                // Enable decompression
-            //                if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression,
-            //                sizeof(decompression))) {
-            //#ifdef _DEBUG
-            //                    std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
-            //#endif
-            //                }
-            //            }
+            hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
+            if (hSession) {
+                const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+                const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
+                // Enable HTTP/2 protocol
+                if (!WinHttpSetOption(
+                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+#ifdef _DEBUG
+                    std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+#endif
+                }
+
+                // Enable decompression
+                if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
+#ifdef _DEBUG
+                    std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+#endif
+                }
+            }
         }
 
 
@@ -333,8 +327,6 @@ namespace siddiqsoft
         /// completes.
         void send(basic_request&& req, const basic_callbacktype& callback)
         {
-            // std::jthread t {callback, req, send(req)};
-            // t.detach();
             pool.queue(RestPoolArgsType(std::move(req), callback));
         }
 
@@ -381,8 +373,7 @@ namespace siddiqsoft
             if (!hs.contains("User-Agent")) req["headers"]["User-Agent"] = UserAgent;
             auto strUserAgent = hs.contains("User-Agent") ? hs.value("User-Agent", UserAgent) : UserAgent;
 
-            if (ACW32HINTERNET hSession {WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)};
-                hSession != NULL) {
+            if (hSession != NULL) {
                 const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
                 const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
