@@ -424,13 +424,8 @@ namespace siddiqsoft
                                                           static_cast<DWORD>(requestHeaders.length()),
                                                           WINHTTP_ADDREQ_FLAG_ADD);
 
-                        // Set this option so we don't incur a roundtrip delay
-                        // ll	   = __LINE__;
-                        // nError = WinHttpSetOption(
-                        //		hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, WINHTTP_NO_CLIENT_CERT_CONTEXT, 0);
-
                         dwError = ERROR_SUCCESS;
-
+                        // Send the request
                         nError  = WinHttpSendRequest(hRequest,
                                                     WINHTTP_NO_ADDITIONAL_HEADERS,
                                                     0,
@@ -453,10 +448,9 @@ namespace siddiqsoft
                             }
                         }
 
-
+                        // *************
                         // Receive phase
-                        rest_response resp;
-
+                        // *************
                         // Get the "response" and the headers..
                         if (nError == FALSE) {
                             dwError = GetLastError();

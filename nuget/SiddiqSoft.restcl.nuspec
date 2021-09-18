@@ -27,7 +27,7 @@
       <dependency id="SiddiqSoft.AzureCppUtils" version="1"/>
       <dependency id="SiddiqSoft.acw32h" version="2.7"/>
       <dependency id="SiddiqSoft.string2map" version="2.3"/>
-      <dependency id="SiddiqSoft.asynchrony-lib" version="0.8"/>
+      <dependency id="SiddiqSoft.asynchrony-lib" version="0.9"/>
     </dependencies>
   </metadata>
 
