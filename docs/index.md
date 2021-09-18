@@ -32,6 +32,7 @@ Package     | Comments
 [string2map](https://github.com/SiddiqSoft/string2map)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.string2map) | This library provides for parsing of HTTP headers into a std::map
 [acw32h](https://github.com/SiddiqSoft/acw32h)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.acw32h) | This library provides for an auto-closing wrapper for HINTERNET, HSESSION and HINSTANCE objects.
 [RunOnEnd](https://github.com/SiddiqSoft/RunOnEnd)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.RunOnEnd) | This library provides for arbitrary lambda call on scope exit.
+[asynchrony-lib](https://github.com/SiddiqSoft/asynchrony-lib)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.asynchrony-lib) | Provides for utility to add asynchrony to the restcl library.
 
 _Unless otherwise noted, use the latest. We're quite aggressive updating dependencies._
 
@@ -57,7 +58,10 @@ This is the starting point for your client. We make extensive use of initializer
         WinHttpRESTClient(const WinHttpRESTClient&) = delete;
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
+        WinHttpRESTClient(WinHttpRESTClient&&);
         WinHttpRESTClient(const std::string& ua = {});
+
+        basic_response send(basic_request& req);
         void send(basic_request&& req, basic_callbacktype&& callback);
     };
 ```
@@ -84,10 +88,30 @@ Sets the HTTP/2 option and the decompression options
 
 #### `WinHttpRESTClient::send`
 ```cpp
+⎔    basic_response send(basic_request& req);
+```
+
+Uses the existing hSession to connect, send, receive data from the remote server and returns the response in **synchronous mode**.
+
+
+##### Parameters
+
+Parameter | Type | Description
+---------:|------|:-----------
+`req` | [`basic_request`](#class-basic_request) | The Request to be sent to the remote server.
+return | [`basic_response`](#alias-basic_response) | The Response from the remote server or IO error code and message.
+
+See the [examples](#examples) section.
+
+
+#### `WinHttpRESTClient::send`
+```cpp
 ⎔    void send(basic_request&& req, basic_callbacktype&& callback);
 ```
 
 Uses the existing hSession to connect, send, receive data from the remote server and fire the callback.
+
+Returns immediately once the request has been queued into the threadpool.
 
 > _Why no "return object"?_
 >

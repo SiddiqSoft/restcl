@@ -242,15 +242,15 @@ namespace siddiqsoft
     /// @brief Windows implementation of the basic_restclient
     class WinHttpRESTClient : public basic_restclient
     {
-        WinHttpRESTClient(const WinHttpRESTClient&) = delete;
-        WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
-
-
     private:
-        static const DWORD                READBUFFERSIZE {8192};
-        static inline const char*         RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
-        static inline const wchar_t*      RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-        ACW32HINTERNET                    hSession {};
+        static const DWORD           READBUFFERSIZE {8192};
+        static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+        static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
+
+        /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
+        ACW32HINTERNET hSession {};
+
+        /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         roundrobin_pool<RestPoolArgsType> pool {[&](RestPoolArgsType& arg) -> void {
             // This function is invoked any time we have an item
             auto resp = send(arg.request);
@@ -258,6 +258,9 @@ namespace siddiqsoft
         }};
 
     public:
+        WinHttpRESTClient(const WinHttpRESTClient&) = delete;
+        WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
+
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
