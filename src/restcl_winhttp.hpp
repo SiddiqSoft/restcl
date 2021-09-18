@@ -43,6 +43,13 @@
 #include <functional>
 #include <memory>
 #include <format>
+#include <thread>
+#include <mutex>
+#include <shared_mutex>
+#include <deque>
+#include <semaphore>
+#include <stop_token>
+
 
 #include <windows.h>
 
@@ -61,9 +68,36 @@
 #include "siddiqsoft/acw32h.hpp"
 #include "siddiqsoft/azure-cpp-utils.hpp"
 
+#include "siddiqsoft/roundrobin_pool.hpp"
 
 namespace siddiqsoft
 {
+    struct RestPoolArgsType
+    {
+        basic_request      request;
+        basic_callbacktype callback;
+
+        RestPoolArgsType(RestPoolArgsType&& src) noexcept
+            : request(std::move(src.request))
+            , callback(std::move(src.callback))
+        {
+        }
+
+        RestPoolArgsType& operator=(RestPoolArgsType&& src) noexcept
+        {
+            request  = std::move(src.request);
+            callback = std::move(src.callback);
+            return *this;
+        }
+
+        RestPoolArgsType(basic_request&& r, basic_callbacktype c) noexcept
+            : request(std::move(r))
+            , callback(c)
+        {
+        }
+    };
+
+
 #pragma region WinInet error code map
     static std::map<uint32_t, std::string_view> WinInetErrorCodes {
             {12001, std::string_view("ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.")},
@@ -165,9 +199,9 @@ namespace siddiqsoft
                      "ERROR_INTERNET_POST_IS_NON_SECURE: The application is posting data to a server that is not secure.")},
             {12044, std::string_view("ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED: Client certificate is needed.")},
             {12110,
-             std::string_view(
-                     "ERROR_FTP_TRANSFER_IN_PROGRESS: The requested operation cannot be made on the FTP session handle because an "
-                     "operation is already in progress.")},
+             std::string_view("ERROR_FTP_TRANSFER_IN_PROGRESS: The requested operation cannot be made on the FTP session "
+                              "handle because an "
+                              "operation is already in progress.")},
             {12111, std::string_view("ERROR_FTP_DROPPED: The FTP operation was not completed because the session was aborted.")},
             {12130,
              std::string_view(
@@ -208,16 +242,25 @@ namespace siddiqsoft
     /// @brief Windows implementation of the basic_restclient
     class WinHttpRESTClient : public basic_restclient
     {
-        WinHttpRESTClient(const WinHttpRESTClient&) = delete;
-        WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
-
     private:
         static const DWORD           READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-        ACW32HINTERNET               hSession {};
+
+        /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
+        ACW32HINTERNET hSession {};
+
+        /// @brief Adds asynchrony to the library via the roundrobin_pool utility
+        roundrobin_pool<RestPoolArgsType> pool {[&](RestPoolArgsType& arg) -> void {
+            // This function is invoked any time we have an item
+            auto resp = send(arg.request);
+            arg.callback(arg.request, resp);
+        }};
 
     public:
+        WinHttpRESTClient(const WinHttpRESTClient&) = delete;
+        WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
+
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
@@ -247,10 +290,11 @@ namespace siddiqsoft
             }
         }
 
+
         /// @brief Creates the Windows REST Client with given UserAgent string
         /// Sets the HTTP/2 option and the decompression options
-        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.7.4 (Windows NT; x64)`
-        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.7.4 (Windows NT; x64)")
+        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.8.0 (Windows NT; x64)`
+        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.8.0 (Windows NT; x64)")
         {
             UserAgent  = ua;
             UserAgentW = ConversionUtils::wideFromAscii(ua);
@@ -278,12 +322,27 @@ namespace siddiqsoft
         }
 
 
-        /// @brief Implements a synchronous send of the request. Note that the req param is
-        /// @param req Request object; The parameter must be move-d
-        /// @param callback Required callback
-        void send(basic_restrequest&& req, basic_callbacktype&& callback)
+        /// @brief Implements an asynchronous invocation of the send() method
+        /// @param req Request object
+        /// @param callback The method will be async and there will not be a response object returned
+        ///
+        /// @note The implementation always creates a thread and detaches. The thread will clean itself once the callback
+        /// completes.
+        void send(basic_request&& req, const basic_callbacktype& callback)
         {
-            /// @brief Lambda to Parse the first line from the HTTP response into its parts: version, status and the reason phrase
+            pool.queue(RestPoolArgsType(std::move(req), callback));
+        }
+
+
+        /// @brief Implements a synchronous send of the request.
+        /// @param req Request object
+        /// @return Response object only if the callback is not provided to emulate synchronous invocation
+        basic_response send(basic_request& req)
+        {
+            rest_response resp {};
+
+            /// @brief Lambda to Parse the first line from the HTTP response into its parts: version, status and the reason
+            /// phrase
             /// @param src The buffer as wstring
             /// @return A tuple with httpVersion, statusCode, reasonPhrase and the last is the offset to the start of the header
             /// section just past the end of the response line.
@@ -318,6 +377,24 @@ namespace siddiqsoft
             auto strUserAgent = hs.contains("User-Agent") ? hs.value("User-Agent", UserAgent) : UserAgent;
 
             if (hSession != NULL) {
+                const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+                const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
+                // Enable HTTP/2 protocol
+                if (!WinHttpSetOption(
+                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+#ifdef _DEBUG
+                    std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+#endif
+                }
+
+                // Enable decompression
+                if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
+#ifdef _DEBUG
+                    std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+#endif
+                }
+
                 auto& strServer = req.uri.authority.host;
                 if (ACW32HINTERNET hConnect {
                             WinHttpConnect(hSession, ConversionUtils::wideFromAscii(strServer).c_str(), req.uri.authority.port, 0)};
@@ -378,7 +455,7 @@ namespace siddiqsoft
 
 
                         // Receive phase
-                        RESTResponse resp;
+                        rest_response resp;
 
                         // Get the "response" and the headers..
                         if (nError == FALSE) {
@@ -433,8 +510,8 @@ namespace siddiqsoft
                                         src.erase(0, startOfHeaders);
 
                                         // Parse the response into json object..
-                                        // Extract the heads into a map<string,string> where the source is wstring and the output is string
-                                        // This is then fed to the json which will create a headers object.
+                                        // Extract the heads into a map<string,string> where the source is wstring and the
+                                        // output is string This is then fed to the json which will create a headers object.
                                         resp["headers"] =
                                                 string2map::parse<std::wstring, std::string, std::map<std::string, std::string>>(
                                                         src, L": ", L"\r\n");
@@ -445,17 +522,17 @@ namespace siddiqsoft
 
                         // Next stage is to check for any errors and if none, get the body
                         if (dwError == ERROR_WINHTTP_NAME_NOT_RESOLVED) {
-                            callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
+                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
                         }
                         else if ((dwError == ERROR_WINHTTP_CANNOT_CONNECT) || (dwError == ERROR_WINHTTP_CONNECTION_ERROR) ||
                                  (dwError == ERROR_WINHTTP_OPERATION_CANCELLED) || (dwError == ERROR_WINHTTP_LOGIN_FAILURE) ||
                                  (dwError == ERROR_WINHTTP_INVALID_SERVER_RESPONSE) || (dwError == ERROR_WINHTTP_RESEND_REQUEST) ||
                                  (dwError == ERROR_WINHTTP_SECURE_FAILURE) || (dwError == ERROR_WINHTTP_TIMEOUT))
                         {
-                            callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
+                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
                         }
                         else if (dwError == ERROR_WINHTTP_INVALID_URL) {
-                            callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
+                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
                         }
                         else if (dwError != ERROR_FILE_NOT_FOUND) {
                             nRetry = 0;
@@ -482,39 +559,36 @@ namespace siddiqsoft
                             std::string rawResponse {};
 
                             do {
-                                // memset(cBuf, '\0', sizeof(cBuf));
                                 // Returns byte stream; accumulate until we're out of data.
                                 hr = WinHttpReadData(hRequest, cBuf, READBUFFERSIZE - 1, &dwBytesRead)
                                            ? S_OK
                                            : HRESULT_FROM_WIN32(GetLastError());
-#pragma warning(suppress : 6102)
                                 if (dwBytesRead) {
                                     cBuf[dwBytesRead] = '\0';
                                     rawResponse.append(cBuf, dwBytesRead);
                                 }
                             } while (dwBytesRead > 0);
 
-                            // Log everything; DELETE usually does not return a body!
                             hr = S_OK;
                             resp.setContent(rawResponse);
 
                             // Invoke the callback
-                            callback(req, resp);
+                            return resp;
                         }
                         else {
-                            callback(req, RESTResponse {{dwError, messageFromWininetCode(dwError)}});
+                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
                         }
                     }
                     else {
-                        callback(req, RESTResponse {{hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)}});
+                        return rest_response {hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)};
                     }
                 }
                 else {
-                    callback(req, RESTResponse {{hr, std::format("WinHttpConnect() failed; dwError:{}", hr)}});
+                    return rest_response {hr, std::format("WinHttpConnect() failed; dwError:{}", hr)};
                 }
             }
             else {
-                callback(req, RESTResponse {{hr, std::format("WinHttpOpen() failed; dwError:{}", hr)}});
+                return rest_response {hr, std::format("WinHttpOpen() failed; dwError:{}", hr)};
             }
         }
     };

@@ -35,6 +35,7 @@
 
 #include "gtest/gtest.h"
 #include <iostream>
+#include <barrier>
 
 #include "nlohmann/json.hpp"
 #include "../src/restcl.hpp"
@@ -96,7 +97,7 @@ namespace siddiqsoft
 
     TEST(TSendRequest, test1a)
     {
-        bool              passTest = false;
+        std::atomic_bool  passTest = false;
         WinHttpRESTClient wrc;
 
         wrc.send("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, const auto& resp) {
@@ -105,6 +106,7 @@ namespace siddiqsoft
             // std::cerr << "From callback Serialized json: " << req << std::endl;
             if (resp.success()) {
                 passTest = true;
+                passTest.notify_all();
                 // std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
             }
             else {
@@ -113,13 +115,14 @@ namespace siddiqsoft
             }
         });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
 
     TEST(TSendRequest, test2a)
     {
-        bool              passTest = false;
+        std::atomic_bool  passTest = false;
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__));
 
         wrc.send("https://reqbin.com/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
@@ -127,6 +130,7 @@ namespace siddiqsoft
             // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (resp.success()) {
                 passTest = true;
+                passTest.notify_all();
                 // std::cerr << "Response\n" << resp << std::endl;
             }
             else {
@@ -135,13 +139,14 @@ namespace siddiqsoft
             }
         });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
 
     TEST(TSendRequest, test3a)
     {
-        bool passTest = false;
+        std::atomic_bool passTest = false;
 
         WinHttpRESTClient wrc;
 
@@ -157,6 +162,7 @@ namespace siddiqsoft
                      // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                      if (resp.success()) {
                          passTest = true;
+                         passTest.notify_all();
                          // std::cerr << "Response\n" << resp << std::endl;
                      }
                      else {
@@ -165,13 +171,14 @@ namespace siddiqsoft
                      }
                  });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
     TEST(TSendRequest, test3b)
     {
         // https://ptsv2.com/t/buzz2
-        bool passTest = false;
+        std::atomic_bool passTest = false;
         // auto auth     = base64encode("aau:paau");
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
@@ -185,6 +192,7 @@ namespace siddiqsoft
                      // std::cerr << std::format("From callback Wire serialize              : {}\n", req);
                      if (resp.success()) {
                          passTest = true;
+                         passTest.notify_all();
                          // std::cerr << "Response\n" << resp << std::endl;
                      }
                      else {
@@ -193,13 +201,14 @@ namespace siddiqsoft
                      }
                  });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
 
     TEST(TSendRequest, Fails_1a)
     {
-        bool passTest = false;
+        std::atomic_bool passTest = false;
         using namespace siddiqsoft::literals;
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
@@ -215,16 +224,18 @@ namespace siddiqsoft
             else {
                 auto [ec, emsg] = resp.status();
                 passTest        = ((ec == 12002) || (ec == 12029));
+                passTest.notify_all();
                 std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
             }
         });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
     TEST(TSendRequest, Fails_1b)
     {
-        bool passTest = false;
+        std::atomic_bool passTest = false;
         using namespace siddiqsoft::literals;
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
@@ -240,16 +251,18 @@ namespace siddiqsoft
             else {
                 auto [ec, emsg] = resp.status();
                 passTest        = ec == 12029;
+                passTest.notify_all();
                 // std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
             }
         });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
     TEST(TSendRequest, Fails_1c)
     {
-        bool passTest = false;
+        std::atomic_bool passTest = false;
         using namespace siddiqsoft::literals;
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
@@ -262,16 +275,18 @@ namespace siddiqsoft
             else {
                 auto [ec, emsg] = resp.status();
                 passTest        = ((ec == 12002) || (ec == 12029));
+                passTest.notify_all();
                 std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
             }
         });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
     TEST(TSendRequest, Fails_2a)
     {
-        bool passTest = false;
+        std::atomic_bool passTest = false;
         using namespace siddiqsoft::literals;
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
@@ -284,6 +299,7 @@ namespace siddiqsoft
             else {
                 auto [ec, emsg] = resp.status();
                 passTest        = ec == 405;
+                passTest.notify_all();
                 // This is a work-around for google which sometimes refuses to send the Reason Phrase!
                 if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
                 // std::cerr << "Got error: [" << ec << ":" << emsg << "] -- " << emsg << std::endl
@@ -291,18 +307,20 @@ namespace siddiqsoft
             }
         });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
     TEST(TSendRequest, test9a)
     {
-        bool              passTest = false;
+        std::atomic_bool  passTest = false;
         WinHttpRESTClient wrc;
 
         wrc.send("https://www.google.com/"_GET, [&passTest](const auto& req, const auto& resp) {
             // std::cerr << "From callback Serialized json: " << req << std::endl;
             if (resp.success()) {
                 passTest = resp["response"].value("status", 0) == 200;
+                passTest.notify_all();
                 // std::cerr << "Response\n" << resp << std::endl;
             }
             else {
@@ -311,7 +329,8 @@ namespace siddiqsoft
             }
         });
 
-        EXPECT_TRUE(passTest);
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 
 
@@ -341,6 +360,67 @@ namespace siddiqsoft
             });
         });
 
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
         EXPECT_EQ(4, passTest.load());
     }
+
+
+    TEST(Threads, test_1)
+    {
+        const unsigned   ITER_COUNT = 73;
+        std::atomic_uint passTest   = 0;
+        std::cerr << std::format("Starting..\n");
+
+        {
+            WinHttpRESTClient wrc;
+
+            std::cerr << std::format("Post wrc..\n");
+            basic_callbacktype valid = [&passTest](const auto& req, const auto& resp) {
+                // std::cerr << "From callback Serialized json: " << req << std::endl;
+                if (resp.success()) {
+                    passTest += resp["response"].value("status", 0) == 200;
+                    passTest.notify_all();
+                    // std::cerr << "Response\n" << resp << std::endl;
+                }
+                else {
+                    auto [ec, emsg] = resp.status();
+                    std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                }
+            };
+
+#ifdef _DEBUG
+            std::cerr << std::format("Adding {} items..\n", ITER_COUNT);
+#endif
+
+            for (auto i = 0; i < ITER_COUNT; i++) {
+                if (i % 3 == 0) {
+                    wrc.send("https://www.yahoo.com/"_GET, valid);
+#ifdef _DEBUG
+                    std::cerr << std::format("Added i:{}  i%3:{}  \n", i, (i % 3));
+#endif
+                }
+                else if (i % 2 == 0) {
+                    wrc.send("https://www.bing.com/"_GET, valid);
+#ifdef _DEBUG
+                    std::cerr << std::format("Added i:{}  i%2:{}  \n", i, (i % 2));
+#endif
+                }
+                else {
+                    wrc.send("https://www.google.com/"_GET, valid);
+#ifdef _DEBUG
+                    std::cerr << std::format("Added i:{}  ......  \n", i);
+#endif
+                }
+            }
+#ifdef _DEBUG
+            std::cerr << std::format("Finished adding {} items..\n", ITER_COUNT);
+#endif
+            std::this_thread::sleep_for(std::chrono::milliseconds(5500));
+        }
+        // std::this_thread::sleep_for(std::chrono::seconds(5));
+        EXPECT_EQ(ITER_COUNT, passTest.load());
+    }
+
+
 } // namespace siddiqsoft

@@ -21,12 +21,12 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <VCToolsVersion />
-    <EnableASAN>true</EnableASAN>
+    <EnableASAN>false</EnableASAN>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <VCToolsVersion />
-    <EnableASAN>true</EnableASAN>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
@@ -59,6 +59,7 @@
     <Import Project="..\packages\SiddiqSoft.SplitUri.1.8.2\build\native\SiddiqSoft.SplitUri.targets" Condition="Exists('..\packages\SiddiqSoft.SplitUri.1.8.2\build\native\SiddiqSoft.SplitUri.targets')" />
     <Import Project="..\packages\SiddiqSoft.string2map.2.3.0\build\native\SiddiqSoft.string2map.targets" Condition="Exists('..\packages\SiddiqSoft.string2map.2.3.0\build\native\SiddiqSoft.string2map.targets')" />
     <Import Project="..\packages\SiddiqSoft.acw32h.2.7.0\build\native\SiddiqSoft.acw32h.targets" Condition="Exists('..\packages\SiddiqSoft.acw32h.2.7.0\build\native\SiddiqSoft.acw32h.targets')" />
+    <Import Project="..\packages\SiddiqSoft.asynchrony-lib.0.8.3\build\native\SiddiqSoft.asynchrony-lib.targets" Condition="Exists('..\packages\SiddiqSoft.asynchrony-lib.0.8.3\build\native\SiddiqSoft.asynchrony-lib.targets')" />
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -69,13 +70,15 @@
       <PreprocessorDefinitions>_WIN64;X64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeaderOutputFile />
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
       <XMLDocumentationFileName>$(SolutionDir)docs</XMLDocumentationFileName>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>true</ConformanceMode>
+      <CallingConvention>FastCall</CallingConvention>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -121,5 +124,6 @@
     <Error Condition="!Exists('..\packages\SiddiqSoft.SplitUri.1.8.2\build\native\SiddiqSoft.SplitUri.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.SplitUri.1.8.2\build\native\SiddiqSoft.SplitUri.targets'))" />
     <Error Condition="!Exists('..\packages\SiddiqSoft.string2map.2.3.0\build\native\SiddiqSoft.string2map.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.string2map.2.3.0\build\native\SiddiqSoft.string2map.targets'))" />
     <Error Condition="!Exists('..\packages\SiddiqSoft.acw32h.2.7.0\build\native\SiddiqSoft.acw32h.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.acw32h.2.7.0\build\native\SiddiqSoft.acw32h.targets'))" />
+    <Error Condition="!Exists('..\packages\SiddiqSoft.asynchrony-lib.0.8.3\build\native\SiddiqSoft.asynchrony-lib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.asynchrony-lib.0.8.3\build\native\SiddiqSoft.asynchrony-lib.targets'))" />
   </Target>
 </Project>
