@@ -360,7 +360,7 @@ namespace siddiqsoft
         /// @brief Represents the IO error and its corresponding message
         struct response_code
         {
-            int         code {0};
+            uint32_t    code {0};
             std::string message {};
             NLOHMANN_DEFINE_TYPE_INTRUSIVE(response_code, code, message);
         };
@@ -524,7 +524,7 @@ namespace siddiqsoft
         /// resp["response"]["reason"] or WinHTTP error code message string
         response_code status() const
         {
-            return {rrd["response"].value("status", 0), rrd["response"].value("reason", "")};
+            return {rrd["response"].value<unsigned>("status", 0), rrd["response"].value("reason", "")};
         }
 
     public:
@@ -570,8 +570,8 @@ namespace siddiqsoft
     class basic_restclient
     {
     public:
-        std::string  UserAgent {"siddiqsoft.restcl/0.8.0"};
-        std::wstring UserAgentW {L"siddiqsoft.restcl/0.8.0"};
+        std::string  UserAgent {"siddiqsoft.restcl/0.9.2"};
+        std::wstring UserAgentW {L"siddiqsoft.restcl/0.9.2"};
 
     public:
         /// @brief Synchronous implementation of the IO

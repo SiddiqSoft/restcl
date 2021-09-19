@@ -74,7 +74,7 @@ _Private members are implementation-specific and detailed in the source file._
 
 #### `WinHttpRESTClient::WinHttpRESTClient`
 ```cpp
-⎔    WinHttpRESTClient::WinHttpRESTClient( const std::string& );
+    WinHttpRESTClient::WinHttpRESTClient( const std::string& );
 ```
 
 Creates the Windows REST Client with given UserAgent string and creates a reusable `HSESSION` object.
@@ -83,12 +83,12 @@ Sets the HTTP/2 option and the decompression options
 
 ##### Parameters
 
-- `ua` User agent string; defaults to `siddiqsoft.restcl_winhttp/0.8.0 (Windows NT; x64)`
+- `ua` User agent string; defaults to `siddiqsoft.restcl_winhttp/0.9.2 (Windows NT; x64)`
 
 
 #### `WinHttpRESTClient::send`
 ```cpp
-⎔    basic_response send(basic_request& req);
+    basic_response send(basic_request& req);
 ```
 
 Uses the existing hSession to connect, send, receive data from the remote server and returns the response in **synchronous mode**.
@@ -106,7 +106,7 @@ See the [examples](#examples) section.
 
 #### `WinHttpRESTClient::send`
 ```cpp
-⎔    void send(basic_request&& req, basic_callbacktype&& callback);
+    void send(basic_request&& req, basic_callbacktype&& callback);
 ```
 
 Uses the existing hSession to connect, send, receive data from the remote server and fire the callback.
@@ -158,19 +158,20 @@ protected:
     basic_request();
     explicit basic_request(const std::string& endpoint);
     explicit basic_request(const Uri<char>& s);
+
 public:
-    const auto&        operator[](const auto& key) const;
-    auto&              operator[](const auto& key);
-    basic_request& setContent(const std::string& contentType, const std::string& content);
-    basic_request& setContent(const nlohmann::json& c);
-    std::string        getContent() const;
-    void               encodeHeaders_to(std::string& rs) const;
-    std::string        encode() const;
+    const auto&     operator[](const auto& key) const;
+    auto&           operator[](const auto& key);
+    basic_request&  setContent(const std::string& contentType, const std::string& content);
+    basic_request&  setContent(const nlohmann::json& c);
+    std::string     getContent() const;
+    void            encodeHeaders_to(std::string& rs) const;
+    std::string     encode() const;
 
     Uri<char, AuthorityHttp<char>> uri;
 
 protected:
-    nlohmann::json rrd;
+    nlohmann::json  rrd;
 ```
 
 #### Member Variables
@@ -191,7 +192,7 @@ Field | Type | Description
 
 ##### `basic_request::operator[] const`
 ```cpp
-⎔    const auto&        operator[](const auto& key) const;
+    const auto&        operator[](const auto& key) const;
 ```
 
 The `key` can be either `std::string` or `json_pointer` type.
@@ -204,7 +205,7 @@ To access the request path: `req["request"]["url"]` and to access the `Content-T
 
 ##### `basic_request::operator[]`
 ```cpp
-⎔    auto&              operator[](const auto& key);
+    auto&              operator[](const auto& key);
 ```
 
 The `key` can be either `std::string` or `json_pointer` type.
@@ -216,7 +217,8 @@ To access the request path: `req["request"]["url"]` and to access the `Content-T
 ##### `basic_request::setContent`
 
 ```cpp
-⎔    basic_request& setContent(const std::string& contentType, const std::string& content);
+    basic_request& setContent(const std::string& contentType,
+                              const std::string& content);
 ```
 
 - contentType - Set the content type header
@@ -234,7 +236,7 @@ Functionally equivalent to the following:
 ##### `basic_request::setContent`
 
 ```cpp
-⎔    basic_request& setContent(const nlohmann::json& c);
+    basic_request& setContent(const nlohmann::json& c);
 ```
 
 - contentType - Set the content type header
@@ -247,7 +249,7 @@ Functionally equivalent to the following: `req["content"]= content; // where con
 ##### `basic_request::getContent const`
 
 ```cpp
-⎔    std::string        getContent() const;
+    std::string        getContent() const;
 ```
 
 Returns a serialized representation of the content.
@@ -257,7 +259,7 @@ If the content is json then the method `.dump()` is invoked to serialized the js
 ##### `basic_request::encodeHeaders_to`
 
 ```cpp
-⎔    void               encodeHeaders_to(std::string& rs) const;
+    void               encodeHeaders_to(std::string& rs) const;
 ```
 
 Helper to encode the headers to a given string using `std::format` and `std::back_inserter`.
@@ -265,7 +267,7 @@ Helper to encode the headers to a given string using `std::format` and `std::bac
 ##### `basic_request::encode`
 
 ```cpp
-⎔    std::string        encode() const;
+    std::string        encode() const;
 ```
 
 Helper encodes the HTTP request with request line, header section and the content.
@@ -281,22 +283,27 @@ class basic_response
 {
 protected:
     basic_response();
-public:
-    basic_response(const basic_response& src);
-    basic_response(basic_response&& src);
 
-    basic_response&              operator=(basic_response&&);
-    basic_response&              operator=(const basic_response&);
-    basic_response&              setContent(const std::string& content);
-    bool                             success() const;
-    const auto&                      operator[](const auto& key) const;
-    auto&                            operator[](const auto& key);
-    std::string                      encode() const;
-    std::tuple<uint32_t,std::string> status() const;
+public:
+    struct response_code
+    {
+        uint32_t    code {0};
+        std::string message {};
+    };
+
+    basic_response(const basic_response&);
+    basic_response(basic_response&&);
+
+    basic_response& operator=(basic_response&&);
+    basic_response& operator=(const basic_response&);
+    basic_response& setContent(const std::string&);
+    const auto&     operator[](const auto&) const;
+    auto&           operator[](const auto&);
+    std::string     encode() const;
+    bool            success() const;
+    response_code   status() const;
 
 protected:
-    uint32_t       ioErrorCode {0};
-    std::string    ioError {};
     nlohmann::json rrd { {"response", { {"version", HTTPProtocolVersion::Http2},
                                         {"status", 0},
                                         {"reason", ""}}},
@@ -304,13 +311,21 @@ protected:
                          {"content", nullptr} };
 ```
 
+#### `basic_response::response_code`
+
+Name        | Type | Description
+-----------:|------|:-----------
+`code`     | `uint32_t` | If the IO was successful then the value is the HTTP status code.
+`message` | `std::string` | For successful IO this is the reason phrase otherwise it is the WinHTTP error message corresponding to the IO error code.
+
+
 #### Member Variables
 
 Parameter | Type | Description
 ---------:|------|:-----------
-`ioErrorCode` | `uint32_t` | The status code response from the server
-`ioError` | `std::string` | The reason phrase from the server
 `rrd` | [`nlohmann::json`]() | The json contains the response data: `{"response": {"reason": "OK", "status": 200, "version": ""}, "headers": {}, "content": nullptr}`
+
+The internal `response_code` struct represents the IO error code and IO error message or the HTTP response status and HTTP reason string.
 
 #### Member Functions
 
@@ -340,7 +355,7 @@ Returns true if the HTTP status >=99 and <400. False if there is any IO error or
 
 ##### `basic_response::operator[] const`
 ```cpp
-⎔    const auto&        operator[](const auto& key) const;
+    const auto&        operator[](const auto& key) const;
 ```
 
 The `key` can be either `std::string` or `json_pointer` type.
@@ -353,7 +368,7 @@ To access the request path: `req["response"]["url"]` and to access the `Content-
 
 ##### `basic_response::operator[]`
 ```cpp
-⎔    auto&              operator[](const auto& key);
+    auto&              operator[](const auto& key);
 ```
 
 The `key` can be either `std::string` or `json_pointer` type.
@@ -371,10 +386,10 @@ To access the request path: `resp["request"]["url"]` and to access the `Content-
 ##### `basic_response::status`
 
 ```cpp
-    std::tuple<uint32_t,std::string> status() const;
+    response_code status() const;
 ```
 
-Returns a tuple of status/ioerror and the reason-phrase or ioerror message.
+Returns [`response_code`](#basic_responseresponse_code) status/ioerror and the reason-phrase or ioerror message.
 
 Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or the WinHTTP error code and the corresponding WinHTTP message.
 

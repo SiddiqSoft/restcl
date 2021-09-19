@@ -379,7 +379,7 @@ namespace siddiqsoft
             basic_callbacktype valid = [&passTest](const auto& req, const auto& resp) {
                 // std::cerr << "From callback Serialized json: " << req << std::endl;
                 if (resp.success()) {
-                    passTest += resp["response"].value("status", 0) == 200;
+                    passTest += resp.status().code == 200;
                     passTest.notify_all();
                     // std::cerr << "Response\n" << resp << std::endl;
                 }
