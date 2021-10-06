@@ -21,7 +21,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <VCToolsVersion />
-    <EnableASAN>false</EnableASAN>
+    <EnableASAN>true</EnableASAN>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -59,7 +59,7 @@
     <Import Project="..\packages\SiddiqSoft.SplitUri.1.8.2\build\native\SiddiqSoft.SplitUri.targets" Condition="Exists('..\packages\SiddiqSoft.SplitUri.1.8.2\build\native\SiddiqSoft.SplitUri.targets')" />
     <Import Project="..\packages\SiddiqSoft.string2map.2.3.0\build\native\SiddiqSoft.string2map.targets" Condition="Exists('..\packages\SiddiqSoft.string2map.2.3.0\build\native\SiddiqSoft.string2map.targets')" />
     <Import Project="..\packages\SiddiqSoft.acw32h.2.7.0\build\native\SiddiqSoft.acw32h.targets" Condition="Exists('..\packages\SiddiqSoft.acw32h.2.7.0\build\native\SiddiqSoft.acw32h.targets')" />
-    <Import Project="..\packages\SiddiqSoft.asynchrony-lib.0.9.1\build\native\SiddiqSoft.asynchrony-lib.targets" Condition="Exists('..\packages\SiddiqSoft.asynchrony-lib.0.9.1\build\native\SiddiqSoft.asynchrony-lib.targets')" />
+    <Import Project="..\packages\SiddiqSoft.asynchrony-lib.0.10.1\build\native\SiddiqSoft.asynchrony-lib.targets" Condition="Exists('..\packages\SiddiqSoft.asynchrony-lib.0.10.1\build\native\SiddiqSoft.asynchrony-lib.targets')" />
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -124,6 +124,6 @@
     <Error Condition="!Exists('..\packages\SiddiqSoft.SplitUri.1.8.2\build\native\SiddiqSoft.SplitUri.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.SplitUri.1.8.2\build\native\SiddiqSoft.SplitUri.targets'))" />
     <Error Condition="!Exists('..\packages\SiddiqSoft.string2map.2.3.0\build\native\SiddiqSoft.string2map.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.string2map.2.3.0\build\native\SiddiqSoft.string2map.targets'))" />
     <Error Condition="!Exists('..\packages\SiddiqSoft.acw32h.2.7.0\build\native\SiddiqSoft.acw32h.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.acw32h.2.7.0\build\native\SiddiqSoft.acw32h.targets'))" />
-    <Error Condition="!Exists('..\packages\SiddiqSoft.asynchrony-lib.0.9.1\build\native\SiddiqSoft.asynchrony-lib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.asynchrony-lib.0.9.1\build\native\SiddiqSoft.asynchrony-lib.targets'))" />
+    <Error Condition="!Exists('..\packages\SiddiqSoft.asynchrony-lib.0.10.1\build\native\SiddiqSoft.asynchrony-lib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.asynchrony-lib.0.10.1\build\native\SiddiqSoft.asynchrony-lib.targets'))" />
   </Target>
 </Project>

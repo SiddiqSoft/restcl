@@ -68,7 +68,7 @@
 #include "siddiqsoft/acw32h.hpp"
 #include "siddiqsoft/azure-cpp-utils.hpp"
 
-#include "siddiqsoft/roundrobin_pool.hpp"
+#include "siddiqsoft/simple_pool.hpp"
 
 namespace siddiqsoft
 {
@@ -251,7 +251,7 @@ namespace siddiqsoft
         ACW32HINTERNET hSession {};
 
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
-        roundrobin_pool<RestPoolArgsType> pool {[&](RestPoolArgsType& arg) -> void {
+        simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType& arg) -> void {
             // This function is invoked any time we have an item
             auto resp = send(arg.request);
             arg.callback(arg.request, resp);
@@ -424,9 +424,9 @@ namespace siddiqsoft
                                                           static_cast<DWORD>(requestHeaders.length()),
                                                           WINHTTP_ADDREQ_FLAG_ADD);
 
-                        dwError = ERROR_SUCCESS;
+                        dwError                     = ERROR_SUCCESS;
                         // Send the request
-                        nError  = WinHttpSendRequest(hRequest,
+                        nError = WinHttpSendRequest(hRequest,
                                                     WINHTTP_NO_ADDITIONAL_HEADERS,
                                                     0,
                                                     contentLength > 0 ? LPVOID(req.getContent().c_str()) : NULL,
