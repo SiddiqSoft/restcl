@@ -23,10 +23,10 @@
 		<!-- Dependencies -->
 		<dependencies>
 			<dependency id="nlohmann.json" version="3.10"/>
-			<dependency id="SiddiqSoft.SplitUri" />
-			<dependency id="SiddiqSoft.AzureCppUtils" />
-			<dependency id="SiddiqSoft.acw32h" />
-			<dependency id="SiddiqSoft.string2map" />
+			<dependency id="SiddiqSoft.SplitUri"/>
+			<dependency id="SiddiqSoft.AzureCppUtils"/>
+			<dependency id="SiddiqSoft.acw32h"/>
+			<dependency id="SiddiqSoft.string2map"/>
 			<dependency id="SiddiqSoft.asynchrony-lib"/>
 		</dependencies>
 	</metadata>
