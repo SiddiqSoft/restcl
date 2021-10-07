@@ -3,8 +3,6 @@ trigger:
   branches:
     include:
     - main
-    - develop
-    - release/*
   paths:
     exclude:
     - docs/*
@@ -24,7 +22,7 @@ steps:
 - task: NuGetToolInstaller@1
   displayName: 'Use NuGet 5.10.0'
   inputs:
-    versionSpec: '5.10.0'
+    versionSpec: '5.11.0'
     checkLatest: true
 
 - task: GitVersion@5
@@ -45,6 +43,7 @@ steps:
     restoreSolution: '**/*.sln'
     feedsToUse: 'select'
     vstsFeed: 'ec2759e0-0587-4306-8a8d-8695f15e2336'
+    noCache: true
   continueOnError: true
 
 - task: VSBuild@1
@@ -53,6 +52,7 @@ steps:
     solution: 'restcl.sln'
     platform: 'x64'
     configuration: 'Release'
+    clean: true
     maximumCpuCount: true
     msbuildArchitecture: 'x64'
 
