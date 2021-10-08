@@ -76,25 +76,6 @@ namespace siddiqsoft
     {
         basic_request      request;
         basic_callbacktype callback;
-
-        RestPoolArgsType(RestPoolArgsType&& src) noexcept
-            : request(std::move(src.request))
-            , callback(std::move(src.callback))
-        {
-        }
-
-        RestPoolArgsType& operator=(RestPoolArgsType&& src) noexcept
-        {
-            request  = std::move(src.request);
-            callback = std::move(src.callback);
-            return *this;
-        }
-
-        RestPoolArgsType(basic_request&& r, basic_callbacktype c) noexcept
-            : request(std::move(r))
-            , callback(c)
-        {
-        }
     };
 
 
@@ -325,12 +306,18 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        ///
-        /// @note The implementation always creates a thread and detaches. The thread will clean itself once the callback
-        /// completes.
-        void send(basic_request&& req, const basic_callbacktype& callback)
+        void send(basic_request&& req, basic_callbacktype& callback)
         {
-            pool.queue(RestPoolArgsType(std::move(req), callback));
+            pool.queue(RestPoolArgsType {.request = std::move(req), .callback = callback});
+        }
+
+
+        /// @brief Implements an asynchronous invocation of the send() method
+        /// @param req Request object
+        /// @param callback The method will be async and there will not be a response object returned
+        void send(basic_request&& req, basic_callbacktype&& callback)
+        {
+            pool.queue(RestPoolArgsType {.request = std::move(req), .callback = std::move(callback)});
         }
 
 

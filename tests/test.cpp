@@ -368,7 +368,7 @@ namespace siddiqsoft
 
     TEST(Threads, test_1)
     {
-        const unsigned   ITER_COUNT = 73;
+        const unsigned   ITER_COUNT = 89;
         std::atomic_uint passTest   = 0;
         std::cerr << std::format("Starting..\n");
 

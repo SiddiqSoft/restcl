@@ -63,6 +63,7 @@ This is the starting point for your client. We make extensive use of initializer
 
         basic_response send(basic_request& req);
         void send(basic_request&& req, basic_callbacktype&& callback);
+        void send(basic_request&& req, basic_callbacktype& callback);
     };
 ```
 
@@ -107,6 +108,7 @@ See the [examples](#examples) section.
 #### `WinHttpRESTClient::send`
 ```cpp
     void send(basic_request&& req, basic_callbacktype&& callback);
+    void send(basic_request&& req, basic_callbacktype& callback);
 ```
 
 Uses the existing hSession to connect, send, receive data from the remote server and fire the callback.
@@ -122,8 +124,8 @@ Returns immediately once the request has been queued into the threadpool.
 
 Parameter | Type | Description
 ---------:|------|:-----------
-`req` | [`basic_request`](#class-basic_request) | The Request to be sent to the remote server.
-`callback` | [`basic_callbacktype`](#alias-basic_callbacktype) | The callback is invoked on completion or an error.
+`req` | [`basic_request`](#class-basic_request) | The Request to be sent to the remote server. The data is required to be moved into the function as it takes ownership of the request lifetime.
+`callback` | [`basic_callbacktype`](#alias-basic_callbacktype) | The callback is invoked on completion or an error. There are two versions: you can pass an existing function/member or a lambda.
 
 See the [examples](#examples) section.
 

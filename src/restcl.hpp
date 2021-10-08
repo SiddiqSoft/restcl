@@ -582,7 +582,12 @@ namespace siddiqsoft
         /// @brief Support for async callback
         /// @param req Request
         /// @param callback function that accepts const basic_restrequst& and const basic_response&
-        virtual void send(basic_request&&, const basic_callbacktype&) = 0;
+        virtual void send(basic_request&&, basic_callbacktype&) = 0;
+
+        /// @brief Support for async callback
+        /// @param req Request
+        /// @param callback function that accepts const basic_restrequst& and const basic_response&
+        virtual void send(basic_request&&, basic_callbacktype&&) = 0;
     };
 
 
