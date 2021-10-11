@@ -66,7 +66,7 @@
 
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/acw32h.hpp"
-#include "siddiqsoft/azure-cpp-utils.hpp"
+#include "siddiqsoft/conversion-utils.hpp"
 
 #include "siddiqsoft/simple_pool.hpp"
 
