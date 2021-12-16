@@ -232,7 +232,7 @@ namespace siddiqsoft
         ACW32HINTERNET hSession {};
 
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
-        simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType& arg) -> void {
+        simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
             // This function is invoked any time we have an item
             auto resp = send(arg.request);
             arg.callback(arg.request, resp);
