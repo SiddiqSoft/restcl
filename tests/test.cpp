@@ -416,7 +416,7 @@ namespace siddiqsoft
 #ifdef _DEBUG
             std::cerr << std::format("Finished adding {} items..\n", ITER_COUNT);
 #endif
-            std::this_thread::sleep_for(std::chrono::milliseconds(5500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(9900));
         }
         // std::this_thread::sleep_for(std::chrono::seconds(5));
         EXPECT_EQ(ITER_COUNT, passTest.load());
