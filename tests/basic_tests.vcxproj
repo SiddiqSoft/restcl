@@ -59,7 +59,7 @@
     <Import Project="..\packages\SiddiqSoft.SplitUri.1.8.3\build\native\SiddiqSoft.SplitUri.targets" Condition="Exists('..\packages\SiddiqSoft.SplitUri.1.8.3\build\native\SiddiqSoft.SplitUri.targets')" />
     <Import Project="..\packages\SiddiqSoft.string2map.2.3.1\build\native\SiddiqSoft.string2map.targets" Condition="Exists('..\packages\SiddiqSoft.string2map.2.3.1\build\native\SiddiqSoft.string2map.targets')" />
     <Import Project="..\packages\SiddiqSoft.asynchrony-lib.0.11.0\build\native\SiddiqSoft.asynchrony-lib.targets" Condition="Exists('..\packages\SiddiqSoft.asynchrony-lib.0.11.0\build\native\SiddiqSoft.asynchrony-lib.targets')" />
-    <Import Project="..\packages\SiddiqSoft.AzureCppUtils.1.5.2\build\native\SiddiqSoft.AzureCppUtils.targets" Condition="Exists('..\packages\SiddiqSoft.AzureCppUtils.1.5.2\build\native\SiddiqSoft.AzureCppUtils.targets')" />
+    <Import Project="..\packages\SiddiqSoft.AzureCppUtils.1.5.3\build\native\SiddiqSoft.AzureCppUtils.targets" Condition="Exists('..\packages\SiddiqSoft.AzureCppUtils.1.5.3\build\native\SiddiqSoft.AzureCppUtils.targets')" />
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -124,6 +124,6 @@
     <Error Condition="!Exists('..\packages\SiddiqSoft.SplitUri.1.8.3\build\native\SiddiqSoft.SplitUri.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.SplitUri.1.8.3\build\native\SiddiqSoft.SplitUri.targets'))" />
     <Error Condition="!Exists('..\packages\SiddiqSoft.string2map.2.3.1\build\native\SiddiqSoft.string2map.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.string2map.2.3.1\build\native\SiddiqSoft.string2map.targets'))" />
     <Error Condition="!Exists('..\packages\SiddiqSoft.asynchrony-lib.0.11.0\build\native\SiddiqSoft.asynchrony-lib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.asynchrony-lib.0.11.0\build\native\SiddiqSoft.asynchrony-lib.targets'))" />
-    <Error Condition="!Exists('..\packages\SiddiqSoft.AzureCppUtils.1.5.2\build\native\SiddiqSoft.AzureCppUtils.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.AzureCppUtils.1.5.2\build\native\SiddiqSoft.AzureCppUtils.targets'))" />
+    <Error Condition="!Exists('..\packages\SiddiqSoft.AzureCppUtils.1.5.3\build\native\SiddiqSoft.AzureCppUtils.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SiddiqSoft.AzureCppUtils.1.5.3\build\native\SiddiqSoft.AzureCppUtils.targets'))" />
   </Target>
 </Project>
