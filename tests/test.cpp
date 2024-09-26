@@ -396,7 +396,7 @@ namespace siddiqsoft
                 }
                 else {
                     auto [ec, emsg] = resp.status();
-                    std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                    std::cerr << "Got error: " << ec << " for " << req.uri.authority.host << " -- " << emsg << std::endl;
                 }
             };
 
