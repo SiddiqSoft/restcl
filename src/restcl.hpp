@@ -595,7 +595,7 @@ namespace siddiqsoft
     /// @brief Serializer to ostream for RESResponseType
     static std::ostream& operator<<(std::ostream& os, const basic_response& src)
     {
-        std::format_to(std::ostream_iterator<char>(os), "{}", src);
+        std::format_to(std::ostream_iterator<char>(os), std::string {"{}"}, src);
         return os;
     }
 
