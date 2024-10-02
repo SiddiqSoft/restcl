@@ -111,18 +111,12 @@ namespace siddiqsoft
         /// @brief Access the "headers", "request", "content" in the json object
         /// @param key Allows access into the json object via string or json_pointer
         /// @return Non-mutable reference to the specified element.
-        const auto& operator[](const auto& key) const
-        {
-            return rrd.at(key);
-        }
+        const auto& operator[](const auto& key) const { return rrd.at(key); }
 
         /// @brief Access the "headers", "request", "content" in the json object
         /// @param key Allows access into the json object via string or json_pointer
         /// @return Mutable reference to the specified element.
-        auto& operator[](const auto& key)
-        {
-            return rrd.at(key);
-        }
+        auto& operator[](const auto& key) { return rrd.at(key); }
 
 
         /// @brief Set the content (non-JSON)
@@ -346,7 +340,7 @@ namespace siddiqsoft
 
     static std::ostream& operator<<(std::ostream& os, const basic_request& src)
     {
-        std::format_to(std::ostream_iterator<char>(os), "{}", src);
+        std::format_to(std::ostream_iterator<char>(os), std::string {"{}"}, src);
         return os;
     }
 
@@ -451,19 +445,13 @@ namespace siddiqsoft
         /// @brief Access the "headers", "request", "content" in the json object
         /// @param key Allows access into the json object via string or json_pointer
         /// @return Non-mutable reference to the specified element.
-        const auto& operator[](const auto& key) const
-        {
-            return rrd.at(key);
-        }
+        const auto& operator[](const auto& key) const { return rrd.at(key); }
 
 
         /// @brief Mutable access to the underlying json object
         /// @param key Allows access into the json object via string or json_pointer
         /// @return Mutable reference to the specified element.
-        auto& operator[](const auto& key)
-        {
-            return rrd.at(key);
-        }
+        auto& operator[](const auto& key) { return rrd.at(key); }
 
 
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.
@@ -523,10 +511,7 @@ namespace siddiqsoft
         /// The response contains:
         /// resp["response"]["status"] or WinHTTP error code
         /// resp["response"]["reason"] or WinHTTP error code message string
-        response_code status() const
-        {
-            return {rrd["response"].value<unsigned>("status", 0), rrd["response"].value("reason", "")};
-        }
+        response_code status() const { return {rrd["response"].value<unsigned>("status", 0), rrd["response"].value("reason", "")}; }
 
     public:
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(basic_response, rrd);
@@ -546,10 +531,7 @@ namespace siddiqsoft
         rest_response() { }
 
 
-        rest_response(const int code, const std::string& message)
-        {
-            setStatus(code, message);
-        }
+        rest_response(const int code, const std::string& message) { setStatus(code, message); }
 
 
         /// @brief Construct a response object based on the given transport error
