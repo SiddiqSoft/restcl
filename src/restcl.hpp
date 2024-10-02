@@ -340,7 +340,7 @@ namespace siddiqsoft
 
     static std::ostream& operator<<(std::ostream& os, const basic_request& src)
     {
-        std::format_to(std::ostream_iterator<char>(os), std::string {"{}"}, src);
+        os << src.encode();
         return os;
     }
 
@@ -577,7 +577,7 @@ namespace siddiqsoft
     /// @brief Serializer to ostream for RESResponseType
     static std::ostream& operator<<(std::ostream& os, const basic_response& src)
     {
-        std::format_to(std::ostream_iterator<char>(os), std::string {"{}"}, src);
+        os << src.encode();
         return os;
     }
 
@@ -631,6 +631,10 @@ namespace siddiqsoft
 } // namespace siddiqsoft
 
 #pragma region Custom formatters
+
+#ifndef RESTCL_CUSTOM_FORMATTERS
+#define RESTCL_CUSTOM_FORMATTERS
+
 /*
  * std::format custom implementation must be global scope
  */
@@ -685,10 +689,11 @@ struct std::formatter<siddiqsoft::basic_response> : std::formatter<std::string>
         return std::formatter<std::string>::format(sv.encode(), ctx);
     }
 };
+#endif
 #pragma endregion
 
 #else
 #pragma message(warning : "C++20 required with std::format support")
 #endif
 
-#endif // !RESTREQUESTTYPE_HPP
+#endif // !RESTCL_HPP
