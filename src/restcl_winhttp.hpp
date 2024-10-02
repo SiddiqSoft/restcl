@@ -239,7 +239,7 @@ namespace siddiqsoft
         }};
 
     public:
-        WinHttpRESTClient(const WinHttpRESTClient&) = delete;
+        WinHttpRESTClient(const WinHttpRESTClient&)            = delete;
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
@@ -255,7 +255,8 @@ namespace siddiqsoft
 
                     // Enable HTTP/2 protocol
                     if (!WinHttpSetOption(
-                                hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+                                hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
+                    {
 #ifdef _DEBUG
                         std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
 #endif
@@ -274,8 +275,8 @@ namespace siddiqsoft
 
         /// @brief Creates the Windows REST Client with given UserAgent string
         /// Sets the HTTP/2 option and the decompression options
-        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.9.2 (Windows NT; x64)`
-        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.9.2 (Windows NT; x64)")
+        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.10.13 (Windows NT; x64)`
+        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.10.13 (Windows NT; x64)")
         {
             UserAgent  = ua;
             UserAgentW = ConversionUtils::wideFromAscii(ua);
@@ -287,7 +288,8 @@ namespace siddiqsoft
 
                 // Enable HTTP/2 protocol
                 if (!WinHttpSetOption(
-                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
+                {
 #ifdef _DEBUG
                     std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
 #endif
@@ -369,7 +371,8 @@ namespace siddiqsoft
 
                 // Enable HTTP/2 protocol
                 if (!WinHttpSetOption(
-                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag))) {
+                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
+                {
 #ifdef _DEBUG
                     std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
 #endif

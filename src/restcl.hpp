@@ -553,8 +553,8 @@ namespace siddiqsoft
     class basic_restclient
     {
     public:
-        std::string  UserAgent {"siddiqsoft.restcl/0.10.8"};
-        std::wstring UserAgentW {L"siddiqsoft.restcl/0.10.8"};
+        std::string  UserAgent {"siddiqsoft.restcl/0.10.13"};
+        std::wstring UserAgentW {L"siddiqsoft.restcl/0.10.13"};
 
     public:
         /// @brief Synchronous implementation of the IO
