@@ -19,15 +19,15 @@
 		<icon>docs\Siddiq-Software-Avatar.png</icon>
 		<readme>docs\README.md</readme>
 		<releaseNotes>Documentation at https://siddiqsoft.github.io/restcl</releaseNotes>
-		<copyright>Copyright (c) 2021 Siddiq Software LLC</copyright>
+		<copyright>Copyright (c) 2021-2024 Siddiq Software LLC</copyright>
 		<!-- Dependencies -->
 		<dependencies>
-			<dependency id="nlohmann.json" version="3.10"/>
+			<dependency id="nlohmann.json" version="3.11"/>
 			<dependency id="SiddiqSoft.SplitUri" version="1.8"/>
 			<dependency id="SiddiqSoft.AzureCppUtils" version="1.5"/>
 			<dependency id="SiddiqSoft.acw32h" version="2.6"/>
 			<dependency id="SiddiqSoft.string2map" version="2.3"/>
-			<dependency id="SiddiqSoft.asynchrony-lib" version="0.11"/>
+			<dependency id="SiddiqSoft.asynchrony-lib" version="1.0"/>
 		</dependencies>
 	</metadata>
 
