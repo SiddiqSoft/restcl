@@ -53,7 +53,7 @@
 
 namespace siddiqsoft
 {
-    using namespace literals;
+    using namespace httprequest::literals;
 
     TEST(Serializers, test1a)
     {

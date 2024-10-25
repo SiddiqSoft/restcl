@@ -20,22 +20,32 @@ variables:
   buildPlatform: 'x64'
   
 steps:
-- task: NuGetToolInstaller@1
-  displayName: 'Use NuGet 6.0'
-  inputs:
-    versionSpec: '6.0'
+- checkout: self
+  fetchDepth: 0
 
-- task: GitVersion@5
+- task: NuGetToolInstaller@1
+  displayName: 'Install Nuget'
   inputs:
-    runtime: 'core'
-    preferBundledVersion: false
+    versionSpec: '>=5.0.0-0'
+    checkLatest: true
+
+- task: gitversion/setup@3
+  displayName: 'Install GitVersion..'
+  inputs:
+    versionSpec: '6.x'
+    preferLatestVersion: true
+
+- task: gitversion/execute@3
+  displayName: 'Determine Version..'
+  inputs:
+    useConfigFile: true
     configFilePath: 'GitVersion.yml'
 
 - script: echo %Action%%BuildVersion%
-  displayName: 'Set build version'
+  displayName: 'Set build version to $(GitVersion.FullSemVer)'
   env:
     Action: '##vso[build.updatebuildnumber]'
-    BuildVersion: $(GitVersion.NugetVersionV2)
+    BuildVersion: $(GitVersion.FullSemVer)
 
 - task: NuGetCommand@2
   displayName: 'NuGet restore'
@@ -89,6 +99,7 @@ steps:
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg;build/*.nupkg;!build/*symbols.nupkg'
     nuGetFeedType: 'external'
     publishFeedCredentials: 'sqs-nuget'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
 - task: GitHubRelease@1
   inputs:

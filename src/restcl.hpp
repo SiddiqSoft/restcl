@@ -583,7 +583,7 @@ namespace siddiqsoft
 
 
 #pragma region Literal Operators for rest_request
-    namespace literals
+    namespace httprequest::literals
     {
         static rest_request<RESTMethodType::Get> operator"" _GET(const char* s, size_t sz)
         {
@@ -642,7 +642,7 @@ namespace siddiqsoft
 template <>
 struct std::formatter<siddiqsoft::HTTPProtocolVersion> : std::formatter<std::string>
 {
-    auto format(const siddiqsoft::HTTPProtocolVersion& sv, std::format_context& ctx)
+    auto format(const siddiqsoft::HTTPProtocolVersion& sv, std::format_context& ctx) const
     {
         return std::formatter<std::string>::format(nlohmann::json(sv).get<std::string>(), ctx);
     }
@@ -652,7 +652,7 @@ struct std::formatter<siddiqsoft::HTTPProtocolVersion> : std::formatter<std::str
 template <>
 struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<std::string>
 {
-    auto format(const siddiqsoft::RESTMethodType& sv, std::format_context& ctx)
+    auto format(const siddiqsoft::RESTMethodType& sv, std::format_context& ctx) const
     {
         return std::formatter<std::string>::format(nlohmann::json(sv).get<std::string>(), ctx);
     }
@@ -663,7 +663,7 @@ struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<std::string>
 template <>
 struct std::formatter<siddiqsoft::basic_request> : std::formatter<std::string>
 {
-    auto format(const siddiqsoft::basic_request& sv, std::format_context& ctx)
+    auto format(const siddiqsoft::basic_request& sv, std::format_context& ctx) const
     {
         return std::formatter<std::string>::format(sv.encode(), ctx);
     }
@@ -674,7 +674,7 @@ template <siddiqsoft::RESTMethodType RM>
 struct std::formatter<siddiqsoft::rest_request<RM>> : std::formatter<std::string>
 {
     template <class FC>
-    auto format(const siddiqsoft::rest_request<RM>& sv, FC& ctx)
+    auto format(const siddiqsoft::rest_request<RM>& sv, FC& ctx) const
     {
         return std::formatter<std::string>::format(sv.encode(), ctx);
     }
@@ -684,7 +684,7 @@ struct std::formatter<siddiqsoft::rest_request<RM>> : std::formatter<std::string
 template <>
 struct std::formatter<siddiqsoft::basic_response> : std::formatter<std::string>
 {
-    auto format(const siddiqsoft::basic_response& sv, std::format_context& ctx)
+    auto format(const siddiqsoft::basic_response& sv, std::format_context& ctx) const
     {
         return std::formatter<std::string>::format(sv.encode(), ctx);
     }
