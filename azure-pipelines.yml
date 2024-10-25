@@ -45,7 +45,7 @@ steps:
   displayName: 'Set build version to $(GitVersion.FullSemVer)'
   env:
     Action: '##vso[build.updatebuildnumber]'
-    BuildVersion: $(GitVersion.FullSemVer)
+    BuildVersion: $(GitVersion.MajorMinorPatch).$(GitVersion.CommitsSinceVersionSource)
 
 - task: NuGetCommand@2
   displayName: 'NuGet restore'
@@ -90,7 +90,7 @@ steps:
     command: 'pack'
     packagesToPack: 'nuget/*.nuspec'
     versioningScheme: 'off'
-    buildProperties: 'VERSION=$(build.buildNumber)'
+    buildProperties: 'VERSION=$(GitVersion.MajorMinorPatch)'
 
 - task: NuGetCommand@2
   displayName: 'NuGet push'
