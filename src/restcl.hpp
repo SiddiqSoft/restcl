@@ -553,14 +553,14 @@ namespace siddiqsoft
     class basic_restclient
     {
     public:
-        std::string  UserAgent {"siddiqsoft.restcl/0.10.13"};
-        std::wstring UserAgentW {L"siddiqsoft.restcl/0.10.13"};
+        std::string  UserAgent {"siddiqsoft.restcl/1.6.0"};
+        std::wstring UserAgentW {L"siddiqsoft.restcl/1.6.0"};
 
     public:
         /// @brief Synchronous implementation of the IO
         /// @param req Request
         /// @return The response
-        virtual basic_response send(basic_request&) = 0;
+        [[nodiscard]] virtual basic_response send(basic_request&) = 0;
 
         /// @brief Support for async callback
         /// @param req Request
@@ -583,15 +583,14 @@ namespace siddiqsoft
 
 
 #pragma region Literal Operators for rest_request
-    namespace httprequest::literals
+    namespace restcl_literals
     {
-        static rest_request<RESTMethodType::Get> operator"" _GET(const char* s, size_t sz)
+        [[nodiscard]] static rest_request<RESTMethodType::Get> operator"" _GET(const char* s, size_t sz)
         {
             return rest_request<RESTMethodType::Get>(SplitUri<>(std::string {s, sz}));
         }
 
-
-        static rest_request<RESTMethodType::Delete> operator"" _DELETE(const char* s, size_t sz)
+        [[nodiscard]] static rest_request<RESTMethodType::Delete> operator"" _DELETE(const char* s, size_t sz)
         {
             return rest_request<RESTMethodType::Delete>(SplitUri<>(std::string {s, sz}));
         }
@@ -625,7 +624,7 @@ namespace siddiqsoft
         {
             return rest_request<RESTMethodType::Put>(SplitUri(std::string {s, sz}));
         }
-    } // namespace literals
+    } // namespace restcl_literals
 #pragma endregion
 
 } // namespace siddiqsoft

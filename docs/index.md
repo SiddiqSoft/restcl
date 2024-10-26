@@ -407,7 +407,7 @@ Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or t
     #include "siddiqsoft/restcl_winhttp.hpp"
     ...
     using namespace siddiqsoft;
-    using namespace siddiqsoft::literals;
+    using namespace siddiqsoft::splituri_literals;
 
     WinHttpRESTClient wrc("my-user-agent-string");
 
@@ -427,7 +427,7 @@ Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or t
     #include "siddiqsoft/restcl_winhttp.hpp"
     ...
     using namespace siddiqsoft;
-    using namespace siddiqsoft::literals;
+    using namespace siddiqsoft::splituri_literals;
 
     WinHttpRESTClient wrc("my-user-agent-string");
         ...
