@@ -9,110 +9,120 @@ trigger:
     - docs/*
     - README.md
 
-pool:
-  name: Default
-  demands:
-  - msbuild
-  - visualstudio
-  - vstest
+stages:
+- stage: BuildAndPublish
+  displayName: Build on Windows
 
-variables:
-  buildPlatform: 'x64'
+  jobs:
+  - job:
+    displayName: Build
+    workspace:
+      clean: all
+
+    pool:
+      name: Default
+      demands:
+      - msbuild
+      - visualstudio
+      - vstest
+
+    variables:
+      buildPlatform: 'x64'
   
-steps:
-- checkout: self
-  fetchDepth: 0
+    steps:
+    - checkout: self
+      fetchDepth: 0
 
-- task: NuGetToolInstaller@1
-  displayName: 'Install Nuget'
-  inputs:
-    versionSpec: '>=5.0.0-0'
-    checkLatest: true
+    - task: NuGetToolInstaller@1
+      displayName: 'Install Nuget'
+      inputs:
+        versionSpec: '>=5.0.0-0'
+        checkLatest: true
 
-- task: gitversion/setup@3
-  displayName: 'Install GitVersion..'
-  inputs:
-    versionSpec: '6.x'
-    preferLatestVersion: true
+    - task: gitversion/setup@3
+      displayName: 'Install GitVersion..'
+      inputs:
+        versionSpec: '6.x'
+        preferLatestVersion: true
 
-- task: gitversion/execute@3
-  displayName: 'Determine Version..'
-  inputs:
-    useConfigFile: true
-    configFilePath: 'GitVersion.yml'
+    - task: gitversion/execute@3
+      displayName: 'Determine Version..'
+      inputs:
+        useConfigFile: true
+        configFilePath: 'GitVersion.yml'
 
-- script: echo %Action%%BuildVersion%
-  displayName: 'Set build version to $(GitVersion.FullSemVer)'
-  env:
-    Action: '##vso[build.updatebuildnumber]'
-    BuildVersion: $(GitVersion.MajorMinorPatch).$(GitVersion.CommitsSinceVersionSource)
+    - script: echo %Action%%BuildVersion%
+      displayName: 'Set build version to $(GitVersion.FullSemVer)'
+      env:
+        Action: '##vso[build.updatebuildnumber]'
+        BuildVersion: $(GitVersion.MajorMinorPatch).$(GitVersion.CommitsSinceVersionSource)
 
-- task: NuGetCommand@2
-  displayName: 'NuGet restore'
-  inputs:
-    command: 'restore'
-    restoreSolution: '**/*.sln'
-    feedsToUse: 'select'
-    vstsFeed: 'ec2759e0-0587-4306-8a8d-8695f15e2336'
-    noCache: true
-  continueOnError: true
+    - task: NuGetCommand@2
+      displayName: 'NuGet restore'
+      inputs:
+        command: 'restore'
+        restoreSolution: '**/*.sln'
+        feedsToUse: 'select'
+        vstsFeed: 'ec2759e0-0587-4306-8a8d-8695f15e2336'
+        noCache: true
+      continueOnError: true
 
-- task: VSBuild@1
-  displayName: 'Build solution RELEASE'
-  inputs:
-    solution: 'restcl.sln'
-    platform: 'x64'
-    configuration: 'Release'
-    clean: true
-    maximumCpuCount: true
-    msbuildArchitecture: 'x64'
+    - task: VSBuild@1
+      displayName: 'Build solution RELEASE'
+      inputs:
+        solution: 'restcl.sln'
+        platform: 'x64'
+        configuration: 'Release'
+        clean: true
+        maximumCpuCount: true
+        msbuildArchitecture: 'x64'
 
-- task: CmdLine@2
-  inputs:
-    script: |
-      echo Running googletest
-      cd output\Release
-      basic_tests.exe --gtest_output=xml:..\..\TestResults\
+    - task: CmdLine@2
+      inputs:
+        script: |
+          echo Running googletest
+          cd output\Release
+          basic_tests.exe --gtest_output=xml:..\..\TestResults\
 
-- task: PublishTestResults@2
-  displayName: 'Publish Release Test Results **/TEST-*.xml'
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: '**/TestResults/basic_tests.xml'
-    mergeTestResults: true
-    buildPlatform: 'x64'
-    buildConfiguration: 'Release'
-  continueOnError: true
+    - task: PublishTestResults@2
+      displayName: 'Publish Release Test Results **/TEST-*.xml'
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/TestResults/basic_tests.xml'
+        mergeTestResults: true
+        buildPlatform: 'x64'
+        buildConfiguration: 'Release'
+      continueOnError: true
 
-- task: NuGetCommand@2
-  displayName: 'NuGet pack'
-  inputs:
-    command: 'pack'
-    packagesToPack: 'nuget/*.nuspec'
-    versioningScheme: 'off'
-    buildProperties: 'VERSION=$(GitVersion.MajorMinorPatch)'
+    - task: NuGetCommand@2
+      displayName: 'NuGet pack'
+      inputs:
+        command: 'pack'
+        packagesToPack: 'nuget/*.nuspec'
+        versioningScheme: 'off'
+        buildProperties: 'VERSION=$(GitVersion.MajorMinorPatch).$(GitVersion.CommitsSinceVersionSource)'
 
-- task: NuGetCommand@2
-  displayName: 'NuGet push'
-  inputs:
-    command: 'push'
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg;build/*.nupkg;!build/*symbols.nupkg'
-    nuGetFeedType: 'external'
-    publishFeedCredentials: 'sqs-nuget'
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    - task: NuGetCommand@2
+      displayName: 'NuGet push'
+      inputs:
+        command: 'push'
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg;build/*.nupkg;!build/*symbols.nupkg'
+        nuGetFeedType: 'external'
+        publishFeedCredentials: 'sqs-nuget'
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
-- task: GitHubRelease@1
-  inputs:
-    gitHubConnection: 'github-packages-sqs'
-    repositoryName: 'SiddiqSoft/restcl'
-    action: 'create'
-    target: '$(Build.SourceVersion)'
-    tagSource: 'userSpecifiedTag'
-    tag: '$(build.buildNumber)'
-    title: 'v$(build.buildNumber)'
-    releaseNotesSource: 'inline'
-    releaseNotesInline: 'Documentation https://siddiqsoft.github.io/restcl'
-    isPreRelease: true
-    changeLogCompareToRelease: 'lastFullRelease'
-    changeLogType: 'commitBased'
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    - task: GitHubRelease@1
+      inputs:
+        gitHubConnection: 'github-packages-sqs'
+        repositoryName: 'SiddiqSoft/restcl'
+        action: 'create'
+        target: '$(Build.SourceVersion)'
+        tagSource: 'userSpecifiedTag'
+        tag: '$(build.buildNumber)'
+        title: 'v$(build.buildNumber)'
+        releaseNotesSource: 'inline'
+        releaseNotesInline: 'Documentation https://siddiqsoft.github.io/restcl'
+        isPreRelease: true
+        changeLogCompareToRelease: 'lastFullRelease'
+        changeLogType: 'commitBased'
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))

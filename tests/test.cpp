@@ -53,7 +53,7 @@
 
 namespace siddiqsoft
 {
-    using namespace httprequest::literals;
+    using namespace restcl_literals;
 
     TEST(Serializers, test1a)
     {
@@ -102,7 +102,7 @@ namespace siddiqsoft
 
 namespace siddiqsoft
 {
-    using namespace siddiqsoft::literals;
+    using namespace restcl_literals;
 
     TEST(TSendRequest, test1a)
     {
@@ -156,6 +156,7 @@ namespace siddiqsoft
 
     TEST(TSendRequest, test3a)
     {
+        using namespace siddiqsoft::splituri_literals;
         std::atomic_bool passTest = false;
 
         WinHttpRESTClient wrc;
@@ -187,6 +188,8 @@ namespace siddiqsoft
 
     TEST(TSendRequest, test3b)
     {
+        using namespace siddiqsoft::splituri_literals;
+
         // https://ptsv2.com/t/buzz2
         std::atomic_bool passTest = false;
         // auto auth     = base64encode("aau:paau");
@@ -219,7 +222,7 @@ namespace siddiqsoft
     TEST(TSendRequest, Fails_1a)
     {
         std::atomic_bool passTest = false;
-        using namespace siddiqsoft::literals;
+        using namespace siddiqsoft::splituri_literals;
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
@@ -246,7 +249,7 @@ namespace siddiqsoft
     TEST(TSendRequest, Fails_1b)
     {
         std::atomic_bool passTest = false;
-        using namespace siddiqsoft::literals;
+        using namespace siddiqsoft::splituri_literals;
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
@@ -273,7 +276,7 @@ namespace siddiqsoft
     TEST(TSendRequest, Fails_1c)
     {
         std::atomic_bool passTest = false;
-        using namespace siddiqsoft::literals;
+        using namespace siddiqsoft::splituri_literals;
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
@@ -298,7 +301,7 @@ namespace siddiqsoft
     TEST(TSendRequest, Fails_2a)
     {
         std::atomic_bool passTest = false;
-        using namespace siddiqsoft::literals;
+        using namespace siddiqsoft::splituri_literals;
 
         WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
@@ -433,5 +436,42 @@ namespace siddiqsoft
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 
+    TEST(Threads, Test_Send_Synchronous)
+    {
+        const unsigned   ITER_COUNT = 1;
+        std::atomic_uint passTest   = 0;
+        std::cerr << std::format("Starting..\n");
 
+        try {
+            using namespace std::chrono_literals;
+            using namespace siddiqsoft::restcl_literals;
+
+            siddiqsoft::WinHttpRESTClient wrc {"pmd4-drift-check"};
+            nlohmann::json                myStats {"Test", "drift-check"};
+
+            auto req = "https://time.akamai.com/?iso"_GET;
+            if (siddiqsoft::basic_response resp = wrc.send(req); resp.success()) {
+                passTest++;
+                auto timeNow                = std::chrono::system_clock::now();
+                myStats["timeRemoteSource"] = "https://time.akamai.com/?iso";
+                myStats["timeRemoteTS"]     = resp.encode();
+
+                auto [deltaMS, deltastr] = siddiqsoft::DateUtils::diff(timeNow, siddiqsoft::DateUtils::parseISO8601(resp.encode()));
+                myStats["timeDriftMillis"] = std::to_string(deltaMS.count());
+                myStats["timeDrift"]       = deltastr;
+                myStats["timeNow"]         = siddiqsoft::DateUtils::ISO8601(timeNow);
+
+                std::cerr << std::format("Time drift check {}", myStats.dump()) << std::endl;
+
+                if ((deltaMS > 1500ms) || (deltaMS < -1500ms)) {
+                    std::cerr << "  Found drift from clock more than 1500ms" << std::endl;
+                }
+            }
+        }
+        catch (const std::exception& ex) {
+            std::cerr << std::format("Housekeeping exception: {}", ex.what()) << std::endl;
+        }
+
+        EXPECT_EQ(ITER_COUNT, passTest.load());
+    }
 } // namespace siddiqsoft

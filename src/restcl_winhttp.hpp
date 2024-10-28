@@ -234,8 +234,15 @@ namespace siddiqsoft
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
             // This function is invoked any time we have an item
-            auto resp = send(arg.request);
-            arg.callback(arg.request, resp);
+            // The arg is moved here and belongs to use. Once this
+            // method completes the lifetime of the object ends;
+            // typically this is *after* we invoke the callback.
+            try {
+                auto resp = send(arg.request);
+                arg.callback(arg.request, resp);
+            }
+            catch (const std::exception&) {
+            }
         }};
 
     public:
@@ -275,8 +282,8 @@ namespace siddiqsoft
 
         /// @brief Creates the Windows REST Client with given UserAgent string
         /// Sets the HTTP/2 option and the decompression options
-        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/0.10.13 (Windows NT; x64)`
-        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/0.10.13 (Windows NT; x64)")
+        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/1.6 (Windows NT; x64)`
+        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/1.6 (Windows NT; x64)")
         {
             UserAgent  = ua;
             UserAgentW = ConversionUtils::wideFromAscii(ua);
@@ -326,7 +333,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        basic_response send(basic_request& req)
+        [[nodiscard]] basic_response send(basic_request& req)
         {
             rest_response resp {};
 
