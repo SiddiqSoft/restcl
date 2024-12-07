@@ -39,8 +39,8 @@
 #include <version>
 
 #include "nlohmann/json.hpp"
-#include "../src/restcl.hpp"
-#include "../src/restcl_winhttp.hpp"
+#include "../include/siddiqsoft/restcl.hpp"
+#include "../include/siddiqsoft/restcl_winhttp.hpp"
 
 #ifndef __cpp_lib_atomic_flag_test
 #pragma message("nothing to do; please update to ensure C++20 support!")

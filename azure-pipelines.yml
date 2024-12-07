@@ -1,128 +1,219 @@
+###############################################
+# SiddiqSoft Azure DevOps Pipelines Template  #
+# For C++ Projects                            #
+# Version 2.0                                 #
+###############################################
 trigger:
-  batch: true
+  batch: 'true'
   branches:
     include:
+    - master
     - main
+    - bufix/*
     - release/*
+    - hotfix/*
+    - feature/*
   paths:
     exclude:
-    - docs/*
     - README.md
 
-stages:
-- stage: BuildAndPublish
-  displayName: Build on Windows
+variables:
+  buildConfiguration: 'Release'
 
+stages:
+################################## STAGE ####################################
+# STAGE: BuildTest                                                          #
+#############################################################################
+- stage: BuildTest
+  displayName: 'Building Multiple OS, Testing and Package for Windows'
   jobs:
-  - job:
-    displayName: Build
+  - job: build
+    displayName: 'Build and Test'
     workspace:
       clean: all
 
-    pool:
-      name: Default
-      demands:
-      - msbuild
-      - visualstudio
-      - vstest
+    strategy:
+      matrix:
+        Windows:
+          osName: Windows_NT
+          poolName: Default
+          poolImageName:
+          cmake.preset: Windows-Release
+        #Linux:
+        #  osName: Linux
+        #  poolName: Default
+        #  poolImageName:
+        #  cmake.preset: Linux-Release
 
-    variables:
-      buildPlatform: 'x64'
-  
+    pool:
+      name: $(poolName)
+      vmImage: $(poolImageName)
+      demands:
+        - Agent.OS -equals $(osName)
+
     steps:
     - checkout: self
       fetchDepth: 0
+      name: step1
 
     - task: NuGetToolInstaller@1
       displayName: 'Install Nuget'
       inputs:
-        versionSpec: '>=5.0.0-0'
+        versionSpec: '>=6.0.0-0'
         checkLatest: true
 
-    - task: gitversion/setup@3
+    - task: gitversion/setup@3.0.0
       displayName: 'Install GitVersion..'
       inputs:
         versionSpec: '6.x'
         preferLatestVersion: true
 
-    - task: gitversion/execute@3
+    - task: gitversion/execute@3.0.0
       displayName: 'Determine Version..'
+      name: version_step
       inputs:
         useConfigFile: true
         configFilePath: 'GitVersion.yml'
 
-    - script: echo %Action%%BuildVersion%
-      displayName: 'Set build version to $(GitVersion.FullSemVer)'
-      env:
-        Action: '##vso[build.updatebuildnumber]'
-        BuildVersion: $(GitVersion.MajorMinorPatch).$(GitVersion.CommitsSinceVersionSource)
-
-    - task: NuGetCommand@2
-      displayName: 'NuGet restore'
+    # Set the flags for testing, build here.
+    - task: CMake@1
+      displayName: 'CMake Configure $(cmake.preset)'
       inputs:
-        command: 'restore'
-        restoreSolution: '**/*.sln'
-        feedsToUse: 'select'
-        vstsFeed: 'ec2759e0-0587-4306-8a8d-8695f15e2336'
-        noCache: true
-      continueOnError: true
+        cmakeArgs: '--preset $(cmake.preset) -DCI_BUILDID=$(GitVersion.MajorMinorPatch).$(GitVersion.CommitsSinceVersionSource)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-    - task: VSBuild@1
-      displayName: 'Build solution RELEASE'
+    - task: CMake@1
+      displayName: 'CMake Build $(cmake.preset)'
       inputs:
-        solution: 'restcl.sln'
-        platform: 'x64'
-        configuration: 'Release'
-        clean: true
-        maximumCpuCount: true
-        msbuildArchitecture: 'x64'
+        cmakeArgs: '--build --preset $(cmake.preset) -DCI_BUILDID=$(GitVersion.MajorMinorPatch).$(GitVersion.CommitsSinceVersionSource)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+      condition: succeeded()
+
+    - task: CMake@1
+      displayName: 'CMake Tests $(cmake.preset)'
+      inputs:
+        cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/test_detail.xml --output-on-failure'
+      condition: succeeded()
+      continueOnError: false
+
+    # Try for coverage (but only on Linux build machines)
+    - task: CMake@1
+      displayName: 'CTest Coverage $(cmake.preset) (Linux only)'
+      inputs:
+        cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset) ctest --preset $(cmake.preset) --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/test_detail.xml --output-on-failure  -T Test -T Coverage'
+      condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Linux'))
+      continueOnError: false
 
     - task: CmdLine@2
+      displayName: 'Coverage collection (Linux builds Only)'
       inputs:
         script: |
-          echo Running googletest
-          cd output\Release
-          basic_tests.exe --gtest_output=xml:..\..\TestResults\
-
+          echo "gcovr --delete --root ../../ --print-summary --xml-pretty --xml coverage.xml .  --filter='$(System.DefaultWorkingDirectory)/include/siddiqsoft/*' --filter='$(System.DefaultWorkingDirectory)/tests/*' --gcov-executable 'llvm-cov gcov'"
+          gcovr --delete --root $(System.DefaultWorkingDirectory)/ --print-summary --xml-pretty --xml $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/coverage.xml $(System.DefaultWorkingDirectory)/build/$(cmake.preset)  --filter='$(System.DefaultWorkingDirectory)/include/*' --filter='$(System.DefaultWorkingDirectory)/tests/*' --gcov-executable 'llvm-cov gcov'
+        workingDirectory: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+      condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Linux'))
+ 
     - task: PublishTestResults@2
-      displayName: 'Publish Release Test Results **/TEST-*.xml'
+      displayName: 'Publish $(buildConfiguration) Test Results test_detail.xml'
       inputs:
-        testResultsFormat: 'JUnit'
-        testResultsFiles: '**/TestResults/basic_tests.xml'
-        mergeTestResults: true
-        buildPlatform: 'x64'
-        buildConfiguration: 'Release'
-      continueOnError: true
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/test_detail.xml'
+          mergeTestResults: true
+          buildConfiguration: '$(buildConfiguration)'
+      continueOnError: false
+      condition: succeeded()
+
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish Coverage Results (Linux builds)'
+      inputs:
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/coverage.*'
+      condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Linux'))
+
+################################## STAGE ####################################
+# STAGE: Pack_n_Publish                                                     #
+#############################################################################
+- stage: Pack_n_Publish
+  displayName: 'Package for GitHub (cmake) and Nuget'
+  dependsOn: BuildTest
+  jobs:
+  - job: packit
+    displayName: PackageIt
+    workspace:
+      clean: all
+
+    strategy:
+      matrix:
+        Windows:
+          osName: Windows_NT
+          poolName: Default
+          poolImageName:
+          cmake.preset: Windows-Release
+        #Linux:
+        #  osName: Linux
+        #  poolName: Default
+        #  poolImageName:
+        #  cmake.preset: Linux-Release
+
+    pool:
+      name: $(poolName)
+      vmImage: $(poolImageName)
+      demands:
+        - Agent.OS -equals $(osName)
+
+    steps:
+    - task: gitversion/setup@3.0.0
+      displayName: 'Install GitVersion..'
+      inputs:
+        versionSpec: '6.x'
+        preferLatestVersion: true
+
+    - task: gitversion/execute@3.0.0
+      displayName: 'Determine Version..'
+      name: version_step
+      inputs:
+        useConfigFile: true
+        configFilePath: 'GitVersion.yml'
+
+    - task: NuGetToolInstaller@1
+      displayName: 'Install Nuget'
+      inputs:
+        versionSpec: '>=6.0.0-0'
+        checkLatest: true
 
     - task: NuGetCommand@2
-      displayName: 'NuGet pack'
+      displayName: 'NuGet pack v$(GitVersion.MajorMinorPatch)'
       inputs:
         command: 'pack'
-        packagesToPack: 'nuget/*.nuspec'
+        packagesToPack: 'pack/*.nuspec'
         versioningScheme: 'off'
-        buildProperties: 'VERSION=$(GitVersion.MajorMinorPatch).$(GitVersion.CommitsSinceVersionSource)'
+        buildProperties: 'VERSION=$(GitVersion.MajorMinorPatch)'
+      condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
 
     - task: NuGetCommand@2
       displayName: 'NuGet push'
       inputs:
         command: 'push'
-        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg;build/*.nupkg;!build/*symbols.nupkg'
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;build/*.nupkg'
         nuGetFeedType: 'external'
         publishFeedCredentials: 'sqs-nuget'
-      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')), startsWith(variables['Agent.OS'], 'Windows'))
 
     - task: GitHubRelease@1
+      displayName: 'Release to GitHub'
       inputs:
         gitHubConnection: 'github-packages-sqs'
-        repositoryName: 'SiddiqSoft/restcl'
+        repositoryName: 'siddiqsoft/AzureCppUtils'
         action: 'create'
         target: '$(Build.SourceVersion)'
         tagSource: 'userSpecifiedTag'
-        tag: '$(build.buildNumber)'
-        title: 'v$(build.buildNumber)'
+        tag: '$(GitVersion.MajorMinorPatch)'
+        title: 'v$(GitVersion.MajorMinorPatch)'
         releaseNotesSource: 'inline'
-        releaseNotesInline: 'Documentation https://siddiqsoft.github.io/restcl'
+        releaseNotesInline: 'Documentation https://github.com/SiddiqSoft/AzureCppUtils'
         isPreRelease: true
         changeLogCompareToRelease: 'lastFullRelease'
         changeLogType: 'commitBased'
-      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+        addChangeLog: false
+        assetUploadMode: 'replace'
+      #condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')), startsWith(variables['Agent.OS'], 'Linux'))
+      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')), startsWith(variables['Agent.OS'], 'Windows'))

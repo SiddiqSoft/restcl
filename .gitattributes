@@ -3,6 +3,9 @@
 ###############################################################################
 * text=auto
 
+# Make sure that our samples files are always CRLF!
+*.sip text eol=crlf
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #
