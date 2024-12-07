@@ -39,7 +39,7 @@
 	-->
 	<files>
 		<!-- includes -->
-		<file src="..\src\*.hpp" target="build\native\include\siddiqsoft\" />
+		<file src="..\include\siddiqsoft\*.hpp" target="build\native\include\siddiqsoft\" />
 		<file src="Siddiq-Software-Avatar.png" target="docs\" />
 		<file src="..\README.md" target="docs\" />
 
