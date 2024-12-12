@@ -65,7 +65,7 @@ stages:
     - task: gitversion/setup@3.0.0
       displayName: 'Install GitVersion..'
       inputs:
-        versionSpec: '6.x'
+        versionSpec: '6.0'
         preferLatestVersion: true
 
     - task: gitversion/execute@3.0.0
@@ -100,7 +100,7 @@ stages:
     - task: CMake@1
       displayName: 'CTest Coverage $(cmake.preset) (Linux only)'
       inputs:
-        cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset) ctest --preset $(cmake.preset) --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/test_detail.xml --output-on-failure  -T Test -T Coverage'
+        cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset) ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/test_detail.xml --output-on-failure  -T Test -T Coverage'
       condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Linux'))
       continueOnError: false
 
@@ -164,7 +164,7 @@ stages:
     - task: gitversion/setup@3.0.0
       displayName: 'Install GitVersion..'
       inputs:
-        versionSpec: '6.x'
+        versionSpec: '6.0'
         preferLatestVersion: true
 
     - task: gitversion/execute@3.0.0
@@ -202,14 +202,14 @@ stages:
       displayName: 'Release to GitHub'
       inputs:
         gitHubConnection: 'github-packages-sqs'
-        repositoryName: 'siddiqsoft/restcl'
+        repositoryName: '$(Build.Repository.Name)'
         action: 'create'
         target: '$(Build.SourceVersion)'
         tagSource: 'userSpecifiedTag'
         tag: '$(GitVersion.MajorMinorPatch)'
         title: 'v$(GitVersion.MajorMinorPatch)'
         releaseNotesSource: 'inline'
-        releaseNotesInline: 'Documentation https://github.com/SiddiqSoft/restcl'
+        releaseNotesInline: 'Documentation https://github.com/$(Build.Repository.Name)'
         isPreRelease: true
         changeLogCompareToRelease: 'lastFullRelease'
         changeLogType: 'commitBased'

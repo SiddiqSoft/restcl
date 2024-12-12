@@ -286,7 +286,7 @@ namespace siddiqsoft
         WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/1.6 (Windows NT; x64)")
         {
             UserAgent  = ua;
-            UserAgentW = ConversionUtils::wideFromAscii(ua);
+            UserAgentW = ConversionUtils::convert_to<char,wchar_t>(ua);
 
             hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
             if (hSession) {
@@ -354,9 +354,9 @@ namespace siddiqsoft
                 auto lastPart     = src.find_first_of(L"\r\n", ++secondPart);
                 auto reasonPhrase = src.substr(secondPart, lastPart - secondPart);
 
-                return {ConversionUtils::asciiFromWide(httpVersion),
+                return {ConversionUtils::convert_to<wchar_t,char>(httpVersion),
                         std::stoi(statusCode),
-                        ConversionUtils::asciiFromWide(reasonPhrase),
+                        ConversionUtils::convert_to<wchar_t,char>(reasonPhrase),
                         lastPart + 2}; // start of the header section
             };
 
@@ -394,7 +394,7 @@ namespace siddiqsoft
 
                 auto& strServer = req.uri.authority.host;
                 if (ACW32HINTERNET hConnect {
-                            WinHttpConnect(hSession, ConversionUtils::wideFromAscii(strServer).c_str(), req.uri.authority.port, 0)};
+                            WinHttpConnect(hSession, ConversionUtils::convert_to<char,wchar_t>(strServer).c_str(), req.uri.authority.port, 0)};
                     hConnect != NULL)
                 {
                     auto strMethod  = rs.value("method", "");
@@ -402,9 +402,9 @@ namespace siddiqsoft
                     auto strVersion = rs.value("version", "");
 
                     if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
-                                                                    ConversionUtils::wideFromAscii(strMethod).c_str(),
-                                                                    ConversionUtils::wideFromAscii(strUrl).c_str(),
-                                                                    ConversionUtils::wideFromAscii(strVersion).c_str(),
+                                                                    ConversionUtils::convert_to<char,wchar_t>(strMethod).c_str(),
+                                                                    ConversionUtils::convert_to<char,wchar_t>(strUrl).c_str(),
+                                                                    ConversionUtils::convert_to<char,wchar_t>(strVersion).c_str(),
                                                                     NULL,
                                                                     RESTCL_ACCEPT_TYPES_W,
                                                                     (req.uri.scheme == UriScheme::WebHttps)
@@ -415,7 +415,7 @@ namespace siddiqsoft
                         auto        contentLength = hs.value("Content-Length", 0);
                         std::string strHeaders;
                         req.encodeHeaders_to(strHeaders);
-                        std::wstring requestHeaders = ConversionUtils::wideFromAscii(strHeaders);
+                        std::wstring requestHeaders = ConversionUtils::convert_to<char,wchar_t>(strHeaders);
                         nError                      = WinHttpAddRequestHeaders(hRequest,
                                                           requestHeaders.c_str(),
                                                           static_cast<DWORD>(requestHeaders.length()),

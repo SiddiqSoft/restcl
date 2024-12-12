@@ -26,7 +26,6 @@ project(restcl
 # ____________________________________
 # Options; define and declare defaults
 option(${PROJECT_NAME}_BUILD_TESTS "${PROJECT_NAME} - Build tests. Uncheck for install only runs" OFF)
-option(${${PROJECT_NAME}_BUILD_TESTS} "${PROJECT_NAME} - Build tests. Uncheck for install only runs" OFF)
 
 # ____________________________________
 #  Library Definition
@@ -50,15 +49,15 @@ target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 # Dependencies
 CPMAddPackage("gh:nlohmann/json#v3.11.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
-CPMAddPackage("gh:SiddiqSoft/SplitUri#main")
+CPMAddPackage("gh:SiddiqSoft/SplitUri#2.1.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
-CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#main")
+CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#2.0.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
-CPMAddPackage("gh:SiddiqSoft/acw32h#main")
+CPMAddPackage("gh:SiddiqSoft/acw32h#2.7.4")
 target_link_libraries(${PROJECT_NAME} INTERFACE acw32h::acw32h)
-CPMAddPackage("gh:SiddiqSoft/string2map#main")
+CPMAddPackage("gh:SiddiqSoft/string2map#2.4.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#main")
+CPMAddPackage("gh:SiddiqSoft/asynchrony#1.7.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
 # ____________________________________
