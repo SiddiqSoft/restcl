@@ -24,7 +24,7 @@
 		<dependencies>
 			<dependency id="nlohmann.json" version="3.11"/>
 			<dependency id="SiddiqSoft.SplitUri" version="2.1"/>
-			<dependency id="SiddiqSoft.AzureCppUtils" version="2.0"/>
+			<dependency id="SiddiqSoft.AzureCppUtils" version="2.0.1"/>
 			<dependency id="SiddiqSoft.acw32h" version="2.7"/>
 			<dependency id="SiddiqSoft.string2map" version="2.4"/>
 			<dependency id="SiddiqSoft.asynchrony" version="1.7.3"/>
