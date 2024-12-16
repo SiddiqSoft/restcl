@@ -57,7 +57,7 @@ CPMAddPackage("gh:SiddiqSoft/acw32h#2.7.4")
 target_link_libraries(${PROJECT_NAME} INTERFACE acw32h::acw32h)
 CPMAddPackage("gh:SiddiqSoft/string2map#2.4.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#1.7.3")
+CPMAddPackage("gh:SiddiqSoft/asynchrony#1.8.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
 # ____________________________________

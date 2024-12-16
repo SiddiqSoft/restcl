@@ -17,17 +17,13 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     # Dependencies
     cpmaddpackage("gh:google/googletest#v1.15.2")
     target_link_libraries(${TESTPROJ} PRIVATE GTest::gtest_main)
-    CPMAddPackage("gh:nlohmann/json#v3.11.3")
+    # These are directly added by the public/interface so we need only
+    # link to them. no need to fetch them.
     target_link_libraries(${TESTPROJ} PRIVATE nlohmann_json::nlohmann_json)
-    CPMAddPackage("gh:SiddiqSoft/SplitUri#main")
     target_link_libraries(${TESTPROJ} PRIVATE SplitUri::SplitUri)
-    CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#main")
     target_link_libraries(${TESTPROJ} PRIVATE AzureCppUtils::AzureCppUtils)
-    CPMAddPackage("gh:SiddiqSoft/acw32h#main")
     target_link_libraries(${TESTPROJ} PRIVATE acw32h::acw32h)
-    CPMAddPackage("gh:SiddiqSoft/string2map#main")
     target_link_libraries(${TESTPROJ} PRIVATE string2map::string2map)
-    CPMAddPackage("gh:SiddiqSoft/asynchrony#main")
     target_link_libraries(${TESTPROJ} PRIVATE asynchrony::asynchrony)
         
     include(GoogleTest)
