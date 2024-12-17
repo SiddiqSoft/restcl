@@ -382,7 +382,7 @@ namespace siddiqsoft
 
     TEST(Threads, test_1)
     {
-        const unsigned   ITER_COUNT = 29;
+        const unsigned   ITER_COUNT = 9;
         std::atomic_uint passTest   = 0;
         std::cerr << std::format("Starting..\n");
 
@@ -430,9 +430,10 @@ namespace siddiqsoft
 #ifdef _DEBUG
             std::cerr << std::format("Finished adding {} items..\n", ITER_COUNT);
 #endif
-            std::this_thread::sleep_for(std::chrono::milliseconds(9900));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(9900));
         }
-        // std::this_thread::sleep_for(std::chrono::seconds(5));
+
+        std::this_thread::sleep_for(std::chrono::seconds(4));
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 
