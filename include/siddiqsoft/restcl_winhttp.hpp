@@ -36,7 +36,7 @@
 #ifndef RESTCLWINHTTP_HPP
 #define RESTCLWINHTTP_HPP
 
-
+#if defined(WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64)
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -584,6 +584,8 @@ namespace siddiqsoft
         }
     };
 } // namespace siddiqsoft
-
+#else
+#pragma message("Windows required")
+#endif
 
 #endif // !RESTCLWINHTTP_HPP

@@ -51,8 +51,6 @@
 #include "siddiqsoft/date-utils.hpp"
 
 
-#if __cpp_lib_format
-
 namespace siddiqsoft
 {
     /// @brief REST Methods: GET, PATCH, POST, PUT, DELETE, HEAD, OPTIONS
@@ -690,9 +688,5 @@ struct std::formatter<siddiqsoft::basic_response> : std::formatter<std::string>
 };
 #endif
 #pragma endregion
-
-#else
-#pragma message(warning : "C++20 required with std::format support")
-#endif
 
 #endif // !RESTCL_HPP

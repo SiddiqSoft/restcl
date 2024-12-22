@@ -17,10 +17,12 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
 
     target_sources( ${TESTPROJ}
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/tests/encryption-utils-tests.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/base64-utils-tests.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/url-utils-tests.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/date-utils-tests.cpp)
+                    ${PROJECT_SOURCE_DIR}/tests/test.cpp)
+
+    message (STATUS ">>>> ${CMAKE_C_COMPILER} <<<<")
+    message (STATUS ">>>> ${CMAKE_CXX_COMPILER} <<<<")
+    message (STATUS ">>>> ${CMAKE_CXX_COMPILER_AR} <<<<")
+    message (STATUS ">>>> ${CMAKE_CXX_COMPILER_RANLIB} <<<<")
 
     # ASAN and Coverage only for Debug builds on Linux
     if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
@@ -39,12 +41,17 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     endif()
 
     # Dependencies
-    find_package(OpenSSL 3.0 REQUIRED)
-    target_include_directories(${TESTPROJ} PRIVATE ${OPENSSL_INCLUDE_DIRS})
-    target_link_libraries(${TESTPROJ} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-
     cpmaddpackage("gh:google/googletest#v1.15.2")
-    target_link_libraries(${TESTPROJ} PRIVATE GTest::gtest_main RunOnEnd::RunOnEnd StringHelpers::StringHelpers)
+
+    target_link_libraries(${TESTPROJ} PRIVATE
+                            GTest::gtest_main
+                            nlohmann_json::nlohmann_json
+                            OpenSSL::SSL
+                            OpenSSL::Crypto
+                            RunOnEnd::RunOnEnd
+                            SplitUri::SplitUri
+                            AzureCppUtils::AzureCppUtils
+                            StringHelpers::StringHelpers)
 
     include(GoogleTest)
     gtest_discover_tests(${TESTPROJ} XML_OUTPUT_DIR "${PROJECT_SOURCE_DIR}/tests/results")

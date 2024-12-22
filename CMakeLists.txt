@@ -45,13 +45,21 @@ target_compile_options( ${PROJECT_NAME}
                         INTERFACE
                         $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
 
+set( CMAKE_CXX_STANDARD 20)
+set( CMAKE_CXX_STANDARD_REQUIRED On)
+set( CMAKE_CXX_EXTENSIONS Off)
+                        
 # ____________________________________
 # Dependencies
+find_package(OpenSSL 3.0 REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+
 CPMAddPackage("gh:nlohmann/json#v3.11.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
 CPMAddPackage("gh:SiddiqSoft/SplitUri#2.1.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
-CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#2.0.1")
+CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.0.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
 CPMAddPackage("gh:SiddiqSoft/acw32h#2.7.4")
 target_link_libraries(${PROJECT_NAME} INTERFACE acw32h::acw32h)

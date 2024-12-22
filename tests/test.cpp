@@ -42,13 +42,6 @@
 #include "../include/siddiqsoft/restcl.hpp"
 #include "../include/siddiqsoft/restcl_winhttp.hpp"
 
-#ifndef __cpp_lib_atomic_flag_test
-#pragma message("nothing to do; please update to ensure C++20 support!")
-#endif
-
-#ifndef _HAS_CXX20
-#pragma message("nothing to do; please update to ensure C++20 support!")
-#endif
 
 
 namespace siddiqsoft

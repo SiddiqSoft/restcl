@@ -27,7 +27,7 @@ We use [NuGet](https://nuget.org) for dependencies. Why? Simply put, it is the *
 Package     | Comments
 -----------:|:----------
 [nlohmann.json](https://github.com/nlohmann/json)<br/>![](https://img.shields.io/nuget/v/nlohmann.json)| This is one of the simplest JSON libraries for C++.<br/>We have to make choices and this is our choice: clean, simple and elegant over efficiency. Our use-case <br/>The library is quite conformant and lends itself to general purpose use since it uses `<vector>` underneath it all.<br/>We leave time and experience (plus manpower) to optimize this library for us. So long as it works and we do not have to worry about some JAVA-esque or C-style interface!
-[azure-cpp-utils](https://github.com/SiddiqSoft/azure-cpp-utils)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.AzureCppUtils) | This is library with helpers for encryption, base64 encode/decode and conversion of utf8<-->wide strings.
+[azure-cpp-utils](https://github.com/SiddiqSoft/azure-cpp-utils)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.restcl) | This is library with helpers for encryption, base64 encode/decode and conversion of utf8<-->wide strings.
 [SplitUri](https://github.com/SiddiqSoft/SplitUri)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.SplitUri) | This is library provides parsing of the url.
 [string2map](https://github.com/SiddiqSoft/string2map)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.string2map) | This library provides for parsing of HTTP headers into a std::map
 [acw32h](https://github.com/SiddiqSoft/acw32h)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.acw32h) | This library provides for an auto-closing wrapper for HINTERNET, HSESSION and HINSTANCE objects.

@@ -10,7 +10,7 @@
             "hidden": true,
             "cacheVariables": {
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
-                "AzureCppUtils_BUILD_TESTS": "ON"
+                "restcl_BUILD_TESTS": "ON"
             }
         },
         {
