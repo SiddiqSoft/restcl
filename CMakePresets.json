@@ -2,7 +2,7 @@
     "version": 8,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 25
+        "minor": 29
     },
     "configurePresets": [
         {
@@ -10,7 +10,7 @@
             "hidden": true,
             "cacheVariables": {
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
-                "restcl_BUILD_TESTS": "ON"
+                "AzureCppUtils_BUILD_TESTS": "ON"
             }
         },
         {
@@ -50,9 +50,9 @@
             }
         },
         {
-            "name": "Linux-Debug",
-            "displayName": "Linux Debug",
-            "description": "Target Linux (Debug)",
+            "name": "Linux-Clang-Debug",
+            "displayName": "Linux Clang Debug",
+            "description": "Target Linux Clang(Debug)",
             "generator": "Unix Makefiles",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
@@ -74,9 +74,9 @@
             }
         },
         {
-            "name": "Linux-Release",
-            "displayName": "Linux Release",
-            "description": "Target Linux (Release)",
+            "name": "Linux-Clang-Release",
+            "displayName": "Linux Clang Release",
+            "description": "Target Linux Clang(Release)",
             "generator": "Unix Makefiles",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
@@ -85,6 +85,54 @@
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioRemoteSettings/CMake/2.0": {
+                    "remoteSourceRootDir": "$env{HOME}/.vs/$ms{projectDirName}"
+                }
+            }
+        },
+        {
+            "name": "Linux-GCC-Debug",
+            "displayName": "Linux GCC Debug",
+            "description": "Target Linux GCC(Debug)",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}",
+            "inherits": "Project-Base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "/usr/bin/gcc",
+                "CMAKE_CXX_COMPILER": "/usr/bin/g++"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioRemoteSettings/CMake/2.0": {
+                    "remoteSourceRootDir": "$env{HOME}/.vs/$ms{projectDirName}"
+                }
+            }
+        },
+        {
+            "name": "Linux-GCC-Release",
+            "displayName": "Linux GCC Release",
+            "description": "Target Linux GCC (Release)",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}",
+            "inherits": "Project-Base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "/usr/bin/gcc",
+                "CMAKE_CXX_COMPILER": "/usr/bin/g++"
             },
             "condition": {
                 "type": "equals",
@@ -148,12 +196,20 @@
             "configurePreset": "Apple-Release"
         },
         {
-            "name": "Linux-Debug",
-            "configurePreset": "Linux-Debug"
+            "name": "Linux-GCC-Debug",
+            "configurePreset": "Linux-GCC-Debug"
         },
         {
-            "name": "Linux-Release",
-            "configurePreset": "Linux-Release"
+            "name": "Linux-GCC-Release",
+            "configurePreset": "Linux-GCC-Release"
+        },
+        {
+            "name": "Linux-Clang-Debug",
+            "configurePreset": "Linux-Clang-Debug"
+        },
+        {
+            "name": "Linux-Clang-Release",
+            "configurePreset": "Linux-Clang-Release"
         },
         {
             "name": "Windows-Debug",
@@ -188,8 +244,8 @@
             }
         },
         {
-            "name": "Linux-Debug",
-            "configurePreset": "Linux-Debug",
+            "name": "Linux-GCC-Debug",
+            "configurePreset": "Linux-GCC-Debug",
             "output": {
                 "outputOnFailure": true
             },
@@ -199,8 +255,30 @@
             }
         },
         {
-            "name": "Linux-Release",
-            "configurePreset": "Linux-Release",
+            "name": "Linux-GCC-Release",
+            "configurePreset": "Linux-GCC-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Linux-Clang-Debug",
+            "configurePreset": "Linux-Clang-Debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Linux-Clang-Release",
+            "configurePreset": "Linux-Clang-Release",
             "output": {
                 "outputOnFailure": true
             },
