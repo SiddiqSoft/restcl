@@ -73,13 +73,6 @@
 
 namespace siddiqsoft
 {
-    struct RestPoolArgsType
-    {
-        basic_request      request;
-        basic_callbacktype callback;
-    };
-
-
 #pragma region WinInet error code map
     static std::map<uint32_t, std::string_view> WinInetErrorCodes {
             {12001, std::string_view("ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.")},
@@ -310,15 +303,6 @@ namespace siddiqsoft
 #endif
                 }
             }
-        }
-
-
-        /// @brief Implements an asynchronous invocation of the send() method
-        /// @param req Request object
-        /// @param callback The method will be async and there will not be a response object returned
-        void send(basic_request&& req, basic_callbacktype& callback)
-        {
-            pool.queue(RestPoolArgsType {.request = std::move(req), .callback = callback});
         }
 
 

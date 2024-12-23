@@ -51,7 +51,7 @@ namespace siddiqsoft
     TEST(TSendRequest, test1a)
     {
         std::atomic_bool  passTest = false;
-        WinHttpRESTClient wrc;
+        HttpRESTClient wrc;
 
         wrc.send("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, const auto& resp) {
             nlohmann::json doc(req);
@@ -77,7 +77,7 @@ namespace siddiqsoft
     TEST(TSendRequest, test2a)
     {
         std::atomic_bool  passTest = false;
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__));
+        HttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__));
 
         wrc.send("https://reqbin.com/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
             // Checks the implementation of the encode() implementation
@@ -103,7 +103,7 @@ namespace siddiqsoft
         using namespace siddiqsoft::splituri_literals;
         std::atomic_bool passTest = false;
 
-        WinHttpRESTClient wrc;
+        HttpRESTClient wrc;
         std::string       responseContentType {};
 
         wrc.send(ReqPost {"https://httpbin.org/post"_Uri,
@@ -138,7 +138,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         // auto auth     = base64encode("aau:paau");
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        HttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send(ReqPost {"https://httpbin.org/post"_Uri,
                           {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/json+custom"}},
@@ -168,7 +168,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        HttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send("https://www.siddiqsoft.com:65535/"_GET, [&passTest](const auto& req, const auto& resp) {
             // nlohmann::json doc(req);
@@ -195,7 +195,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        HttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send("https://localhost:65535/"_GET, [&passTest](const auto& req, const auto& resp) {
             nlohmann::json doc(req);
@@ -222,7 +222,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        HttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
         wrc.send("https://httpbin.org:9090/get"_OPTIONS, [&passTest](const auto& req, auto& resp) {
@@ -247,7 +247,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        HttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send("https://google.com/"_OPTIONS, [&passTest](const auto& req, auto& resp) {
             // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
@@ -272,7 +272,7 @@ namespace siddiqsoft
     TEST(TSendRequest, test9a)
     {
         std::atomic_bool  passTest = false;
-        WinHttpRESTClient wrc;
+        HttpRESTClient wrc;
 
         wrc.send("https://www.google.com/"_GET, [&passTest](const auto& req, const auto& resp) {
             // std::cerr << "From callback Serialized json: " << req << std::endl;
@@ -295,10 +295,10 @@ namespace siddiqsoft
     TEST(restcl, MoveConstructor)
     {
         std::atomic_uint                           passTest {0};
-        std::vector<siddiqsoft::WinHttpRESTClient> clients;
+        std::vector<siddiqsoft::HttpRESTClient> clients;
 
         for (auto i = 0; i < 4; i++) {
-            clients.push_back(siddiqsoft::WinHttpRESTClient {});
+            clients.push_back(siddiqsoft::HttpRESTClient {});
         }
 
         EXPECT_EQ(4, clients.size());
@@ -331,7 +331,7 @@ namespace siddiqsoft
         std::cerr << std::format("Starting..\n");
 
         {
-            WinHttpRESTClient wrc;
+            HttpRESTClient wrc;
 
             std::cerr << std::format("Post wrc..\n");
             basic_callbacktype valid = [&passTest](const auto& req, const auto& resp) {
@@ -391,7 +391,7 @@ namespace siddiqsoft
             using namespace std::chrono_literals;
             using namespace siddiqsoft::restcl_literals;
 
-            siddiqsoft::WinHttpRESTClient wrc {"pmd4-drift-check"};
+            siddiqsoft::HttpRESTClient wrc {"pmd4-drift-check"};
             nlohmann::json                myStats {"Test", "drift-check"};
 
             auto req = "https://time.akamai.com/?iso"_GET;

@@ -98,12 +98,12 @@ namespace siddiqsoft
         /// @brief Constructs a request with endpoint string into internal Uri object
         /// @param s Valid endpoint string
         explicit basic_request(const std::string& s) noexcept(false)
-            : uri(s) {};
+            : uri(s) { };
 
         /// @brief Not directly constructible; use the derived classes to build the request
         /// @param s The source Uri
         explicit basic_request(const Uri<char>& s) noexcept(false)
-            : uri(s) {};
+            : uri(s) { };
 
     public:
         /// @brief Access the "headers", "request", "content" in the json object
@@ -235,7 +235,7 @@ namespace siddiqsoft
     /// @brief Explicit implementation is required due to the restriction on direct instantiation of the basic_request class.
     /// @param dest The destination json
     /// @param src The basic_request class (or derived)
-    void to_json(nlohmann::json& dest, const basic_request& src)
+    inline void to_json(nlohmann::json& dest, const basic_request& src)
     {
         dest["uri"] = src.uri;
         dest["rrd"] = src.rrd;
@@ -336,7 +336,7 @@ namespace siddiqsoft
     using ReqHead    = rest_request<RESTMethodType::Head>;
 
 
-    std::ostream& operator<<(std::ostream& os, const basic_request& src)
+    inline std::ostream& operator<<(std::ostream& os, const basic_request& src)
     {
         os << src.encode();
         return os;
@@ -573,12 +573,29 @@ namespace siddiqsoft
 
 
     /// @brief Serializer to ostream for RESResponseType
-    std::ostream& operator<<(std::ostream& os, const basic_response& src)
+    inline std::ostream& operator<<(std::ostream& os, const basic_response& src)
     {
         os << src.encode();
         return os;
     }
 
+    struct RestPoolArgsType
+    {
+        RestPoolArgsType(basic_request&& r, basic_callbacktype& cb)
+            : request(std::move(r)) // own the request
+            , callback(cb)          // make a copy
+        {
+        }
+
+        RestPoolArgsType(basic_request&& r, basic_callbacktype&& cb)
+            : request(std::move(r))   // own the request
+            , callback(std::move(cb)) // own the callback
+        {
+        }
+
+        basic_request      request;
+        basic_callbacktype callback {};
+    };
 
 #pragma region Literal Operators for rest_request
     namespace restcl_literals

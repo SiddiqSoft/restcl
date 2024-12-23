@@ -15,14 +15,22 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                             PRIVATE
                             $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
 
-    target_sources( ${TESTPROJ}
-                    PRIVATE
-                    ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-
-    message (STATUS ">>>> ${CMAKE_C_COMPILER} <<<<")
-    message (STATUS ">>>> ${CMAKE_CXX_COMPILER} <<<<")
-    message (STATUS ">>>> ${CMAKE_CXX_COMPILER_AR} <<<<")
-    message (STATUS ">>>> ${CMAKE_CXX_COMPILER_RANLIB} <<<<")
+    # Conditional compilation for Linux/Apple and Windows.
+    if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
+        OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu]))
+        AND (CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg]))
+        # Linux and Apple tests
+        target_sources( ${TESTPROJ}
+                        PRIVATE
+                        ${PROJECT_SOURCE_DIR}/tests/test_unix.cpp
+                        ${PROJECT_SOURCE_DIR}/tests/test.cpp)
+    elseif()
+        # Windows
+        target_sources( ${TESTPROJ}
+                        PRIVATE
+                        ${PROJECT_SOURCE_DIR}/tests/test_winhttp.cpp
+                        ${PROJECT_SOURCE_DIR}/tests/test.cpp)
+    endif()
 
     # ASAN and Coverage only for Debug builds on Linux
     if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
@@ -50,6 +58,8 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                             OpenSSL::Crypto
                             RunOnEnd::RunOnEnd
                             SplitUri::SplitUri
+                            string2map::string2map
+                            asynchrony::asynchrony
                             AzureCppUtils::AzureCppUtils
                             StringHelpers::StringHelpers)
 
