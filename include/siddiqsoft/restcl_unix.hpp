@@ -33,7 +33,7 @@
  */
 
 #pragma once
-#if defined(__linux__) || defined (__APPLE__)
+#if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
 #define RESTCL_UNIX_HPP
@@ -66,12 +66,12 @@ namespace siddiqsoft
     class HttpRESTClient : public basic_restclient
     {
     private:
-        static const uint32_t           READBUFFERSIZE {8192};
+        static const uint32_t        READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
 
 
-        /// @brief Adds asynchrony to the library via the roundrobin_pool utility
+        /// @brief Adds asynchrony to the library via the simple_pool utility
         simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
@@ -91,9 +91,7 @@ namespace siddiqsoft
 
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
-        HttpRESTClient(HttpRESTClient&& src) noexcept
-        {
-        }
+        HttpRESTClient(HttpRESTClient&& src) noexcept { }
 
 
         /// @brief Creates the Windows REST Client with given UserAgent string
@@ -102,34 +100,32 @@ namespace siddiqsoft
         HttpRESTClient(const std::string& ua = "siddiqsoft.restcl_unix/1.6 (generic; x64)")
         {
             UserAgent  = ua;
-            UserAgentW = ConversionUtils::convert_to<char,wchar_t>(ua);
-
-
+            UserAgentW = ConversionUtils::convert_to<char, wchar_t>(ua);
         }
 
 
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(basic_request&& req, basic_callbacktype& callback)
+        void send(basic_request&& req, basic_callbacktype& callback) override
         {
-            pool.queue(RestPoolArgsType{std::move(req), callback});
+            pool.queue(RestPoolArgsType {std::move(req), callback});
         }
 
 
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(basic_request&& req, basic_callbacktype&& callback)
+        void send(basic_request&& req, basic_callbacktype&& callback) override
         {
-            pool.queue(RestPoolArgsType{std::move(req), std::move(callback)});
+            pool.queue(RestPoolArgsType {std::move(req), std::move(callback)});
         }
 
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] basic_response send(basic_request& req)
+        [[nodiscard]] basic_response send(basic_request& req) override
         {
             rest_response resp {};
 

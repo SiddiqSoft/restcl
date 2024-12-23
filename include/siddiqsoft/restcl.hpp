@@ -579,6 +579,10 @@ namespace siddiqsoft
         return os;
     }
 
+    /**
+     * @brief Container to store the basic_request and the optional callback.
+     * 
+     */
     struct RestPoolArgsType
     {
         RestPoolArgsType(basic_request&& r, basic_callbacktype& cb)
@@ -593,7 +597,16 @@ namespace siddiqsoft
         {
         }
 
-        basic_request      request;
+        /**
+         * @brief Represents the basic_request object
+         * 
+         */
+        basic_request request;
+
+        /**
+         * @brief Holds the callback to the client code
+         * 
+         */
         basic_callbacktype callback {};
     };
 
