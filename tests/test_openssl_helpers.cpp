@@ -9,15 +9,20 @@
 
 namespace siddiqsoft
 {
-    using namespace restcl_literals;
-
     TEST(openssl_helpers, test1a)
     {
         OpenSSLSingleton ossl;
 
-        ossl.configure().start();
-        auto ctx = ossl.getCTX();
-        EXPECT_TRUE(ctx);
+        // configure
+        // start
+        // get a context object
+        EXPECT_NO_THROW({
+            auto ctx = ossl.configure().start().getCTX();
+            EXPECT_TRUE(ctx);
+#if defined(DEBUG) || defined(_DEBUG)
+            EXPECT_TRUE(ossl.isInitialized);
+#endif
+        });
     }
 } // namespace siddiqsoft
 

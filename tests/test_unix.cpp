@@ -32,7 +32,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined (__linux__) || defined (__APPLE__)
+#if defined(__linux__) || defined(__APPLE__)
 #include "gtest/gtest.h"
 #include <iostream>
 #include <barrier>
@@ -43,15 +43,14 @@
 #include "../include/siddiqsoft/restcl_unix.hpp"
 
 
-
 namespace siddiqsoft
 {
     using namespace restcl_literals;
 
     TEST(TSendRequest, test1a)
     {
-        std::atomic_bool  passTest = false;
-        HttpRESTClient wrc;
+        std::atomic_bool passTest = false;
+        HttpRESTClient   wrc;
 
         wrc.send("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, const auto& resp) {
             nlohmann::json doc(req);
@@ -76,8 +75,8 @@ namespace siddiqsoft
 
     TEST(TSendRequest, test2a)
     {
-        std::atomic_bool  passTest = false;
-        HttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__));
+        std::atomic_bool passTest = false;
+        HttpRESTClient   wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__));
 
         wrc.send("https://reqbin.com/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
             // Checks the implementation of the encode() implementation
@@ -104,7 +103,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
 
         HttpRESTClient wrc;
-        std::string       responseContentType {};
+        std::string    responseContentType {};
 
         wrc.send(ReqPost {"https://httpbin.org/post"_Uri,
                           {{"Content-Type", "application/json"}},
@@ -271,8 +270,8 @@ namespace siddiqsoft
 
     TEST(TSendRequest, test9a)
     {
-        std::atomic_bool  passTest = false;
-        HttpRESTClient wrc;
+        std::atomic_bool passTest = false;
+        HttpRESTClient   wrc;
 
         wrc.send("https://www.google.com/"_GET, [&passTest](const auto& req, const auto& resp) {
             // std::cerr << "From callback Serialized json: " << req << std::endl;
@@ -294,10 +293,11 @@ namespace siddiqsoft
 
     TEST(restcl, MoveConstructor)
     {
-        std::atomic_uint                           passTest {0};
+        std::atomic_uint                        passTest {0};
         std::vector<siddiqsoft::HttpRESTClient> clients;
 
         for (auto i = 0; i < 4; i++) {
+            // Move constructor!
             clients.push_back(siddiqsoft::HttpRESTClient {});
         }
 
@@ -374,7 +374,7 @@ namespace siddiqsoft
 #ifdef _DEBUG
             std::cerr << std::format("Finished adding {} items..\n", ITER_COUNT);
 #endif
-            //std::this_thread::sleep_for(std::chrono::milliseconds(9900));
+            // std::this_thread::sleep_for(std::chrono::milliseconds(9900));
         }
 
         std::this_thread::sleep_for(std::chrono::seconds(4));
@@ -392,7 +392,7 @@ namespace siddiqsoft
             using namespace siddiqsoft::restcl_literals;
 
             siddiqsoft::HttpRESTClient wrc {"pmd4-drift-check"};
-            nlohmann::json                myStats {"Test", "drift-check"};
+            nlohmann::json             myStats {"Test", "drift-check"};
 
             auto req = "https://time.akamai.com/?iso"_GET;
             if (siddiqsoft::basic_response resp = wrc.send(req); resp.success()) {
