@@ -33,10 +33,10 @@
  */
 
 #pragma once
-#if defined(WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64)
+#if defined(__linux__) || defined (__APPLE__)
 
-#ifndef RESTCL_WINHTTP_HPP
-#define RESTCL_WINHTTP_HPP
+#ifndef RESTCL_UNIX_HPP
+#define RESTCL_UNIX_HPP
 
 #include <iostream>
 #include <chrono>

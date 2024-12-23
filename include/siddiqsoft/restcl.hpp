@@ -235,7 +235,7 @@ namespace siddiqsoft
     /// @brief Explicit implementation is required due to the restriction on direct instantiation of the basic_request class.
     /// @param dest The destination json
     /// @param src The basic_request class (or derived)
-    static void to_json(nlohmann::json& dest, const basic_request& src)
+    void to_json(nlohmann::json& dest, const basic_request& src)
     {
         dest["uri"] = src.uri;
         dest["rrd"] = src.rrd;
@@ -336,7 +336,7 @@ namespace siddiqsoft
     using ReqHead    = rest_request<RESTMethodType::Head>;
 
 
-    static std::ostream& operator<<(std::ostream& os, const basic_request& src)
+    std::ostream& operator<<(std::ostream& os, const basic_request& src)
     {
         os << src.encode();
         return os;
@@ -573,7 +573,7 @@ namespace siddiqsoft
 
 
     /// @brief Serializer to ostream for RESResponseType
-    static std::ostream& operator<<(std::ostream& os, const basic_response& src)
+    std::ostream& operator<<(std::ostream& os, const basic_response& src)
     {
         os << src.encode();
         return os;
