@@ -58,6 +58,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                             OpenSSL::Crypto
                             RunOnEnd::RunOnEnd
                             SplitUri::SplitUri
+                            acw32h::acw32h
                             string2map::string2map
                             asynchrony::asynchrony
                             AzureCppUtils::AzureCppUtils
