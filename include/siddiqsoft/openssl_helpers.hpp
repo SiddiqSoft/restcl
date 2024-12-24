@@ -1,3 +1,14 @@
+/**
+ * @file openssl_helpers.hpp
+ * @author Abdulkareem Siddiq (github@siddiqsoft.com)
+ * @brief OpenSSL v3.0 Helpers
+ * @version 0.1
+ * @date 2024-12-23
+ * 
+ * @copyright Copyright (c) 2024 SiddiqSoftware
+ * 
+ */
+
 #pragma once
 #ifndef OPENSSL_HELPERS_HPP
 #define OPENSSL_HELPERS_HPP
@@ -14,23 +25,28 @@
 
 namespace siddiqsoft
 {
-
-    class OpenSSLSingleton
+    /**
+     * @brief LibSSLSingleton provides entry point and stores the various configuration for your
+     *        applications use of the OpenSSL library.
+     *        There is no need to perform explicit initialization and cleanup for the library.
+     *        https://docs.openssl.org/3.0/man7/migration_guide/#support-of-legacy-engines
+     */
+    class LibSSLSingleton
     {
     private:
         std::once_flag initFlag {};
 
     public:
-        OpenSSLSingleton()                   = default;
+        LibSSLSingleton()                   = default;
 
-        OpenSSLSingleton(OpenSSLSingleton&&) = delete;
-        auto operator=(OpenSSLSingleton&&)   = delete;
+        LibSSLSingleton(LibSSLSingleton&&) = delete;
+        auto operator=(LibSSLSingleton&&)   = delete;
 
-        ~OpenSSLSingleton() { }
+        ~LibSSLSingleton() { }
 
-        auto configure() -> OpenSSLSingleton& { return *this; }
+        auto configure() -> LibSSLSingleton& { return *this; }
 
-        auto start() -> OpenSSLSingleton&
+        auto start() -> LibSSLSingleton&
         {
             std::call_once(initFlag, [&]() {
                 // Perform once-per-application OpenSSL initialization logic
@@ -64,9 +80,45 @@ namespace siddiqsoft
             throw std::runtime_error("Something went wrong with OpenSSL");
         };
 
-    protected:
-        void __cdecl thread_setup() {};
-        void __cdecl thread_cleanup() {};
+#if defined(DEBUG) || defined(_DEBUG)
+    public:
+        bool isInitialized {false};
+#else
+    private:
+        bool isInitialized {false};
+#endif
+    };
+
+
+    /**
+     * @brief LibCryptoSingleton provides a facility to centrally manage the lifespan of the various
+     *        OpenSSL crypto context and configuration objects.
+     * 
+     */
+    class LibCryptoSingleton
+    {
+    private:
+        std::once_flag initFlag {};
+
+    public:
+        LibCryptoSingleton()                   = default;
+
+        LibCryptoSingleton(LibCryptoSingleton&&) = delete;
+        auto operator=(LibCryptoSingleton&&)   = delete;
+
+        ~LibCryptoSingleton() { }
+
+        auto configure() -> LibCryptoSingleton& { return *this; }
+
+        auto start() -> LibCryptoSingleton&
+        {
+            std::call_once(initFlag, [&]() {
+                /* Setup encryption algorithms and load error strings */
+                isInitialized = true;
+            });
+
+            return *this;
+        }
 
 #if defined(DEBUG) || defined(_DEBUG)
     public:

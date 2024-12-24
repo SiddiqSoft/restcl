@@ -9,9 +9,9 @@
 
 namespace siddiqsoft
 {
-    TEST(openssl_helpers, test1a)
+    TEST(openssl_helpers, libsslsingleton_test1a)
     {
-        OpenSSLSingleton ossl;
+        LibSSLSingleton ossl;
 
         // configure
         // start
@@ -24,6 +24,22 @@ namespace siddiqsoft
 #endif
         });
     }
+
+    TEST(openssl_helpers, libcryptosingleton_test1a)
+    {
+        LibCryptoSingleton ossl;
+
+        // configure
+        // start
+        // get a context object
+        EXPECT_NO_THROW({
+            ossl.configure().start();
+#if defined(DEBUG) || defined(_DEBUG)
+            EXPECT_TRUE(ossl.isInitialized);
+#endif
+        });
+    }
+
 } // namespace siddiqsoft
 
 #endif
