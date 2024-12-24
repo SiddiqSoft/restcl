@@ -150,6 +150,10 @@
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
             "inherits": "Project-Base",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe"
@@ -165,10 +169,6 @@
             "displayName": "Windows x64 Debug",
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
             "inherits": "Windows-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -177,7 +177,7 @@
             "name": "Windows-Release",
             "displayName": "Windows x64 Release",
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
-            "inherits": "Windows-Debug",
+            "inherits": "Windows-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }

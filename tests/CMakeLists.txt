@@ -17,15 +17,14 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
 
     # Conditional compilation for Linux/Apple and Windows.
     if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
-        OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu]))
-        AND (CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg]))
+        OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu])))
         # Linux and Apple tests
         target_sources( ${TESTPROJ}
                         PRIVATE
                         ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp
                         ${PROJECT_SOURCE_DIR}/tests/test_unix.cpp
                         ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-    elseif()
+    elseif((CMAKE_CXX_COMPILER_ID MATCHES [Mm][Ss][Vv][Cc]))
         # Windows
         target_sources( ${TESTPROJ}
                         PRIVATE
