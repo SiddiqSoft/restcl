@@ -65,6 +65,10 @@ namespace siddiqsoft
     /// @brief Windows implementation of the basic_restclient
     class HttpRESTClient : public basic_restclient
     {
+    public:
+        std::string  UserAgent {"siddiqsoft.restcl/1.6.0"};
+        std::wstring UserAgentW {L"siddiqsoft.restcl/1.6.0"};
+
     private:
         static const uint32_t        READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
@@ -72,7 +76,7 @@ namespace siddiqsoft
 
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
-        simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
+        siddiqsoft::simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
             // method completes the lifetime of the object ends;
@@ -92,7 +96,7 @@ namespace siddiqsoft
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         HttpRESTClient(HttpRESTClient&& src) noexcept { }
-
+        void operator=(HttpRESTClient&&) { }
 
         /// @brief Creates the Windows REST Client with given UserAgent string
         /// Sets the HTTP/2 option and the decompression options
@@ -127,11 +131,13 @@ namespace siddiqsoft
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
         [[nodiscard]] basic_response send(basic_request& req) override
         {
-            rest_response resp {};
+            rest_response resp {0,"not-set"};
 
             return resp;
         }
     };
+
+    using restcl = HttpRESTClient;
 } // namespace siddiqsoft
 #else
 #pragma message("Windows required")

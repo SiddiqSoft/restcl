@@ -217,6 +217,10 @@ namespace siddiqsoft
     /// @brief Windows implementation of the basic_restclient
     class WinHttpRESTClient : public basic_restclient
     {
+    public:
+        std::string  UserAgent {"siddiqsoft.restcl/1.6.0"};
+        std::wstring UserAgentW {L"siddiqsoft.restcl/1.6.0"};
+
     private:
         static const DWORD           READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
@@ -568,6 +572,8 @@ namespace siddiqsoft
             }
         }
     };
+
+    using restcl = WinHttpRESTClient;
 } // namespace siddiqsoft
 #else
 #pragma message("Windows required")
