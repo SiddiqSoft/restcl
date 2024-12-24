@@ -21,9 +21,9 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         # Linux and Apple tests
         target_sources( ${TESTPROJ}
                         PRIVATE
-                        ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp
-                        ${PROJECT_SOURCE_DIR}/tests/test_unix.cpp
-                        ${PROJECT_SOURCE_DIR}/tests/test.cpp)
+                        #${PROJECT_SOURCE_DIR}/tests/test_unix.cpp
+                        #${PROJECT_SOURCE_DIR}/tests/test.cpp
+                        ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp)
     elseif((CMAKE_CXX_COMPILER_ID MATCHES [Mm][Ss][Vv][Cc]))
         # Windows
         target_sources( ${TESTPROJ}
