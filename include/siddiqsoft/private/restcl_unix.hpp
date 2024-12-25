@@ -1,38 +1,17 @@
-/*
-    restcl : WinHTTP implementation for Windows
-
-    BSD 3-Clause License
-
-    Copyright (c) 2021, Siddiq Software LLC
-    All rights reserved.
-
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-
-    1. Redistributions of source code must retain the above copyright notice, this
-       list of conditions and the following disclaimer.
-
-    2. Redistributions in binary form must reproduce the above copyright notice,
-       this list of conditions and the following disclaimer in the documentation
-       and/or other materials provided with the distribution.
-
-    3. Neither the name of the copyright holder nor the names of its
-       contributors may be used to endorse or promote products derived from
-       this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    SERVICES; LOSS OF USE, d_, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/**
+ * @file restcl_unix.hpp
+ * @author Abdulkareem Siddiq (github@siddiqsoft.com)
+ * @brief OpenSSL based implementation of the basic_restclient
+ * @version
+ * @date 2024-12-24
+ *
+ * @copyright Copyright (c) 2024 Siddiq Software
+ *
  */
 
 #pragma once
+#include <optional>
+#include <stdexcept>
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
@@ -53,7 +32,14 @@
 
 
 #include "nlohmann/json.hpp"
-#include "../restcl.hpp"
+
+#include "restcl_definitions.hpp"
+#include "basic_request.hpp"
+#include "basic_response.hpp"
+#include "basic_restclient.hpp"
+#include "rest_request.hpp"
+#include "rest_response.hpp"
+#include "openssl_helpers.hpp"
 
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/conversion-utils.hpp"
@@ -65,7 +51,7 @@
 
 namespace siddiqsoft
 {
-    /// @brief Windows implementation of the basic_restclient
+    /// @brief Unix implementation of the basic_restclient
     class HttpRESTClient : public basic_restclient
     {
     public:
@@ -78,6 +64,8 @@ namespace siddiqsoft
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
 
         std::shared_ptr<SSL_CTX> sslCtx;
+
+        basic_callbacktype _callback {};
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
@@ -96,7 +84,7 @@ namespace siddiqsoft
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
-        HttpRESTClient()                                 = delete;
+        HttpRESTClient()                                 = default;
 
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
@@ -104,45 +92,39 @@ namespace siddiqsoft
             : sslCtx(std::move(src.sslCtx))
             , UserAgent(std::move(src.UserAgent))
             , UserAgentW(std::move(src.UserAgentW))
+            , _callback(std::move(src._callback))
         {
         }
 
-
-        /// @brief Creates the Windows REST Client with given UserAgent string
-        /// Sets the HTTP/2 option and the decompression options
-        /// @param ua User agent string; defaults to `siddiqsoft.restcl_unix/1.6 (generic; x64)`
-        HttpRESTClient(std::shared_ptr<SSL_CTX> ssl, const std::string& ua = "siddiqsoft.restcl_unix/1.6 (generic; x64)")
-            : sslCtx(ssl)
-            , UserAgent(ua)
+        basic_restclient& configure(const std::string& ua, basic_callbacktype&& func = {}) override
         {
+            UserAgent  = ua;
             UserAgentW = ConversionUtils::convert_to<char, wchar_t>(ua);
-        }
 
+            if (func) _callback = std::move(func);
+
+            return *this;
+        }
 
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(basic_request&& req, basic_callbacktype& callback) override
+        void send(basic_request&& req, std::optional<basic_callbacktype> callback = std::nullopt) override
         {
-            pool.queue(RestPoolArgsType {std::move(req), callback});
-        }
+            if (!_callback && !callback.has_value())
+                throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
+                                            "configure() or provide callback at point of invocation.");
 
-
-        /// @brief Implements an asynchronous invocation of the send() method
-        /// @param req Request object
-        /// @param callback The method will be async and there will not be a response object returned
-        void send(basic_request&& req, basic_callbacktype&& callback) override
-        {
-            pool.queue(RestPoolArgsType {std::move(req), std::move(callback)});
+            pool.queue(RestPoolArgsType {std::move(req), callback.has_value() ? callback.value() : _callback});
         }
 
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] basic_response send(basic_request& req) override
+        [[nodiscard]] basic_response send(const basic_request& req) override
         {
-            rest_response resp {0,"not-set"};
+            rest_response resp {0, "not-set"};
 
             return resp;
         }

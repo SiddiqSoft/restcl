@@ -10,7 +10,7 @@
  */
 
 #pragma once
-#if defined(WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64)
+#if defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)
 
 #ifndef RESTCL_WIN_HPP
 #define RESTCL_WIN_HPP
@@ -40,7 +40,13 @@
 
 
 #include "nlohmann/json.hpp"
-#include "../restcl.hpp"
+
+#include "restcl_definitions.hpp"
+#include "basic_request.hpp"
+#include "basic_response.hpp"
+#include "basic_restclient.hpp"
+#include "rest_request.hpp"
+#include "rest_response.hpp"
 
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/acw32h.hpp"
@@ -206,6 +212,8 @@ namespace siddiqsoft
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
 
+        basic_callbacktype callback {};
+
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
             // This function is invoked any time we have an item
@@ -224,14 +232,14 @@ namespace siddiqsoft
         WinHttpRESTClient(const WinHttpRESTClient&)            = delete;
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
-        /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
-        /// @param src Source object is "cleared"
-        WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
-            : hSession(std::move(src.hSession))
+        WinHttpRESTClient& configure(const std::string ua...)
         {
-            // If the source is null/empty then we should create our own instance!
+            UserAgent  = ua;
+            UserAgentW = ConversionUtils::convert_to<char, wchar_t>(ua);
+
             if (hSession == NULL) {
-                if (hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0)); hSession) {
+                hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
+                if (hSession) {
                     const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
                     const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
@@ -252,50 +260,36 @@ namespace siddiqsoft
                     }
                 }
             }
+
+            va_list args;
+            va_start(args, ua);
+            callback = std::move(va_args(args, basic_callbacktype));
+            va_end(args);
+
+            return *this;
         }
 
 
-        /// @brief Creates the Windows REST Client with given UserAgent string
-        /// Sets the HTTP/2 option and the decompression options
-        /// @param ua User agent string; defaults to `siddiqsoft.restcl_winhttp/1.6 (Windows NT; x64)`
-        WinHttpRESTClient(const std::string& ua = "siddiqsoft.restcl_winhttp/1.6 (Windows NT; x64)")
+        /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
+        /// @param src Source object is "cleared"
+        WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
+            : hSession(std::move(src.hSession))
+            , UserAgent(src.UserAgent)
+            , UserAgentW(src.UserAgentW)
+            , callback(std::move(src.callback))
         {
-            UserAgent  = ua;
-            UserAgentW = ConversionUtils::convert_to<char,wchar_t>(ua);
-
-            hSession   = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
-            if (hSession) {
-                const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
-                const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
-
-                // Enable HTTP/2 protocol
-                if (!WinHttpSetOption(
-                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
-                {
-#ifdef _DEBUG
-                    std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
-#endif
-                }
-
-                // Enable decompression
-                if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
-#ifdef _DEBUG
-                    std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
-#endif
-                }
-            }
         }
 
-        
+
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(basic_request&& req, basic_callbacktype& callback) override
+        void send(basic_request&& req) override
         {
             pool.queue(RestPoolArgsType {std::move(req), callback});
         }
 
-        
+
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
@@ -308,7 +302,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] basic_response send(basic_request& req)
+        [[nodiscard]] basic_response send(const basic_request& req)
         {
             rest_response resp {};
 
@@ -329,9 +323,9 @@ namespace siddiqsoft
                 auto lastPart     = src.find_first_of(L"\r\n", ++secondPart);
                 auto reasonPhrase = src.substr(secondPart, lastPart - secondPart);
 
-                return {ConversionUtils::convert_to<wchar_t,char>(httpVersion),
+                return {ConversionUtils::convert_to<wchar_t, char>(httpVersion),
                         std::stoi(statusCode),
-                        ConversionUtils::convert_to<wchar_t,char>(reasonPhrase),
+                        ConversionUtils::convert_to<wchar_t, char>(reasonPhrase),
                         lastPart + 2}; // start of the header section
             };
 
@@ -348,28 +342,9 @@ namespace siddiqsoft
             auto strUserAgent = hs.contains("User-Agent") ? hs.value("User-Agent", UserAgent) : UserAgent;
 
             if (hSession != NULL) {
-                const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
-                const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
-
-                // Enable HTTP/2 protocol
-                if (!WinHttpSetOption(
-                            hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
-                {
-#ifdef _DEBUG
-                    std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
-#endif
-                }
-
-                // Enable decompression
-                if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
-#ifdef _DEBUG
-                    std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
-#endif
-                }
-
                 auto& strServer = req.uri.authority.host;
-                if (ACW32HINTERNET hConnect {
-                            WinHttpConnect(hSession, ConversionUtils::convert_to<char,wchar_t>(strServer).c_str(), req.uri.authority.port, 0)};
+                if (ACW32HINTERNET hConnect {WinHttpConnect(
+                            hSession, ConversionUtils::convert_to<char, wchar_t>(strServer).c_str(), req.uri.authority.port, 0)};
                     hConnect != NULL)
                 {
                     auto strMethod  = rs.value("method", "");
@@ -377,9 +352,9 @@ namespace siddiqsoft
                     auto strVersion = rs.value("version", "");
 
                     if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
-                                                                    ConversionUtils::convert_to<char,wchar_t>(strMethod).c_str(),
-                                                                    ConversionUtils::convert_to<char,wchar_t>(strUrl).c_str(),
-                                                                    ConversionUtils::convert_to<char,wchar_t>(strVersion).c_str(),
+                                                                    ConversionUtils::convert_to<char, wchar_t>(strMethod).c_str(),
+                                                                    ConversionUtils::convert_to<char, wchar_t>(strUrl).c_str(),
+                                                                    ConversionUtils::convert_to<char, wchar_t>(strVersion).c_str(),
                                                                     NULL,
                                                                     RESTCL_ACCEPT_TYPES_W,
                                                                     (req.uri.scheme == UriScheme::WebHttps)
@@ -390,7 +365,7 @@ namespace siddiqsoft
                         auto        contentLength = hs.value("Content-Length", 0);
                         std::string strHeaders;
                         req.encodeHeaders_to(strHeaders);
-                        std::wstring requestHeaders = ConversionUtils::convert_to<char,wchar_t>(strHeaders);
+                        std::wstring requestHeaders = ConversionUtils::convert_to<char, wchar_t>(strHeaders);
                         nError                      = WinHttpAddRequestHeaders(hRequest,
                                                           requestHeaders.c_str(),
                                                           static_cast<DWORD>(requestHeaders.length()),

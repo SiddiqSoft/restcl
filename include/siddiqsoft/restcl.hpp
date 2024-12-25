@@ -12,12 +12,6 @@
 #ifndef RESTCL_HPP
 #define RESTCL_HPP
 
-#include "private/restcl_definitions.hpp"
-#include "private/basic_request.hpp"
-#include "private/basic_response.hpp"
-#include "private/basic_restclient.hpp"
-#include "private/rest_request.hpp"
-#include "private/rest_response.hpp"
 
 #if defined(__linux__) || defined(__APPLE__)
 #include "private/restcl_unix.hpp"

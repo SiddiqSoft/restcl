@@ -1,14 +1,15 @@
 /**
  * @file basic_restclient.hpp
  * @author your name (you@domain.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2024-12-24
- * 
+ *
  * @copyright Copyright (c) 2024 Siddiq Software
- * 
+ *
  */
 #pragma once
+#include <optional>
 #ifndef BASIC_RESTCLIENT_HPP
 #define BASIC_RESTCLIENT_HPP
 
@@ -29,20 +30,29 @@ namespace siddiqsoft
     class basic_restclient
     {
     public:
+        /**
+         * @brief Configuration entry point. This function maybe used for initializing ssl objects
+         *        and/or other platform-specific shared resources.
+         *
+         * @param us The User-Agent string
+         * @param ... Variable number of arguments depending on the platform.
+         *            One of the variable arguments would be the callback for sendAsync operations.
+         * @return basic_restclient& Returns reference to self to allow chaining
+         */
+        virtual basic_restclient& configure(const std::string& ua, basic_callbacktype&& = {}) = 0;
+
         /// @brief Synchronous implementation of the IO
         /// @param req Request
         /// @return The response
-        [[nodiscard]] virtual basic_response send(basic_request&) = 0;
+        [[nodiscard]] virtual basic_response send(const basic_request&) = 0;
 
-        /// @brief Support for async callback
+        /// @brief Asynchronous operation. The callback must be provided here or previously via the configure()
         /// @param req Request
-        /// @param callback function that accepts const basic_restrequst& and const basic_response&
-        virtual void send(basic_request&&, basic_callbacktype&) = 0;
-
-        /// @brief Support for async callback
-        /// @param req Request
-        /// @param callback function that accepts const basic_restrequst& and const basic_response&
-        virtual void send(basic_request&&, basic_callbacktype&&) = 0;
+        /// @param callback Optional callback function.
+        ///                 If not present then the one provided during configuration is used.
+        ///                 If no callback has been registered or provided here then an invalid_argument
+        ///                 exception should be thrown.
+        virtual void send(basic_request&&, std::optional<basic_callbacktype> = std::nullopt) = 0;
     };
 
     /**
