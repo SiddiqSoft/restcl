@@ -1,38 +1,14 @@
-/*
-    restcl : Tests
-
-    BSD 3-Clause License
-
-    Copyright (c) 2021, Siddiq Software LLC
-    All rights reserved.
-
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-
-    1. Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
-
-    2. Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-
-    3. Neither the name of the copyright holder nor the names of its
-    contributors may be used to endorse or promote products derived from
-    this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/**
+ * @file test_restcl.cpp
+ * @author Abdulkareem Siddiq (github@siddiqsoft.com)
+ * @brief 
+ * @version 0.1
+ * @date 2024-12-24
+ * 
+ * @copyright Copyright (c) 2024 Siddiq Software
+ * 
  */
 
-#if defined (WIN32) || defined (_WIN32) || defined (WIN64) || defined (_WIN64)
 #include "gtest/gtest.h"
 #include <iostream>
 #include <barrier>
@@ -49,7 +25,7 @@ namespace siddiqsoft
     TEST(TSendRequest, test1a)
     {
         std::atomic_bool  passTest = false;
-        WinHttpRESTClient wrc;
+        restcl wrc;
 
         wrc.send("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, const auto& resp) {
             nlohmann::json doc(req);
@@ -75,7 +51,7 @@ namespace siddiqsoft
     TEST(TSendRequest, test2a)
     {
         std::atomic_bool  passTest = false;
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__));
+        restcl wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__));
 
         wrc.send("https://reqbin.com/echo/post/json"_OPTIONS, [&passTest](const auto& req, auto& resp) {
             // Checks the implementation of the encode() implementation
@@ -101,7 +77,7 @@ namespace siddiqsoft
         using namespace siddiqsoft::splituri_literals;
         std::atomic_bool passTest = false;
 
-        WinHttpRESTClient wrc;
+        restcl wrc;
         std::string       responseContentType {};
 
         wrc.send(ReqPost {"https://httpbin.org/post"_Uri,
@@ -136,7 +112,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         // auto auth     = base64encode("aau:paau");
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        restcl wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send(ReqPost {"https://httpbin.org/post"_Uri,
                           {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/json+custom"}},
@@ -166,7 +142,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        restcl wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send("https://www.siddiqsoft.com:65535/"_GET, [&passTest](const auto& req, const auto& resp) {
             // nlohmann::json doc(req);
@@ -193,7 +169,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        restcl wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send("https://localhost:65535/"_GET, [&passTest](const auto& req, const auto& resp) {
             nlohmann::json doc(req);
@@ -220,7 +196,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        restcl wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
         wrc.send("https://httpbin.org:9090/get"_OPTIONS, [&passTest](const auto& req, auto& resp) {
@@ -245,7 +221,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        WinHttpRESTClient wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+        restcl wrc(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
 
         wrc.send("https://google.com/"_OPTIONS, [&passTest](const auto& req, auto& resp) {
             // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
@@ -270,7 +246,7 @@ namespace siddiqsoft
     TEST(TSendRequest, test9a)
     {
         std::atomic_bool  passTest = false;
-        WinHttpRESTClient wrc;
+        restcl wrc;
 
         wrc.send("https://www.google.com/"_GET, [&passTest](const auto& req, const auto& resp) {
             // std::cerr << "From callback Serialized json: " << req << std::endl;
@@ -293,10 +269,10 @@ namespace siddiqsoft
     TEST(restcl, MoveConstructor)
     {
         std::atomic_uint                           passTest {0};
-        std::vector<siddiqsoft::WinHttpRESTClient> clients;
+        std::vector<siddiqsoft::restcl> clients;
 
         for (auto i = 0; i < 4; i++) {
-            clients.push_back(siddiqsoft::WinHttpRESTClient {});
+            clients.push_back(siddiqsoft::restcl {});
         }
 
         EXPECT_EQ(4, clients.size());
@@ -329,7 +305,7 @@ namespace siddiqsoft
         std::cerr << std::format("Starting..\n");
 
         {
-            WinHttpRESTClient wrc;
+            restcl wrc;
 
             std::cerr << std::format("Post wrc..\n");
             basic_callbacktype valid = [&passTest](const auto& req, const auto& resp) {
@@ -389,7 +365,7 @@ namespace siddiqsoft
             using namespace std::chrono_literals;
             using namespace siddiqsoft::restcl_literals;
 
-            siddiqsoft::WinHttpRESTClient wrc {"pmd4-drift-check"};
+            siddiqsoft::restcl wrc {"pmd4-drift-check"};
             nlohmann::json                myStats {"Test", "drift-check"};
 
             auto req = "https://time.akamai.com/?iso"_GET;
@@ -418,4 +394,3 @@ namespace siddiqsoft
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 } // namespace siddiqsoft
-#endif

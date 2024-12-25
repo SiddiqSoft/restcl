@@ -15,23 +15,6 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                             PRIVATE
                             $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
 
-    # Conditional compilation for Linux/Apple and Windows.
-    if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
-        OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu])))
-        # Linux and Apple tests
-        target_sources( ${TESTPROJ}
-                        PRIVATE
-                        #${PROJECT_SOURCE_DIR}/tests/test_unix.cpp
-                        ${PROJECT_SOURCE_DIR}/tests/test.cpp
-                        ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp)
-    elseif((CMAKE_CXX_COMPILER_ID MATCHES [Mm][Ss][Vv][Cc]))
-        # Windows
-        target_sources( ${TESTPROJ}
-                        PRIVATE
-                        ${PROJECT_SOURCE_DIR}/tests/test_winhttp.cpp
-                        ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-    endif()
-
     # ASAN and Coverage only for Debug builds on Linux
     if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
         OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu]))
@@ -47,6 +30,13 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     if( CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
         add_compile_definitions(${TESTPROJ} PRIVATE DEBUG=1 _DEBUG=1)
     endif()
+
+    # Sources
+    target_sources( ${TESTPROJ}
+                    PRIVATE
+                    ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
+                    ${PROJECT_SOURCE_DIR}/tests/test_basics.cpp
+                    ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp)
 
     # Dependencies
     cpmaddpackage("gh:google/googletest#v1.15.2")

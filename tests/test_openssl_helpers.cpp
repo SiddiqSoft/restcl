@@ -31,7 +31,6 @@ namespace siddiqsoft
 
         // configure
         // start
-        // get a context object
         EXPECT_NO_THROW({
             ossl.configure().start();
 #if defined(DEBUG) || defined(_DEBUG)

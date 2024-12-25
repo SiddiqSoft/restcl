@@ -6,7 +6,7 @@
 #   BUILD_TESTS ON
 #   CI_BUILDID must be set to the gitversion
 # 
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.30)
 
 # _________________
 # Version detection; must preceed the declaration of the actual project()
