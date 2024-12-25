@@ -59,7 +59,7 @@ namespace siddiqsoft
     class basic_response
     {
     protected:
-        basic_response() { }
+        basic_response() = default;
 
     public:
         /// @brief Represents the IO error and its corresponding message

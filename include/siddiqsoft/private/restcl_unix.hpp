@@ -61,11 +61,11 @@ namespace siddiqsoft
     class HttpRESTClient : public basic_restclient
     {
     public:
-        std::string  UserAgent {"siddiqsoft.restcl/1.6.0"};
+        std::string UserAgent {"siddiqsoft.restcl/1.6.0"};
 
     private:
-        static const uint32_t        READBUFFERSIZE {8192};
-        static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+        static const uint32_t     READBUFFERSIZE {8192};
+        static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
 
         std::once_flag           initFlag {};
         std::shared_ptr<SSL_CTX> sslCtx {};
@@ -102,14 +102,14 @@ namespace siddiqsoft
 
         /**
          * @brief Performs ONETIME configuration of the underlying provider (OpenSSL)
-         * 
+         *
          * @param ua The UserAgent string
          * @param func Optional callback the client-level. You can also provider per-call callbacks for each REST send() operation
          * @return basic_restclient& Returns self reference for chaining.
          */
         basic_restclient& configure(const std::string& ua, basic_callbacktype&& func = {}) override
         {
-            UserAgent  = ua;
+            UserAgent = ua;
 
             if (func) _callback = std::move(func);
 
@@ -119,7 +119,7 @@ namespace siddiqsoft
                 sslCtx = g_ossl.configure().start().getCTX();
                 // Configure the SSL library level options here..
                 SSL_CTX_set_options(sslCtx.get(), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-                });
+            });
 
             return *this;
         }
@@ -142,9 +142,34 @@ namespace siddiqsoft
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
         [[nodiscard]] basic_response send(const basic_request& req) override
         {
-            rest_response resp {0, "not-set"};
+            if (std::unique_ptr<BIO, decltype(&BIO_free_all)> io(BIO_new_ssl_connect(sslCtx.get()), &BIO_free_all); io) {
+                if (1 !=
+                    BIO_set_conn_hostname(io.get(), std::format("{}:{}", req.uri.authority.host, req.uri.authority.port).c_str()))
+                {
+                    if (1 != BIO_do_connect(io.get())) {
+                        if (1 != BIO_do_handshake(io.get())) {
+                            // Send the request..
+                            BIO_puts(io.get(), req.encode().c_str());
 
-            return resp;
+                            int               len {0};
+                            std::stringstream responseBuffer {};
+                            do {
+                                std::array<char, 1536> buff;
+
+                                len          = BIO_read(io.get(), buff.data(), buff.size());
+                                buff.at(len) = '\0';
+                                responseBuffer << buff.data();
+                            } while (len > 0 || BIO_should_retry(io.get()));
+
+                            rest_response resp {200, "In progress"};
+                            resp.setContent(responseBuffer.str());
+                            return resp;
+                        }
+                    }
+                }
+            }
+
+            return rest_response {};
         }
     };
 
