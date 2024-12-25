@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include <string>
 
+
 #include "openssl/err.h"
 #include "openssl/ssl.h"
 
@@ -61,11 +62,11 @@ namespace siddiqsoft
         /**
          * @brief Get a new SSL context.
          * Auto-clears the SSL_CTX when this object goes out of scope.
-         * @return std::unique_ptr<SSL_CTX>
+         * @return std::shared_ptr<SSL_CTX>
          */
         [[nodiscard("Auto-clears the SSL_CTX when this object goes out of scope.")]] auto getCTX()
         {
-            if (std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(SSL_CTX_new(TLS_method()), &SSL_CTX_free); ctx) {
+            if (std::shared_ptr<SSL_CTX> ctx(SSL_CTX_new(TLS_method()), SSL_CTX_free); ctx) {
                 // Set options..
                 SSL_CTX_set_options(ctx.get(), SSL_OP_ALL);
 #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)

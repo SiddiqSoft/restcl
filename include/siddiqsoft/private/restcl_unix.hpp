@@ -60,6 +60,9 @@
 
 #include "siddiqsoft/simple_pool.hpp"
 
+#include "openssl/ssl.h"
+
+
 namespace siddiqsoft
 {
     /// @brief Windows implementation of the basic_restclient
@@ -74,6 +77,7 @@ namespace siddiqsoft
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
 
+        std::shared_ptr<SSL_CTX> sslCtx;
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
@@ -92,18 +96,25 @@ namespace siddiqsoft
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
+        HttpRESTClient()                                 = delete;
 
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
-        HttpRESTClient(HttpRESTClient&& src) noexcept { }
-        void operator=(HttpRESTClient&&) { }
+        HttpRESTClient(HttpRESTClient&& src) noexcept
+            : sslCtx(std::move(src.sslCtx))
+            , UserAgent(std::move(src.UserAgent))
+            , UserAgentW(std::move(src.UserAgentW))
+        {
+        }
+
 
         /// @brief Creates the Windows REST Client with given UserAgent string
         /// Sets the HTTP/2 option and the decompression options
         /// @param ua User agent string; defaults to `siddiqsoft.restcl_unix/1.6 (generic; x64)`
-        HttpRESTClient(const std::string& ua = "siddiqsoft.restcl_unix/1.6 (generic; x64)")
+        HttpRESTClient(std::shared_ptr<SSL_CTX> ssl, const std::string& ua = "siddiqsoft.restcl_unix/1.6 (generic; x64)")
+            : sslCtx(ssl)
+            , UserAgent(ua)
         {
-            UserAgent  = ua;
             UserAgentW = ConversionUtils::convert_to<char, wchar_t>(ua);
         }
 
