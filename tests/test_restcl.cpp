@@ -27,21 +27,22 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc;
 
-        wrc.send("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, const auto& resp) {
-            nlohmann::json doc(req);
+        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
+                .send("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, const auto& resp) {
+                    nlohmann::json doc(req);
 
-            // std::cerr << "From callback Serialized json: " << req << std::endl;
-            if (resp.success()) {
-                passTest = true;
-                // std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
-            }
-            else {
-                auto [ec, emsg] = resp.status();
-                passTest        = ((ec == 12002) || (ec == 12029));
-                std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
-            }
-            passTest.notify_all();
-        });
+                    // std::cerr << "From callback Serialized json: " << req << std::endl;
+                    if (resp.success()) {
+                        passTest = true;
+                        // std::cerr << "Response\n" << nlohmann::json(resp).dump(3) << std::endl;
+                    }
+                    else {
+                        auto [ec, emsg] = resp.status();
+                        passTest        = ((ec == 12002) || (ec == 12029));
+                        std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                    }
+                    passTest.notify_all();
+                });
 
         passTest.wait(false);
         EXPECT_TRUE(passTest.load());
@@ -379,7 +380,7 @@ namespace siddiqsoft
             siddiqsoft::restcl wrc;
             nlohmann::json     myStats {"Test", "drift-check"};
 
-            wrc.configure("pmd4-drift-check");
+            wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
             auto req = "https://time.akamai.com/?iso"_GET;
             if (siddiqsoft::basic_response resp = wrc.send(req); resp.success()) {
                 passTest++;

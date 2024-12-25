@@ -67,7 +67,8 @@ namespace siddiqsoft
         static const uint32_t     READBUFFERSIZE {8192};
         static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
 
-        std::once_flag           initFlag {};
+        bool                     isInitialized {false};
+        std::once_flag           hrcInitFlag {};
         std::shared_ptr<SSL_CTX> sslCtx {};
 
         basic_callbacktype _callback {};
@@ -114,12 +115,16 @@ namespace siddiqsoft
             if (func) _callback = std::move(func);
 
             // Grab a context (configure and initialize)
-            std::call_once(initFlag, [&]() {
+            std::call_once(hrcInitFlag, [&]() {
                 // The SSL CTX is released when this client object goes out of scope.
-                sslCtx = g_ossl.configure().start().getCTX();
-                // Configure the SSL library level options here..
-                SSL_CTX_set_options(sslCtx.get(), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+                if (sslCtx = g_ossl.configure().start().getCTX(); sslCtx) {
+                    // Configure the SSL library level options here..
+                    SSL_CTX_set_options(sslCtx.get(), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+                    isInitialized = true;
+                }
             });
+
+            std::cerr << __func__ << " - completed ok.\n";
 
             return *this;
         }
@@ -129,6 +134,8 @@ namespace siddiqsoft
         /// @param callback The method will be async and there will not be a response object returned
         void send(basic_request&& req, std::optional<basic_callbacktype> callback = std::nullopt) override
         {
+            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
+
             if (!_callback && !callback.has_value())
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
@@ -142,14 +149,23 @@ namespace siddiqsoft
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
         [[nodiscard]] basic_response send(const basic_request& req) override
         {
+            auto rc {0};
+
+            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
+
+            std::string destinationHost = std::format("{}:{}", req.uri.authority.host, req.uri.authority.port);
+
+            std::cerr << __func__ << " - Attempting connection to " << destinationHost << std::endl;
+
             if (std::unique_ptr<BIO, decltype(&BIO_free_all)> io(BIO_new_ssl_connect(sslCtx.get()), &BIO_free_all); io) {
-                if (1 !=
-                    BIO_set_conn_hostname(io.get(), std::format("{}:{}", req.uri.authority.host, req.uri.authority.port).c_str()))
-                {
-                    if (1 != BIO_do_connect(io.get())) {
-                        if (1 != BIO_do_handshake(io.get())) {
+                if (rc = BIO_set_conn_hostname(io.get(), destinationHost.c_str()); rc == 1) {
+                    if (rc = BIO_do_connect(io.get()); rc == 1) {
+                        if (rc = BIO_do_handshake(io.get()); rc == 1) {
+                            std::cerr << "About to send request..\n";
                             // Send the request..
-                            BIO_puts(io.get(), req.encode().c_str());
+                            rc= BIO_puts(io.get(), req.encode().c_str());
+
+                            std::cerr << __func__ << " - Sent request: rc=" << rc << std::endl;
 
                             int               len {0};
                             std::stringstream responseBuffer {};
@@ -159,14 +175,30 @@ namespace siddiqsoft
                                 len          = BIO_read(io.get(), buff.data(), buff.size());
                                 buff.at(len) = '\0';
                                 responseBuffer << buff.data();
-                            } while (len > 0 || BIO_should_retry(io.get()));
+                                rc= BIO_should_retry(io.get());
+                                std::cerr << __func__ << " - read " << len << " bytes.. rc=" << rc << std::endl;
+                            } while ((len > 0) && (rc!=0));
+
+                            std::cerr << "Finished reading response.\n" << responseBuffer.str() << std::endl;
 
                             rest_response resp {200, "In progress"};
                             resp.setContent(responseBuffer.str());
                             return resp;
                         }
+                        else {
+                            std::cerr << __func__ << " - Failed BIO_do_handshake; rc=" << rc << std::endl;
+                        }
+                    }
+                    else {
+                        std::cerr << __func__ << " - Failed BIO_do_connect; rc=" << rc << std::endl;
                     }
                 }
+                else {
+                    std::cerr << __func__ << " - Failed BIO_set_conn_hostname; rc=" << rc << std::endl;
+                }
+            }
+            else {
+                std::cerr << __func__ << " - Failed BIO_new_ssl_connect; rc=" << rc << std::endl;
             }
 
             return rest_response {};

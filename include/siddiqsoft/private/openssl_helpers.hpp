@@ -4,9 +4,9 @@
  * @brief OpenSSL v3.0 Helpers
  * @version 0.1
  * @date 2024-12-23
- * 
+ *
  * @copyright Copyright (c) 2024 SiddiqSoftware
- * 
+ *
  */
 
 #pragma once
@@ -38,10 +38,9 @@ namespace siddiqsoft
         std::once_flag initFlag {};
 
     public:
-        LibSSLSingleton()                   = default;
-
+        LibSSLSingleton()                  = default;
         LibSSLSingleton(LibSSLSingleton&&) = delete;
-        auto operator=(LibSSLSingleton&&)   = delete;
+        auto operator=(LibSSLSingleton&&)  = delete;
 
         ~LibSSLSingleton() { }
 
@@ -56,6 +55,8 @@ namespace siddiqsoft
                 isInitialized = true;
             });
 
+            std::cerr << "LibSSLSingleton - start() completed.\n";
+
             return *this;
         }
 
@@ -64,7 +65,7 @@ namespace siddiqsoft
          * Auto-clears the SSL_CTX when this object goes out of scope.
          * @return std::shared_ptr<SSL_CTX>
          */
-        [[nodiscard("Auto-clears the SSL_CTX when this object goes out of scope.")]] auto getCTX()
+        [[nodiscard("Auto-clears the SSL_CTX when this object goes out of scope.")]] auto getCTX() -> std::shared_ptr<SSL_CTX>
         {
             if (std::shared_ptr<SSL_CTX> ctx(SSL_CTX_new(TLS_method()), SSL_CTX_free); ctx) {
                 // Set options..
@@ -74,6 +75,7 @@ namespace siddiqsoft
                 // Windows.
                 SSL_CTX_set_options(ctx.get(), SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER);
 #endif
+                std::cerr << "getCTX() - ok\n";
                 return ctx;
             }
 
@@ -94,7 +96,7 @@ namespace siddiqsoft
     /**
      * @brief LibCryptoSingleton provides a facility to centrally manage the lifespan of the various
      *        OpenSSL crypto context and configuration objects.
-     * 
+     *
      */
     class LibCryptoSingleton
     {
@@ -102,10 +104,10 @@ namespace siddiqsoft
         std::once_flag initFlag {};
 
     public:
-        LibCryptoSingleton()                   = default;
+        LibCryptoSingleton()                     = default;
 
         LibCryptoSingleton(LibCryptoSingleton&&) = delete;
-        auto operator=(LibCryptoSingleton&&)   = delete;
+        auto operator=(LibCryptoSingleton&&)     = delete;
 
         ~LibCryptoSingleton() { }
 
