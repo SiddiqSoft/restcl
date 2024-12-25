@@ -5,7 +5,7 @@
 #include <version>
 
 #include "nlohmann/json.hpp"
-#include "../include/siddiqsoft/openssl_helpers.hpp"
+#include "../include/siddiqsoft/private/openssl_helpers.hpp"
 
 namespace siddiqsoft
 {

@@ -1,19 +1,28 @@
-
+/**
+ * @file restcl.hpp
+ * @author Abdulkareem Siddiq (github@siddiqsoft.com)
+ * @brief Simple REST client using OpenSSL 3.x for Unix/Linux and Windows WinHTTP library for Windows platform
+ * @version 0.1
+ * @date 2024-12-24
+ * 
+ * @copyright Copyright (c) 2024 Siddiq Software
+ * 
+ */
 #pragma once
 #ifndef RESTCL_HPP
 #define RESTCL_HPP
 
-#include "restcl_definitions.hpp"
-#include "basic_request.hpp"
-#include "basic_response.hpp"
-#include "basic_restclient.hpp"
-#include "rest_request.hpp"
-#include "rest_response.hpp"
+#include "private/restcl_definitions.hpp"
+#include "private/basic_request.hpp"
+#include "private/basic_response.hpp"
+#include "private/basic_restclient.hpp"
+#include "private/rest_request.hpp"
+#include "private/rest_response.hpp"
 
 #if defined(__linux__) || defined(__APPLE__)
-#include "restcl_unix.hpp"
+#include "private/restcl_unix.hpp"
 #elif defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)
-#include "restcl_winhttp.hpp"
+#include "private/restcl_winhttp.hpp"
 #else
 #error "Platform not supported"
 #endif
