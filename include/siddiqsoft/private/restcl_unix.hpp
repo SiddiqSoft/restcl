@@ -51,19 +51,24 @@
 
 namespace siddiqsoft
 {
+    /**
+     * @brief Global singleton for this library users OpenSSL library entry point
+     *
+     */
+    static LibSSLSingleton g_ossl;
+
     /// @brief Unix implementation of the basic_restclient
     class HttpRESTClient : public basic_restclient
     {
     public:
         std::string  UserAgent {"siddiqsoft.restcl/1.6.0"};
-        std::wstring UserAgentW {L"siddiqsoft.restcl/1.6.0"};
 
     private:
         static const uint32_t        READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
-        static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
 
-        std::shared_ptr<SSL_CTX> sslCtx;
+        std::once_flag           initFlag {};
+        std::shared_ptr<SSL_CTX> sslCtx {};
 
         basic_callbacktype _callback {};
 
@@ -75,7 +80,7 @@ namespace siddiqsoft
             // typically this is *after* we invoke the callback.
             try {
                 auto resp = send(arg.request);
-                arg.callback(arg.request, resp);
+                if (arg.callback) arg.callback(arg.request, resp);
             }
             catch (const std::exception&) {
             }
@@ -91,17 +96,30 @@ namespace siddiqsoft
         HttpRESTClient(HttpRESTClient&& src) noexcept
             : sslCtx(std::move(src.sslCtx))
             , UserAgent(std::move(src.UserAgent))
-            , UserAgentW(std::move(src.UserAgentW))
             , _callback(std::move(src._callback))
         {
         }
 
+        /**
+         * @brief Performs ONETIME configuration of the underlying provider (OpenSSL)
+         * 
+         * @param ua The UserAgent string
+         * @param func Optional callback the client-level. You can also provider per-call callbacks for each REST send() operation
+         * @return basic_restclient& Returns self reference for chaining.
+         */
         basic_restclient& configure(const std::string& ua, basic_callbacktype&& func = {}) override
         {
             UserAgent  = ua;
-            UserAgentW = ConversionUtils::convert_to<char, wchar_t>(ua);
 
             if (func) _callback = std::move(func);
+
+            // Grab a context (configure and initialize)
+            std::call_once(initFlag, [&]() {
+                // The SSL CTX is released when this client object goes out of scope.
+                sslCtx = g_ossl.configure().start().getCTX();
+                // Configure the SSL library level options here..
+                SSL_CTX_set_options(sslCtx.get(), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+                });
 
             return *this;
         }
