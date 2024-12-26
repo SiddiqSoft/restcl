@@ -68,6 +68,9 @@ target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#1.8.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
+CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.9.0")
+target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
+
 # ____________________________________
 # Testing
 # Available only when building in our repo; controlled by the switch: ${PROJECT_NAME}_BUILD_TESTS = ON

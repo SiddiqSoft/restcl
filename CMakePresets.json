@@ -2,13 +2,14 @@
     "version": 8,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 29
+        "minor": 30
     },
     "configurePresets": [
         {
             "name": "Project-Base",
             "hidden": true,
             "generator": "Ninja",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "cacheVariables": {
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
                 "restcl_BUILD_TESTS": "ON"
@@ -221,6 +222,7 @@
         {
             "name": "Apple-Debug",
             "configurePreset": "Apple-Debug",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "output": {
                 "outputOnFailure": true
             },
@@ -232,6 +234,7 @@
         {
             "name": "Apple-Release",
             "configurePreset": "Apple-Release",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "output": {
                 "outputOnFailure": true
             },
@@ -243,6 +246,7 @@
         {
             "name": "Linux-GCC-Debug",
             "configurePreset": "Linux-GCC-Debug",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "output": {
                 "outputOnFailure": true
             },
@@ -254,6 +258,7 @@
         {
             "name": "Linux-GCC-Release",
             "configurePreset": "Linux-GCC-Release",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "output": {
                 "outputOnFailure": true
             },
@@ -265,6 +270,7 @@
         {
             "name": "Linux-Clang-Debug",
             "configurePreset": "Linux-Clang-Debug",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "output": {
                 "outputOnFailure": true
             },
@@ -276,6 +282,7 @@
         {
             "name": "Linux-Clang-Release",
             "configurePreset": "Linux-Clang-Release",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "output": {
                 "outputOnFailure": true
             },
@@ -287,6 +294,7 @@
         {
             "name": "Windows-Debug",
             "configurePreset": "Windows-Debug",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "output": {
                 "outputOnFailure": true
             },
@@ -298,6 +306,7 @@
         {
             "name": "Windows-Release",
             "configurePreset": "Windows-Release",
+            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
             "output": {
                 "outputOnFailure": true
             },

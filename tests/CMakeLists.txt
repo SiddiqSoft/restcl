@@ -52,6 +52,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                             string2map::string2map
                             asynchrony::asynchrony
                             AzureCppUtils::AzureCppUtils
+                            ctre::ctre
                             StringHelpers::StringHelpers)
 
     include(GoogleTest)
