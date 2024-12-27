@@ -22,7 +22,7 @@ namespace siddiqsoft
     static const std::string                HTTP_EMPTY_STRING {};
     static const std::string                HTTP_END_OF_HEADERS {"\r\n\r\n"};
     static const std::string                HTTP_PROTOCOLPREFIX {"HTTP/"};
-    static const std::array<std::string, 4> HTTP_PROTOCOL {{"HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0"}};
+    static const std::array<std::string, 6> HTTP_PROTOCOL {{"HTTP/1.0", "HTTP/1.1", "HTTP/1.2", "HTTP/2", "HTTP/3"}};
     static const std::array<std::string, 8> HTTP_VERBS {"GET", "POST", "PUT", "UPDATE", "DELETE", "INFO", "OPTIONS", "CONNECT"};
 
 
@@ -32,7 +32,7 @@ namespace siddiqsoft
         static auto isHttpProtocol(const std::string& fragment) -> const std::string&
         {
             for (const auto& p : HTTP_PROTOCOL) {
-                return p.compare(fragment) == 0 ? p : HTTP_EMPTY_STRING;
+                if (fragment.starts_with(p)) return p;
             }
 
             return HTTP_EMPTY_STRING;
@@ -41,7 +41,7 @@ namespace siddiqsoft
         static auto isHttpVerb(const std::string& fragment) -> const std::string&
         {
             for (const auto& v : HTTP_VERBS) {
-                return v.compare(fragment) == 0 ? v : HTTP_EMPTY_STRING;
+                if (v == fragment) return v;
             }
 
             return HTTP_EMPTY_STRING;
@@ -63,14 +63,10 @@ namespace siddiqsoft
                 // The regex is very precise and there is no chance we will end up here
                 // with an ill-formed (or unsupported) start-line.
                 if (const auto& verb = isHttpVerb(matchStartLine[3]); !verb.empty()) {
-                    httpm["s"s] = {
-                            {"type"s, "request"}, {"method"s, verb}, {"uri"s, matchStartLine[2]}, {"version"s, matchStartLine[3]}};
+                    httpm["request"s] = {{"method"s, verb}, {"uri"s, matchStartLine[2]}, {"version"s, matchStartLine[3]}};
                 }
                 else if (const auto& proto = isHttpProtocol(matchStartLine[1]); !proto.empty()) {
-                    httpm["s"s] = {{"type"s, "response"},
-                                   {"reason"s, matchStartLine[3]},
-                                   {"status"s, std::stoi(matchStartLine[2].str())},
-                                   {"version"s, matchStartLine[1]}};
+                    httpm.setStatus(std::stoi(matchStartLine[2].str()), matchStartLine[3]);
                 }
 
                 // Offset the start to the point after the start-line. Make sure to skip over any prefix!

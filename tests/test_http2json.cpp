@@ -91,7 +91,17 @@ namespace siddiqsoft
 
         EXPECT_TRUE(contents.length() > 0);
 
-        auto resp= siddiqsoft::http2json::parse(contents);
+        auto resp = siddiqsoft::http2json::parse(contents);
+        std::cerr << "Contents of parse: " << resp;
     }
-    
-    } // namespace siddiqsoft
+
+    TEST(ImplementationChecks, synthetic_2)
+    {
+        auto contents = loadSampleFile("www-wikipedia-org-1");
+
+        EXPECT_TRUE(contents.length() > 0);
+
+        auto resp = siddiqsoft::http2json::parse(contents);
+        std::cerr << "Contents of parse: " << resp;
+    }
+} // namespace siddiqsoft
