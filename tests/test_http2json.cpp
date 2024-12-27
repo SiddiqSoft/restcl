@@ -17,7 +17,7 @@
 #include "nlohmann/json.hpp"
 
 
-#include "../include/private/http2json.hpp"
+#include "../include/siddiqsoft/private/http2json.hpp"
 
 namespace siddiqsoft
 {
@@ -59,7 +59,7 @@ namespace siddiqsoft
             }
         }
 
-        throw std::runtime_error {"Environment variable SAMPLES_DIR must point to directory for SIP samples!"};
+        throw std::runtime_error {"Environment variable SAMPLES_DIR must point to directory for HTTP samples!"};
     }
 
     // NOLINTNEXTLINE
@@ -84,4 +84,14 @@ namespace siddiqsoft
 
         EXPECT_TRUE(std::filesystem::exists(samplesDirectoryPath));
     }
-} // namespace siddiqsoft
+
+    TEST(ImplementationChecks, synthetic_1)
+    {
+        auto contents = loadSampleFile("www-google-com");
+
+        EXPECT_TRUE(contents.length() > 0);
+
+        auto resp= siddiqsoft::http2json::parse(contents);
+    }
+    
+    } // namespace siddiqsoft
