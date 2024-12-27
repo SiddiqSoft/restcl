@@ -36,80 +36,34 @@
 #ifndef RESTCL_DEFINITIONS_HPP
 #define RESTCL_DEFINITIONS_HPP
 
-
-#include <iostream>
-#include <chrono>
 #include <string>
-#include <functional>
-#include <memory>
-#include <format>
-#include <iterator>
-
-
-#include "nlohmann/json.hpp"
-#include "siddiqsoft/SplitUri.hpp"
-#include "siddiqsoft/date-utils.hpp"
+#include <regex>
+#include <array>
 
 
 namespace siddiqsoft
 {
-    /// @brief REST Methods: GET, PATCH, POST, PUT, DELETE, HEAD, OPTIONS
-    enum class RESTMethodType
+    static const std::regex  HTTP_RESPONSE_REGEX {"(HTTP.*)\\s(\\d+)\\s([^\\s]*)\\s"};
+    static const std::string HTTP_NEWLINE {"\r\n"};
+    static const std::string ELEM_NEWLINE_LF {"\r"};
+    static const std::string ELEM_SEPERATOR {": "};
+    static const std::string HTTP_EMPTY_STRING {};
+    static const std::string HTTP_END_OF_HEADERS {"\r\n\r\n"};
+    static const std::string HTTP_PROTOCOLPREFIX {"HTTP/"};
+    enum HTTP_PROTOCOL_VERSION_ID
     {
-        Get,
-        Patch,
-        Post,
-        Put,
-        Delete,
-        Head,
-        Options
+        Http1  = 0,
+        Http11 = 1,
+        Http12 = 2,
+        Http2  = 3,
+        Http3  = 4
     };
-
-    NLOHMANN_JSON_SERIALIZE_ENUM(RESTMethodType,
-                                 {{RESTMethodType::Get, "GET"},
-                                  {RESTMethodType::Patch, "PATCH"},
-                                  {RESTMethodType::Put, "PUT"},
-                                  {RESTMethodType::Post, "POST"},
-                                  {RESTMethodType::Delete, "DELETE"},
-                                  {RESTMethodType::Head, "HEAD"},
-                                  {RESTMethodType::Options, "OPTIONS"}});
-
-    /// @brief HTTP Protocol version: Http2, Http11 and Http10
-    enum class HTTPProtocolVersion
-    {
-        Http2,
-        Http11,
-        Http10
-    };
-
-    NLOHMANN_JSON_SERIALIZE_ENUM(HTTPProtocolVersion,
-                                 {{HTTPProtocolVersion::Http2, "HTTP/2"},
-                                  {HTTPProtocolVersion::Http11, "HTTP/1.1"},
-                                  {HTTPProtocolVersion::Http10, "HTTP/1.0"}});
+    static const std::array<std::string, 6> HTTP_PROTOCOL_VERSIONS {{"HTTP/1.0", "HTTP/1.1", "HTTP/1.2", "HTTP/2", "HTTP/3"}};
+    static const std::array<std::string, 9>
+                             HTTP_VERBS {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"};
+    static const std::string HF_CONTENT_LENGTH {"Content-Length"};
+    static const std::string HF_CONTENT_TYPE {"Content-Type"};
 } // namespace siddiqsoft
-
-/*
- * std::format custom implementation must be global scope
- */
-
-template <>
-struct std::formatter<siddiqsoft::HTTPProtocolVersion> : std::formatter<std::string>
-{
-    auto format(const siddiqsoft::HTTPProtocolVersion& sv, std::format_context& ctx) const
-    {
-        return std::formatter<std::string>::format(nlohmann::json(sv).get<std::string>(), ctx);
-    }
-};
-
-
-template <>
-struct std::formatter<siddiqsoft::RESTMethodType> : std::formatter<std::string>
-{
-    auto format(const siddiqsoft::RESTMethodType& sv, std::format_context& ctx) const
-    {
-        return std::formatter<std::string>::format(nlohmann::json(sv).get<std::string>(), ctx);
-    }
-};
 
 
 #endif // !RESTCL_DEFINITIONS_HPP

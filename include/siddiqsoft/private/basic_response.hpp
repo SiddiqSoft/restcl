@@ -26,7 +26,7 @@
     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
     FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
     DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    SERVICES; LOSS OF USE, rrd, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    SERVICES; LOSS OF USE, *this, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
     CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -56,38 +56,27 @@
 namespace siddiqsoft
 {
     /// @brief REST Response object
-    class basic_response
+    class basic_response : public nlohmann::json
     {
     protected:
-        basic_response() = default;
+        basic_response()
+            : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+        {
+        }
 
     public:
-        /// @brief Represents the IO error and its corresponding message
-        struct response_code
-        {
-            uint32_t    code {0};
-            std::string message {};
-            NLOHMANN_DEFINE_TYPE_INTRUSIVE(response_code, code, message);
-        };
-
         basic_response(const basic_response& src) noexcept
+            : nlohmann::json(src)
         {
-            try {
-                rrd = src.rrd;
-            }
-            catch (const std::exception&) {
-            }
         }
 
 
         /// @brief Move constructor
         basic_response(basic_response&& src) noexcept
+            : nlohmann::json(std::move(reinterpret_cast<nlohmann::json&&>(src)))
         {
-            try {
-                std::swap(rrd, src.rrd);
-            }
-            catch (const std::exception&) {
-            }
         }
 
 
@@ -97,7 +86,7 @@ namespace siddiqsoft
         basic_response& operator=(basic_response&& src) noexcept
         {
             try {
-                std::swap(rrd, src.rrd);
+                std::swap(reinterpret_cast<nlohmann::json>(*this), reinterpret_cast<nlohmann::json>(src));
             }
             catch (const std::exception&) {
             }
@@ -109,7 +98,7 @@ namespace siddiqsoft
         basic_response& operator=(const basic_response& src) noexcept
         {
             try {
-                rrd = src.rrd;
+                *this = reinterpret_cast<nlohmann::json>(src);
             }
             catch (const std::exception&) {
             }
@@ -124,10 +113,10 @@ namespace siddiqsoft
         basic_response& setContent(const std::string& c)
         {
             if (!c.empty()) {
-                if (rrd["headers"].value("Content-Type", "").find("json") != std::string::npos) {
+                if (*this["headers"].value("Content-Type", "").find("json") != std::string::npos) {
                     try {
-                        rrd["content"] = nlohmann::json::parse(c);
-                        if (!rrd["headers"].contains("Content-Length")) rrd["headers"]["Content-Length"] = c.length();
+                        *this["content"] = nlohmann::json::parse(c);
+                        if (!*this["headers"].contains("Content-Length")) *this["headers"]["Content-Length"] = c.length();
                         return *this;
                     }
                     catch (...) {
@@ -135,8 +124,8 @@ namespace siddiqsoft
                 }
 
                 // We did not decode a json; assign as-is
-                rrd["content"] = c;
-                if (!rrd["headers"].contains("Content-Length")) rrd["headers"]["Content-Length"] = c.length();
+                *this["content"] = c;
+                if (!*this["headers"].contains("Content-Length")) *this["headers"]["Content-Length"] = c.length();
             }
 
             return *this;
@@ -152,26 +141,14 @@ namespace siddiqsoft
         }
 
 
-        /// @brief Access the "headers", "request", "content" in the json object
-        /// @param key Allows access into the json object via string or json_pointer
-        /// @return Non-mutable reference to the specified element.
-        const auto& operator[](const auto& key) const { return rrd.at(key); }
-
-
-        /// @brief Mutable access to the underlying json object
-        /// @param key Allows access into the json object via string or json_pointer
-        /// @return Mutable reference to the specified element.
-        auto& operator[](const auto& key) { return rrd.at(key); }
-
-
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.
         /// @return String
         std::string encode() const
         {
             std::string rs;
             std::string body;
-            auto&       hs = rrd.at("headers");
-            auto&       rl = rrd.at("response");
+            auto&       hs = *this.at("headers");
+            auto&       rl = *this.at("response");
 
             // Request Line
             std::format_to(std::back_inserter(rs),
@@ -181,15 +158,15 @@ namespace siddiqsoft
                            rl["reason"].is_null() ? "" : rl["reason"].get<std::string>());
 
             // Build the content to ensure we have the content-type
-            if (!rrd["content"].is_null() && rrd["content"].is_object()) {
-                body = rrd["content"].dump();
+            if (!*this["content"].is_null() && *this["content"].is_object()) {
+                body = *this["content"].dump();
             }
-            else if (!rrd["content"].is_null() && rrd["content"].is_string()) {
-                body = rrd["content"].get<std::string>();
+            else if (!*this["content"].is_null() && *this["content"].is_string()) {
+                body = *this["content"].get<std::string>();
             }
 
             // Headers..
-            for (auto& [k, v] : rrd["headers"].items()) {
+            for (auto& [k, v] : *this["headers"].items()) {
                 if (v.is_string()) {
                     std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
                 }
@@ -221,16 +198,13 @@ namespace siddiqsoft
         /// The response contains:
         /// resp["response"]["status"] or WinHTTP error code
         /// resp["response"]["reason"] or WinHTTP error code message string
-        response_code status() const { return {rrd["response"].value<unsigned>("status", 0), rrd["response"].value("reason", "")}; }
+        auto status() const -> std::pair<const unsigned, const std::string&>
+        {
+            return {*this["response"].value<unsigned>("status", 0), *this["response"].value("reason", "")};
+        }
 
     public:
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(basic_response, rrd);
         friend std::ostream& operator<<(std::ostream&, const basic_response&);
-
-    protected:
-        nlohmann::json rrd {{"response", {{"version", HTTPProtocolVersion::Http2}, {"status", 0}, {"reason", ""}}},
-                            {"headers", nullptr},
-                            {"content", nullptr}};
     };
 
 

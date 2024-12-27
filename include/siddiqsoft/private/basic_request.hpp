@@ -26,7 +26,7 @@
     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
     FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
     DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    SERVICES; LOSS OF USE, rrd, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    SERVICES; LOSS OF USE, *this, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
     CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -56,34 +56,34 @@
 namespace siddiqsoft
 {
     /// @brief Base for all RESTRequests
-    class basic_request
+    class basic_request : public nlohmann::json
     {
     protected:
         /// @brief Not directly constructible; use the derived classes to build the request
-        basic_request() { }
+        basic_request()
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+        {
+        }
 
         /// @brief Constructs a request with endpoint string into internal Uri object
         /// @param s Valid endpoint string
         explicit basic_request(const std::string& s) noexcept(false)
-            : uri(s) { };
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+            , uri(s) { };
 
         /// @brief Not directly constructible; use the derived classes to build the request
         /// @param s The source Uri
         explicit basic_request(const Uri<char>& s) noexcept(false)
-            : uri(s) { };
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+            , uri(s) { };
 
     public:
-        /// @brief Access the "headers", "request", "content" in the json object
-        /// @param key Allows access into the json object via string or json_pointer
-        /// @return Non-mutable reference to the specified element.
-        const auto& operator[](const auto& key) const { return rrd.at(key); }
-
-        /// @brief Access the "headers", "request", "content" in the json object
-        /// @param key Allows access into the json object via string or json_pointer
-        /// @return Mutable reference to the specified element.
-        auto& operator[](const auto& key) { return rrd.at(key); }
-
-
         /// @brief Set the content (non-JSON)
         /// @param ctype Content-Type
         /// @param c The content
@@ -91,9 +91,9 @@ namespace siddiqsoft
         basic_request& setContent(const std::string& ctype, const std::string& c)
         {
             if (!c.empty()) {
-                rrd["headers"]["Content-Type"]   = ctype;
-                rrd["headers"]["Content-Length"] = c.length();
-                rrd["content"]                   = c;
+                this->at("headers")[HF_CONTENT_TYPE]   = ctype;
+                this->at("headers")[HF_CONTENT_LENGTH] = c.length();
+                this->at("content")                    = c;
             }
             return *this;
         }
@@ -104,10 +104,10 @@ namespace siddiqsoft
         basic_request& setContent(const nlohmann::json& c)
         {
             if (!c.is_null()) {
-                rrd["content"]                   = c;
-                rrd["headers"]["Content-Length"] = c.dump().length();
+                this->at("content")                    = c;
+                this->at("headers")[HF_CONTENT_LENGTH] = c.dump().length();
                 // Make sure we do not override existing value
-                if (!rrd["headers"].contains("Content-Type")) rrd["headers"]["Content-Type"] = "application/json";
+                if (!this->at("headers").contains(HF_CONTENT_TYPE)) this->at("headers")[HF_CONTENT_TYPE] = "application/json";
             }
             return *this;
         }
@@ -116,11 +116,11 @@ namespace siddiqsoft
         std::string getContent() const
         {
             // Build the content to ensure we have the content-type
-            if (rrd["content"].is_object()) {
-                return rrd["content"].dump();
+            if (this->at("content").is_object()) {
+                return this->at("content").dump();
             }
-            else if (rrd["content"].is_string()) {
-                return rrd["content"].get<std::string>();
+            else if (this->at("content").is_string()) {
+                return this->at("content").get<std::string>();
             }
 
             return {};
@@ -131,7 +131,7 @@ namespace siddiqsoft
         /// @param rs String where the headers is "written-to".
         void encodeHeaders_to(std::string& rs) const
         {
-            for (auto& [k, v] : rrd["headers"].items()) {
+            for (auto& [k, v] : this->at("headers").items()) {
                 if (v.is_string()) {
                     std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
                 }
@@ -156,8 +156,8 @@ namespace siddiqsoft
         {
             std::string rs;
             std::string body;
-            auto&       hs = rrd.at("headers");
-            auto&       rl = rrd.at("request");
+            auto&       hs = this->at("headers");
+            auto&       rl = this->at("request");
 
             // Request Line
             std::format_to(std::back_inserter(rs),
@@ -167,11 +167,11 @@ namespace siddiqsoft
                            rl["version"].get<std::string>());
 
             // Build the content to ensure we have the content-type
-            if (rrd["content"].is_object()) {
-                body = rrd["content"].dump();
+            if (this->at("content").is_object()) {
+                body = this->at("content").dump();
             }
-            else if (rrd["content"].is_string()) {
-                body = rrd["content"].get<std::string>();
+            else if (this->at("content").is_string()) {
+                body = this->at("content").get<std::string>();
             }
 
             // Headers..
@@ -188,25 +188,10 @@ namespace siddiqsoft
 
     public:
         friend std::ostream& operator<<(std::ostream&, const basic_request&);
-        friend void          to_json(nlohmann::json&, const basic_request&);
 
     public:
         Uri<char, AuthorityHttp<char>> uri;
-
-    protected:
-        nlohmann::json rrd {{"request", {{"method", nullptr}, {"uri", nullptr}, {"version", nullptr}}},
-                            {"headers", nullptr},
-                            {"content", nullptr}};
     };
-
-    /// @brief Explicit implementation is required due to the restriction on direct instantiation of the basic_request class.
-    /// @param dest The destination json
-    /// @param src The basic_request class (or derived)
-    inline void to_json(nlohmann::json& dest, const basic_request& src)
-    {
-        dest["uri"] = src.uri;
-        dest["rrd"] = src.rrd;
-    }
 
 
     inline std::ostream& operator<<(std::ostream& os, const basic_request& src)

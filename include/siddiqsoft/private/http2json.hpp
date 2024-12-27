@@ -9,23 +9,13 @@
 #include <format>
 
 #include "nlohmann/json.hpp"
+
+#include "restcl_definitions.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"
 
-#include "ctre.hpp"
-
-
 namespace siddiqsoft
 {
-    static const std::regex                 HTTP_RESPONSE_REGEX {"(HTTP.*)\\s(\\d+)\\s([^\\s]*)\\s"};
-    static const std::string                HTTP_NEWLINE {"\r\n"};
-    static const std::string                HTTP_EMPTY_STRING {};
-    static const std::string                HTTP_END_OF_HEADERS {"\r\n\r\n"};
-    static const std::string                HTTP_PROTOCOLPREFIX {"HTTP/"};
-    static const std::array<std::string, 6> HTTP_PROTOCOL {{"HTTP/1.0", "HTTP/1.1", "HTTP/1.2", "HTTP/2", "HTTP/3"}};
-    static const std::array<std::string, 8> HTTP_VERBS {"GET", "POST", "PUT", "UPDATE", "DELETE", "INFO", "OPTIONS", "CONNECT"};
-
-
     class http2json
     {
     private:
@@ -80,6 +70,107 @@ namespace siddiqsoft
             return found;
         }
 
+        static bool storeHeaderValue(rest_response& httpm, const std::string& key, const std::string& value)
+        {
+            if (key.find(HF_CONTENT_LENGTH) == 0) {
+                httpm["headers"][key] = std::stoi(value);
+            }
+            else if (value.empty()) {
+                httpm["headers"][key] = "";
+            }
+            else {
+                httpm["headers"][key] = value;
+            }
+
+            return true;
+        }
+
+        static bool parseHeaders(rest_response&               httpm,
+                                 std::string::iterator&       bufferStart,
+                                 const std::string::iterator& bufferEnd) noexcept(false)
+        {
+            using namespace std::string_literals;
+
+            bool done {false};
+            bool found {false};
+
+            // WARNING
+            // The bufferStart must point to the start of the first sequence (excluding the CRLF) after the startline is processed!
+            // Scan for the location of the header section end within the frame.
+            // If we don't have one, then we should bail out.
+            // Note that for response messages, it is likely that the bufferEnd will also be the headerEnd (no content).
+            auto useCRLF             = true;
+            auto headerDelimiterSize = HTTP_END_OF_HEADERS.size();
+            auto lineEndSize         = HTTP_NEWLINE.size();
+            auto headerEnd           = std::search(bufferStart, bufferEnd, HTTP_END_OF_HEADERS.begin(), HTTP_END_OF_HEADERS.end());
+
+            // Assert header end delimiter must exist!
+            auto headerSectionSize = size_t(bufferEnd - headerEnd);
+            if (headerSectionSize < headerDelimiterSize)
+                throw std::invalid_argument {std::format("{}:Cannot find header section delimiter.", __func__).c_str()};
+
+            while (!done) {
+                // Scan for the first `:`
+                auto hsep = std::search(bufferStart, headerEnd, ELEM_SEPERATOR.begin(), ELEM_SEPERATOR.end());
+                if (hsep != headerEnd) {
+                    // Found the separator element.
+                    // Key is from bufferStart until the separator
+                    if (std::string key(bufferStart, hsep); !key.empty()) {
+                        std::string value {};
+                        auto        hval = hsep; // Store the location of the value part of the header element.
+
+                        // Next, let's look for the end of element
+                        bufferStart = hsep += ELEM_SEPERATOR.size();
+
+                        // Skip over the leading "space" if found.
+                        if (*bufferStart == ' ') bufferStart = ++hsep;
+
+                    label_recummulate_to_unfold_buffer:
+                        auto hend = useCRLF ? search(hsep, headerEnd, HTTP_NEWLINE.begin(), HTTP_NEWLINE.end())
+                                            : search(hsep, headerEnd, ELEM_NEWLINE_LF.begin(), ELEM_NEWLINE_LF.end());
+                        if (hend != headerEnd) {
+                            // We found the `\r\n`;
+                            // Next, check if this is a folded element
+                            if ((headerEnd != (hend + lineEndSize + 1)) &&
+                                ((*(hend + lineEndSize + 1) == ' ') ||
+                                 ((*hend + lineEndSize + 1) == '\t'))) // peek ahead to see if we have.. folded indicator
+                            {
+                                // Yes, we have a folded item.
+                                // build up the value..
+                                value.append(hsep, hend);
+                                // Advance to past the fold portion
+                                hsep = hend + lineEndSize + 1;
+                                // Go back to find the next section..
+                                goto label_recummulate_to_unfold_buffer;
+                            }
+                            else {
+                                value.append(hsep, hend);
+                                found       = storeHeaderValue(httpm, key, value);
+                                bufferStart = hend += lineEndSize;
+                            }
+                        }
+                        else {
+                            // reached the end; We're done
+                            value.append(hsep, hend);
+                            found       = storeHeaderValue(httpm, key, value);
+                            bufferStart = headerEnd + headerDelimiterSize;
+                            done        = true;
+                        }
+                    }
+                    else {
+                        // Key is empty; we're done.
+                        done = true;
+                    }
+                }
+                else {
+                    // End of buffer or Could not find separator; we're done.
+                    done = true;
+                }
+            }
+
+            return found;
+        }
+
     public:
         [[nodiscard]] static auto parse(std::string& srcBuffer) -> siddiqsoft::rest_response
         {
@@ -88,6 +179,13 @@ namespace siddiqsoft
 
             if (parseStartLine(resp, startIterator, srcBuffer.end())) {
                 // Continue to parse the headers..
+                if (parseHeaders(resp, startIterator, srcBuffer.end())) {
+                    // Continue to extract the body.. so far
+                    // bufferStart will be left at the end of the header section
+                    // so we can use this as our starting point for the body..
+                    srcBuffer.erase(srcBuffer.begin(), startIterator);
+                    resp.setContent( srcBuffer);
+                }
             }
 
             return resp;
