@@ -39,6 +39,7 @@
 #include <version>
 
 #include "nlohmann/json.hpp"
+#include "siddiqsoft/SplitUri.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
 
 
@@ -49,17 +50,18 @@ namespace siddiqsoft
     TEST(Serializers, test_GET)
     {
         auto srt = "https://www.siddiqsoft.com/"_GET;
-        EXPECT_NO_THROW({
+        std::cerr << "Going to check if we can dump.." << std::endl;
+        //EXPECT_NO_THROW({
             auto doc = srt.dump(3);
             std::cerr << doc << std::endl;
-        });
+        //});
 
-        EXPECT_NO_THROW({
+        //EXPECT_NO_THROW({
             // nlohmann::json doc(srt);
-            nlohmann::json doc = srt;
+            nlohmann::json doc2 = srt;
             // Checks the implementation of the json implementation
-            std::cerr << "Serialized json: " << doc.dump(3) << std::endl;
-        });
+            std::cerr << "Serialized json: " << doc2.dump(3) << std::endl;
+        //});
     }
 
 

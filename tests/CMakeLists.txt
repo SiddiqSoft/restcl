@@ -31,6 +31,11 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         add_compile_definitions(${TESTPROJ} PRIVATE DEBUG=1 _DEBUG=1)
     endif()
 
+    if( FORCE_USE_OPENSSL MATCHES "True")
+        message(STATUS "Windows build; force using OpenSSL implementation.")
+        add_compile_definitions(${TESTPROJ} PRIVATE FORCE_USE_OPENSSL=True)
+    endif()
+
     # Sources
     target_sources( ${TESTPROJ}
                     PRIVATE
@@ -53,7 +58,6 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                             string2map::string2map
                             asynchrony::asynchrony
                             AzureCppUtils::AzureCppUtils
-                            ctre::ctre
                             StringHelpers::StringHelpers)
 
     include(GoogleTest)

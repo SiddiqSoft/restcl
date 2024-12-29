@@ -73,7 +73,7 @@ namespace siddiqsoft
             : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
                               {"headers", nullptr},
                               {"content", nullptr}})
-            , uri(s) { };
+            , uri(s) {};
 
         /// @brief Not directly constructible; use the derived classes to build the request
         /// @param s The source Uri
@@ -81,7 +81,7 @@ namespace siddiqsoft
             : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
                               {"headers", nullptr},
                               {"content", nullptr}})
-            , uri(s) { };
+            , uri(s) {};
 
     public:
         /// @brief Set the content (non-JSON)
@@ -200,7 +200,10 @@ namespace siddiqsoft
         rest_request(const std::string& verb,
                      const std::string& endpoint,
                      const std::string& proto = HTTP_PROTOCOL_VERSIONS[1]) noexcept(false)
-            : uri(endpoint)
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+            , uri(endpoint)
         {
             // Build the request line data
             this->at("request") = {{"uri", uri.urlPart}, {"method", verb}, {"protocol", proto}};
@@ -218,7 +221,10 @@ namespace siddiqsoft
         /// @param endpoint Fully qualified http schema uri
         /// @param h Optional json containing the headers
         rest_request(const std::string& verb, const Uri<char>& endpoint, const nlohmann::json& h = nullptr) noexcept(false)
-            : uri(endpoint)
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+            , uri(endpoint)
         {
             // Set the headers if present (we add some defaults below if not provided or missing param)
             if (h.is_object() && !h.is_null()) {
@@ -242,8 +248,16 @@ namespace siddiqsoft
         /// @param h Required json containing the headers
         /// @param c Required json containing the content
         rest_request(const Uri<char>& endpoint, const nlohmann::json& h, const nlohmann::json& c) noexcept(false)
-            : rest_request(endpoint, h)
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+            , uri(endpoint)
         {
+            // Set the headers if present (we add some defaults below if not provided or missing param)
+            if (h.is_object() && !h.is_null()) {
+                this->at("headers") = h;
+            }
+
             setContent(c);
         }
 
@@ -252,8 +266,16 @@ namespace siddiqsoft
         /// @param h Required json containing the headers. At least Content-Type should be set.
         /// @param c Required string containing the content. Make sure to set "Content-Type"
         explicit rest_request(const Uri<char>& endpoint, const nlohmann::json& h, const std::string& c) noexcept(false)
-            : rest_request(endpoint, h)
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+            , uri(endpoint)
         {
+            // Set the headers if present (we add some defaults below if not provided or missing param)
+            if (h.is_object() && !h.is_null()) {
+                this->at("headers") = h;
+            }
+
             if (!c.empty()) {
                 if (h.is_null() || (h.is_object() && !h.contains("Content-Type")))
                     this->at("headers")["Content-Type"] = "text/plain";
@@ -267,8 +289,16 @@ namespace siddiqsoft
         /// @param h Required json containing the headers. At least Content-Type should be set.
         /// @param c Required string containing the content. Make sure to set "Content-Type"
         explicit rest_request(const Uri<char>& endpoint, const nlohmann::json& h, const char* srcContent) noexcept(false)
-            : rest_request(endpoint, h)
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+            , uri(endpoint)
         {
+            // Set the headers if present (we add some defaults below if not provided or missing param)
+            if (h.is_object() && !h.is_null()) {
+                this->at("headers") = h;
+            }
+
             if (srcContent != nullptr) {
                 if (h.is_null() || (h.is_object() && !h.contains("Content-Type")))
                     this->at("headers")["Content-Type"] = "text/plain";

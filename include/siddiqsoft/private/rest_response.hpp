@@ -66,6 +66,14 @@ namespace siddiqsoft
         {
         }
 
+        rest_response(const int code, const std::string& message = {})
+            : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+        {
+            setStatus(code, message);
+        }
+
         /// @brief Set the content of the response. An attempt is made to parse to json object
         /// @param c Content from the receive
         /// @return Self
@@ -163,16 +171,14 @@ namespace siddiqsoft
         /// resp["response"]["reason"] or WinHTTP error code message string
         auto status() const -> std::pair<const unsigned, const std::string&>
         {
-            auto&       hs = this->at("headers");
-            auto&       rl = this->at("response");
+            auto& hs = this->at("headers");
+            auto& rl = this->at("response");
 
             return {rl.value<unsigned>("status", 0), rl.value("reason", "")};
         }
 
     public:
         friend std::ostream& operator<<(std::ostream&, const rest_response&);
-    public:
-        rest_response(const int code, const std::string& message = {}) { setStatus(code, message); }
 
 
         /// @brief Construct a response object based on the given transport error

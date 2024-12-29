@@ -6,7 +6,7 @@
 #   BUILD_TESTS ON
 #   CI_BUILDID must be set to the gitversion
 # 
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.29)
 
 # _________________
 # Version detection; must preceed the declaration of the actual project()
@@ -68,8 +68,6 @@ target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#1.8.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
-CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.9.0")
-target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
 
 # ____________________________________
 # Testing

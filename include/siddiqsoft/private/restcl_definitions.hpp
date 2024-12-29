@@ -40,6 +40,7 @@
 #include <regex>
 #include <array>
 
+#include "nlohmann/json.hpp"
 
 namespace siddiqsoft
 {

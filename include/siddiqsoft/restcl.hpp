@@ -15,8 +15,8 @@
 
 #if defined(__linux__) || defined(__APPLE__) || defined (FORCE_USE_OPENSSL)
 #include "private/restcl_unix.hpp"
-#elif defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)
-#include "private/restcl_winhttp.hpp"
+#elif (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)) && !defined(FORCE_USE_OPENSSL)
+#include "private/restcl_win.hpp"
 #else
 #error "Platform not supported"
 #endif
