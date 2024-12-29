@@ -66,8 +66,10 @@ namespace siddiqsoft
         /// @param err Specifies the transport error.
         rest_response& setStatus(const int code, const std::string& message)
         {
-            if (code != 0) rrd["response"]["status"] = code;
-            if (!message.empty()) rrd["response"]["reason"] = message;
+            using namespace nlohmann::literals;
+
+            if (code != 0) this->at("response/status"_json_pointer) = code;
+            if (!message.empty()) this->at("response/reason"_json_pointer) = message;
             return *this;
         }
     };

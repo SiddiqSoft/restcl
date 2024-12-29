@@ -58,9 +58,41 @@ namespace siddiqsoft
         Http2  = 3,
         Http3  = 4
     };
+    NLOHMANN_JSON_SERIALIZE_ENUM(HTTP_PROTOCOL_VERSION_ID,
+                                 {{HTTP_PROTOCOL_VERSION_ID::Http1, "HTTP/1.0"},
+                                  {HTTP_PROTOCOL_VERSION_ID::Http11, "HTTP/1.1"},
+                                  {HTTP_PROTOCOL_VERSION_ID::Http12, "HTTP/1.2"},
+                                  {HTTP_PROTOCOL_VERSION_ID::Http2, "HTTP/2"},
+                                  {HTTP_PROTOCOL_VERSION_ID::Http3, "HTTP/3"}});
     static const std::array<std::string, 6> HTTP_PROTOCOL_VERSIONS {{"HTTP/1.0", "HTTP/1.1", "HTTP/1.2", "HTTP/2", "HTTP/3"}};
+
+    enum HTTP_VERB_ID
+    {
+        GET     = 0,
+        HEAD    = 1,
+        POST    = 2,
+        PUT     = 3,
+        DELETE  = 4,
+        CONNECT = 5,
+        OPTIONS = 6,
+        TRACE   = 7,
+        PATCH   = 8
+    };
+    NLOHMANN_JSON_SERIALIZE_ENUM(HTTP_VERB_ID,
+                                 {{HTTP_VERB_ID::GET, "GET"},
+                                  {HTTP_VERB_ID::HEAD, "HEAD"},
+                                  {HTTP_VERB_ID::POST, "POST"},
+                                  {HTTP_VERB_ID::PUT, "PUT"},
+                                  {HTTP_VERB_ID::DELETE, "DELETE"},
+                                  {HTTP_VERB_ID::CONNECT, "CONNECT"},
+                                  {HTTP_VERB_ID::TRACE, "TRACE"},
+                                  {HTTP_VERB_ID::PATCH, "PATCH"},
+                                  {HTTP_VERB_ID::OPTIONS, "OPTIONS"}});
+
+    /// @brief HTTP Protocol version: Http2, Http11 and Http3
     static const std::array<std::string, 9>
-                             HTTP_VERBS {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"};
+            HTTP_VERBS {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"};
+
     static const std::string HF_CONTENT_LENGTH {"Content-Length"};
     static const std::string HF_CONTENT_TYPE {"Content-Type"};
 } // namespace siddiqsoft

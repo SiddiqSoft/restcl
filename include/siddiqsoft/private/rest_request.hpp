@@ -90,7 +90,8 @@ namespace siddiqsoft
             }
 
             // Build the request line data
-            this->at("request") = {{"uri", uri.urlPart}, {"method", verb}, {"version", HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]}};
+            this->at("request") = {
+                    {"uri", uri.urlPart}, {"method", verb}, {"version", HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]}};
 
             // Enforce some default headers
             auto& hs = this->at("headers");
@@ -140,6 +141,57 @@ namespace siddiqsoft
             }
         }
     };
+
+
+    namespace restcl_literals
+    {
+        [[nodiscard]] static rest_request operator""_GET(const char* url, size_t sz)
+        {
+            return rest_request("GET", std::string {url, sz});
+        }
+        [[nodiscard]] static rest_request operator""_HEAD(const char* url, size_t sz)
+        {
+            return rest_request("HEAD", std::string {url, sz});
+        }
+        [[nodiscard]] static rest_request operator""_POST(const char* url, size_t sz)
+        {
+            return rest_request("POST", std::string {url, sz});
+        }
+        [[nodiscard]] static rest_request operator""_PUT(const char* url, size_t sz)
+        {
+            return rest_request("PUT", std::string {url, sz});
+        }
+        [[nodiscard]] static rest_request operator""_DELETE(const char* url, size_t sz)
+        {
+            return rest_request("DELETE", std::string {url, sz});
+        }
+        [[nodiscard]] static rest_request operator""_CONNECT(const char* url, size_t sz)
+        {
+            return rest_request("CONNECT", std::string {url, sz});
+        }
+        [[nodiscard]] static rest_request operator""_OPTIONS(const char* url, size_t sz)
+        {
+            return rest_request("OPTIONS", std::string {url, sz});
+        }
+        [[nodiscard]] static rest_request operator""_TRACE(const char* url, size_t sz)
+        {
+            return rest_request("TRACE", std::string {url, sz});
+        }
+        [[nodiscard]] static rest_request operator""_PATCH(const char* url, size_t sz)
+        {
+            return rest_request("PATCH", std::string {url, sz});
+        }
+    } // namespace restcl_literals
 } // namespace siddiqsoft
+
+template <>
+struct std::formatter<siddiqsoft::rest_request> : std::formatter<std::string>
+{
+    template <class FC>
+    auto format(const siddiqsoft::rest_request& sv, FC& ctx) const
+    {
+        return std::formatter<std::string>::format(sv.encode(), ctx);
+    }
+};
 
 #endif // !REST_REQUEST_HPP

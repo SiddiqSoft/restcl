@@ -21,7 +21,7 @@ namespace siddiqsoft
     private:
         static auto isHttpProtocol(const std::string& fragment) -> const std::string&
         {
-            for (const auto& p : HTTP_PROTOCOL) {
+            for (const auto& p : HTTP_PROTOCOL_VERSIONS) {
                 if (fragment.starts_with(p)) return p;
             }
 

@@ -67,56 +67,16 @@ namespace siddiqsoft
         }
 
     public:
-        basic_response(const basic_response& src) noexcept
-            : nlohmann::json(src)
-        {
-        }
-
-
-        /// @brief Move constructor
-        basic_response(basic_response&& src) noexcept
-            : nlohmann::json(std::move(reinterpret_cast<nlohmann::json&&>(src)))
-        {
-        }
-
-
-        /// @brief Move assignment operator
-        /// @param src The source object
-        /// @return Self
-        basic_response& operator=(basic_response&& src) noexcept
-        {
-            try {
-                std::swap(reinterpret_cast<nlohmann::json>(*this), reinterpret_cast<nlohmann::json>(src));
-            }
-            catch (const std::exception&) {
-            }
-
-            return *this;
-        }
-
-
-        basic_response& operator=(const basic_response& src) noexcept
-        {
-            try {
-                *this = reinterpret_cast<nlohmann::json>(src);
-            }
-            catch (const std::exception&) {
-            }
-
-            return *this;
-        }
-
-
         /// @brief Set the content of the response. An attempt is made to parse to json object
         /// @param c Content from the receive
         /// @return Self
         basic_response& setContent(const std::string& c)
         {
             if (!c.empty()) {
-                if (*this["headers"].value("Content-Type", "").find("json") != std::string::npos) {
+                if (this->at("headers").value("Content-Type", "").find("json") != std::string::npos) {
                     try {
-                        *this["content"] = nlohmann::json::parse(c);
-                        if (!*this["headers"].contains("Content-Length")) *this["headers"]["Content-Length"] = c.length();
+                        this->at("content") = nlohmann::json::parse(c);
+                        if (!this->at("headers").contains("Content-Length")) this->at("headers")["Content-Length"] = c.length();
                         return *this;
                     }
                     catch (...) {
@@ -124,8 +84,8 @@ namespace siddiqsoft
                 }
 
                 // We did not decode a json; assign as-is
-                *this["content"] = c;
-                if (!*this["headers"].contains("Content-Length")) *this["headers"]["Content-Length"] = c.length();
+                this->at("content") = c;
+                if (!this->at("headers").contains("Content-Length")) this->at("headers")["Content-Length"] = c.length();
             }
 
             return *this;
@@ -136,7 +96,10 @@ namespace siddiqsoft
         /// @return True iff there is no IOError and the StatusCode (99,400)
         bool success() const
         {
-            auto sc = status().code;
+            using namespace nlohmann::json_literals;
+
+            //             : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
+            auto sc = this->at("response/status"_json_pointer).template get<int>();
             return (sc > 99) && (sc < 400);
         }
 
@@ -147,8 +110,9 @@ namespace siddiqsoft
         {
             std::string rs;
             std::string body;
-            auto&       hs = *this.at("headers");
-            auto&       rl = *this.at("response");
+            auto&       hs = this->at("headers");
+            auto&       rl = this->at("response");
+            auto&       cs = this->at("content");
 
             // Request Line
             std::format_to(std::back_inserter(rs),
@@ -158,15 +122,15 @@ namespace siddiqsoft
                            rl["reason"].is_null() ? "" : rl["reason"].get<std::string>());
 
             // Build the content to ensure we have the content-type
-            if (!*this["content"].is_null() && *this["content"].is_object()) {
-                body = *this["content"].dump();
+            if (!cs.is_null() && cs.is_object()) {
+                body = cs.dump();
             }
-            else if (!*this["content"].is_null() && *this["content"].is_string()) {
-                body = *this["content"].get<std::string>();
+            else if (!cs.is_null() && cs.is_string()) {
+                body = cs.get<std::string>();
             }
 
             // Headers..
-            for (auto& [k, v] : *this["headers"].items()) {
+            for (auto& [k, v] : this->at("headers").items()) {
                 if (v.is_string()) {
                     std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
                 }
@@ -200,7 +164,10 @@ namespace siddiqsoft
         /// resp["response"]["reason"] or WinHTTP error code message string
         auto status() const -> std::pair<const unsigned, const std::string&>
         {
-            return {*this["response"].value<unsigned>("status", 0), *this["response"].value("reason", "")};
+            auto&       hs = this->at("headers");
+            auto&       rl = this->at("response");
+
+            return {rl.value<unsigned>("status", 0), rl.value("reason", "")};
         }
 
     public:
