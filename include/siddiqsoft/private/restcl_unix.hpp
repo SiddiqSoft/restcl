@@ -37,7 +37,6 @@
 #include "rest_response.hpp"
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
-#include "rest_response.hpp"
 #include "openssl_helpers.hpp"
 
 #include "siddiqsoft/string2map.hpp"

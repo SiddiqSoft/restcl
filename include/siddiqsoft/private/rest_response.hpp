@@ -58,7 +58,7 @@ namespace siddiqsoft
     /// @brief REST Response object
     class rest_response : public nlohmann::json
     {
-    protected:
+    public:
         rest_response()
             : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
                               {"headers", nullptr},
@@ -66,7 +66,6 @@ namespace siddiqsoft
         {
         }
 
-    public:
         /// @brief Set the content of the response. An attempt is made to parse to json object
         /// @param c Content from the receive
         /// @return Self
@@ -173,7 +172,7 @@ namespace siddiqsoft
     public:
         friend std::ostream& operator<<(std::ostream&, const rest_response&);
     public:
-        rest_response(const int code = 0, const std::string& message = {}) { setStatus(code, message); }
+        rest_response(const int code, const std::string& message = {}) { setStatus(code, message); }
 
 
         /// @brief Construct a response object based on the given transport error
