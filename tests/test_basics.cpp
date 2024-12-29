@@ -42,19 +42,24 @@
 #include "../include/siddiqsoft/restcl.hpp"
 
 
-
 namespace siddiqsoft
 {
     using namespace restcl_literals;
 
-    TEST(Serializers, test1a)
+    TEST(Serializers, test_GET)
     {
         auto srt = "https://www.siddiqsoft.com/"_GET;
+        EXPECT_NO_THROW({
+            auto doc = srt.dump(3);
+            std::cerr << doc << std::endl;
+        });
 
-        nlohmann::json doc(srt);
-
-        // Checks the implementation of the json implementation
-        std::cerr << "Serialized json: " << doc.dump(3) << std::endl;
+        EXPECT_NO_THROW({
+            // nlohmann::json doc(srt);
+            nlohmann::json doc = srt;
+            // Checks the implementation of the json implementation
+            std::cerr << "Serialized json: " << doc.dump(3) << std::endl;
+        });
     }
 
 

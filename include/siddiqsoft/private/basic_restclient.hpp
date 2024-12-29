@@ -17,13 +17,13 @@
 #include <functional>
 
 #include "restcl_definitions.hpp"
-#include "basic_request.hpp"
+#include "rest_request.hpp"
 #include "basic_response.hpp"
 
 namespace siddiqsoft
 {
-    /// @brief The function or lambda must accept const basic_request& and const basic_response&
-    using basic_callbacktype = std::function<void(const basic_request&, const basic_response&)>;
+    /// @brief The function or lambda must accept const rest_request& and const basic_response&
+    using basic_callbacktype = std::function<void(const rest_request&, const basic_response&)>;
 
 
     /// @brief Base class for the rest client
@@ -44,7 +44,7 @@ namespace siddiqsoft
         /// @brief Synchronous implementation of the IO
         /// @param req Request
         /// @return The response
-        [[nodiscard]] virtual basic_response send(const basic_request&) = 0;
+        [[nodiscard]] virtual basic_response send(const rest_request&) = 0;
 
         /// @brief Asynchronous operation. The callback must be provided here or previously via the configure()
         /// @param req Request
@@ -52,32 +52,32 @@ namespace siddiqsoft
         ///                 If not present then the one provided during configuration is used.
         ///                 If no callback has been registered or provided here then an invalid_argument
         ///                 exception should be thrown.
-        virtual void send(basic_request&&, std::optional<basic_callbacktype> = std::nullopt) = 0;
+        virtual void send(rest_request&&, std::optional<basic_callbacktype> = std::nullopt) = 0;
     };
 
     /**
-     * @brief Container to store the basic_request and the optional callback.
+     * @brief Container to store the rest_request and the optional callback.
      *
      */
     struct RestPoolArgsType
     {
-        RestPoolArgsType(basic_request&& r, basic_callbacktype& cb)
+        RestPoolArgsType(rest_request&& r, basic_callbacktype& cb)
             : request(std::move(r)) // own the request
             , callback(cb)          // make a copy
         {
         }
 
-        RestPoolArgsType(basic_request&& r, basic_callbacktype&& cb)
+        RestPoolArgsType(rest_request&& r, basic_callbacktype&& cb)
             : request(std::move(r))   // own the request
             , callback(std::move(cb)) // own the callback
         {
         }
 
         /**
-         * @brief Represents the basic_request object
+         * @brief Represents the rest_request object
          *
          */
-        basic_request request;
+        rest_request request;
 
         /**
          * @brief Holds the callback to the client code

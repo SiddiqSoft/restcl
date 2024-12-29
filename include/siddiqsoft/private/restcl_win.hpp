@@ -42,8 +42,6 @@
 #include "nlohmann/json.hpp"
 
 #include "restcl_definitions.hpp"
-#include "basic_request.hpp"
-#include "basic_response.hpp"
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"
@@ -284,7 +282,7 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(basic_request&& req) override
+        void send(rest_request&& req) override
         {
             pool.queue(RestPoolArgsType {std::move(req), callback});
         }
@@ -293,7 +291,7 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(basic_request&& req, basic_callbacktype&& callback)
+        void send(rest_request&& req, basic_callbacktype&& callback)
         {
             pool.queue(RestPoolArgsType {std::move(req), std::move(callback)});
         }
@@ -302,7 +300,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] basic_response send(const basic_request& req)
+        [[nodiscard]] basic_response send(const rest_request& req)
         {
             rest_response resp {};
 
