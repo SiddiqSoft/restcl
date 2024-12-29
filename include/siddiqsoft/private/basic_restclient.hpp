@@ -63,7 +63,7 @@ namespace siddiqsoft
     {
         RestPoolArgsType(rest_request&& r, basic_callbacktype& cb)
             : request(std::move(r)) // own the request
-            , callback(cb)          // make a copy
+            , callback(cb)             // make a copy
         {
         }
 
