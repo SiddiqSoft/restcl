@@ -9,7 +9,9 @@
             "name": "Project-Base",
             "hidden": true,
             "generator": "Ninja",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "cacheVariables": {
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
                 "restcl_BUILD_TESTS": "ON"
@@ -171,7 +173,8 @@
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
             "inherits": "Windows-base",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "FORCE_USE_OPENSSL": "True"
             }
         },
         {
@@ -222,7 +225,9 @@
         {
             "name": "Apple-Debug",
             "configurePreset": "Apple-Debug",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "output": {
                 "outputOnFailure": true
             },
@@ -234,7 +239,9 @@
         {
             "name": "Apple-Release",
             "configurePreset": "Apple-Release",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "output": {
                 "outputOnFailure": true
             },
@@ -246,7 +253,9 @@
         {
             "name": "Linux-GCC-Debug",
             "configurePreset": "Linux-GCC-Debug",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "output": {
                 "outputOnFailure": true
             },
@@ -258,7 +267,9 @@
         {
             "name": "Linux-GCC-Release",
             "configurePreset": "Linux-GCC-Release",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "output": {
                 "outputOnFailure": true
             },
@@ -270,7 +281,9 @@
         {
             "name": "Linux-Clang-Debug",
             "configurePreset": "Linux-Clang-Debug",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "output": {
                 "outputOnFailure": true
             },
@@ -282,7 +295,9 @@
         {
             "name": "Linux-Clang-Release",
             "configurePreset": "Linux-Clang-Release",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "output": {
                 "outputOnFailure": true
             },
@@ -294,7 +309,9 @@
         {
             "name": "Windows-Debug",
             "configurePreset": "Windows-Debug",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "output": {
                 "outputOnFailure": true
             },
@@ -306,7 +323,9 @@
         {
             "name": "Windows-Release",
             "configurePreset": "Windows-Release",
-            "environment": {"SAMPLES_DIR": "${sourceDir}/samples"},
+            "environment": {
+                "SAMPLES_DIR": "${sourceDir}/samples"
+            },
             "output": {
                 "outputOnFailure": true
             },

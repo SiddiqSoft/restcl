@@ -12,7 +12,7 @@
 #pragma once
 #include <optional>
 #include <stdexcept>
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined (FORCE_USE_OPENSSL)
 
 #ifndef RESTCL_UNIX_HPP
 #define RESTCL_UNIX_HPP

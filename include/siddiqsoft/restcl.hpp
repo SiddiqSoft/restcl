@@ -13,7 +13,7 @@
 #define RESTCL_HPP
 
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined (FORCE_USE_OPENSSL)
 #include "private/restcl_unix.hpp"
 #elif defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)
 #include "private/restcl_winhttp.hpp"

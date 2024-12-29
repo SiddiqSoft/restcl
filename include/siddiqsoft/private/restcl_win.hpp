@@ -10,7 +10,7 @@
  */
 
 #pragma once
-#if defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)
+#if (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)) && !defined (FORCE_USE_OPENSSL)
 
 #ifndef RESTCL_WIN_HPP
 #define RESTCL_WIN_HPP
