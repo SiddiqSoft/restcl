@@ -61,7 +61,7 @@ This is the starting point for your client. We make extensive use of initializer
         WinHttpRESTClient(WinHttpRESTClient&&);
         WinHttpRESTClient(const std::string& ua = {});
 
-        basic_response send(rest_request& req);
+        rest_response send(rest_request& req);
         void send(rest_request&& req, basic_callbacktype&& callback);
         void send(rest_request&& req, basic_callbacktype& callback);
     };
@@ -89,7 +89,7 @@ Sets the HTTP/2 option and the decompression options
 
 #### `WinHttpRESTClient::send`
 ```cpp
-    basic_response send(rest_request& req);
+    rest_response send(rest_request& req);
 ```
 
 Uses the existing hSession to connect, send, receive data from the remote server and returns the response in **synchronous mode**.
@@ -100,7 +100,7 @@ Uses the existing hSession to connect, send, receive data from the remote server
 Parameter | Type | Description
 ---------:|------|:-----------
 `req` | [`rest_request`](#class-rest_request) | The Request to be sent to the remote server.
-return | [`basic_response`](#alias-basic_response) | The Response from the remote server or IO error code and message.
+return | [`rest_response`](#alias-rest_response) | The Response from the remote server or IO error code and message.
 
 See the [examples](#examples) section.
 
@@ -135,7 +135,7 @@ See the [examples](#examples) section.
 ### Signature
 ```cpp
     using basic_callbacktype = std::function<void(const rest_request&  req,
-                                                  const basic_response& resp)>;
+                                                  const rest_response& resp)>;
 ```
 
 Callback invoked by the library on error / success. The request and response are valid for the lifespan of the call but may not be modified.
@@ -145,7 +145,7 @@ Callback invoked by the library on error / success. The request and response are
 Parameter | Type | Description
 ---------:|------|:-----------
 `req` | [`const rest_request`](#class-rest_request) | The Request to be sent to the remote server.
-`resp` | [`const basic_response`](#class-basic_response) | The Response from the remote server.
+`resp` | [`const rest_response`](#class-rest_response) | The Response from the remote server.
 
 <hr/>
 
@@ -277,14 +277,14 @@ Helper encodes the HTTP request with request line, header section and the conten
 <hr/>
 
 
-## class `basic_response`
+## class `rest_response`
 
 ### Signature
 ```cpp
-class basic_response
+class rest_response
 {
 protected:
-    basic_response();
+    rest_response();
 
 public:
     struct response_code
@@ -293,12 +293,12 @@ public:
         std::string message {};
     };
 
-    basic_response(const basic_response&);
-    basic_response(basic_response&&);
+    rest_response(const rest_response&);
+    rest_response(rest_response&&);
 
-    basic_response& operator=(basic_response&&);
-    basic_response& operator=(const basic_response&);
-    basic_response& setContent(const std::string&);
+    rest_response& operator=(rest_response&&);
+    rest_response& operator=(const rest_response&);
+    rest_response& setContent(const std::string&);
     const auto&     operator[](const auto&) const;
     auto&           operator[](const auto&);
     std::string     encode() const;
@@ -313,7 +313,7 @@ protected:
                          {"content", nullptr} };
 ```
 
-#### `basic_response::response_code`
+#### `rest_response::response_code`
 
 Name        | Type | Description
 -----------:|------|:-----------
@@ -334,10 +334,10 @@ The internal `response_code` struct represents the IO error code and IO error me
 > Omit eplanations for constructors. They're pretty standard default/empty, move constructors and move assignment operator.
 
 
-##### `basic_response::setContent`
+##### `rest_response::setContent`
 
 ```cpp
-    basic_response&              setContent(const std::string& content);
+    rest_response&              setContent(const std::string& content);
 ```
 - content - Set the content body as read by the server.
 
@@ -346,7 +346,7 @@ This method should not be used by the client.
 The client must use the headers to figure out the type of the content and its length.
 
 
-##### `basic_response::success`
+##### `rest_response::success`
 
 ```cpp
     bool                             success() const;
@@ -355,7 +355,7 @@ The client must use the headers to figure out the type of the content and its le
 Returns true if the HTTP status >=99 and <400. False if there is any IO error or status >400 from the remote server.
 
 
-##### `basic_response::operator[] const`
+##### `rest_response::operator[] const`
 ```cpp
     const auto&        operator[](const auto& key) const;
 ```
@@ -368,7 +368,7 @@ To access the request path: `req["response"]["url"]` and to access the `Content-
 
 > API simplicity. Use an access model that is simple and flexible without the need for adding specific methods
 
-##### `basic_response::operator[]`
+##### `rest_response::operator[]`
 ```cpp
     auto&              operator[](const auto& key);
 ```
@@ -379,19 +379,19 @@ Mutator for `response`, `headers` and `content` (returns the key within the unde
 
 To access the request path: `resp["request"]["url"]` and to access the `Content-Type`, you'd use `resp["headers"]["Content-Type"]`. You can also use `json_pointer` notation to access the elements: `req["/headers/Content-Type"_json_pointer]`
 
-##### `basic_response::encode`
+##### `rest_response::encode`
 
 ```cpp
     std::string                      encode() const;
 ```
 
-##### `basic_response::status`
+##### `rest_response::status`
 
 ```cpp
     response_code status() const;
 ```
 
-Returns [`response_code`](#basic_responseresponse_code) status/ioerror and the reason-phrase or ioerror message.
+Returns [`response_code`](#rest_responseresponse_code) status/ioerror and the reason-phrase or ioerror message.
 
 Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or the WinHTTP error code and the corresponding WinHTTP message.
 

@@ -382,7 +382,7 @@ namespace siddiqsoft
 
             wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
             auto req = "https://time.akamai.com/?iso"_GET;
-            if (siddiqsoft::basic_response resp = wrc.send(req); resp.success()) {
+            if (siddiqsoft::rest_response resp = wrc.send(req); resp.success()) {
                 passTest++;
                 auto timeNow                = std::chrono::system_clock::now();
                 myStats["timeRemoteSource"] = "https://time.akamai.com/?iso";

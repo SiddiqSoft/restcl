@@ -300,7 +300,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] basic_response send(const rest_request& req)
+        [[nodiscard]] rest_response send(const rest_request& req)
         {
             rest_response resp {};
 

@@ -34,7 +34,7 @@
 #include "nlohmann/json.hpp"
 
 #include "restcl_definitions.hpp"
-#include "basic_response.hpp"
+#include "rest_response.hpp"
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"
@@ -146,7 +146,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] basic_response send(const rest_request& req) override
+        [[nodiscard]] rest_response send(const rest_request& req) override
         {
             auto rc {0};
 

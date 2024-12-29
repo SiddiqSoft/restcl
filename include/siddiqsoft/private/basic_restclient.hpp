@@ -18,12 +18,12 @@
 
 #include "restcl_definitions.hpp"
 #include "rest_request.hpp"
-#include "basic_response.hpp"
+#include "rest_response.hpp"
 
 namespace siddiqsoft
 {
-    /// @brief The function or lambda must accept const rest_request& and const basic_response&
-    using basic_callbacktype = std::function<void(const rest_request&, const basic_response&)>;
+    /// @brief The function or lambda must accept const rest_request& and const rest_response&
+    using basic_callbacktype = std::function<void(const rest_request&, const rest_response&)>;
 
 
     /// @brief Base class for the rest client
@@ -44,7 +44,7 @@ namespace siddiqsoft
         /// @brief Synchronous implementation of the IO
         /// @param req Request
         /// @return The response
-        [[nodiscard]] virtual basic_response send(const rest_request&) = 0;
+        [[nodiscard]] virtual rest_response send(const rest_request&) = 0;
 
         /// @brief Asynchronous operation. The callback must be provided here or previously via the configure()
         /// @param req Request

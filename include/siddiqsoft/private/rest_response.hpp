@@ -51,13 +51,127 @@
 #include "siddiqsoft/date-utils.hpp"
 
 #include "restcl_definitions.hpp"
-#include "basic_response.hpp"
+#include "rest_response.hpp"
 
 namespace siddiqsoft
 {
     /// @brief REST Response object
-    class rest_response : public basic_response
+    class rest_response : public nlohmann::json
     {
+    protected:
+        rest_response()
+            : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
+        {
+        }
+
+    public:
+        /// @brief Set the content of the response. An attempt is made to parse to json object
+        /// @param c Content from the receive
+        /// @return Self
+        rest_response& setContent(const std::string& c)
+        {
+            if (!c.empty()) {
+                if (this->at("headers").value("Content-Type", "").find("json") != std::string::npos) {
+                    try {
+                        this->at("content") = nlohmann::json::parse(c);
+                        if (!this->at("headers").contains("Content-Length")) this->at("headers")["Content-Length"] = c.length();
+                        return *this;
+                    }
+                    catch (...) {
+                    }
+                }
+
+                // We did not decode a json; assign as-is
+                this->at("content") = c;
+                if (!this->at("headers").contains("Content-Length")) this->at("headers")["Content-Length"] = c.length();
+            }
+
+            return *this;
+        }
+
+
+        /// @brief Check if the response was successful
+        /// @return True iff there is no IOError and the StatusCode (99,400)
+        bool success() const
+        {
+            using namespace nlohmann::json_literals;
+
+            //             : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
+            auto sc = this->at("response/status"_json_pointer).template get<int>();
+            return (sc > 99) && (sc < 400);
+        }
+
+
+        /// @brief Encode the request to a byte stream ready to transfer to the remote server.
+        /// @return String
+        std::string encode() const
+        {
+            std::string rs;
+            std::string body;
+            auto&       hs = this->at("headers");
+            auto&       rl = this->at("response");
+            auto&       cs = this->at("content");
+
+            // Request Line
+            std::format_to(std::back_inserter(rs),
+                           "{} {} {}\r\n",
+                           rl["version"].get<std::string>(),
+                           rl["status"].get<uint32_t>(),
+                           rl["reason"].is_null() ? "" : rl["reason"].get<std::string>());
+
+            // Build the content to ensure we have the content-type
+            if (!cs.is_null() && cs.is_object()) {
+                body = cs.dump();
+            }
+            else if (!cs.is_null() && cs.is_string()) {
+                body = cs.get<std::string>();
+            }
+
+            // Headers..
+            for (auto& [k, v] : this->at("headers").items()) {
+                if (v.is_string()) {
+                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
+                }
+                else if (v.is_number_unsigned()) {
+                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<uint64_t>());
+                }
+                else if (v.is_number_integer()) {
+                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<int>());
+                }
+                else {
+                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.dump());
+                }
+            }
+
+            std::format_to(std::back_inserter(rs), "\r\n");
+
+            // Finally the content..
+            if (!body.empty()) {
+                std::format_to(std::back_inserter(rs), "{}", body);
+            }
+
+            return std::move(rs);
+        }
+
+
+        /// @brief Returns the IO error if present otherwise returns the HTTP status code and reason
+        /// @return response_code with the code, message which correspond with valid HTTP respose status and reason phrase or
+        /// ioError and ioError message.
+        /// The response contains:
+        /// resp["response"]["status"] or WinHTTP error code
+        /// resp["response"]["reason"] or WinHTTP error code message string
+        auto status() const -> std::pair<const unsigned, const std::string&>
+        {
+            auto&       hs = this->at("headers");
+            auto&       rl = this->at("response");
+
+            return {rl.value<unsigned>("status", 0), rl.value("reason", "")};
+        }
+
+    public:
+        friend std::ostream& operator<<(std::ostream&, const rest_response&);
     public:
         rest_response(const int code = 0, const std::string& message = {}) { setStatus(code, message); }
 
@@ -73,7 +187,22 @@ namespace siddiqsoft
             return *this;
         }
     };
+
+    /// @brief Serializer to ostream for RESResponseType
+    inline std::ostream& operator<<(std::ostream& os, const rest_response& src)
+    {
+        os << src.encode();
+        return os;
+    }
 } // namespace siddiqsoft
 
+template <>
+struct std::formatter<siddiqsoft::rest_response> : std::formatter<std::string>
+{
+    auto format(const siddiqsoft::rest_response& sv, std::format_context& ctx) const
+    {
+        return std::formatter<std::string>::format(sv.encode(), ctx);
+    }
+};
 
 #endif // !REST_RESPONSE_HPP

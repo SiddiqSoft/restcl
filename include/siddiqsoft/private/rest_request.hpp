@@ -56,7 +56,7 @@ namespace siddiqsoft
 {
     /// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
     /// Essentially we're a convenience wrapper on the rest_request.
-    class rest_request
+    class rest_request : public nlohmann::json
     {
     protected:
         /// @brief Not directly constructible; use the derived classes to build the request
