@@ -58,76 +58,20 @@ namespace siddiqsoft
     /// Essentially we're a convenience wrapper on the rest_request.
     class rest_request : public nlohmann::json
     {
+#if defined(DEBUG) || defined (_DEBUG)
+    public:
+        Uri<char, AuthorityHttp<char>> uri;
+#else
     protected:
-        /// @brief Not directly constructible; use the derived classes to build the request
-        rest_request()
-            : nlohmann::json({{"request", {{"method", "GET"}, {"uri", nullptr}, {"protocol", HTTP_PROTOCOL_VERSIONS[1]}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-        {
-        }
-
-        /// @brief Constructs a request with endpoint string into internal Uri object
-        /// @param s Valid endpoint string
-        explicit rest_request(const std::string& s) noexcept(false)
-            : nlohmann::json({{"request",
-                               {{"method", "GET"},
-                                {"uri", nullptr},
-                                {"protocol", HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-            , uri(s)
-        {
-            using namespace nlohmann::literals;
-
-            // Build the request line data
-            this->at("/request/uri"_json_pointer) = uri.urlPart;
-        };
-
-        /// @brief Not directly constructible; use the derived classes to build the request
-        /// @param s The source Uri
-        explicit rest_request(const Uri<char>& s) noexcept(false)
-            : nlohmann::json({{"request",
-                               {{"method", "GET"},
-                                {"uri", nullptr},
-                                {"protocol", HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-            , uri(s)
-        {
-            using namespace nlohmann::literals;
-
-            // Build the request line data
-            this->at("/request/uri"_json_pointer) = uri.urlPart;
-        };
+        Uri<char, AuthorityHttp<char>> uri;
+#endif
 
     public:
-        /// @brief Set the content (non-JSON)
-        /// @param ctype Content-Type
-        /// @param c The content
-        /// @return Self
-        rest_request& setContent(const std::string& ctype, const std::string& c)
+        rest_request()
+            : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
+                              {"headers", nullptr},
+                              {"content", nullptr}})
         {
-            if (!c.empty()) {
-                this->at("headers")[HF_CONTENT_TYPE]   = ctype;
-                this->at("headers")[HF_CONTENT_LENGTH] = c.length();
-                this->at("content")                    = c;
-            }
-            return *this;
-        }
-
-        /// @brief Set the content to json
-        /// @param c JSON content
-        /// @return Self
-        rest_request& setContent(const nlohmann::json& c)
-        {
-            if (!c.is_null()) {
-                this->at("content")                    = c;
-                this->at("headers")[HF_CONTENT_LENGTH] = c.dump().length();
-                // Make sure we do not override existing value
-                if (!this->at("headers").contains(HF_CONTENT_TYPE)) this->at("headers")[HF_CONTENT_TYPE] = "application/json";
-            }
-            return *this;
         }
 
 
@@ -206,58 +150,55 @@ namespace siddiqsoft
         }
 
 
-    public:
-        friend std::ostream& operator<<(std::ostream&, const rest_request&);
+        auto setVerb(HttpVerbType verb)
+        {
+            this->at("/request/verb"_json_pointer) = verb;
+            return *this;
+        }
 
-    public:
-        Uri<char, AuthorityHttp<char>> uri;
 
-    public:
-        /// @brief Constructor with only endpoint as string argument
-        /// @param endpoint Valid endpoint string
-        rest_request(const std::string& verb,
-                     const std::string& endpoint,
-                     const std::string& proto = HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]) noexcept(false)
-            : nlohmann::json({{"request", {{"method", verb}, {"uri", nullptr}, {"protocol", proto}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-            , uri(endpoint)
+        auto setProtocol(const HttpProtocolVersionType& proto = HttpProtocolVersionType::Http12)
         {
             using namespace nlohmann::literals;
 
+            this->at("/request/protocol"_json_pointer) = proto;
+            return *this;
+        }
+
+        auto setUri(const Uri<char, AuthorityHttp<char>>& endpoint)
+        {
+            using namespace nlohmann::literals;
+
+            uri = endpoint;
             // Build the request line data
             this->at("/request/uri"_json_pointer) = uri.urlPart;
+
+            // At the time of the Uri, we must ensure that the protocol and the headers are also set.
+            this->setProtocol();
 
             // Enforce some default headers
             auto& hs = this->at("headers");
             if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
             if (!hs.contains("Accept")) hs["Accept"] = "application/json";
             if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
-            if (!hs.contains("Content-Length")) hs["Content-Length"] = 0;
+            if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
+            return *this;
         }
+
+        auto getHost() const { return this->at("/headers/Host"_json_pointer).template get<std::string>(); }
 
 
         /// @brief Constructor with endpoint and optional headers and json content
         /// @param endpoint Fully qualified http schema uri
         /// @param h Optional json containing the headers
-        rest_request(const std::string& verb, const Uri<char>& endpoint, const nlohmann::json& h = nullptr) noexcept(false)
-            : nlohmann::json({{"request",
-                               {{"method", verb},
-                                {"uri", nullptr},
-                                {"protocol", HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-            , uri(endpoint)
+        auto setHeaders(const nlohmann::json& h) noexcept(false)
         {
             using namespace nlohmann::literals;
 
             // Set the headers if present (we add some defaults below if not provided or missing param)
-            if (h.is_object() && !h.is_null()) {
+            if (!h.empty() && h.is_object() && !h.is_null()) {
                 this->at("headers") = h;
             }
-
-            // Build the request line data
-            this->at("/request/uri"_json_pointer) = uri.urlPart;
 
             // Enforce some default headers
             auto& hs = this->at("headers");
@@ -267,82 +208,38 @@ namespace siddiqsoft
             if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
         }
 
-        /// @brief Constructor with json content
-        /// @param endpoint Fully qualified http schema uri
-        /// @param h Required json containing the headers
-        /// @param c Required json containing the content
-        rest_request(const Uri<char>& endpoint, const nlohmann::json& h, const nlohmann::json& c) noexcept(false)
-            : nlohmann::json({{"request",
-                               {{"method", "GET"},
-                                {"uri", nullptr},
-                                {"protocol", HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-            , uri(endpoint)
+        /// @brief Set the content (non-JSON)
+        /// @param ctype Content-Type
+        /// @param c The content
+        /// @return Self
+        auto setContent(const std::string& ctype, const std::string& c)
         {
-            // Set the headers if present (we add some defaults below if not provided or missing param)
-            if (h.is_object() && !h.is_null()) {
-                this->at("headers") = h;
-            }
-
-            setContent(c);
-        }
-
-        /// @brief Constructor with arbitrary content. If the header Content-Type is missing then we use text/plain
-        /// @param endpoint Fully qualified http schema uri
-        /// @param h Required json containing the headers. At least Content-Type should be set.
-        /// @param c Required string containing the content. Make sure to set "Content-Type"
-        explicit rest_request(const Uri<char>& endpoint, const nlohmann::json& h, const std::string& c) noexcept(false)
-            : nlohmann::json({{"request",
-                               {{"method", "GET"},
-                                {"uri", nullptr},
-                                {"protocol", HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-            , uri(endpoint)
-        {
-            // Set the headers if present (we add some defaults below if not provided or missing param)
-            if (h.is_object() && !h.is_null()) {
-                this->at("headers") = h;
-            }
-
             if (!c.empty()) {
-                if (h.is_null() || (h.is_object() && !h.contains("Content-Type")))
-                    this->at("headers")["Content-Type"] = "text/plain";
+                this->at("headers")[HF_CONTENT_TYPE]   = ctype;
                 this->at("headers")[HF_CONTENT_LENGTH] = c.length();
                 this->at("content")                    = c;
             }
+            return *this;
         }
 
-        /// @brief Constructor with arbitrary content. If the header Content-Type is missing then we use text/plain
-        /// @param endpoint Fully qualified http schema uri
-        /// @param h Required json containing the headers. At least Content-Type should be set.
-        /// @param c Required string containing the content. Make sure to set "Content-Type"
-        explicit rest_request(const Uri<char>& endpoint, const nlohmann::json& h, const char* srcContent) noexcept(false)
-            : nlohmann::json({{"request",
-                               {{"method", "GET"},
-                                {"uri", nullptr},
-                                {"protocol", HTTP_PROTOCOL_VERSIONS[HTTP_PROTOCOL_VERSION_ID::Http12]}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-            , uri(endpoint)
+        /// @brief Set the content to json
+        /// @param c JSON content
+        /// @return Self
+        auto setContent(const nlohmann::json& c)
         {
-            // Set the headers if present (we add some defaults below if not provided or missing param)
-            if (h.is_object() && !h.is_null()) {
-                this->at("headers") = h;
+            if (!c.is_null()) {
+                this->at("content")                    = c;
+                this->at("headers")[HF_CONTENT_LENGTH] = c.dump().length();
+                // Make sure we do not override existing value
+                if (!this->at("headers").contains(HF_CONTENT_TYPE)) this->at("headers")[HF_CONTENT_TYPE] = "application/json";
             }
 
-            if (srcContent != nullptr) {
-                if (h.is_null() || (h.is_object() && !h.contains("Content-Type")))
-                    this->at("headers")["Content-Type"] = "text/plain";
-                this->at("headers")[HF_CONTENT_LENGTH] = strlen(srcContent);
-                this->at("content")                    = srcContent;
-            }
-            else {
-                this->at("headers")[HF_CONTENT_LENGTH] = 0;
-            }
+            return *this;
         }
+
+        friend std::ostream& operator<<(std::ostream&, const rest_request&);
     };
+
 
     inline std::ostream& operator<<(std::ostream& os, const rest_request& src)
     {
@@ -354,39 +251,48 @@ namespace siddiqsoft
     {
         [[nodiscard]] static rest_request operator""_GET(const char* url, size_t sz)
         {
-            return rest_request("GET", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::GET).setUri(std::string {url, sz});
         }
         [[nodiscard]] static rest_request operator""_HEAD(const char* url, size_t sz)
         {
-            return rest_request("HEAD", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::GET).setUri(std::string {url, sz});
         }
         [[nodiscard]] static rest_request operator""_POST(const char* url, size_t sz)
         {
-            return rest_request("POST", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::POST).setUri(std::string {url, sz});
         }
         [[nodiscard]] static rest_request operator""_PUT(const char* url, size_t sz)
         {
-            return rest_request("PUT", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::PUT).setUri(std::string {url, sz});
         }
         [[nodiscard]] static rest_request operator""_DELETE(const char* url, size_t sz)
         {
-            return rest_request("DELETE", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::DELETE).setUri(std::string {url, sz});
         }
         [[nodiscard]] static rest_request operator""_CONNECT(const char* url, size_t sz)
         {
-            return rest_request("CONNECT", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::CONNECT).setUri(std::string {url, sz});
         }
         [[nodiscard]] static rest_request operator""_OPTIONS(const char* url, size_t sz)
         {
-            return rest_request("OPTIONS", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::OPTIONS).setUri(std::string {url, sz});
         }
         [[nodiscard]] static rest_request operator""_TRACE(const char* url, size_t sz)
         {
-            return rest_request("TRACE", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::TRACE).setUri(std::string {url, sz});
         }
         [[nodiscard]] static rest_request operator""_PATCH(const char* url, size_t sz)
         {
-            return rest_request("PATCH", std::string {url, sz});
+            rest_request rr;
+            return rr.setVerb(HttpVerbType::PATCH).setUri(std::string {url, sz});
         }
     } // namespace restcl_literals
 } // namespace siddiqsoft

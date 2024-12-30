@@ -151,7 +151,7 @@ namespace siddiqsoft
 
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
-            std::string destinationHost = std::format("{}:{}", req.uri.authority.host, req.uri.authority.port);
+            auto destinationHost = req.getHost();
 
             std::cerr << __func__ << " - Attempting connection to " << destinationHost << std::endl;
 

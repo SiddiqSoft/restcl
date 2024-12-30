@@ -21,7 +21,7 @@ namespace siddiqsoft
     private:
         static auto isHttpProtocol(const std::string& fragment) -> const std::string&
         {
-            for (const auto& p : HTTP_PROTOCOL_VERSIONS) {
+            for (const auto& p : HttpProtocolVersions) {
                 if (fragment.starts_with(p)) return p;
             }
 
@@ -30,7 +30,7 @@ namespace siddiqsoft
 
         static auto isHttpVerb(const std::string& fragment) -> const std::string&
         {
-            for (const auto& v : HTTP_VERBS) {
+            for (const auto& v : HttpVerbs) {
                 if (v == fragment) return v;
             }
 
@@ -184,7 +184,7 @@ namespace siddiqsoft
                     // bufferStart will be left at the end of the header section
                     // so we can use this as our starting point for the body..
                     srcBuffer.erase(srcBuffer.begin(), startIterator);
-                    resp.setContent( srcBuffer);
+                    resp.setContent(srcBuffer);
                 }
             }
 

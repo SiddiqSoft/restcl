@@ -60,14 +60,14 @@ namespace siddiqsoft
     {
     public:
         rest_response()
-            : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
+            : nlohmann::json({{"response", {{"protocol", nullptr}, {"status", 0}, {"reason", ""}}},
                               {"headers", nullptr},
                               {"content", nullptr}})
         {
         }
 
         rest_response(const int code, const std::string& message = {})
-            : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
+            : nlohmann::json({{"response", {{"protocol", nullptr}, {"status", 0}, {"reason", ""}}},
                               {"headers", nullptr},
                               {"content", nullptr}})
         {
@@ -105,7 +105,7 @@ namespace siddiqsoft
         {
             using namespace nlohmann::json_literals;
 
-            //             : nlohmann::json({{"response", {{"protocol", HTTP_PROTOCOL_VERSIONS[0]}, {"status", 0}, {"reason", ""}}},
+            //             : nlohmann::json({{"response", {{"protocol", HttpProtocolVersion[0]}, {"status", 0}, {"reason", ""}}},
             auto sc = this->at("response/status"_json_pointer).template get<int>();
             return (sc > 99) && (sc < 400);
         }
