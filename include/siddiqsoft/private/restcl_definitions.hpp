@@ -51,13 +51,14 @@ namespace siddiqsoft
     static const std::string HTTP_EMPTY_STRING {};
     static const std::string HTTP_END_OF_HEADERS {"\r\n\r\n"};
     static const std::string HTTP_PROTOCOLPREFIX {"HTTP/"};
+
     enum class HttpProtocolVersionType
     {
-        Http1  = 0,
-        Http11 = 1,
-        Http12 = 2,
-        Http2  = 3,
-        Http3  = 4
+        Http1,
+        Http11,
+        Http12,
+        Http2,
+        Http3
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(HttpProtocolVersionType,
                                  {{HttpProtocolVersionType::Http1, "HTTP/1.0"},
@@ -69,15 +70,15 @@ namespace siddiqsoft
 
     enum class HttpMethodType
     {
-        GET     = 0,
-        HEAD    = 1,
-        POST    = 2,
-        PUT     = 3,
-        DELETE  = 4,
-        CONNECT = 5,
-        OPTIONS = 6,
-        TRACE   = 7,
-        PATCH   = 8
+        GET,
+        HEAD,
+        POST,
+        PUT,
+        DELETE,
+        CONNECT,
+        OPTIONS,
+        TRACE,
+        PATCH
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(HttpMethodType,
                                  {{HttpMethodType::GET, "GET"},
@@ -96,6 +97,14 @@ namespace siddiqsoft
 
     static const std::string HF_CONTENT_LENGTH {"Content-Length"};
     static const std::string HF_CONTENT_TYPE {"Content-Type"};
+    static const std::string HF_DATE {"Date"};
+    static const std::string HF_ACCEPT {"Accept"};
+    static const std::string HF_HOST {"Host"};
+
+    static const std::string CONTENT_APPLICATION_JSON {"application/json"};
+    static const std::string CONTENT_JSON {"json"};
+    static const std::string CONTENT_APPLICATION_TEXT {"application/text"};
+    static const std::string CONTENT_TEXT {"text"};
 } // namespace siddiqsoft
 
 

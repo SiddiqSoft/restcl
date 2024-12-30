@@ -69,7 +69,7 @@ namespace siddiqsoft
     public:
         rest_request()
             : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
-                              {"headers", nullptr},
+                              {"headers", {{"Date", DateUtils::RFC7231()}}},
                               {"content", nullptr}})
         {
         }
@@ -177,21 +177,14 @@ namespace siddiqsoft
 
             uri = endpoint;
             // Build the request line data
-            (*this)["/request/uri"_json_pointer] = uri.urlPart;
-
-            // At the time of the Uri, we must ensure that the protocol and the headers are also set.
-            this->setProtocol();
-
-            // Enforce some default headers
-            if (auto& hs = this->at("headers"); hs != nullptr) {
-                if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
-                if (!hs.contains("Accept")) hs["Accept"] = "application/json";
-                if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
-                if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
-            }
+            (*this)["/request/uri"_json_pointer]      = uri.urlPart;
+            (*this)["/request/protocol"_json_pointer] = HttpProtocolVersionType::Http12;
+            (*this)["/headers/Host"_json_pointer]     = std::format("{}:{}", uri.authority.host, uri.authority.port);
 
             return *this;
         }
+
+        auto& getUri() { return uri; }
 
         auto getHost() const { return this->at("/headers/Host"_json_pointer).template get<std::string>(); }
 
@@ -207,13 +200,14 @@ namespace siddiqsoft
             if (!h.empty() && h.is_object() && !h.is_null()) {
                 this->at("headers") = h;
             }
-
-            // Enforce some default headers
-            if (auto& hs = this->at("headers"); hs != nullptr) {
-                if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
-                if (!hs.contains("Accept")) hs["Accept"] = "application/json";
-                if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
-                if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
+            else {
+                // Enforce some default headers
+                if (auto& hs = this->at("headers"); hs != nullptr) {
+                    if (!hs.contains(HF_DATE)) hs[HF_DATE] = DateUtils::RFC7231();
+                    if (!hs.contains(HF_ACCEPT)) hs[HF_ACCEPT] = CONTENT_APPLICATION_JSON;
+                    if (!hs.contains(HF_HOST)) hs[HF_HOST] = std::format("{}:{}", uri.authority.host, uri.authority.port);
+                    if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
+                }
             }
 
             return *this;
@@ -225,28 +219,23 @@ namespace siddiqsoft
         /// @return Self
         auto& setContent(const std::string& ctype, const std::string& c)
         {
-            if (!c.empty()) {
-                this->at("headers")[HF_CONTENT_TYPE]   = ctype;
-                this->at("headers")[HF_CONTENT_LENGTH] = c.length();
-                this->at("content")                    = c;
+            if (ctype.empty() && !c.empty()) throw std::invalid_argument("Content-Type cannot be empty");
+            if (!ctype.empty() && c.empty())
+                throw std::invalid_argument(std::format("Content-Type is {} but no content provided!").c_str());
+
+            if (!ctype.empty() && !c.empty()) {
+                (*this)["/headers/Content-Type"_json_pointer]   = ctype;
+                (*this)["/headers/Content-Length"_json_pointer] = c.length();
+                (*this)["content"]                              = c;
             }
+
             return *this;
         }
 
         /// @brief Set the content to json
         /// @param c JSON content
         /// @return Self
-        auto& setContent(const nlohmann::json& c)
-        {
-            if (!c.is_null()) {
-                this->at("content")                    = c;
-                this->at("headers")[HF_CONTENT_LENGTH] = c.dump().length();
-                // Make sure we do not override existing value
-                if (!this->at("headers").contains(HF_CONTENT_TYPE)) this->at("headers")[HF_CONTENT_TYPE] = "application/json";
-            }
-
-            return *this;
-        }
+        auto& setContent(const nlohmann::json& c) { return setContent(CONTENT_APPLICATION_JSON, c.dump()); }
 
         friend std::ostream& operator<<(std::ostream&, const rest_request&);
     };
@@ -333,7 +322,7 @@ namespace siddiqsoft
         }
     } // namespace restcl_literals
 
-    
+
     static rest_request
     make_rest_request(HttpMethodType verb = HttpMethodType::GET, const std::string url = {}, const nlohmann::json& h = {})
     {

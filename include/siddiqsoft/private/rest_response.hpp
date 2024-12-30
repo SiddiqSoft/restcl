@@ -106,7 +106,7 @@ namespace siddiqsoft
             using namespace nlohmann::json_literals;
 
             //             : nlohmann::json({{"response", {{"protocol", HttpProtocolVersion[0]}, {"status", 0}, {"reason", ""}}},
-            auto sc = this->at("response/status"_json_pointer).template get<int>();
+            auto sc = this->at("/response/status"_json_pointer).template get<int>();
             return (sc > 99) && (sc < 400);
         }
 
@@ -124,7 +124,7 @@ namespace siddiqsoft
             // Request Line
             std::format_to(std::back_inserter(rs),
                            "{} {} {}\r\n",
-                           rl["version"].get<std::string>(),
+                           rl["protocol"].get<std::string>(),
                            rl["status"].get<uint32_t>(),
                            rl["reason"].is_null() ? "" : rl["reason"].get<std::string>());
 
