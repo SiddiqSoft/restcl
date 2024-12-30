@@ -58,7 +58,7 @@ namespace siddiqsoft
     /// Essentially we're a convenience wrapper on the rest_request.
     class rest_request : public nlohmann::json
     {
-#if defined(DEBUG) || defined (_DEBUG)
+#if defined(DEBUG) || defined(_DEBUG)
     public:
         Uri<char, AuthorityHttp<char>> uri;
 #else
@@ -71,6 +71,12 @@ namespace siddiqsoft
             : nlohmann::json({{"request", {{"method", nullptr}, {"uri", nullptr}, {"protocol", nullptr}}},
                               {"headers", nullptr},
                               {"content", nullptr}})
+        {
+        }
+
+
+        rest_request(const rest_request&& src)
+            : nlohmann::json(std::move(src))
         {
         }
 
@@ -88,7 +94,7 @@ namespace siddiqsoft
             return {};
         }
 
-
+    private:
         /// @brief Encode the headers to the given argument
         /// @param rs String where the headers is "written-to".
         void encodeHeaders_to(std::string& rs) const
@@ -111,7 +117,7 @@ namespace siddiqsoft
             std::format_to(std::back_inserter(rs), "\r\n");
         }
 
-
+    public:
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.
         /// @return String
         std::string encode() const
@@ -126,15 +132,15 @@ namespace siddiqsoft
                            "{} {} {}\r\n",
                            rl["method"].get<std::string>(),
                            rl["uri"].get<std::string>(),
-                           rl["version"].get<std::string>());
+                           rl["protocol"].get<std::string>());
 
             // Build the content to ensure we have the content-type
-            if (this->contains("content")) {
-                if (this->at("content").is_object()) {
-                    body = this->at("content").dump();
+            if (auto& cs = this->at("content"); cs) {
+                if (cs.is_object()) {
+                    body = cs.dump();
                 }
-                else if (this->at("content").is_string()) {
-                    body = this->at("content").get<std::string>();
+                else if (cs.is_string()) {
+                    body = cs.get<std::string>();
                 }
             }
 
@@ -150,38 +156,40 @@ namespace siddiqsoft
         }
 
 
-        auto setVerb(HttpVerbType verb)
+        auto& setMethod(HttpMethodType verb)
         {
-            this->at("/request/verb"_json_pointer) = verb;
+            (*this)["/request/method"_json_pointer] = verb;
             return *this;
         }
 
 
-        auto setProtocol(const HttpProtocolVersionType& proto = HttpProtocolVersionType::Http12)
+        auto& setProtocol(const HttpProtocolVersionType& proto = HttpProtocolVersionType::Http12)
         {
             using namespace nlohmann::literals;
 
-            this->at("/request/protocol"_json_pointer) = proto;
+            (*this)["/request/protocol"_json_pointer] = proto;
             return *this;
         }
 
-        auto setUri(const Uri<char, AuthorityHttp<char>>& endpoint)
+        auto& setUri(const Uri<char, AuthorityHttp<char>>& endpoint)
         {
             using namespace nlohmann::literals;
 
             uri = endpoint;
             // Build the request line data
-            this->at("/request/uri"_json_pointer) = uri.urlPart;
+            (*this)["/request/uri"_json_pointer] = uri.urlPart;
 
             // At the time of the Uri, we must ensure that the protocol and the headers are also set.
             this->setProtocol();
 
             // Enforce some default headers
-            auto& hs = this->at("headers");
-            if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
-            if (!hs.contains("Accept")) hs["Accept"] = "application/json";
-            if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
-            if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
+            if (auto& hs = this->at("headers"); hs != nullptr) {
+                if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
+                if (!hs.contains("Accept")) hs["Accept"] = "application/json";
+                if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
+                if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
+            }
+
             return *this;
         }
 
@@ -191,7 +199,7 @@ namespace siddiqsoft
         /// @brief Constructor with endpoint and optional headers and json content
         /// @param endpoint Fully qualified http schema uri
         /// @param h Optional json containing the headers
-        auto setHeaders(const nlohmann::json& h) noexcept(false)
+        auto& setHeaders(const nlohmann::json& h) noexcept(false)
         {
             using namespace nlohmann::literals;
 
@@ -201,18 +209,21 @@ namespace siddiqsoft
             }
 
             // Enforce some default headers
-            auto& hs = this->at("headers");
-            if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
-            if (!hs.contains("Accept")) hs["Accept"] = "application/json";
-            if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
-            if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
+            if (auto& hs = this->at("headers"); hs != nullptr) {
+                if (!hs.contains("Date")) hs["Date"] = DateUtils::RFC7231();
+                if (!hs.contains("Accept")) hs["Accept"] = "application/json";
+                if (!hs.contains("Host")) hs["Host"] = std::format("{}:{}", uri.authority.host, uri.authority.port);
+                if (!hs.contains(HF_CONTENT_LENGTH)) hs[HF_CONTENT_LENGTH] = 0;
+            }
+
+            return *this;
         }
 
         /// @brief Set the content (non-JSON)
         /// @param ctype Content-Type
         /// @param c The content
         /// @return Self
-        auto setContent(const std::string& ctype, const std::string& c)
+        auto& setContent(const std::string& ctype, const std::string& c)
         {
             if (!c.empty()) {
                 this->at("headers")[HF_CONTENT_TYPE]   = ctype;
@@ -225,7 +236,7 @@ namespace siddiqsoft
         /// @brief Set the content to json
         /// @param c JSON content
         /// @return Self
-        auto setContent(const nlohmann::json& c)
+        auto& setContent(const nlohmann::json& c)
         {
             if (!c.is_null()) {
                 this->at("content")                    = c;
@@ -252,50 +263,90 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_GET(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::GET).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::GET);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
+
         [[nodiscard]] static rest_request operator""_HEAD(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::GET).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::HEAD);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
+
         [[nodiscard]] static rest_request operator""_POST(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::POST).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::POST);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
+
         [[nodiscard]] static rest_request operator""_PUT(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::PUT).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::PUT);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
+
         [[nodiscard]] static rest_request operator""_DELETE(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::DELETE).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::DELETE);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
+
         [[nodiscard]] static rest_request operator""_CONNECT(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::CONNECT).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::CONNECT);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
+
         [[nodiscard]] static rest_request operator""_OPTIONS(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::OPTIONS).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::OPTIONS);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
+
         [[nodiscard]] static rest_request operator""_TRACE(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::TRACE).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::TRACE);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
+
         [[nodiscard]] static rest_request operator""_PATCH(const char* url, size_t sz)
         {
             rest_request rr;
-            return rr.setVerb(HttpVerbType::PATCH).setUri(std::string {url, sz});
+            rr.setMethod(HttpMethodType::PATCH);
+            rr.setUri(std::string {url, sz});
+            return rr;
         }
     } // namespace restcl_literals
+
+    
+    static rest_request
+    make_rest_request(HttpMethodType verb = HttpMethodType::GET, const std::string url = {}, const nlohmann::json& h = {})
+    {
+        rest_request req {};
+
+        req.setMethod(verb);
+        req.setUri(Uri<char, AuthorityHttp<char>>(url));
+        req.setHeaders(h);
+
+        return req;
+    }
 } // namespace siddiqsoft
+
 
 template <>
 struct std::formatter<siddiqsoft::rest_request> : std::formatter<std::string>

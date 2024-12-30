@@ -58,7 +58,7 @@ namespace siddiqsoft
 
         //EXPECT_NO_THROW({
             // nlohmann::json doc(srt);
-            nlohmann::json doc2 = srt;
+            nlohmann::json doc2{std::move(srt)};
             // Checks the implementation of the json implementation
             std::cerr << "Serialized json: " << doc2.dump(3) << std::endl;
         //});

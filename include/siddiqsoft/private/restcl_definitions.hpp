@@ -67,7 +67,7 @@ namespace siddiqsoft
                                   {HttpProtocolVersionType::Http3, "HTTP/3"}});
     static const std::array<std::string, 5> HttpProtocolVersions {{"HTTP/1.0", "HTTP/1.1", "HTTP/1.2", "HTTP/2", "HTTP/3"}};
 
-    enum class HttpVerbType
+    enum class HttpMethodType
     {
         GET     = 0,
         HEAD    = 1,
@@ -79,16 +79,16 @@ namespace siddiqsoft
         TRACE   = 7,
         PATCH   = 8
     };
-    NLOHMANN_JSON_SERIALIZE_ENUM(HttpVerbType,
-                                 {{HttpVerbType::GET, "GET"},
-                                  {HttpVerbType::HEAD, "HEAD"},
-                                  {HttpVerbType::POST, "POST"},
-                                  {HttpVerbType::PUT, "PUT"},
-                                  {HttpVerbType::DELETE, "DELETE"},
-                                  {HttpVerbType::CONNECT, "CONNECT"},
-                                  {HttpVerbType::TRACE, "TRACE"},
-                                  {HttpVerbType::PATCH, "PATCH"},
-                                  {HttpVerbType::OPTIONS, "OPTIONS"}});
+    NLOHMANN_JSON_SERIALIZE_ENUM(HttpMethodType,
+                                 {{HttpMethodType::GET, "GET"},
+                                  {HttpMethodType::HEAD, "HEAD"},
+                                  {HttpMethodType::POST, "POST"},
+                                  {HttpMethodType::PUT, "PUT"},
+                                  {HttpMethodType::DELETE, "DELETE"},
+                                  {HttpMethodType::CONNECT, "CONNECT"},
+                                  {HttpMethodType::TRACE, "TRACE"},
+                                  {HttpMethodType::PATCH, "PATCH"},
+                                  {HttpMethodType::OPTIONS, "OPTIONS"}});
 
     /// @brief HTTP Protocol version: Http2, Http11 and Http3
     static const std::array<std::string, 9>
