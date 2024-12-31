@@ -39,6 +39,7 @@
 #include <string>
 #include <regex>
 #include <array>
+#include <map>
 
 #include "nlohmann/json.hpp"
 
@@ -66,7 +67,11 @@ namespace siddiqsoft
                                   {HttpProtocolVersionType::Http12, "HTTP/1.2"},
                                   {HttpProtocolVersionType::Http2, "HTTP/2"},
                                   {HttpProtocolVersionType::Http3, "HTTP/3"}});
-    static const std::array<std::string, 5> HttpProtocolVersions {{"HTTP/1.0", "HTTP/1.1", "HTTP/1.2", "HTTP/2", "HTTP/3"}};
+    static const std::map<HttpProtocolVersionType, std::string> HttpProtocolVersions {{HttpProtocolVersionType::Http1, "HTTP/1.0"},
+                                                                                      {HttpProtocolVersionType::Http11, "HTTP/1.1"},
+                                                                                      {HttpProtocolVersionType::Http12, "HTTP/1.2"},
+                                                                                      {HttpProtocolVersionType::Http2, "HTTP/2"},
+                                                                                      {HttpProtocolVersionType::Http3, "HTTP/3"}};
 
     enum class HttpMethodType
     {
@@ -92,8 +97,15 @@ namespace siddiqsoft
                                   {HttpMethodType::OPTIONS, "OPTIONS"}});
 
     /// @brief HTTP Protocol version: Http2, Http11 and Http3
-    static const std::array<std::string, 9>
-            HttpVerbs {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"};
+    static const std::map<HttpMethodType, std::string> HttpVerbs {{HttpMethodType::GET, "GET"},
+                                                                  {HttpMethodType::HEAD, "HEAD"},
+                                                                  {HttpMethodType::POST, "POST"},
+                                                                  {HttpMethodType::PUT, "PUT"},
+                                                                  {HttpMethodType::DELETE, "DELETE"},
+                                                                  {HttpMethodType::CONNECT, "CONNECT"},
+                                                                  {HttpMethodType::OPTIONS, "OPTIONS"},
+                                                                  {HttpMethodType::TRACE, "TRACE"},
+                                                                  {HttpMethodType::PATCH, "PATCH"}};
 
     static const std::string HF_CONTENT_LENGTH {"Content-Length"};
     static const std::string HF_CONTENT_TYPE {"Content-Type"};
@@ -104,7 +116,7 @@ namespace siddiqsoft
     static const std::string CONTENT_APPLICATION_JSON {"application/json"};
     static const std::string CONTENT_JSON {"json"};
     static const std::string CONTENT_APPLICATION_TEXT {"application/text"};
-    static const std::string CONTENT_TEXT {"text"};
+    static const std::string CONTENT_TEXT_PLAIN {"text/plain"};
 } // namespace siddiqsoft
 
 template <>

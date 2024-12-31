@@ -33,6 +33,9 @@
 */
 
 #pragma once
+#include <cstdint>
+#include <stdexcept>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #ifndef REST_REQUEST_HPP
@@ -68,14 +71,7 @@ namespace siddiqsoft
         {
             std::string type {};
             std::string str {};
-            size_t      length {0};
-
-            ContentType(const nlohmann::json& j)
-            {
-                str    = j.dump();
-                length = str.length();
-                type   = CONTENT_APPLICATION_JSON;
-            }
+            uint64_t    length {0};
 
             void operator=(const nlohmann::json& j)
             {
@@ -84,15 +80,16 @@ namespace siddiqsoft
                 type   = CONTENT_APPLICATION_JSON;
             }
 
-            operator std::string()
+            void operator=(const std::string& s)
             {
-                if (!str.empty()) {
-                    length = str.length();
-                }
-                return str;
+                str    = s;
+                length = str.length();
+                type   = CONTENT_APPLICATION_TEXT;
             }
 
-            operator bool() { return !str.empty(); }
+            operator std::string() const { return str; }
+
+            operator bool() const { return !str.empty(); }
         };
 
 #if defined(DEBUG) || defined(_DEBUG)
@@ -117,17 +114,26 @@ namespace siddiqsoft
 
         auto getProtocol() { return protocol; }
 
-        auto& setMethod(HttpMethodType& m)
+        auto& setMethod(const HttpMethodType& m)
         {
             method = m;
             return *this;
         }
 
-        auto getMethod() { return method; }
+        auto& setMethod(const std::string& fragment)
+        {
+            for (const auto& v : HttpVerbs) {
+                if (v == fragment) return v;
+            }
+        }
+
+        HttpMethodType getMethod() const { return method; }
 
         auto& setUri(const Uri<char, AuthorityHttp<char>>& u)
         {
-            uri = u;
+            uri              = u;
+            headers[HF_HOST] = std::format("{}:{}", uri.authority.host, uri.authority.port);
+
             return *this;
         }
 
@@ -169,27 +175,24 @@ namespace siddiqsoft
         {
             std::string rs;
 
+            if (!content.type.empty() && content.str.empty())
+                throw std::invalid_argument("Missing content body when content type is present!");
 
             // Request Line
             std::format_to(std::back_inserter(rs), "{} {} {}\r\n", method, uri, protocol);
-
-            if (content) {
-                headers[HF_CONTENT_LENGTH] = content.length;
-                headers[HF_CONTENT_TYPE]   = content.type;
-            }
 
             // Headers..
             encodeHeaders_to(rs);
 
             // Finally the content..
-            if (content) {
+            if (!content.str.empty() && !content.type.empty()) {
                 std::format_to(std::back_inserter(rs), "{}", content.str);
             }
 
             return rs;
         }
 
-        auto getHost() const { return this->at("/headers/Host"_json_pointer).template get<std::string>(); }
+        auto getHost() const { return headers["Host"].template get<std::string>(); }
 
 
         /// @brief Set the content (non-JSON)
@@ -203,9 +206,11 @@ namespace siddiqsoft
                 throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype).c_str());
 
             if (!ctype.empty() && !c.empty()) {
-                headers["Content-Type"]   = ctype;
-                headers["Content-Length"] = c.length();
-                con
+                content.str                = c;
+                content.type               = ctype;
+                content.length             = c.length();
+                headers[HF_CONTENT_TYPE]   = ctype;
+                headers[HF_CONTENT_LENGTH] = c.length();
             }
 
             return *this;
@@ -219,6 +224,7 @@ namespace siddiqsoft
 
 
         friend std::ostream& operator<<(std::ostream&, const rest_request&);
+        friend void          to_json(nlohmann::json& dest, const rest_request& src);
     };
 
 
@@ -304,22 +310,11 @@ namespace siddiqsoft
     } // namespace restcl_literals
 
 
-    static rest_request
-    make_rest_request(HttpMethodType verb = HttpMethodType::GET, const std::string url = {}, const nlohmann::json& h = {})
+    inline void to_json(nlohmann::json& dest, const rest_request& src)
     {
-        rest_request req {};
-
-        req.setMethod(verb);
-        req.setUri(Uri<char, AuthorityHttp<char>>(url));
-        req.setHeaders(h);
-
-        return req;
-    }
-
-    static void to_json(nlohmann::json& dest, const rest_request& src)
-    {
-        std::cerr << "to_json for rest_request\n";
-        dest = src;
+        dest["request"] = {{"method", src.method}, {"uri", src.uri}, {"protocol", src.protocol}};
+        dest["headers"] = src.headers;
+        dest["content"] = src.content;
     }
 
 } // namespace siddiqsoft

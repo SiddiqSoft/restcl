@@ -53,11 +53,11 @@ namespace siddiqsoft
                 // The regex is very precise and there is no chance we will end up here
                 // with an ill-formed (or unsupported) start-line.
                 if (const auto& verb = isHttpVerb(matchStartLine[3]); !verb.empty()) {
-                    httpm["request"s] = {{"method"s, verb}, {"uri"s, matchStartLine[2]}, {"version"s, matchStartLine[3]}};
+                    httpm.setMethod(verb).setUri(matchStartLine[2]).setProtocol(matchStartLine[3]);
                 }
-                else if (const auto& proto = isHttpProtocol(matchStartLine[1]); !proto.empty()) {
-                    httpm.setStatus(std::stoi(matchStartLine[2].str()), matchStartLine[3]);
-                }
+                //else if (const auto& proto = isHttpProtocol(matchStartLine[1]); !proto.empty()) {
+                //    httpm.setStatus(std::stoi(matchStartLine[2].str()), matchStartLine[3]);
+                //}
 
                 // Offset the start to the point after the start-line. Make sure to skip over any prefix!
                 // We may have junk or left-over crud at the start (especially if we're using text files)
@@ -73,13 +73,13 @@ namespace siddiqsoft
         static bool storeHeaderValue(rest_response& httpm, const std::string& key, const std::string& value)
         {
             if (key.find(HF_CONTENT_LENGTH) == 0) {
-                httpm["headers"][key] = std::stoi(value);
+                httpm.headers[key] = std::stoi(value);
             }
             else if (value.empty()) {
-                httpm["headers"][key] = "";
+                httpm.headers[key] = "";
             }
             else {
-                httpm["headers"][key] = value;
+                httpm.headers[key] = value;
             }
 
             return true;

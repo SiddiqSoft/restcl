@@ -52,37 +52,12 @@ namespace siddiqsoft
         auto srt = "https://www.siddiqsoft.com/"_GET;
         std::cerr << "Going to check if we can dump.." << std::endl;
 
-        // EXPECT_NO_THROW({
-        auto doc = srt.dump(3);
-        std::cerr << doc << std::endl;
-        //});
+        std::cerr << srt << std::endl;
 
         // EXPECT_NO_THROW({
         //  nlohmann::json doc(srt);
         // nlohmann::json doc2 {std::move(srt)};
         nlohmann::json doc2 = srt;
-        // Checks the implementation of the json implementation
-        std::cerr << "Serialized json: " << doc2.dump(3) << std::endl;
-        //});
-    }
-
-    TEST(Serializers, test_make_rest_request_POST)
-    {
-        auto srt = make_rest_request(HttpMethodType::POST, std::format("https://www.siddiqsoft.com/echo?from={}", __func__));
-        std::cerr << "Going to check if we can dump.." << std::endl;
-
-        // EXPECT_NO_THROW({
-        auto doc = srt.dump(3);
-        std::cerr << doc << std::endl;
-        //});
-        srt.setContent(CONTENT_APPLICATION_TEXT, "Hello");
-
-        std::cerr << srt.dump(3) << std::endl;
-
-        // EXPECT_NO_THROW({
-        //  nlohmann::json doc(srt);
-         nlohmann::json doc2 {std::move(srt)};
-        //nlohmann::json doc2 = srt;
         // Checks the implementation of the json implementation
         std::cerr << "Serialized json: " << doc2.dump(3) << std::endl;
         //});
@@ -110,15 +85,19 @@ namespace siddiqsoft
     TEST(Validate, test1)
     {
         auto r1 = "https://www.siddiqsoft.com:65535/"_GET;
-        EXPECT_EQ("GET", r1["request"].value("method", ""));
+        EXPECT_EQ(HttpMethodType::GET, r1.getMethod());
         EXPECT_EQ(65535, r1.uri.authority.port);
 
         auto r2 = "https://localhost:65535/"_GET;
-        EXPECT_EQ("GET", r2["request"].value("method", ""));
+        EXPECT_EQ(HttpMethodType::GET, r2.getMethod());
         EXPECT_EQ(65535, r2.uri.authority.port);
 
-        auto r3 = "https://reqbin.com:9090/echo/post/json"_OPTIONS;
-        EXPECT_EQ("OPTIONS", r3["request"].value("method", ""));
+        auto r3 = "https://user.name@reqbin.com:9090/echo/post/json?source=Validate::test1&param=r3"_OPTIONS;
+        EXPECT_EQ(HttpMethodType::OPTIONS, r3.getMethod());
         EXPECT_EQ(9090, r3.uri.authority.port);
+
+        nlohmann::json doc{r3};
+        std::cerr << "Serialized (encoded): " << r3 << std::endl;
+        std::cerr << "Serialized (json'd) : " << doc.dump(2) << std::endl;
     }
 } // namespace siddiqsoft
