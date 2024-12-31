@@ -17,7 +17,7 @@
 #include "nlohmann/json.hpp"
 
 
-#include "../include/siddiqsoft/private/http2json.hpp"
+#include "../include/siddiqsoft/private/rest_response.hpp"
 
 namespace siddiqsoft
 {
@@ -91,7 +91,7 @@ namespace siddiqsoft
 
         EXPECT_TRUE(contents.length() > 0);
 
-        auto resp = siddiqsoft::http2json::parse(contents);
+        auto resp = siddiqsoft::rest_response::parse(contents);
         std::cerr << "Contents of parse: " << resp;
     }
 
@@ -101,7 +101,7 @@ namespace siddiqsoft
 
         EXPECT_TRUE(contents.length() > 0);
 
-        auto resp = siddiqsoft::http2json::parse(contents);
+        auto resp = siddiqsoft::rest_response::parse(contents);
         std::cerr << "Contents of parse: " << resp;
     }
 } // namespace siddiqsoft

@@ -102,6 +102,25 @@ namespace siddiqsoft
         nlohmann::json                 headers {};
         ContentType                    content {};
 
+    protected:
+        static auto isHttpProtocol(const std::string& fragment)
+        {
+            for (const auto& [i, p] : HttpProtocolVersions) {
+                if (fragment.starts_with(p)) return i;
+            }
+
+            return HttpProtocolVersionType::UNKNOWN;
+        }
+
+        static auto isHttpVerb(const std::string& fragment)
+        {
+            for (const auto& [i, v] : HttpVerbs) {
+                if (v == fragment) return i;
+            }
+
+            return HttpMethodType::UNKNOWN;
+        }
+
     public:
         http_frame() { headers["Date"] = DateUtils::RFC7231(); }
 

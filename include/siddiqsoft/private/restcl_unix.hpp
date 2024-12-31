@@ -10,14 +10,13 @@
  */
 
 #pragma once
-#include "http2json.hpp"
-#include <optional>
-#include <stdexcept>
 #if defined(__linux__) || defined(__APPLE__) || defined(FORCE_USE_OPENSSL)
 
 #ifndef RESTCL_UNIX_HPP
 #define RESTCL_UNIX_HPP
 
+#include <optional>
+#include <stdexcept>
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -183,7 +182,7 @@ namespace siddiqsoft
                             // wasted performance! we must update the parse to use
                             // stringstream
                             std::string buffer= responseBuffer.str();
-                            return http2json::parse(buffer);
+                            return rest_response::parse(buffer);
                         }
                         else {
                             std::cerr << __func__ << " - Failed BIO_do_handshake; rc=" << rc << std::endl;
