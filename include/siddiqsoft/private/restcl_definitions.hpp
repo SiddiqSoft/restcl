@@ -107,5 +107,38 @@ namespace siddiqsoft
     static const std::string CONTENT_TEXT {"text"};
 } // namespace siddiqsoft
 
+template <>
+struct std::formatter<siddiqsoft::HttpMethodType> : std::formatter<std::string>
+{
+    auto format(const siddiqsoft::HttpMethodType& m, std::format_context& ctx) const
+    {
+        switch (m) {
+            case siddiqsoft::HttpMethodType::GET: return std::formatter<std::string>::format("GET", ctx);
+            case siddiqsoft::HttpMethodType::HEAD: return std::formatter<std::string>::format("HEAD", ctx);
+            case siddiqsoft::HttpMethodType::POST: return std::formatter<std::string>::format("POST", ctx);
+            case siddiqsoft::HttpMethodType::PUT: return std::formatter<std::string>::format("PUT", ctx);
+            case siddiqsoft::HttpMethodType::DELETE: return std::formatter<std::string>::format("DELETE", ctx);
+            case siddiqsoft::HttpMethodType::CONNECT: return std::formatter<std::string>::format("CONNECT", ctx);
+            case siddiqsoft::HttpMethodType::OPTIONS: return std::formatter<std::string>::format("OPTIONS", ctx);
+            case siddiqsoft::HttpMethodType::TRACE: return std::formatter<std::string>::format("TRACE", ctx);
+            case siddiqsoft::HttpMethodType::PATCH: return std::formatter<std::string>::format("PATCH", ctx);
+        }
+    }
+};
+
+template <>
+struct std::formatter<siddiqsoft::HttpProtocolVersionType> : std::formatter<std::string>
+{
+    auto format(const siddiqsoft::HttpProtocolVersionType& p, std::format_context& ctx) const
+    {
+        switch (p) {
+            case siddiqsoft::HttpProtocolVersionType::Http1: return std::formatter<std::string>::format("HTTP/1.0", ctx);
+            case siddiqsoft::HttpProtocolVersionType::Http11: return std::formatter<std::string>::format("HTTP/1.1", ctx);
+            case siddiqsoft::HttpProtocolVersionType::Http12: return std::formatter<std::string>::format("HTTP/1.2", ctx);
+            case siddiqsoft::HttpProtocolVersionType::Http2: return std::formatter<std::string>::format("HTTP/2", ctx);
+            case siddiqsoft::HttpProtocolVersionType::Http3: return std::formatter<std::string>::format("HTTP/3", ctx);
+        }
+    }
+};
 
 #endif // !RESTCL_DEFINITIONS_HPP

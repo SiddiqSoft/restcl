@@ -51,16 +51,40 @@ namespace siddiqsoft
     {
         auto srt = "https://www.siddiqsoft.com/"_GET;
         std::cerr << "Going to check if we can dump.." << std::endl;
-        //EXPECT_NO_THROW({
-            auto doc = srt.dump(3);
-            std::cerr << doc << std::endl;
+
+        // EXPECT_NO_THROW({
+        auto doc = srt.dump(3);
+        std::cerr << doc << std::endl;
         //});
 
-        //EXPECT_NO_THROW({
-            // nlohmann::json doc(srt);
-            nlohmann::json doc2{std::move(srt)};
-            // Checks the implementation of the json implementation
-            std::cerr << "Serialized json: " << doc2.dump(3) << std::endl;
+        // EXPECT_NO_THROW({
+        //  nlohmann::json doc(srt);
+        // nlohmann::json doc2 {std::move(srt)};
+        nlohmann::json doc2 = srt;
+        // Checks the implementation of the json implementation
+        std::cerr << "Serialized json: " << doc2.dump(3) << std::endl;
+        //});
+    }
+
+    TEST(Serializers, test_make_rest_request_POST)
+    {
+        auto srt = make_rest_request(HttpMethodType::POST, std::format("https://www.siddiqsoft.com/echo?from={}", __func__));
+        std::cerr << "Going to check if we can dump.." << std::endl;
+
+        // EXPECT_NO_THROW({
+        auto doc = srt.dump(3);
+        std::cerr << doc << std::endl;
+        //});
+        srt.setContent(CONTENT_APPLICATION_TEXT, "Hello");
+
+        std::cerr << srt.dump(3) << std::endl;
+
+        // EXPECT_NO_THROW({
+        //  nlohmann::json doc(srt);
+         nlohmann::json doc2 {std::move(srt)};
+        //nlohmann::json doc2 = srt;
+        // Checks the implementation of the json implementation
+        std::cerr << "Serialized json: " << doc2.dump(3) << std::endl;
         //});
     }
 
