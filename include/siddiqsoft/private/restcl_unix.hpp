@@ -10,9 +10,10 @@
  */
 
 #pragma once
+#include "http2json.hpp"
 #include <optional>
 #include <stdexcept>
-#if defined(__linux__) || defined(__APPLE__) || defined (FORCE_USE_OPENSSL)
+#if defined(__linux__) || defined(__APPLE__) || defined(FORCE_USE_OPENSSL)
 
 #ifndef RESTCL_UNIX_HPP
 #define RESTCL_UNIX_HPP
@@ -161,7 +162,7 @@ namespace siddiqsoft
                         if (rc = BIO_do_handshake(io.get()); rc == 1) {
                             std::cerr << "About to send request..\n";
                             // Send the request..
-                            rc= BIO_puts(io.get(), req.encode().c_str());
+                            rc = BIO_puts(io.get(), req.encode().c_str());
 
                             std::cerr << __func__ << " - Sent request: rc=" << rc << std::endl;
 
@@ -173,15 +174,16 @@ namespace siddiqsoft
                                 len          = BIO_read(io.get(), buff.data(), buff.size());
                                 buff.at(len) = '\0';
                                 responseBuffer << buff.data();
-                                rc= BIO_should_retry(io.get());
+                                rc = BIO_should_retry(io.get());
                                 std::cerr << __func__ << " - read " << len << " bytes.. rc=" << rc << std::endl;
-                            } while ((len > 0) && (rc!=0));
+                            } while ((len > 0) && (rc != 0));
 
                             std::cerr << "Finished reading response.\n" << responseBuffer.str() << std::endl;
 
-                            rest_response resp {200, "In progress"};
-                            resp.setContent(responseBuffer.str());
-                            return resp;
+                            // wasted performance! we must update the parse to use
+                            // stringstream
+                            std::string buffer= responseBuffer.str();
+                            return http2json::parse(buffer);
                         }
                         else {
                             std::cerr << __func__ << " - Failed BIO_do_handshake; rc=" << rc << std::endl;

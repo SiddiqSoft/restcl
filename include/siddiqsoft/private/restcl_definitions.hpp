@@ -55,6 +55,7 @@ namespace siddiqsoft
 
     enum class HttpProtocolVersionType
     {
+        UNKNOWN,
         Http1,
         Http11,
         Http12,
@@ -62,7 +63,8 @@ namespace siddiqsoft
         Http3
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(HttpProtocolVersionType,
-                                 {{HttpProtocolVersionType::Http1, "HTTP/1.0"},
+                                 {{HttpProtocolVersionType::UNKNOWN, "UNKNOWN"},
+                                  {HttpProtocolVersionType::Http1, "HTTP/1.0"},
                                   {HttpProtocolVersionType::Http11, "HTTP/1.1"},
                                   {HttpProtocolVersionType::Http12, "HTTP/1.2"},
                                   {HttpProtocolVersionType::Http2, "HTTP/2"},
@@ -75,6 +77,7 @@ namespace siddiqsoft
 
     enum class HttpMethodType
     {
+        UNKNOWN,
         GET,
         HEAD,
         POST,
@@ -86,7 +89,8 @@ namespace siddiqsoft
         PATCH
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(HttpMethodType,
-                                 {{HttpMethodType::GET, "GET"},
+                                 {{HttpMethodType::UNKNOWN, "UNKNOWN"},
+                                  {HttpMethodType::GET, "GET"},
                                   {HttpMethodType::HEAD, "HEAD"},
                                   {HttpMethodType::POST, "POST"},
                                   {HttpMethodType::PUT, "PUT"},
@@ -134,6 +138,7 @@ struct std::formatter<siddiqsoft::HttpMethodType> : std::formatter<std::string>
             case siddiqsoft::HttpMethodType::OPTIONS: return std::formatter<std::string>::format("OPTIONS", ctx);
             case siddiqsoft::HttpMethodType::TRACE: return std::formatter<std::string>::format("TRACE", ctx);
             case siddiqsoft::HttpMethodType::PATCH: return std::formatter<std::string>::format("PATCH", ctx);
+            default: return std::formatter<std::string>::format("UNKNOWN", ctx);
         }
     }
 };
@@ -149,6 +154,7 @@ struct std::formatter<siddiqsoft::HttpProtocolVersionType> : std::formatter<std:
             case siddiqsoft::HttpProtocolVersionType::Http12: return std::formatter<std::string>::format("HTTP/1.2", ctx);
             case siddiqsoft::HttpProtocolVersionType::Http2: return std::formatter<std::string>::format("HTTP/2", ctx);
             case siddiqsoft::HttpProtocolVersionType::Http3: return std::formatter<std::string>::format("HTTP/3", ctx);
+            default: return std::formatter<std::string>::format("UNKNOWN", ctx);
         }
     }
 };

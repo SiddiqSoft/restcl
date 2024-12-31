@@ -51,115 +51,43 @@
 #include "siddiqsoft/date-utils.hpp"
 
 #include "restcl_definitions.hpp"
-#include "rest_response.hpp"
+#include "http_frame.hpp"
 
 namespace siddiqsoft
 {
     /// @brief REST Response object
-    class rest_response : public nlohmann::json
+    class rest_response : public http_frame
     {
+        int         statusCode {0};
+        std::string reasonCode {};
+
     public:
-        rest_response()
-            : nlohmann::json({{"response", {{"protocol", nullptr}, {"status", 0}, {"reason", ""}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-        {
-        }
-
-        rest_response(const int code, const std::string& message = {})
-            : nlohmann::json({{"response", {{"protocol", nullptr}, {"status", 0}, {"reason", ""}}},
-                              {"headers", nullptr},
-                              {"content", nullptr}})
-        {
-            setStatus(code, message);
-        }
-
-        /// @brief Set the content of the response. An attempt is made to parse to json object
-        /// @param c Content from the receive
-        /// @return Self
-        rest_response& setContent(const std::string& c)
-        {
-            if (!c.empty()) {
-                if (this->at("headers").value("Content-Type", "").find("json") != std::string::npos) {
-                    try {
-                        this->at("content") = nlohmann::json::parse(c);
-                        if (!this->at("headers").contains("Content-Length")) this->at("headers")["Content-Length"] = c.length();
-                        return *this;
-                    }
-                    catch (...) {
-                    }
-                }
-
-                // We did not decode a json; assign as-is
-                this->at("content") = c;
-                if (!this->at("headers").contains("Content-Length")) this->at("headers")["Content-Length"] = c.length();
-            }
-
-            return *this;
-        }
-
-
         /// @brief Check if the response was successful
         /// @return True iff there is no IOError and the StatusCode (99,400)
-        bool success() const
-        {
-            using namespace nlohmann::json_literals;
-
-            //             : nlohmann::json({{"response", {{"protocol", HttpProtocolVersion[0]}, {"status", 0}, {"reason", ""}}},
-            auto sc = this->at("/response/status"_json_pointer).template get<int>();
-            return (sc > 99) && (sc < 400);
-        }
+        bool success() const { return (statusCode > 99) && (statusCode < 400); }
 
 
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.
         /// @return String
-        std::string encode() const
+        std::string encode() const override
         {
             std::string rs;
-            std::string body;
-            auto&       hs = this->at("headers");
-            auto&       rl = this->at("response");
-            auto&       cs = this->at("content");
+
+            if (!content.type.empty() && content.str.empty())
+                throw std::invalid_argument("Missing content body when content type is present!");
 
             // Request Line
-            std::format_to(std::back_inserter(rs),
-                           "{} {} {}\r\n",
-                           rl["protocol"].get<std::string>(),
-                           rl["status"].get<uint32_t>(),
-                           rl["reason"].is_null() ? "" : rl["reason"].get<std::string>());
-
-            // Build the content to ensure we have the content-type
-            if (!cs.is_null() && cs.is_object()) {
-                body = cs.dump();
-            }
-            else if (!cs.is_null() && cs.is_string()) {
-                body = cs.get<std::string>();
-            }
+            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", protocol, statusCode, reasonCode);
 
             // Headers..
-            for (auto& [k, v] : this->at("headers").items()) {
-                if (v.is_string()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
-                }
-                else if (v.is_number_unsigned()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<uint64_t>());
-                }
-                else if (v.is_number_integer()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<int>());
-                }
-                else {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.dump());
-                }
-            }
-
-            std::format_to(std::back_inserter(rs), "\r\n");
+            encodeHeaders_to(rs);
 
             // Finally the content..
-            if (!body.empty()) {
-                std::format_to(std::back_inserter(rs), "{}", body);
+            if (!content.str.empty() && !content.type.empty()) {
+                std::format_to(std::back_inserter(rs), "{}", content.str);
             }
 
-            return std::move(rs);
+            return rs;
         }
 
 
@@ -169,13 +97,7 @@ namespace siddiqsoft
         /// The response contains:
         /// resp["response"]["status"] or WinHTTP error code
         /// resp["response"]["reason"] or WinHTTP error code message string
-        auto status() const -> std::pair<const unsigned, const std::string&>
-        {
-            auto& hs = this->at("headers");
-            auto& rl = this->at("response");
-
-            return {rl.value<unsigned>("status", 0), rl.value("reason", "")};
-        }
+        [[nodiscard]] auto status() const -> std::pair<const unsigned, const std::string&> { return {statusCode, reasonCode}; }
 
     public:
         friend std::ostream& operator<<(std::ostream&, const rest_response&);
@@ -185,10 +107,8 @@ namespace siddiqsoft
         /// @param err Specifies the transport error.
         rest_response& setStatus(const int code, const std::string& message)
         {
-            using namespace nlohmann::literals;
-
-            if (code != 0) this->at("response/status"_json_pointer) = code;
-            if (!message.empty()) this->at("response/reason"_json_pointer) = message;
+            statusCode = code;
+            reasonCode = message;
             return *this;
         }
     };

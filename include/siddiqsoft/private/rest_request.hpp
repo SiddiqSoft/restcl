@@ -33,15 +33,15 @@
 */
 
 #pragma once
+
+#ifndef REST_REQUEST_HPP
+#define REST_REQUEST_HPP
+
 #include <cstdint>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <variant>
-#ifndef REST_REQUEST_HPP
-#define REST_REQUEST_HPP
-
-
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -56,122 +56,19 @@
 #include "siddiqsoft/date-utils.hpp"
 
 #include "restcl_definitions.hpp"
+#include "http_frame.hpp"
+
 
 namespace siddiqsoft
 {
     /// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
     /// Essentially we're a convenience wrapper on the rest_request.
-    class rest_request
+    class rest_request : public http_frame
     {
-        /**
-         * @brief Store the Content-Type, Content-Length and the serialized content
-         *
-         */
-        struct ContentType
-        {
-            std::string type {};
-            std::string str {};
-            uint64_t    length {0};
-
-            void operator=(const nlohmann::json& j)
-            {
-                str    = j.dump();
-                length = str.length();
-                type   = CONTENT_APPLICATION_JSON;
-            }
-
-            void operator=(const std::string& s)
-            {
-                str    = s;
-                length = str.length();
-                type   = CONTENT_APPLICATION_TEXT;
-            }
-
-            operator std::string() const { return str; }
-
-            operator bool() const { return !str.empty(); }
-        };
-
-#if defined(DEBUG) || defined(_DEBUG)
-    public:
-#else
-    protected:
-#endif
-        HttpProtocolVersionType        protocol {};
-        HttpMethodType                 method {};
-        Uri<char, AuthorityHttp<char>> uri;
-        nlohmann::json                 headers {};
-        ContentType                    content {};
-
-    public:
-        rest_request() { headers["Date"] = DateUtils::RFC7231(); }
-
-        auto& setProtocol(const HttpProtocolVersionType& p)
-        {
-            protocol = p;
-            return *this;
-        }
-
-        auto getProtocol() { return protocol; }
-
-        auto& setMethod(const HttpMethodType& m)
-        {
-            method = m;
-            return *this;
-        }
-
-        auto& setMethod(const std::string& fragment)
-        {
-            for (const auto& v : HttpVerbs) {
-                if (v == fragment) return v;
-            }
-        }
-
-        HttpMethodType getMethod() const { return method; }
-
-        auto& setUri(const Uri<char, AuthorityHttp<char>>& u)
-        {
-            uri              = u;
-            headers[HF_HOST] = std::format("{}:{}", uri.authority.host, uri.authority.port);
-
-            return *this;
-        }
-
-        auto getUri() { return uri; }
-
-        auto& setHeaders(const nlohmann::json& h)
-        {
-            headers = h;
-            return *this;
-        }
-
-    private:
-        /// @brief Encode the headers to the given argument
-        /// @param rs String where the headers is "written-to".
-        void encodeHeaders_to(std::string& rs) const
-        {
-            for (auto& [k, v] : headers.items()) {
-                if (v.is_string()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
-                }
-                else if (v.is_number_unsigned()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<uint64_t>());
-                }
-                else if (v.is_number_integer()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<int>());
-                }
-                else {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.dump());
-                }
-            }
-
-            std::format_to(std::back_inserter(rs), "\r\n");
-        }
-
     public:
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.
         /// @return String
-        std::string encode() const
+        std::string encode() const override
         {
             std::string rs;
 
@@ -191,37 +88,6 @@ namespace siddiqsoft
 
             return rs;
         }
-
-        auto getHost() const { return headers["Host"].template get<std::string>(); }
-
-
-        /// @brief Set the content (non-JSON)
-        /// @param ctype Content-Type
-        /// @param c The content
-        /// @return Self
-        auto& setContent(const std::string& ctype, const std::string& c)
-        {
-            if (ctype.empty() && !c.empty()) throw std::invalid_argument("Content-Type cannot be empty");
-            if (!ctype.empty() && c.empty())
-                throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype).c_str());
-
-            if (!ctype.empty() && !c.empty()) {
-                content.str                = c;
-                content.type               = ctype;
-                content.length             = c.length();
-                headers[HF_CONTENT_TYPE]   = ctype;
-                headers[HF_CONTENT_LENGTH] = c.length();
-            }
-
-            return *this;
-        }
-
-
-        /// @brief Set the content to json
-        /// @param c JSON content
-        /// @return Self
-        auto& setContent(const nlohmann::json& c) { return setContent(CONTENT_APPLICATION_JSON, c.dump()); }
-
 
         friend std::ostream& operator<<(std::ostream&, const rest_request&);
         friend void          to_json(nlohmann::json& dest, const rest_request& src);

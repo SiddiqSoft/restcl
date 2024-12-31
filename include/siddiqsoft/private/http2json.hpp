@@ -19,22 +19,22 @@ namespace siddiqsoft
     class http2json
     {
     private:
-        static auto isHttpProtocol(const std::string& fragment) -> const std::string&
+        static auto isHttpProtocol(const std::string& fragment)
         {
-            for (const auto& p : HttpProtocolVersions) {
-                if (fragment.starts_with(p)) return p;
+            for (const auto& [i, p] : HttpProtocolVersions) {
+                if (fragment.starts_with(p)) return i;
             }
 
-            return HTTP_EMPTY_STRING;
+            return HttpProtocolVersionType::UNKNOWN;
         }
 
-        static auto isHttpVerb(const std::string& fragment) -> const std::string&
+        static auto isHttpVerb(const std::string& fragment)
         {
-            for (const auto& v : HttpVerbs) {
-                if (v == fragment) return v;
+            for (const auto& [i, v] : HttpVerbs) {
+                if (v == fragment) return i;
             }
 
-            return HTTP_EMPTY_STRING;
+            return HttpMethodType::UNKNOWN;
         }
 
         static bool parseStartLine(rest_response&               httpm,
@@ -52,12 +52,12 @@ namespace siddiqsoft
             if (found && (matchStartLine.size() >= 3)) {
                 // The regex is very precise and there is no chance we will end up here
                 // with an ill-formed (or unsupported) start-line.
-                if (const auto& verb = isHttpVerb(matchStartLine[3]); !verb.empty()) {
-                    httpm.setMethod(verb).setUri(matchStartLine[2]).setProtocol(matchStartLine[3]);
+                if (isHttpVerb(matchStartLine[3]) != HttpMethodType::UNKNOWN) {
+                    httpm.setMethod(matchStartLine[3].str()).setUri(matchStartLine[2].str()).setProtocol(matchStartLine[3].str());
                 }
-                //else if (const auto& proto = isHttpProtocol(matchStartLine[1]); !proto.empty()) {
-                //    httpm.setStatus(std::stoi(matchStartLine[2].str()), matchStartLine[3]);
-                //}
+                else if (isHttpProtocol(matchStartLine[1]) != HttpProtocolVersionType::UNKNOWN) {
+                    httpm.setStatus(std::stoi(matchStartLine[2].str()), matchStartLine[3].str()).setProtocol(matchStartLine[1]);
+                }
 
                 // Offset the start to the point after the start-line. Make sure to skip over any prefix!
                 // We may have junk or left-over crud at the start (especially if we're using text files)
