@@ -321,14 +321,14 @@ namespace siddiqsoft
             restcl               wrc;
             siddiqsoft::RunOnEnd roe([&]() { std::cerr << "Final Stats of the client: " << wrc << std::endl; });
 
-            std::cerr << std::format("Post wrc..\n");
+            //std::cerr << std::format("Post wrc..\n");
             basic_callbacktype valid = [&](const auto& req, const auto& resp) {
                 callbackCounter++;
                 // std::cerr << "From callback Serialized json: " << req << std::endl;
                 if (resp.success()) {
                     passTest += resp.statusCode() == 200;
                     passTest.notify_all();
-                    std::cerr << "Response\n" << resp << std::endl;
+                    //std::cerr << "Response\n" << resp << std::endl;
                 }
                 else {
                     std::cerr << "Got error: " << resp.statusCode() << " for " << req.uri.authority.host << " -- "

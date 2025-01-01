@@ -70,6 +70,21 @@ namespace siddiqsoft
         std::once_flag           hrcInitFlag {};
         std::shared_ptr<SSL_CTX> sslCtx {};
 
+    protected:
+        std::atomic_uint64_t ioAttempt {0};
+        std::atomic_uint64_t ioAttemptFailed {0};
+        std::atomic_uint64_t ioConnect {0};
+        std::atomic_uint64_t ioConnectFailed {0};
+        std::atomic_uint64_t ioSend {0};
+        std::atomic_uint64_t ioSendFailed {0};
+        std::atomic_uint64_t ioReadAttempt {0};
+        std::atomic_uint64_t ioRead {0};
+        std::atomic_uint64_t ioReadFailed {0};
+        std::atomic_uint64_t callbackAttempt {0};
+        std::atomic_uint64_t callbackFailed {0};
+        std::atomic_uint64_t callbackCompleted {0};
+
+    private:
         basic_callbacktype _callback {};
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
@@ -80,9 +95,23 @@ namespace siddiqsoft
             // typically this is *after* we invoke the callback.
             try {
                 auto resp = send(arg.request);
-                if (arg.callback) arg.callback(arg.request, resp);
+
+                callbackAttempt++;
+                if (arg.callback) {
+                    arg.callback(arg.request, resp);
+                    callbackCompleted++;
+                }
+                else if (_callback) {
+                    _callback(arg.request, resp);
+                    callbackCompleted++;
+                }
             }
-            catch (const std::exception&) {
+            catch (const std::exception& ex) {
+                callbackFailed++;
+                std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
+                                         "******************************************\n",
+                                         callbackAttempt.load(),
+                                         ex.what());
             }
         }};
 
@@ -142,8 +171,6 @@ namespace siddiqsoft
             pool.queue(RestPoolArgsType {std::move(req), callback.has_value() ? callback.value() : _callback});
         }
 
-        std::atomic_uint64_t ioAttempt {0}, ioAttemptFailed {0}, ioConnect {0}, ioConnectFailed {0}, ioSend {0}, ioSendFailed {0},
-                ioReadAttempt {0}, ioRead {0}, ioReadFailed {0};
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
@@ -212,6 +239,7 @@ namespace siddiqsoft
 
         /// @brief Serializer to ostream for RESResponseType
         friend std::ostream& operator<<(std::ostream& os, const HttpRESTClient& src);
+        friend void          to_json(nlohmann::json& dest, const HttpRESTClient& src);
     };
 
     inline void to_json(nlohmann::json& dest, const HttpRESTClient& src)
@@ -219,6 +247,9 @@ namespace siddiqsoft
         dest["UserAgent"] = src.UserAgent;
         dest["counters"]  = {{"ioAttempt", src.ioAttempt.load()},
                              {"ioAttemptFailed", src.ioAttemptFailed.load()},
+                             {"callbackAttempt", src.callbackAttempt.load()},
+                             {"callbackCompleted", src.callbackCompleted.load()},
+                             {"callbackFailed", src.callbackFailed.load()},
                              {"ioConnect", src.ioConnect.load()},
                              {"ioConnectFailed", src.ioConnectFailed.load()},
                              {"ioReadAttempt", src.ioReadAttempt.load()},

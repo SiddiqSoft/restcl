@@ -33,6 +33,7 @@
  */
 
 #pragma once
+#include <exception>
 #ifndef REST_RESPONSE_HPP
 #define REST_RESPONSE_HPP
 
@@ -145,14 +146,20 @@ namespace siddiqsoft
     protected:
         static bool storeHeaderValue(rest_response& httpm, const std::string& key, const std::string& value)
         {
-            if (key.find(HF_CONTENT_LENGTH) == 0) {
-                httpm.headers[key] = std::stoi(value);
+            try {
+                if (key.find(HF_CONTENT_LENGTH) == 0) {
+                    httpm.headers[key] = std::stoi(value);
+                }
+                else if (value.empty()) {
+                    httpm.headers[key] = "";
+                }
+                else {
+                    httpm.headers[key] = value;
+                }
             }
-            else if (value.empty()) {
-                httpm.headers[key] = "";
-            }
-            else {
-                httpm.headers[key] = value;
+            catch (std::exception& ex) {
+                std::cerr << std::format("{} - {} : {}..ex:{}...........\n", __func__, key, value, ex.what());
+                throw;
             }
 
             return true;
@@ -250,16 +257,27 @@ namespace siddiqsoft
         {
             siddiqsoft::rest_response resp {};
             auto                      startIterator = srcBuffer.begin();
+            auto                      lastLine      = __LINE__;
 
-            if (parseStartLine(resp, startIterator, srcBuffer.end())) {
-                // Continue to parse the headers..
-                if (parseHeaders(resp, startIterator, srcBuffer.end())) {
-                    // Continue to extract the body.. so far
-                    // bufferStart will be left at the end of the header section
-                    // so we can use this as our starting point for the body..
-                    srcBuffer.erase(srcBuffer.begin(), startIterator);
-                    resp.setContent(srcBuffer);
+            try {
+                lastLine = __LINE__;
+                if (parseStartLine(resp, startIterator, srcBuffer.end())) {
+                    lastLine = __LINE__;
+                    // Continue to parse the headers..
+                    if (parseHeaders(resp, startIterator, srcBuffer.end())) {
+                        lastLine = __LINE__;
+                        // Continue to extract the body.. so far
+                        // bufferStart will be left at the end of the header section
+                        // so we can use this as our starting point for the body..
+                        srcBuffer.erase(srcBuffer.begin(), startIterator);
+                        lastLine = __LINE__;
+                        resp.setContent(srcBuffer);
+                    }
                 }
+            }
+            catch (std::exception& ex) {
+                std::cerr << std::format("parse - while processing frame (ll:{})\n{}\n", lastLine, srcBuffer);
+                throw;
             }
 
             return resp;
