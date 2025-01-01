@@ -352,7 +352,7 @@ namespace siddiqsoft
 #endif
                 }
                 else if (i % 2 == 0) {
-                    wrc.send("https://www.bing.com/"_GET);
+                    wrc.send("https://www.duckduckgo.com/"_GET);
 #ifdef _DEBUG0
                     std::cerr << std::format("Added i:{}  i%2:{}  \n", i, (i % 2));
 #endif

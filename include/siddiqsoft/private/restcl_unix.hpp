@@ -143,7 +143,7 @@ namespace siddiqsoft
         }
 
         std::atomic_uint64_t ioAttempt {0}, ioAttemptFailed {0}, ioConnect {0}, ioConnectFailed {0}, ioSend {0}, ioSendFailed {0},
-                ioRead {0}, ioReadFailed {0};
+                ioReadAttempt {0}, ioRead {0}, ioReadFailed {0};
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
@@ -172,9 +172,12 @@ namespace siddiqsoft
                             do {
                                 std::array<char, 1536> buff;
 
-                                len          = BIO_read(io.get(), buff.data(), buff.size());
-                                buff.at(len) = '\0';
-                                responseBuffer << buff.data();
+                                ioReadAttempt++;
+                                len = BIO_read(io.get(), buff.data(), buff.size());
+                                if (len > 0) {
+                                    buff.at(len) = '\0';
+                                    responseBuffer << buff.data();
+                                }
                                 rc = BIO_should_retry(io.get());
 
                                 ioReadFailed += ((len == 0) && (rc == 0));
@@ -218,6 +221,7 @@ namespace siddiqsoft
                              {"ioAttemptFailed", src.ioAttemptFailed.load()},
                              {"ioConnect", src.ioConnect.load()},
                              {"ioConnectFailed", src.ioConnectFailed.load()},
+                             {"ioReadAttempt", src.ioReadAttempt.load()},
                              {"ioRead", src.ioRead.load()},
                              {"ioReadFailed", src.ioReadFailed.load()},
                              {"ioSendFailed", src.ioSendFailed.load()},
