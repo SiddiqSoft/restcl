@@ -96,10 +96,10 @@ namespace siddiqsoft
 #else
     protected:
 #endif
-        HttpProtocolVersionType        protocol {};
+        HttpProtocolVersionType        protocol {HttpProtocolVersionType::Http11};
         HttpMethodType                 method {};
         Uri<char, AuthorityHttp<char>> uri {};
-        nlohmann::json                 headers {};
+        nlohmann::json                 headers {{"Date", DateUtils::RFC7231()}};
         ContentType                    content {};
 
     protected:
@@ -122,7 +122,10 @@ namespace siddiqsoft
         }
 
     public:
-        http_frame() { headers["Date"] = DateUtils::RFC7231(); }
+        virtual ~http_frame() = default;
+        http_frame()          = default;
+
+        // http_frame() { headers["Date"] = DateUtils::RFC7231(); }
 
         auto& setProtocol(const HttpProtocolVersionType& p)
         {
@@ -172,13 +175,15 @@ namespace siddiqsoft
             return *this;
         }
 
-        auto getUri() { return uri; }
+        auto& getUri() const { return uri; }
 
         auto& setHeaders(const nlohmann::json& h)
         {
             headers = h;
             return *this;
         }
+
+        auto& getHeaders() const { return headers; }
 
     protected:
         /// @brief Encode the headers to the given argument

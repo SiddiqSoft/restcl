@@ -45,7 +45,7 @@
 
 namespace siddiqsoft
 {
-    static const std::regex  HTTP_RESPONSE_REGEX {"(HTTP.*)\\s(\\d+)\\s([^\\s]*)\\s"};
+    static const std::regex  HTTP_RESPONSE_REGEX {"(HTTP.*)\\s(\\d+)\\s([^\\r\\n]*)\\r\\n"};
     static const std::string HTTP_NEWLINE {"\r\n"};
     static const std::string ELEM_NEWLINE_LF {"\r"};
     static const std::string ELEM_SEPERATOR {": "};
@@ -55,25 +55,27 @@ namespace siddiqsoft
 
     enum class HttpProtocolVersionType
     {
-        UNKNOWN,
         Http1,
         Http11,
         Http12,
-        Http2,
-        Http3
+        // Http2,
+        // Http3,
+        UNKNOWN
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(HttpProtocolVersionType,
-                                 {{HttpProtocolVersionType::UNKNOWN, "UNKNOWN"},
-                                  {HttpProtocolVersionType::Http1, "HTTP/1.0"},
+                                 {{HttpProtocolVersionType::Http1, "HTTP/1.0"},
                                   {HttpProtocolVersionType::Http11, "HTTP/1.1"},
-                                  {HttpProtocolVersionType::Http12, "HTTP/1.2"},
-                                  {HttpProtocolVersionType::Http2, "HTTP/2"},
-                                  {HttpProtocolVersionType::Http3, "HTTP/3"}});
-    static const std::map<HttpProtocolVersionType, std::string> HttpProtocolVersions {{HttpProtocolVersionType::Http1, "HTTP/1.0"},
-                                                                                      {HttpProtocolVersionType::Http11, "HTTP/1.1"},
-                                                                                      {HttpProtocolVersionType::Http12, "HTTP/1.2"},
-                                                                                      {HttpProtocolVersionType::Http2, "HTTP/2"},
-                                                                                      {HttpProtocolVersionType::Http3, "HTTP/3"}};
+                                  //{HttpProtocolVersionType::Http12, "HTTP/1.2"},
+                                  //{HttpProtocolVersionType::Http2, "HTTP/2"},
+                                  //{HttpProtocolVersionType::Http3, "HTTP/3"},
+                                  {HttpProtocolVersionType::UNKNOWN, "UNKNOWN"}});
+    static const std::map<HttpProtocolVersionType, std::string> HttpProtocolVersions {
+            {HttpProtocolVersionType::Http1, "HTTP/1.0"},
+            {HttpProtocolVersionType::Http11, "HTTP/1.1"},
+            //{HttpProtocolVersionType::Http12, "HTTP/1.2"}
+            //{HttpProtocolVersionType::Http2, "HTTP/2"},
+            //{HttpProtocolVersionType::Http3, "HTTP/3"}
+    };
 
     enum class HttpMethodType
     {
@@ -151,9 +153,9 @@ struct std::formatter<siddiqsoft::HttpProtocolVersionType> : std::formatter<std:
         switch (p) {
             case siddiqsoft::HttpProtocolVersionType::Http1: return std::formatter<std::string>::format("HTTP/1.0", ctx);
             case siddiqsoft::HttpProtocolVersionType::Http11: return std::formatter<std::string>::format("HTTP/1.1", ctx);
-            case siddiqsoft::HttpProtocolVersionType::Http12: return std::formatter<std::string>::format("HTTP/1.2", ctx);
-            case siddiqsoft::HttpProtocolVersionType::Http2: return std::formatter<std::string>::format("HTTP/2", ctx);
-            case siddiqsoft::HttpProtocolVersionType::Http3: return std::formatter<std::string>::format("HTTP/3", ctx);
+            //case siddiqsoft::HttpProtocolVersionType::Http12: return std::formatter<std::string>::format("HTTP/1.2", ctx);
+            // case siddiqsoft::HttpProtocolVersionType::Http2: return std::formatter<std::string>::format("HTTP/2", ctx);
+            // case siddiqsoft::HttpProtocolVersionType::Http3: return std::formatter<std::string>::format("HTTP/3", ctx);
             default: return std::formatter<std::string>::format("UNKNOWN", ctx);
         }
     }

@@ -10,6 +10,7 @@
  */
 
 #pragma once
+#include <atomic>
 #if defined(__linux__) || defined(__APPLE__) || defined(FORCE_USE_OPENSSL)
 
 #ifndef RESTCL_UNIX_HPP
@@ -141,6 +142,8 @@ namespace siddiqsoft
             pool.queue(RestPoolArgsType {std::move(req), callback.has_value() ? callback.value() : _callback});
         }
 
+        std::atomic_uint64_t ioAttempt {0}, ioAttemptFailed {0}, ioConnect {0}, ioConnectFailed {0}, ioSend {0}, ioSendFailed {0},
+                ioRead {0}, ioReadFailed {0};
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
@@ -153,17 +156,16 @@ namespace siddiqsoft
 
             auto destinationHost = req.getHost();
 
-            std::cerr << __func__ << " - Attempting connection to " << destinationHost << std::endl;
-
             if (std::unique_ptr<BIO, decltype(&BIO_free_all)> io(BIO_new_ssl_connect(sslCtx.get()), &BIO_free_all); io) {
+                ioAttempt++;
                 if (rc = BIO_set_conn_hostname(io.get(), destinationHost.c_str()); rc == 1) {
                     if (rc = BIO_do_connect(io.get()); rc == 1) {
+                        ioConnect++;
                         if (rc = BIO_do_handshake(io.get()); rc == 1) {
-                            std::cerr << "About to send request..\n";
                             // Send the request..
                             rc = BIO_puts(io.get(), req.encode().c_str());
-
-                            std::cerr << __func__ << " - Sent request: rc=" << rc << std::endl;
+                            ioSend += (rc > -1);
+                            ioSendFailed += (rc <= 0);
 
                             int               len {0};
                             std::stringstream responseBuffer {};
@@ -174,17 +176,18 @@ namespace siddiqsoft
                                 buff.at(len) = '\0';
                                 responseBuffer << buff.data();
                                 rc = BIO_should_retry(io.get());
-                                std::cerr << __func__ << " - read " << len << " bytes.. rc=" << rc << std::endl;
-                            } while ((len > 0) && (rc != 0));
 
-                            std::cerr << "Finished reading response.\n" << responseBuffer.str() << std::endl;
+                                ioReadFailed += ((len == 0) && (rc == 0));
+                            } while ((len > 0) && (rc != 0));
 
                             // wasted performance! we must update the parse to use
                             // stringstream
-                            std::string buffer= responseBuffer.str();
+                            ioRead++;
+                            std::string buffer = responseBuffer.str();
                             return rest_response::parse(buffer);
                         }
                         else {
+                            ioConnectFailed++;
                             std::cerr << __func__ << " - Failed BIO_do_handshake; rc=" << rc << std::endl;
                         }
                     }
@@ -197,17 +200,55 @@ namespace siddiqsoft
                 }
             }
             else {
+                ioAttemptFailed++;
                 std::cerr << __func__ << " - Failed BIO_new_ssl_connect; rc=" << rc << std::endl;
             }
 
             return rest_response {};
         }
+
+        /// @brief Serializer to ostream for RESResponseType
+        friend std::ostream& operator<<(std::ostream& os, const HttpRESTClient& src);
     };
 
+    inline void to_json(nlohmann::json& dest, const HttpRESTClient& src)
+    {
+        dest["UserAgent"] = src.UserAgent;
+        dest["counters"]  = {{"ioAttempt", src.ioAttempt.load()},
+                             {"ioAttemptFailed", src.ioAttemptFailed.load()},
+                             {"ioConnect", src.ioConnect.load()},
+                             {"ioConnectFailed", src.ioConnectFailed.load()},
+                             {"ioRead", src.ioRead.load()},
+                             {"ioReadFailed", src.ioReadFailed.load()},
+                             {"ioSendFailed", src.ioSendFailed.load()},
+                             {"ioSend", src.ioSend.load()}};
+    }
+
+    inline std::ostream& operator<<(std::ostream& os, const HttpRESTClient& src)
+    {
+        nlohmann::json doc {src};
+
+        os << doc.dump(3);
+        return os;
+    }
     using restcl = HttpRESTClient;
 } // namespace siddiqsoft
+
+template <>
+struct std::formatter<siddiqsoft::HttpRESTClient> : std::formatter<std::string>
+{
+    template <class FC>
+    auto format(const siddiqsoft::HttpRESTClient& sv, FC& ctx) const
+    {
+        nlohmann::json doc {sv};
+        return std::formatter<std::string>::format(doc.dump(3), ctx);
+    }
+};
+
+
 #else
 #pragma message("Windows required")
 #endif
+
 
 #endif // !RESTCLWINHTTP_HPP

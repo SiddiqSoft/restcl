@@ -58,13 +58,13 @@ namespace siddiqsoft
     /// @brief REST Response object
     class rest_response : public http_frame
     {
-        int         statusCode {0};
-        std::string reasonCode {};
+        unsigned    _statusCode {0};
+        std::string _reasonCode {};
 
     public:
         /// @brief Check if the response was successful
         /// @return True iff there is no IOError and the StatusCode (99,400)
-        bool success() const { return (statusCode > 99) && (statusCode < 400); }
+        bool success() const { return (_statusCode > 99) && (_statusCode < 400); }
 
 
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.
@@ -77,7 +77,7 @@ namespace siddiqsoft
                 throw std::invalid_argument("Missing content body when content type is present!");
 
             // Request Line
-            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", protocol, statusCode, reasonCode);
+            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", protocol, _statusCode, _reasonCode);
 
             // Headers..
             encodeHeaders_to(rs);
@@ -90,14 +90,10 @@ namespace siddiqsoft
             return rs;
         }
 
+        auto statusCode() const { return _statusCode; }
+        auto reasonCode() const { return _reasonCode; }
 
-        /// @brief Returns the IO error if present otherwise returns the HTTP status code and reason
-        /// @return response_code with the code, message which correspond with valid HTTP respose status and reason phrase or
-        /// ioError and ioError message.
-        /// The response contains:
-        /// resp["response"]["status"] or WinHTTP error code
-        /// resp["response"]["reason"] or WinHTTP error code message string
-        [[nodiscard]] auto status() const -> std::pair<const unsigned, const std::string&> { return {statusCode, reasonCode}; }
+        auto status() const { return std::pair<unsigned, std::string> {_statusCode, _reasonCode}; }
 
     public:
         friend std::ostream& operator<<(std::ostream&, const rest_response&);
@@ -107,8 +103,8 @@ namespace siddiqsoft
         /// @param err Specifies the transport error.
         rest_response& setStatus(const int code, const std::string& message)
         {
-            statusCode = code;
-            reasonCode = message;
+            _statusCode = code;
+            _reasonCode = message;
             return *this;
         }
 

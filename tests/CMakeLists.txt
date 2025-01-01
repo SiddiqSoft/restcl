@@ -39,7 +39,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     # Sources
     target_sources( ${TESTPROJ}
                     PRIVATE
-                    #${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
+                    ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_basics.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_http2json.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp)
