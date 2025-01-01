@@ -24,14 +24,41 @@ namespace siddiqsoft
     static std::string loadSampleFile(const std::string& fileName)
     {
         std::string samplesDirectoryPath {};
-
+        auto        currentDirectoryPath = std::filesystem::current_path();
 
         if (auto env_samples_dir = std::getenv("SAMPLES_DIR"); env_samples_dir != nullptr) {
             std::clog << " -- Environment SAMPLES_DIR  : " << env_samples_dir << std::endl;
             samplesDirectoryPath = env_samples_dir;
         }
         else {
-            std::clog << " -- Environment SAMPLES_DIR not found; cannot load " << fileName << std::endl;
+            auto cp = currentDirectoryPath;
+            cp += "/samples";
+            if (std::filesystem::exists(cp)) {
+                samplesDirectoryPath = cp.string();
+            }
+            else {
+                cp = currentDirectoryPath;
+                cp = cp.parent_path();
+                cp += "/samples";
+                std::clog << "Checking for`" << cp << "`...\n";
+                if (std::filesystem::exists(cp))
+                    samplesDirectoryPath = cp.string();
+                else {
+                    cp = currentDirectoryPath;
+                    cp = cp.parent_path().parent_path();
+                    cp += "/samples";
+                    std::clog << "Checking for`" << cp << "`...\n";
+                    if (std::filesystem::exists(cp))
+                        samplesDirectoryPath = cp.string();
+                    else {
+                        cp = currentDirectoryPath;
+                        cp = cp.parent_path().parent_path().parent_path();
+                        cp += "/samples";
+                        std::clog << "Checking for`" << cp << "`...\n";
+                        if (std::filesystem::exists(cp)) samplesDirectoryPath = cp.string();
+                    }
+                }
+            }
         }
 
         if (std::filesystem::exists(samplesDirectoryPath)) {
