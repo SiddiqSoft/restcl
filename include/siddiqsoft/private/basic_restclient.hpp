@@ -9,13 +9,12 @@
  *
  */
 #pragma once
-#include <optional>
 #ifndef BASIC_RESTCLIENT_HPP
 #define BASIC_RESTCLIENT_HPP
 
-
+#include <tuple>
+#include <optional>
 #include <functional>
-
 #include "restcl_definitions.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"
@@ -23,7 +22,7 @@
 namespace siddiqsoft
 {
     /// @brief The function or lambda must accept const rest_request& and const rest_response&
-    using basic_callbacktype = std::function<void(const rest_request&, const rest_response&)>;
+    using basic_callbacktype = std::function<void(rest_request&, std::tuple<int, rest_response&>)>;
 
 
     /// @brief Base class for the rest client
@@ -63,7 +62,7 @@ namespace siddiqsoft
     {
         RestPoolArgsType(rest_request&& r, basic_callbacktype& cb)
             : request(std::move(r)) // own the request
-            , callback(cb)             // make a copy
+            , callback(cb)          // make a copy
         {
         }
 

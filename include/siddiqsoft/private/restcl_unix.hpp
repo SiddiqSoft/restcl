@@ -11,8 +11,10 @@
 
 #pragma once
 #include <atomic>
+#include <cerrno>
 #include <cstdint>
 #include <openssl/bio.h>
+#include <system_error>
 #if defined(__linux__) || defined(__APPLE__) || defined(FORCE_USE_OPENSSL)
 
 #ifndef RESTCL_UNIX_HPP
@@ -92,6 +94,19 @@ namespace siddiqsoft
         basic_callbacktype               _callback {};
         std::array<char, READBUFFERSIZE> _buff {};
 
+        inline void dispatchCallback(basic_callbacktype& cb, rest_request& req, std::tuple<int, rest_response&> resp)
+        {
+            callbackAttempt++;
+            if (cb) {
+                cb(req, resp);
+                callbackCompleted++;
+            }
+            else if (_callback) {
+                _callback(req, resp);
+                callbackCompleted++;
+            }
+        }
+
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
             // This function is invoked any time we have an item
@@ -104,16 +119,11 @@ namespace siddiqsoft
                 }
 
                 auto resp = send(arg.request);
-
-                callbackAttempt++;
-                if (arg.callback) {
-                    arg.callback(arg.request, resp);
-                    callbackCompleted++;
-                }
-                else if (_callback) {
-                    _callback(arg.request, resp);
-                    callbackCompleted++;
-                }
+                dispatchCallback(arg.callback, arg.req, resp);
+            }
+            catch (const std::system_error& se) {
+                // Failed; dispatch anyways and let the client figure out the issue.
+                dispatchCallback(arg.callback, arg.req, {se.code(), {}});
             }
             catch (const std::exception& ex) {
                 callbackFailed++;
@@ -246,7 +256,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] rest_response send(const rest_request& req) override
+        [[nodiscard]] rest_response send(const rest_request& req) override noexcept(false)
         {
             auto rc {0};
 
@@ -265,16 +275,12 @@ namespace siddiqsoft
                             ioSend += (rc > -1);
                             ioSendFailed += (rc <= 0);
 
-                            uint32_t               len {0};
-                            uint32_t               moreData {0};
+                            uint32_t          len {0};
+                            uint32_t          moreData {0};
                             std::stringstream responseBuffer {};
                             do {
-                                std::array< char, READBUFFERSIZE> iobuff {};
+                                std::array<char, READBUFFERSIZE> iobuff {};
                                 ioReadAttempt++;
-
-                                // Check if we have any more data to read..
-                                moreData = BIO_pending(io.get());
-                                if (moreData == 0) break;
 
                                 // Read..
                                 len = BIO_read(io.get(), iobuff.data(), iobuff.size());
@@ -284,8 +290,9 @@ namespace siddiqsoft
                                     // responseBuffer.write(iobuff.data(), len);
                                     responseBuffer << std::string {iobuff.data(), len};
                                 }
-                                // rc       = BIO_should_retry(io.get());
-                                // moreData = BIO_should_read(io.get());
+                                // Check if we have any more data to read..
+                                moreData = BIO_pending(io.get());
+                                if (moreData == 0) break;
                             } while ((len > 0) || BIO_should_retry(io.get()));
 
                             // wasted performance! we must update the parse to use
@@ -297,19 +304,26 @@ namespace siddiqsoft
                         }
                         else {
                             ioConnectFailed++;
-                            std::cerr << __func__ << " - Failed BIO_do_handshake; rc=" << rc << std::endl;
+                            throw std::system_error(
+                                    ECONNREFUSED,
+                                    std::format("{}:BIO_do_handshake failed to {}; rc:{}", __func__, destinationHost, rc));
                         }
                     }
                     else {
-                        std::cerr << __func__ << " - Failed BIO_do_connect; rc=" << rc << std::endl;
+                        throw std::system_error(
+                                ECONNREFUSED, std::format("{}:BIO_do_connect failed to {}; rc:{}", __func__, destinationHost, rc));
                     }
                 }
                 else {
-                    std::cerr << __func__ << " - Failed BIO_set_conn_hostname; rc=" << rc << std::endl;
+                    throw std::system_error(
+                            EHOSTUNREACH,
+                            std::format("{}:BIO_set_conn_hostname failed to {}; rc:{}", __func__, destinationHost, rc));
                 }
             }
             else {
                 ioAttemptFailed++;
+                throw std::system_error(ENETUNREACH,
+                                        std::format("{}:BIO_new_ssl_connect Failed SSL/BIO to {}", __func__, destinationHost));
                 std::cerr << __func__ << " - Failed BIO_new_ssl_connect; rc=" << rc << std::endl;
             }
 
