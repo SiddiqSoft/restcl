@@ -11,6 +11,8 @@
 
 #pragma once
 #include <atomic>
+#include <cstdint>
+#include <openssl/bio.h>
 #if defined(__linux__) || defined(__APPLE__) || defined(FORCE_USE_OPENSSL)
 
 #ifndef RESTCL_UNIX_HPP
@@ -64,6 +66,8 @@ namespace siddiqsoft
 
     private:
         static const uint32_t     READBUFFERSIZE {8192};
+        static const uint32_t     MAX_ZERO_READ_FROM_SSL_THRESHOLD = 5;
+        static const uint32_t     MAX_SAME_READ_FROM_SSL_THRESHOLD = 10;
         static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
 
         bool                     isInitialized {false};
@@ -85,7 +89,8 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackCompleted {0};
 
     private:
-        basic_callbacktype _callback {};
+        basic_callbacktype               _callback {};
+        std::array<char, READBUFFERSIZE> _buff {};
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
@@ -94,6 +99,10 @@ namespace siddiqsoft
             // method completes the lifetime of the object ends;
             // typically this is *after* we invoke the callback.
             try {
+                if (!arg.request.headers.contains("Connection")) {
+                    arg.request.headers["Connection"] = "Keep-Alive";
+                }
+
                 auto resp = send(arg.request);
 
                 callbackAttempt++;
@@ -115,6 +124,68 @@ namespace siddiqsoft
             }
         }};
 
+        /*
+                void recv()
+                {
+                    bool     readOk              = false;
+                    bool     doneReading         = false;
+                    uint32_t nReadCounter        = 0;
+                    uint32_t nZeroReadCounter    = 0;
+                    uint32_t sslret              = 0;
+                    uint32_t bytesRead           = 0;
+                    uint32_t readOffset          = 0;
+                    uint32_t remainingBufferSize = 0;
+
+                    do {
+                        nReadCounter++;
+                        remainingBufferSize = sizeof(char) * (READBUFFERSIZE - readOffset);
+                        if (sslCtx.get() == nullptr) break;
+                        sslret = SSL_read(sslCtx.get(), _buff.data() + readOffset, remainingBufferSize);
+                        if (sslret <= 0) {
+                            sslret = SSL_get_error(sslCtx.get(), sslret);
+                            switch (sslret) {
+                                case SSL_ERROR_NONE: {
+                                    doneReading = true;
+                                } break;
+                                case SSL_ERROR_WANT_READ: {
+                                    if (nReadCounter > MAX_SAME_READ_FROM_SSL_THRESHOLD) doneReading = true;
+                                } break;
+                                case SSL_ERROR_WANT_WRITE: {
+                                    doneReading = true;
+                                } break;
+                                case SSL_ERROR_ZERO_RETURN: {
+                                    doneReading = true;
+                                } break;
+                                case SSL_ERROR_SYSCALL: {
+                                    doneReading = true;
+                                } break;
+                                default: {
+                                    readOk      = false;
+                                    doneReading = true;
+                                }
+                            }
+                        }
+                        else if ((nReadCounter == 1) && (sslret > 0) && (sslret < READBUFFERSIZE)) {
+                            _buff.at(sslret) = '\0';
+                            readOffset += sslret;
+                            doneReading = true;
+                            readOk      = true;
+                            break;
+                        }
+                        else if (sslret > 0) {
+                            readOffset += sslret;
+                            readOk = true;
+                        }
+                        else if (sslret == 0) {
+                            ++nZeroReadCounter;
+                            if (nZeroReadCounter > MAX_ZERO_READ_FROM_SSL_THRESHOLD) {
+                                doneReading = true;
+                                readOk      = false;
+                            }
+                        }
+                    } while (!doneReading && (readOffset < READBUFFERSIZE));
+                }
+        */
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
@@ -194,26 +265,34 @@ namespace siddiqsoft
                             ioSend += (rc > -1);
                             ioSendFailed += (rc <= 0);
 
-                            int               len {0};
+                            uint32_t               len {0};
+                            uint32_t               moreData {0};
                             std::stringstream responseBuffer {};
                             do {
-                                std::array<char, 1536> buff;
-
+                                std::array< char, READBUFFERSIZE> iobuff {};
                                 ioReadAttempt++;
-                                len = BIO_read(io.get(), buff.data(), buff.size());
-                                if (len > 0) {
-                                    buff.at(len) = '\0';
-                                    responseBuffer << buff.data();
-                                }
-                                rc = BIO_should_retry(io.get());
 
-                                ioReadFailed += ((len == 0) && (rc == 0));
-                            } while ((len > 0) && (rc != 0));
+                                // Check if we have any more data to read..
+                                moreData = BIO_pending(io.get());
+                                if (moreData == 0) break;
+
+                                // Read..
+                                len = BIO_read(io.get(), iobuff.data(), iobuff.size());
+                                if (len > 0) {
+                                    // Pad with nul if we're less then capacity
+                                    if (len < _buff.size()) iobuff.at(len) = '\0';
+                                    // responseBuffer.write(iobuff.data(), len);
+                                    responseBuffer << std::string {iobuff.data(), len};
+                                }
+                                // rc       = BIO_should_retry(io.get());
+                                // moreData = BIO_should_read(io.get());
+                            } while ((len > 0) || BIO_should_retry(io.get()));
 
                             // wasted performance! we must update the parse to use
                             // stringstream
                             ioRead++;
                             std::string buffer = responseBuffer.str();
+                            std::clog << buffer << std::endl;
                             return rest_response::parse(buffer);
                         }
                         else {
