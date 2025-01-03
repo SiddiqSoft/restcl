@@ -119,8 +119,7 @@ namespace siddiqsoft
                     arg.request.headers["Connection"] = "Keep-Alive";
                 }
 
-                auto resp = send(arg.request);
-                dispatchCallback(arg.callback, arg.request, resp);
+                dispatchCallback(arg.callback, arg.request, send(arg.request));
             }
             catch (std::system_error& se) {
                 // Failed; dispatch anyways and let the client figure out the issue.
@@ -261,7 +260,7 @@ namespace siddiqsoft
         {
             auto rc {0};
 
-            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
+            if (!isInitialized) return std::unexpected(EBUSY);
 
             auto destinationHost = req.getHost();
 
@@ -325,7 +324,7 @@ namespace siddiqsoft
                 return std::unexpected(ENETUNREACH);
             }
 
-            return std::unexpected (ENOTRECOVERABLE);
+            return std::unexpected(ENOTRECOVERABLE);
         }
 
         /// @brief Serializer to ostream for RESResponseType

@@ -99,7 +99,7 @@ namespace siddiqsoft
         HttpProtocolVersionType        protocol {HttpProtocolVersionType::Http11};
         HttpMethodType                 method {};
         Uri<char, AuthorityHttp<char>> uri {};
-        nlohmann::json                 headers {{"Date", DateUtils::RFC7231()}};
+        nlohmann::json                 headers {{"Accept", CONTENT_APPLICATION_JSON}, {"Date", DateUtils::RFC7231()}};
         ContentType                    content {};
 
     protected:
@@ -179,7 +179,7 @@ namespace siddiqsoft
 
         auto& setHeaders(const nlohmann::json& h)
         {
-            headers = h;
+            headers.update( h);
             return *this;
         }
 

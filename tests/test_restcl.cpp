@@ -58,16 +58,24 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc;
 
+        auto optionsRequest = "https://reqbin.com/echo/post/json"_OPTIONS;
+        optionsRequest.setHeaders({"From", __func__}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
+
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send("https://reqbin.com/echo/post/json"_OPTIONS, [&passTest](auto& req, std::expected<rest_response, int> resp) {
+                .send(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
                     // Checks the implementation of the encode() implementation
                     std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (passTest = resp ? resp->success() : false; passTest.load()) {
                         std::cerr << "Response\n" << *resp << std::endl;
                     }
-                    else if (resp) {
-                        auto ec = resp.error();
-                        std::cerr << "Got error: " << ec << std::endl;
+                    else if (resp && resp.has_value()) {
+                        auto [ec, emsg] = resp->status();
+                        std::cerr << "Got HTTP error: " << ec << std::endl;
+                    }
+                    else if (!resp.has_value()) {
+                        std::cerr << "Got IO error: " << resp.error() << std::endl;
+                        // Technically we were successfull in our IO.
+                        passTest = true;
                     }
                     passTest.notify_all();
                 });
@@ -212,7 +220,7 @@ namespace siddiqsoft
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send("https://httpbin.org:9090/get"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response,int> resp) {
+                .send("https://httpbin.org:9090/get"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (resp->success()) {
                         std::cerr << "Response\n" << *resp << std::endl;
@@ -237,7 +245,7 @@ namespace siddiqsoft
         restcl wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response,int> resp) {
+                .send("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (resp->success()) {
                         std::cerr << "Response\n" << *resp << std::endl;
@@ -371,10 +379,10 @@ namespace siddiqsoft
 #ifdef _DEBUG0
             std::cerr << std::format("Finished adding {} items..\n", ITER_COUNT);
 #endif
-            std::this_thread::sleep_for(std::chrono::milliseconds(9900));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1900));
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(9));
+        // std::this_thread::sleep_for(std::chrono::seconds(9));
 
         std::cerr << "Wrapup; ITER_COUNT: " << ITER_COUNT << "\npassTest: " << passTest.load()
                   << "\ncallbackCounter: " << callbackCounter.load() << std::endl;
@@ -405,7 +413,8 @@ namespace siddiqsoft
                 myStats["timeRemoteSource"] = "https://time.akamai.com/?iso";
                 myStats["timeRemoteTS"]     = resp->encode();
 
-                auto [deltaMS, deltastr] = siddiqsoft::DateUtils::diff(timeNow, siddiqsoft::DateUtils::parseISO8601(resp->encode()));
+                auto [deltaMS, deltastr] =
+                        siddiqsoft::DateUtils::diff(timeNow, siddiqsoft::DateUtils::parseISO8601(resp->encode()));
                 myStats["timeDriftMillis"] = std::to_string(deltaMS.count());
                 myStats["timeDrift"]       = deltastr;
                 myStats["timeNow"]         = siddiqsoft::DateUtils::ISO8601(timeNow);
