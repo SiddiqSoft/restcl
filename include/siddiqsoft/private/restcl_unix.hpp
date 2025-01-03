@@ -34,6 +34,7 @@
 #include <deque>
 #include <semaphore>
 #include <stop_token>
+#include <expected>
 
 
 #include "nlohmann/json.hpp"
@@ -94,7 +95,7 @@ namespace siddiqsoft
         basic_callbacktype               _callback {};
         std::array<char, READBUFFERSIZE> _buff {};
 
-        inline void dispatchCallback(basic_callbacktype& cb, rest_request& req, std::tuple<int, rest_response&> resp)
+        inline void dispatchCallback(basic_callbacktype& cb, rest_request& req, std::expected<rest_response, int> resp)
         {
             callbackAttempt++;
             if (cb) {
@@ -119,13 +120,13 @@ namespace siddiqsoft
                 }
 
                 auto resp = send(arg.request);
-                dispatchCallback(arg.callback, arg.req, resp);
+                dispatchCallback(arg.callback, arg.request, resp);
             }
-            catch (const std::system_error& se) {
+            catch (std::system_error& se) {
                 // Failed; dispatch anyways and let the client figure out the issue.
-                dispatchCallback(arg.callback, arg.req, {se.code(), {}});
+                dispatchCallback(arg.callback, arg.request, std::unexpected(reinterpret_cast<int>(se.code().value())));
             }
-            catch (const std::exception& ex) {
+            catch (std::exception& ex) {
                 callbackFailed++;
                 std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
                                          "******************************************\n",
@@ -256,7 +257,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] rest_response send(const rest_request& req) override noexcept(false)
+        [[nodiscard]] std::expected<rest_response, int> send(const rest_request& req) override
         {
             auto rc {0};
 
@@ -304,30 +305,27 @@ namespace siddiqsoft
                         }
                         else {
                             ioConnectFailed++;
-                            throw std::system_error(
-                                    ECONNREFUSED,
-                                    std::format("{}:BIO_do_handshake failed to {}; rc:{}", __func__, destinationHost, rc));
+                            std::cerr << std::format("{}:BIO_do_handshake failed to {}; rc:{}", __func__, destinationHost, rc);
+                            return std::unexpected(ECONNREFUSED);
                         }
                     }
                     else {
-                        throw std::system_error(
-                                ECONNREFUSED, std::format("{}:BIO_do_connect failed to {}; rc:{}", __func__, destinationHost, rc));
+                        std::cerr << std::format("{}:BIO_do_connect failed to {}; rc:{}", __func__, destinationHost, rc);
+                        return std::unexpected(ECONNREFUSED);
                     }
                 }
                 else {
-                    throw std::system_error(
-                            EHOSTUNREACH,
-                            std::format("{}:BIO_set_conn_hostname failed to {}; rc:{}", __func__, destinationHost, rc));
+                    std::cerr << std::format("{}:BIO_set_conn_hostname failed to {}; rc:{}", __func__, destinationHost, rc);
+                    return std::unexpected(EHOSTUNREACH);
                 }
             }
             else {
                 ioAttemptFailed++;
-                throw std::system_error(ENETUNREACH,
-                                        std::format("{}:BIO_new_ssl_connect Failed SSL/BIO to {}", __func__, destinationHost));
-                std::cerr << __func__ << " - Failed BIO_new_ssl_connect; rc=" << rc << std::endl;
+                std::cerr << std::format("{}:BIO_new_ssl_connect Failed SSL/BIO to {}", __func__, destinationHost);
+                return std::unexpected(ENETUNREACH);
             }
 
-            return rest_response {};
+            return std::unexpected (ENOTRECOVERABLE);
         }
 
         /// @brief Serializer to ostream for RESResponseType

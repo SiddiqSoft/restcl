@@ -300,7 +300,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] rest_response send(const rest_request& req)
+        [[nodiscard]] std::tuple<int,rest_response> send(const rest_request& req)
         {
             rest_response resp {};
 
@@ -515,19 +515,19 @@ namespace siddiqsoft
                             return resp;
                         }
                         else {
-                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
+                            return {static_cast<int>(dwError),rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)}};
                         }
                     }
                     else {
-                        return rest_response {hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)};
+                        return {hr,rest_response {hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)}};
                     }
                 }
                 else {
-                    return rest_response {hr, std::format("WinHttpConnect() failed; dwError:{}", hr)};
+                    return {hr,rest_response {hr, std::format("WinHttpConnect() failed; dwError:{}", hr)}};
                 }
             }
             else {
-                return rest_response {hr, std::format("WinHttpOpen() failed; dwError:{}", hr)};
+                return {hr,rest_response {hr, std::format("WinHttpOpen() failed; dwError:{}", hr)}};
             }
         }
     };

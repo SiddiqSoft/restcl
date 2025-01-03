@@ -1,16 +1,16 @@
 if(${${PROJECT_NAME}_BUILD_TESTS})
     set(TESTPROJ ${PROJECT_NAME}_tests)
 
-    set( CMAKE_CXX_STANDARD 20)
+    set( CMAKE_CXX_STANDARD 23)
     set( CMAKE_CXX_STANDARD_REQUIRED On)
     set( CMAKE_CXX_EXTENSIONS Off)
     
     add_executable(${TESTPROJ})
 
-    target_compile_features(${TESTPROJ} PRIVATE cxx_std_20)
+    target_compile_features(${TESTPROJ} PRIVATE cxx_std_23)
     target_compile_options( ${TESTPROJ}
                             PRIVATE
-                            $<$<CXX_COMPILER_ID:MSVC>:/std:c++20> )
+                            $<$<CXX_COMPILER_ID:MSVC>:/std:c++23> )
     target_compile_options( ${TESTPROJ}
                             PRIVATE
                             $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )

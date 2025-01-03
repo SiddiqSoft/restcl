@@ -15,6 +15,7 @@
 #include <tuple>
 #include <optional>
 #include <functional>
+#include <expected>
 #include "restcl_definitions.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"
@@ -22,7 +23,7 @@
 namespace siddiqsoft
 {
     /// @brief The function or lambda must accept const rest_request& and const rest_response&
-    using basic_callbacktype = std::function<void(rest_request&, std::tuple<int, rest_response&>)>;
+    using basic_callbacktype = std::function<void(rest_request&, std::expected<rest_response,int>)>;
 
 
     /// @brief Base class for the rest client
@@ -43,7 +44,7 @@ namespace siddiqsoft
         /// @brief Synchronous implementation of the IO
         /// @param req Request
         /// @return The response
-        [[nodiscard]] virtual rest_response send(const rest_request&) = 0;
+        [[nodiscard]] virtual std::expected<rest_response,int> send(const rest_request&) = 0;
 
         /// @brief Asynchronous operation. The callback must be provided here or previously via the configure()
         /// @param req Request
