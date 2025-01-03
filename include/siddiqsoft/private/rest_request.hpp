@@ -66,14 +66,17 @@ namespace siddiqsoft
     class rest_request : public http_frame
     {
     public:
-        rest_request()=default;
+        rest_request() = default;
 
         rest_request(const HttpMethodType&                v,
                      const Uri<char, AuthorityHttp<char>> u,
                      const nlohmann::json&                h,
                      const nlohmann::json&                c)
         {
-            setHeaders(h).setMethod(v).setUri(u).setContent(c);
+            setHeaders(h);
+            setMethod(v);
+            setUri(u);
+            setContent(c);
         }
 
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.

@@ -179,7 +179,7 @@ namespace siddiqsoft
 
         auto& setHeaders(const nlohmann::json& h)
         {
-            headers.update( h);
+            headers.update(h);
             return *this;
         }
 
@@ -227,21 +227,40 @@ namespace siddiqsoft
                 throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype).c_str());
 
             if (!ctype.empty() && !c.empty()) {
-                content.str                = c;
-                content.type               = ctype;
-                content.length             = c.length();
-                headers[HF_CONTENT_TYPE]   = ctype;
-                headers[HF_CONTENT_LENGTH] = c.length();
+                content.str    = c;
+                content.type   = ctype;
+                content.length = c.length();
+                if (!headers.contains(HF_CONTENT_TYPE)) {
+                    headers[HF_CONTENT_TYPE] = content.type;
+                }
+                if (!headers.contains(HF_CONTENT_LENGTH)) {
+                    headers[HF_CONTENT_LENGTH] = content.length;
+                }
             }
 
             return *this;
         }
 
 
+        auto& setContent(const std::string& src)
+        {
+            content.str    = src;
+            content.length = src.length();
+            content.type   = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
+            if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content.length;
+            return *this;
+        }
+
         /// @brief Set the content to json
         /// @param c JSON content
         /// @return Self
-        auto& setContent(const nlohmann::json& c) { return setContent(CONTENT_APPLICATION_JSON, c.dump()); }
+        auto& setContent(const nlohmann::json& c)
+        {
+            // This allows us to handle such things as: application/json+custom
+            if (!headers.contains(HF_CONTENT_TYPE)) headers[HF_CONTENT_TYPE] = CONTENT_APPLICATION_JSON;
+
+            return setContent(headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON), c.dump());
+        }
     };
 } // namespace siddiqsoft
 #endif // !HTTP_FRAME_HPP

@@ -109,6 +109,7 @@ namespace siddiqsoft
             return *this;
         }
 
+
     protected:
         static bool parseStartLine(rest_response&               httpm,
                                    std::string::iterator&       bufferStart,
@@ -270,8 +271,21 @@ namespace siddiqsoft
                         // bufferStart will be left at the end of the header section
                         // so we can use this as our starting point for the body..
                         srcBuffer.erase(srcBuffer.begin(), startIterator);
-                        lastLine = __LINE__;
-                        resp.setContent(srcBuffer);
+
+                        if (!srcBuffer.empty()) {
+                            // What type of content do we have?
+                            lastLine = __LINE__;
+                            if (resp.getHeaders().value(HF_CONTENT_TYPE, "").starts_with(CONTENT_APPLICATION_JSON)) {
+                                lastLine = __LINE__;
+                                auto doc = nlohmann::json::parse(srcBuffer);
+                                lastLine = __LINE__;
+                                resp.setContent(doc);
+                            }
+                            else {
+                                lastLine = __LINE__;
+                                resp.setContent(resp.getHeaders().value("Content-Type", ""), srcBuffer);
+                            }
+                        }
                     }
                 }
             }

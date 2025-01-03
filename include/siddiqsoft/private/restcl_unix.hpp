@@ -115,9 +115,7 @@ namespace siddiqsoft
             // method completes the lifetime of the object ends;
             // typically this is *after* we invoke the callback.
             try {
-                if (!arg.request.headers.contains("Connection")) {
-                    arg.request.headers["Connection"] = "Keep-Alive";
-                }
+                if (!arg.request.getHeaders().contains("Connection")) arg.request.setHeaders({{"Connection", "Keep-Alive"}});
 
                 dispatchCallback(arg.callback, arg.request, send(arg.request));
             }
@@ -271,7 +269,12 @@ namespace siddiqsoft
                         ioConnect++;
                         if (rc = BIO_do_handshake(io.get()); rc == 1) {
                             // Send the request..
-                            rc = BIO_puts(io.get(), req.encode().c_str());
+                            std::string requestString = req.encode();
+
+                            std::cerr << "------------#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n"
+                                      << requestString << "\n------------#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n";
+                            
+                            rc = BIO_puts(io.get(), requestString.c_str());
                             ioSend += (rc > -1);
                             ioSendFailed += (rc <= 0);
 
@@ -299,7 +302,8 @@ namespace siddiqsoft
                             // stringstream
                             ioRead++;
                             std::string buffer = responseBuffer.str();
-                            std::clog << buffer << std::endl;
+                            std::cerr << "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n"
+                                      << buffer << "\n#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n";
                             return rest_response::parse(buffer);
                         }
                         else {
