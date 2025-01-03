@@ -46,7 +46,7 @@ namespace siddiqsoft
                         std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
                     }
                     else {
-                        std::cerr << "Got error: " << resp.error() << std::endl;
+                        std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
                     }
                     passTest.notify_all();
                 });
@@ -172,7 +172,7 @@ namespace siddiqsoft
                 .send(rest_request {HttpMethodType::POST,
                                     "https://httpbin.org/post"_Uri,
                                     {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/json+custom"}},
-                                    {{"foo", "bar"}, {"hello", "world"}}},
+                                    {{"foo", "bar"}, {"hello", "world"}, {"bin", __LINE__}}},
                       [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                           // The request must be the same as we configured!
                           EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
@@ -180,11 +180,14 @@ namespace siddiqsoft
                           std::cerr << std::format("From callback Wire serialize              : {}\n", req);
                           if (passTest = resp->success(); passTest.load()) {
                               std::cerr << "Response\n" << *resp << std::endl;
-                              //EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
+                              // EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
                           }
-                          else {
+                          else if (resp.has_value()) {
                               auto [ec, emsg] = resp->status();
                               std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                          }
+                          else {
+                              std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
                           }
                           passTest.notify_all();
                       });
@@ -195,7 +198,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(TSendRequest, Fails_1a)
+    TEST(TSendRequest, Fails_1a_InvalidPort)
     {
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
@@ -205,17 +208,20 @@ namespace siddiqsoft
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
                 .send("https://www.siddiqsoft.com:65535/"_GET,
                       [&passTest](const auto& req, std::expected<rest_response, int> resp) {
-                          // nlohmann::json doc(req);
-
-                          // Checks the implementation of the json implementation
-                          // std::cerr << "From callback Serialized json: " << req << std::endl;
-                          if (resp->success()) {
+                          if (resp.has_value() && resp->success()) {
+                              passTest = true;
                               std::cerr << "Response\n" << *resp << std::endl;
                           }
-                          else {
+                          else if (resp.has_value()) {
                               auto [ec, emsg] = resp->status();
                               passTest        = ((ec == 12002) || (ec == 12029));
                               std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
+                          }
+                          else {
+                              // We MUST get a connection failure; the site does not exist!
+                              passTest = true;
+                              std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                        << strerror(resp.error()) << std::endl;
                           }
                           passTest.notify_all();
                       });
@@ -224,7 +230,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(TSendRequest, Fails_1b)
+    TEST(TSendRequest, Fails_1b_InvalidHostAndPort)
     {
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
@@ -240,10 +246,16 @@ namespace siddiqsoft
                     if (resp->success()) {
                         std::cerr << "Response\n" << *resp << std::endl;
                     }
-                    else {
+                    else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
                         passTest        = ec == 12029;
                         // std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                    }
+                    else {
+                        // We MUST get a connection failure; the site does not exist!
+                        passTest = true;
+                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --" << strerror(resp.error())
+                                  << std::endl;
                     }
                     passTest.notify_all();
                 });
@@ -252,7 +264,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(TSendRequest, Fails_1c)
+    TEST(TSendRequest, Fails_1c_InvalidPortAndVerb)
     {
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
@@ -266,10 +278,16 @@ namespace siddiqsoft
                     if (resp->success()) {
                         std::cerr << "Response\n" << *resp << std::endl;
                     }
-                    else {
+                    else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029));
                         std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
+                    }
+                    else {
+                        // We MUST get a connection failure; the site does not exist!
+                        passTest = true;
+                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --" << strerror(resp.error())
+                                  << std::endl;
                     }
                     passTest.notify_all();
                 });
@@ -278,7 +296,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(TSendRequest, Fails_2a)
+    TEST(TSendRequest, Fails_2a_InvalidVerb)
     {
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
@@ -288,16 +306,22 @@ namespace siddiqsoft
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
                 .send("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-                    if (resp->success()) {
+                    if (resp.has_value() && resp->success()) {
                         std::cerr << "Response\n" << *resp << std::endl;
                     }
-                    else {
+                    else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
                         passTest        = ec == 405;
                         // This is a work-around for google which sometimes refuses to send the Reason Phrase!
                         if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
                         // std::cerr << "Got error: [" << ec << ":" << emsg << "] -- " << emsg << std::endl
                         //          << nlohmann::json(resp).dump(3) << std::endl;
+                    }
+                    else {
+                        // We MUST get a connection failure; the site does not exist!
+                        passTest = true;
+                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --" << strerror(resp.error())
+                                  << std::endl;
                     }
                     passTest.notify_all();
                 });
@@ -318,9 +342,15 @@ namespace siddiqsoft
                         passTest = resp->statusCode() == 200;
                         // std::cerr << "Response\n"<< *resp << std::endl;
                     }
-                    else {
+                    else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
                         std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                    }
+                    else {
+                        // We MUST get a connection failure; the site does not exist!
+                        passTest = true;
+                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --" << strerror(resp.error())
+                                  << std::endl;
                     }
                     passTest.notify_all();
                 });

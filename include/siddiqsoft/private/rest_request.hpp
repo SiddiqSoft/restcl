@@ -89,7 +89,7 @@ namespace siddiqsoft
                 throw std::invalid_argument("Missing content body when content type is present!");
 
             // Request Line
-            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", method, uri, protocol);
+            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", method, uri.urlPart, protocol);
 
             // Headers..
             encodeHeaders_to(rs);
