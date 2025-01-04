@@ -50,6 +50,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     target_link_libraries(${TESTPROJ} PRIVATE
                             GTest::gtest_main
                             nlohmann_json::nlohmann_json
+                            CURL::libcurl
                             OpenSSL::SSL
                             OpenSSL::Crypto
                             RunOnEnd::RunOnEnd

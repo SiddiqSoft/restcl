@@ -51,6 +51,10 @@ set( CMAKE_CXX_EXTENSIONS Off)
                         
 # ____________________________________
 # Dependencies
+find_package(CURL 8.7 REQUIRED)
+include_directories(${CURL_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} INTERFACE CURL::libcurl)
+
 find_package(OpenSSL 3.0 REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} INTERFACE OpenSSL::SSL OpenSSL::Crypto)
