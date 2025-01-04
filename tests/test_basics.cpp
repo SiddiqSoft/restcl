@@ -82,7 +82,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(Validate, test1)
+    TEST(Validation, test1)
     {
         auto r1 = "https://www.siddiqsoft.com:65535/"_GET;
         EXPECT_EQ(HttpMethodType::GET, r1.getMethod());
@@ -106,5 +106,31 @@ namespace siddiqsoft
         nlohmann::json doc {r3};
         std::cerr << "Serialized (encoded): " << r3 << std::endl;
         std::cerr << "Serialized (json'd) : " << doc.dump(2) << std::endl;
+    }
+
+    TEST(Validation, test_positive_google_com)
+    {
+        std::atomic_bool passTest = false;
+        restcl           wrc;
+
+        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
+                .send("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                    if (resp && resp->success()) {
+                        passTest = true;
+                        // std::cerr << "Response\n" << *resp << std::endl;
+                    }
+                    else if (resp) {
+                        auto [ec, emsg] = resp->status();
+                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
+                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                    }
+                    else {
+                        std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
+                    }
+                    passTest.notify_all();
+                });
+
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
     }
 } // namespace siddiqsoft

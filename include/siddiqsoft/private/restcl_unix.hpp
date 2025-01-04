@@ -14,6 +14,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <openssl/bio.h>
+#include <sstream>
 #include <system_error>
 #if defined(__linux__) || defined(__APPLE__) || defined(FORCE_USE_OPENSSL)
 
@@ -35,7 +36,7 @@
 #include <semaphore>
 #include <stop_token>
 #include <expected>
-
+#include <sstream>
 
 #include "nlohmann/json.hpp"
 
@@ -125,75 +126,87 @@ namespace siddiqsoft
             }
             catch (std::exception& ex) {
                 callbackFailed++;
-                std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
-                                         "******************************************\n",
-                                         callbackAttempt.load(),
-                                         ex.what());
+                // std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
+                //                          "******************************************\n",
+                //                          callbackAttempt.load(),
+                //                          ex.what());
             }
         }};
 
         /*
-                void recv()
-                {
-                    bool     readOk              = false;
-                    bool     doneReading         = false;
-                    uint32_t nReadCounter        = 0;
-                    uint32_t nZeroReadCounter    = 0;
-                    uint32_t sslret              = 0;
-                    uint32_t bytesRead           = 0;
-                    uint32_t readOffset          = 0;
-                    uint32_t remainingBufferSize = 0;
+        std::expected<std::string, int> recvFromConnection(const rest_request& req)
+        {
+            bool                                                                 readOk {false};
+            bool                                                                 doneReading {false};
+            uint32_t                                                             nReadCounter {0};
+            uint32_t                                                             nZeroReadCounter {0};
+            uint32_t                                                             sslret {0};
+            uint32_t                                                             bytesRead {0};
+            std::array<char, READBUFFERSIZE + (sizeof(uint64_t) / sizeof(char))> ioBuffer {};
+            std::stringstream                                                    finalBuffer {};
 
-                    do {
-                        nReadCounter++;
-                        remainingBufferSize = sizeof(char) * (READBUFFERSIZE - readOffset);
-                        if (sslCtx.get() == nullptr) break;
-                        sslret = SSL_read(sslCtx.get(), _buff.data() + readOffset, remainingBufferSize);
-                        if (sslret <= 0) {
-                            sslret = SSL_get_error(sslCtx.get(), sslret);
-                            switch (sslret) {
-                                case SSL_ERROR_NONE: {
-                                    doneReading = true;
-                                } break;
-                                case SSL_ERROR_WANT_READ: {
-                                    if (nReadCounter > MAX_SAME_READ_FROM_SSL_THRESHOLD) doneReading = true;
-                                } break;
-                                case SSL_ERROR_WANT_WRITE: {
-                                    doneReading = true;
-                                } break;
-                                case SSL_ERROR_ZERO_RETURN: {
-                                    doneReading = true;
-                                } break;
-                                case SSL_ERROR_SYSCALL: {
-                                    doneReading = true;
-                                } break;
-                                default: {
-                                    readOk      = false;
-                                    doneReading = true;
-                                }
-                            }
-                        }
-                        else if ((nReadCounter == 1) && (sslret > 0) && (sslret < READBUFFERSIZE)) {
-                            _buff.at(sslret) = '\0';
-                            readOffset += sslret;
+
+            if (sslCtx.get() == nullptr) return std::unexpected(EBUSY);
+            auto destinationHost = req.getHost();
+
+            sslret               = SSL_connect(sslCtx.get());
+            sslret               = SSL_do_handshake(sslCtx.get());
+
+            do {
+                nReadCounter++;
+                // Check if the context is valid; otherwise we're done
+                if (sslCtx.get() == nullptr) break;
+
+                sslret = SSL_read(sslCtx.get(), ioBuffer.data(), READBUFFERSIZE);
+                if (sslret <= 0) {
+                    sslret = SSL_get_error(sslCtx.get(), sslret);
+                    std::cerr << std::format("", __func__, sslret, nReadCounter);
+                    switch (sslret) {
+                        case SSL_ERROR_NONE: {
                             doneReading = true;
-                            readOk      = true;
-                            break;
+                        } break;
+                        case SSL_ERROR_WANT_READ: {
+                            if (nReadCounter > MAX_SAME_READ_FROM_SSL_THRESHOLD) doneReading = true;
+                        } break;
+                        case SSL_ERROR_WANT_WRITE: {
+                            doneReading = true;
+                        } break;
+                        case SSL_ERROR_ZERO_RETURN: {
+                            doneReading = true;
+                        } break;
+                        case SSL_ERROR_SYSCALL: {
+                            doneReading = true;
+                        } break;
+                        default: {
+                            readOk      = false;
+                            doneReading = true;
                         }
-                        else if (sslret > 0) {
-                            readOffset += sslret;
-                            readOk = true;
-                        }
-                        else if (sslret == 0) {
-                            ++nZeroReadCounter;
-                            if (nZeroReadCounter > MAX_ZERO_READ_FROM_SSL_THRESHOLD) {
-                                doneReading = true;
-                                readOk      = false;
-                            }
-                        }
-                    } while (!doneReading && (readOffset < READBUFFERSIZE));
+                    }
                 }
+                else if ((nReadCounter == 1) && (sslret > 0) && (sslret < READBUFFERSIZE)) {
+                    ioBuffer.at(sslret) = '\0';
+                    finalBuffer << ioBuffer;
+                    doneReading = true;
+                    readOk      = true;
+                    break;
+                }
+                else if (sslret > 0) {
+                    finalBuffer << ioBuffer;
+                    readOk = true;
+                }
+                else if (sslret == 0) {
+                    ++nZeroReadCounter;
+                    if (nZeroReadCounter > MAX_ZERO_READ_FROM_SSL_THRESHOLD) {
+                        doneReading = true;
+                        readOk      = false;
+                    }
+                }
+            } while (!doneReading);
+
+            return finalBuffer.str();
+        }
         */
+        
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
@@ -271,9 +284,9 @@ namespace siddiqsoft
                             // Send the request..
                             std::string requestString = req.encode();
 
-                            std::cerr << "------------#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n"
-                                      << requestString << "\n------------#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n";
-                            
+                            // std::cerr << "------------#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n"
+                            //           << requestString << "\n------------#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n";
+
                             rc = BIO_puts(io.get(), requestString.c_str());
                             ioSend += (rc > -1);
                             ioSendFailed += (rc <= 0);
@@ -294,16 +307,23 @@ namespace siddiqsoft
                                     responseBuffer << std::string {iobuff.data(), len};
                                 }
                                 // Check if we have any more data to read..
+                                rc       = BIO_should_retry(io.get());
                                 moreData = BIO_pending(io.get());
+                                std::cerr << std::format("{} - ioReadAttempt:{}  len:{}  rc:{}  moreData:{}\n",
+                                                         __func__,
+                                                         ioReadAttempt.load(),
+                                                         len,
+                                                         rc,
+                                                         moreData);
                                 if (moreData == 0) break;
-                            } while ((len > 0) || BIO_should_retry(io.get()));
+                            } while ((len > 0) || rc);
 
                             // wasted performance! we must update the parse to use
                             // stringstream
                             ioRead++;
                             std::string buffer = responseBuffer.str();
-                            std::cerr << "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n"
-                                      << buffer << "\n#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n";
+                            // std::cerr << "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n"
+                            //           << buffer << "\n#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n";
                             return rest_response::parse(buffer);
                         }
                         else {
