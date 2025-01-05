@@ -45,14 +45,14 @@
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
 #include "openssl_helpers.hpp"
-
+#include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/conversion-utils.hpp"
 
 #include "siddiqsoft/simple_pool.hpp"
 
-#include "openssl/ssl.h"
-
+#include "curl/curl.h"
+#include "libcurl_helpers.hpp"
 
 namespace siddiqsoft
 {
@@ -60,7 +60,7 @@ namespace siddiqsoft
      * @brief Global singleton for this library users OpenSSL library entry point
      *
      */
-    static LibSSLSingleton g_ossl;
+    static LibCurlSingleton g_ossl;
 
     /// @brief Unix implementation of the basic_restclient
     class HttpRESTClient : public basic_restclient
@@ -74,9 +74,9 @@ namespace siddiqsoft
         static const uint32_t     MAX_SAME_READ_FROM_SSL_THRESHOLD = 10;
         static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
 
-        bool                     isInitialized {false};
-        std::once_flag           hrcInitFlag {};
-        std::shared_ptr<SSL_CTX> sslCtx {};
+        bool                  isInitialized {false};
+        std::once_flag        hrcInitFlag {};
+        std::shared_ptr<CURL> sslCtx {};
 
     protected:
         std::atomic_uint64_t ioAttempt {0};
@@ -133,80 +133,7 @@ namespace siddiqsoft
             }
         }};
 
-        /*
-        std::expected<std::string, int> recvFromConnection(const rest_request& req)
-        {
-            bool                                                                 readOk {false};
-            bool                                                                 doneReading {false};
-            uint32_t                                                             nReadCounter {0};
-            uint32_t                                                             nZeroReadCounter {0};
-            uint32_t                                                             sslret {0};
-            uint32_t                                                             bytesRead {0};
-            std::array<char, READBUFFERSIZE + (sizeof(uint64_t) / sizeof(char))> ioBuffer {};
-            std::stringstream                                                    finalBuffer {};
 
-
-            if (sslCtx.get() == nullptr) return std::unexpected(EBUSY);
-            auto destinationHost = req.getHost();
-
-            sslret               = SSL_connect(sslCtx.get());
-            sslret               = SSL_do_handshake(sslCtx.get());
-
-            do {
-                nReadCounter++;
-                // Check if the context is valid; otherwise we're done
-                if (sslCtx.get() == nullptr) break;
-
-                sslret = SSL_read(sslCtx.get(), ioBuffer.data(), READBUFFERSIZE);
-                if (sslret <= 0) {
-                    sslret = SSL_get_error(sslCtx.get(), sslret);
-                    std::cerr << std::format("", __func__, sslret, nReadCounter);
-                    switch (sslret) {
-                        case SSL_ERROR_NONE: {
-                            doneReading = true;
-                        } break;
-                        case SSL_ERROR_WANT_READ: {
-                            if (nReadCounter > MAX_SAME_READ_FROM_SSL_THRESHOLD) doneReading = true;
-                        } break;
-                        case SSL_ERROR_WANT_WRITE: {
-                            doneReading = true;
-                        } break;
-                        case SSL_ERROR_ZERO_RETURN: {
-                            doneReading = true;
-                        } break;
-                        case SSL_ERROR_SYSCALL: {
-                            doneReading = true;
-                        } break;
-                        default: {
-                            readOk      = false;
-                            doneReading = true;
-                        }
-                    }
-                }
-                else if ((nReadCounter == 1) && (sslret > 0) && (sslret < READBUFFERSIZE)) {
-                    ioBuffer.at(sslret) = '\0';
-                    finalBuffer << ioBuffer;
-                    doneReading = true;
-                    readOk      = true;
-                    break;
-                }
-                else if (sslret > 0) {
-                    finalBuffer << ioBuffer;
-                    readOk = true;
-                }
-                else if (sslret == 0) {
-                    ++nZeroReadCounter;
-                    if (nZeroReadCounter > MAX_ZERO_READ_FROM_SSL_THRESHOLD) {
-                        doneReading = true;
-                        readOk      = false;
-                    }
-                }
-            } while (!doneReading);
-
-            return finalBuffer.str();
-        }
-        */
-        
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
@@ -237,9 +164,7 @@ namespace siddiqsoft
             // Grab a context (configure and initialize)
             std::call_once(hrcInitFlag, [&]() {
                 // The SSL CTX is released when this client object goes out of scope.
-                if (sslCtx = g_ossl.configure().start().getCTX(); sslCtx) {
-                    // Configure the SSL library level options here..
-                    SSL_CTX_set_options(sslCtx.get(), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+                if (sslCtx = g_ossl.configure().start().getEasyHandle(); sslCtx) {
                     isInitialized = true;
                 }
             });
@@ -269,82 +194,42 @@ namespace siddiqsoft
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
         [[nodiscard]] std::expected<rest_response, int> send(const rest_request& req) override
         {
-            auto rc {0};
+            CURLcode rc {};
 
             if (!isInitialized) return std::unexpected(EBUSY);
 
             auto destinationHost = req.getHost();
 
-            if (std::unique_ptr<BIO, decltype(&BIO_free_all)> io(BIO_new_ssl_connect(sslCtx.get()), &BIO_free_all); io) {
+            std::cerr << std::format("{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json {req}.dump(3));
+
+            if (sslCtx && !destinationHost.empty()) {
                 ioAttempt++;
-                if (rc = BIO_set_conn_hostname(io.get(), destinationHost.c_str()); rc == 1) {
-                    if (rc = BIO_do_connect(io.get()); rc == 1) {
-                        ioConnect++;
-                        if (rc = BIO_do_handshake(io.get()); rc == 1) {
-                            // Send the request..
-                            std::string requestString = req.encode();
+                if (req.getMethod() == HttpMethodType::GET) {
+                    curl_easy_setopt(sslCtx.get(), CURLOPT_URL, req.getUri().string().c_str());
+                }
+                else if (req.getMethod() == HttpMethodType::POST) {
+                    curl_easy_setopt(sslCtx.get(), CURLOPT_URL, req.getUri().string().c_str());
+                    curl_easy_setopt(sslCtx.get(), CURLOPT_POST, 1L);
+                }
+                
+#if defined(DEBUG) || defined(_DEBUG)
+                curl_easy_setopt(sslCtx.get(), CURLOPT_VERBOSE, 1L);
+#endif
 
-                            // std::cerr << "------------#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n"
-                            //           << requestString << "\n------------#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n";
-
-                            rc = BIO_puts(io.get(), requestString.c_str());
-                            ioSend += (rc > -1);
-                            ioSendFailed += (rc <= 0);
-
-                            uint32_t          len {0};
-                            uint32_t          moreData {0};
-                            std::stringstream responseBuffer {};
-                            do {
-                                std::array<char, READBUFFERSIZE> iobuff {};
-                                ioReadAttempt++;
-
-                                // Read..
-                                len = BIO_read(io.get(), iobuff.data(), iobuff.size());
-                                if (len > 0) {
-                                    // Pad with nul if we're less then capacity
-                                    if (len < _buff.size()) iobuff.at(len) = '\0';
-                                    // responseBuffer.write(iobuff.data(), len);
-                                    responseBuffer << std::string {iobuff.data(), len};
-                                }
-                                // Check if we have any more data to read..
-                                rc       = BIO_should_retry(io.get());
-                                moreData = BIO_pending(io.get());
-                                std::cerr << std::format("{} - ioReadAttempt:{}  len:{}  rc:{}  moreData:{}\n",
-                                                         __func__,
-                                                         ioReadAttempt.load(),
-                                                         len,
-                                                         rc,
-                                                         moreData);
-                                if (moreData == 0) break;
-                            } while ((len > 0) || rc);
-
-                            // wasted performance! we must update the parse to use
-                            // stringstream
-                            ioRead++;
-                            std::string buffer = responseBuffer.str();
-                            // std::cerr << "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n"
-                            //           << buffer << "\n#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-\n";
-                            return rest_response::parse(buffer);
-                        }
-                        else {
-                            ioConnectFailed++;
-                            std::cerr << std::format("{}:BIO_do_handshake failed to {}; rc:{}", __func__, destinationHost, rc);
-                            return std::unexpected(ECONNREFUSED);
-                        }
-                    }
-                    else {
-                        std::cerr << std::format("{}:BIO_do_connect failed to {}; rc:{}", __func__, destinationHost, rc);
-                        return std::unexpected(ECONNREFUSED);
-                    }
+                // Send the request..
+                if (rc = curl_easy_perform(sslCtx.get()); rc == CURLE_OK) {
+                    ioSend++;
+                    // std::cerr << "()()())()()()()()()()()()()()()()()()()()()()\n";
+                    return rest_response {};
                 }
                 else {
-                    std::cerr << std::format("{}:BIO_set_conn_hostname failed to {}; rc:{}", __func__, destinationHost, rc);
-                    return std::unexpected(EHOSTUNREACH);
+                    ioSendFailed++;
+                    std::cerr << std::format("{}:curl_easy_perform() failed:{}\n", __func__, curl_easy_strerror(rc));
+                    return std::unexpected(rc);
                 }
             }
             else {
                 ioAttemptFailed++;
-                std::cerr << std::format("{}:BIO_new_ssl_connect Failed SSL/BIO to {}", __func__, destinationHost);
                 return std::unexpected(ENETUNREACH);
             }
 

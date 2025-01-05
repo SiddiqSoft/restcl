@@ -41,7 +41,7 @@
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
-
+#include "curl/curl.h"
 
 namespace siddiqsoft
 {
@@ -126,6 +126,60 @@ namespace siddiqsoft
                     }
                     else {
                         std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
+                    }
+                    passTest.notify_all();
+                });
+
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
+    }
+
+    TEST(Validation, test_positive_bing_com)
+    {
+        std::atomic_bool passTest = false;
+        restcl           wrc;
+
+        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
+                .send("https://www.bing.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                    if (resp && resp->success()) {
+                        passTest = true;
+                        // std::cerr << "Response\n" << *resp << std::endl;
+                    }
+                    else if (resp) {
+                        auto [ec, emsg] = resp->status();
+                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
+                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                    }
+                    else {
+                        passTest = true;
+                        std::cerr << std::format("{}: failed:{}\n", __func__, resp.error());
+                    }
+                    passTest.notify_all();
+                });
+
+        passTest.wait(false);
+        EXPECT_TRUE(passTest.load());
+    }
+
+    TEST(Validation, test_positive_httpbin)
+    {
+        std::atomic_bool passTest = false;
+        restcl           wrc;
+
+        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
+                .send("https://httpbin.org/post"_POST, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                    if (resp && resp->success()) {
+                        passTest = true;
+                        // std::cerr << "Response\n" << *resp << std::endl;
+                    }
+                    else if (resp) {
+                        auto [ec, emsg] = resp->status();
+                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
+                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                    }
+                    else {
+                        passTest = true;
+                        std::cerr << std::format("{}: failed:{}\n", __func__, resp.error());
                     }
                     passTest.notify_all();
                 });

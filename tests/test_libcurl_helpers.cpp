@@ -16,6 +16,8 @@ namespace siddiqsoft
         // configure
         // start
         // get a context object
+        ossl.configure().start();
+        
         EXPECT_NO_THROW({
             auto ctx = ossl.getEasyHandle();
             EXPECT_TRUE(ctx);

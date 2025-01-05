@@ -42,6 +42,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                     ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_basics.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_http2json.cpp
+                    ${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp)
 
     # Dependencies
