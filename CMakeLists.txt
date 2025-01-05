@@ -51,13 +51,16 @@ set( CMAKE_CXX_EXTENSIONS Off)
                         
 # ____________________________________
 # Dependencies
-find_package(CURL 8.7 REQUIRED)
-include_directories(${CURL_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} INTERFACE CURL::libcurl)
+if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
+        OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu])))
+    find_package(CURL REQUIRED)
+    include_directories(${CURL_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} INTERFACE CURL::libcurl)
 
-find_package(OpenSSL 3.0 REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+    find_package(OpenSSL 3.0 REQUIRED)
+    include_directories(${OPENSSL_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+endif()
 
 CPMAddPackage("gh:nlohmann/json#v3.11.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
