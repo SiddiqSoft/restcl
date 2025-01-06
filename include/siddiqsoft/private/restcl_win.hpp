@@ -10,7 +10,7 @@
  */
 
 #pragma once
-#if (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)) && !defined (FORCE_USE_OPENSSL)
+#if (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)) && !defined(FORCE_USE_OPENSSL)
 
 #ifndef RESTCL_WIN_HPP
 #define RESTCL_WIN_HPP
@@ -227,11 +227,13 @@ namespace siddiqsoft
         }};
 
     public:
+        WinHttpRESTClient()                                    = default;
         WinHttpRESTClient(const WinHttpRESTClient&)            = delete;
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
-        WinHttpRESTClient& configure(const std::string ua...)
+        basic_restclient& configure(const std::string& ua, basic_callbacktype&& cb = {}) override
         {
+            callback   = std::move(cb);
             UserAgent  = ua;
             UserAgentW = ConversionUtils::convert_to<char, wchar_t>(ua);
 
@@ -259,11 +261,6 @@ namespace siddiqsoft
                 }
             }
 
-            va_list args;
-            va_start(args, ua);
-            callback = std::move(va_args(args, basic_callbacktype));
-            va_end(args);
-
             return *this;
         }
 
@@ -282,25 +279,26 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(rest_request&& req) override
-        {
-            pool.queue(RestPoolArgsType {std::move(req), callback});
-        }
+        void send(rest_request&& req) { pool.queue(RestPoolArgsType {std::move(req), callback}); }
 
 
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(rest_request&& req, basic_callbacktype&& callback)
+        void send(rest_request&& req, std::optional<basic_callbacktype> cb = std::nullopt) override
         {
-            pool.queue(RestPoolArgsType {std::move(req), std::move(callback)});
+            if (!callback && !cb.has_value())
+                throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
+                                            "configure() or provide callback at point of invocation.");
+
+            pool.queue(RestPoolArgsType {std::move(req), cb.has_value() ? cb.value() : callback});
         }
 
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] std::tuple<int,rest_response> send(const rest_request& req)
+        [[nodiscard]] std::expected<rest_response, int> send(rest_request& req)
         {
             rest_response resp {};
 
@@ -332,12 +330,11 @@ namespace siddiqsoft
             uint32_t nRetry {0}, nError {0};
             char     cBuf[READBUFFERSIZE] {};
             DWORD    dwFlagsSize = 0;
-            auto&    hs          = req["headers"]; // shortcut
-            auto&    rs          = req["request"]; // shortcut
 
             // First order - adjust the UserAgent
-            if (!hs.contains("User-Agent")) req["headers"]["User-Agent"] = UserAgent;
-            auto strUserAgent = hs.contains("User-Agent") ? hs.value("User-Agent", UserAgent) : UserAgent;
+            if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = UserAgent;
+            auto strUserAgent =
+                    req.getHeaders().contains("User-Agent") ? req.getHeaders().value("User-Agent", UserAgent) : UserAgent;
 
             if (hSession != NULL) {
                 auto& strServer = req.uri.authority.host;
@@ -345,9 +342,9 @@ namespace siddiqsoft
                             hSession, ConversionUtils::convert_to<char, wchar_t>(strServer).c_str(), req.uri.authority.port, 0)};
                     hConnect != NULL)
                 {
-                    auto strMethod  = rs.value("method", "");
-                    auto strUrl     = req.uri.urlPart;
-                    auto strVersion = rs.value("version", "");
+                    std::string strMethod  = to_string(req.getMethod());
+                    auto        strUrl     = req.uri.urlPart;
+                    std::string strVersion = to_string(req.getProtocol());
 
                     if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
                                                                     ConversionUtils::convert_to<char, wchar_t>(strMethod).c_str(),
@@ -360,10 +357,8 @@ namespace siddiqsoft
                                                                             : WINHTTP_FLAG_REFRESH)};
                         hRequest != NULL)
                     {
-                        auto        contentLength = hs.value("Content-Length", 0);
-                        std::string strHeaders;
-                        req.encodeHeaders_to(strHeaders);
-                        std::wstring requestHeaders = ConversionUtils::convert_to<char, wchar_t>(strHeaders);
+                        auto         contentLength  = req.getHeaders().value("Content-Length", 0);
+                        std::wstring requestHeaders = ConversionUtils::convert_to<char, wchar_t>(req.encodeHeaders());
                         nError                      = WinHttpAddRequestHeaders(hRequest,
                                                           requestHeaders.c_str(),
                                                           static_cast<DWORD>(requestHeaders.length()),
@@ -374,7 +369,7 @@ namespace siddiqsoft
                         nError = WinHttpSendRequest(hRequest,
                                                     WINHTTP_NO_ADDITIONAL_HEADERS,
                                                     0,
-                                                    contentLength > 0 ? LPVOID(req.getContent().c_str()) : NULL,
+                                                    contentLength > 0 ? LPVOID(req.encodeContent().c_str()) : NULL,
                                                     contentLength,
                                                     contentLength,
                                                     NULL);
@@ -386,7 +381,7 @@ namespace siddiqsoft
                                 nError = WinHttpSendRequest(hRequest,
                                                             WINHTTP_NO_ADDITIONAL_HEADERS,
                                                             0,
-                                                            contentLength > 0 ? LPVOID(req.getContent().c_str()) : NULL,
+                                                            contentLength > 0 ? LPVOID(req.encodeContent().c_str()) : NULL,
                                                             contentLength,
                                                             contentLength,
                                                             NULL);
@@ -441,19 +436,17 @@ namespace siddiqsoft
                                         // Decode the CRLF string into key-value elements.
                                         std::wstring src {lpOutBuffer.get(), dwSize};
 
-                                        size_t startOfHeaders    = std::string::npos;
-                                        std::tie(resp["response"]["version"],
-                                                 resp["response"]["status"],
-                                                 resp["response"]["reason"],
-                                                 startOfHeaders) = extractResponseLine(src);
+                                        auto [ver, status, reason, startOfHeaders] = extractResponseLine(src);
                                         src.erase(0, startOfHeaders);
+                                        resp.setStatus(status, reason);
+                                        resp.setProtocol(ver);
 
                                         // Parse the response into json object..
                                         // Extract the heads into a map<string,string> where the source is wstring and the
                                         // output is string This is then fed to the json which will create a headers object.
-                                        resp["headers"] =
+                                        resp.setHeaders(
                                                 string2map::parse<std::wstring, std::string, std::map<std::string, std::string>>(
-                                                        src, L": ", L"\r\n");
+                                                        src, L": ", L"\r\n"));
                                     }
                                 }
                             }
@@ -461,17 +454,17 @@ namespace siddiqsoft
 
                         // Next stage is to check for any errors and if none, get the body
                         if (dwError == ERROR_WINHTTP_NAME_NOT_RESOLVED) {
-                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
+                            return std::unexpected(static_cast<int>(dwError));
                         }
                         else if ((dwError == ERROR_WINHTTP_CANNOT_CONNECT) || (dwError == ERROR_WINHTTP_CONNECTION_ERROR) ||
                                  (dwError == ERROR_WINHTTP_OPERATION_CANCELLED) || (dwError == ERROR_WINHTTP_LOGIN_FAILURE) ||
                                  (dwError == ERROR_WINHTTP_INVALID_SERVER_RESPONSE) || (dwError == ERROR_WINHTTP_RESEND_REQUEST) ||
                                  (dwError == ERROR_WINHTTP_SECURE_FAILURE) || (dwError == ERROR_WINHTTP_TIMEOUT))
                         {
-                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
+                            return std::unexpected {static_cast<int>(dwError)};
                         }
                         else if (dwError == ERROR_WINHTTP_INVALID_URL) {
-                            return rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)};
+                            return std::unexpected {static_cast<int>(dwError)};
                         }
                         else if (dwError != ERROR_FILE_NOT_FOUND) {
                             nRetry = 0;
@@ -515,19 +508,19 @@ namespace siddiqsoft
                             return resp;
                         }
                         else {
-                            return {static_cast<int>(dwError),rest_response {static_cast<int>(dwError), messageFromWininetCode(dwError)}};
+                            return std::unexpected {static_cast<int>(dwError)};
                         }
                     }
                     else {
-                        return {hr,rest_response {hr, std::format("HttpOpenRequest() failed; dwError:{}", hr)}};
+                        return std::unexpected {static_cast<int>(hr)};
                     }
                 }
                 else {
-                    return {hr,rest_response {hr, std::format("WinHttpConnect() failed; dwError:{}", hr)}};
+                    return std::unexpected {static_cast<int>(hr)};
                 }
             }
             else {
-                return {hr,rest_response {hr, std::format("WinHttpOpen() failed; dwError:{}", hr)}};
+                return std::unexpected {static_cast<int>(hr)};
             }
         }
     };

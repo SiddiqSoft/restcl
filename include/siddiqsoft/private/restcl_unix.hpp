@@ -10,17 +10,17 @@
  */
 
 #pragma once
+#if defined(__linux__) || defined(__APPLE__)
+
+#ifndef RESTCL_UNIX_HPP
+#define RESTCL_UNIX_HPP
+
 #include <atomic>
 #include <cerrno>
 #include <cstdint>
 #include <openssl/bio.h>
 #include <sstream>
 #include <system_error>
-#if defined(__linux__) || defined(__APPLE__) || defined(FORCE_USE_OPENSSL)
-
-#ifndef RESTCL_UNIX_HPP
-#define RESTCL_UNIX_HPP
-
 #include <optional>
 #include <stdexcept>
 #include <iostream>
@@ -192,7 +192,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] std::expected<rest_response, int> send(const rest_request& req) override
+        [[nodiscard]] std::expected<rest_response, int> send(rest_request& req) override
         {
             CURLcode rc {};
 

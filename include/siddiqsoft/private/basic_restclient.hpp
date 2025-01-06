@@ -44,7 +44,7 @@ namespace siddiqsoft
         /// @brief Synchronous implementation of the IO
         /// @param req Request
         /// @return The response
-        [[nodiscard]] virtual std::expected<rest_response, int> send(const rest_request&) = 0;
+        [[nodiscard]] virtual std::expected<rest_response, int> send(rest_request&) = 0;
 
         /// @brief Asynchronous operation. The callback must be provided here or previously via the configure()
         /// @param req Request

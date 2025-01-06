@@ -173,8 +173,7 @@
       "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
       "inherits": "Windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "FORCE_USE_OPENSSL": "True"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {

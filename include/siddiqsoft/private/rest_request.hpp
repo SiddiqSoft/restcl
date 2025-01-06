@@ -118,7 +118,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_GET(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::GET);
+            rr.setMethod(HttpMethodType::METHOD_GET);
             rr.setUri(std::string {url, sz});
             return rr;
         }
@@ -126,7 +126,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_HEAD(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::HEAD);
+            rr.setMethod(HttpMethodType::METHOD_HEAD);
             rr.setUri(std::string {url, sz});
             return rr;
         }
@@ -134,7 +134,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_POST(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::POST);
+            rr.setMethod(HttpMethodType::METHOD_POST);
             rr.setUri(std::string {url, sz});
             return rr;
         }
@@ -142,7 +142,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_PUT(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::PUT);
+            rr.setMethod(HttpMethodType::METHOD_PUT);
             rr.setUri(std::string {url, sz});
             return rr;
         }
@@ -150,7 +150,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_DELETE(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::DELETE);
+            rr.setMethod(HttpMethodType::METHOD_DELETE);
             rr.setUri(std::string {url, sz});
             return rr;
         }
@@ -158,7 +158,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_CONNECT(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::CONNECT);
+            rr.setMethod(HttpMethodType::METHOD_CONNECT);
             rr.setUri(std::string {url, sz});
             return rr;
         }
@@ -166,7 +166,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_OPTIONS(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::OPTIONS);
+            rr.setMethod(HttpMethodType::METHOD_OPTIONS);
             rr.setUri(std::string {url, sz});
             return rr;
         }
@@ -174,7 +174,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_TRACE(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::TRACE);
+            rr.setMethod(HttpMethodType::METHOD_TRACE);
             rr.setUri(std::string {url, sz});
             return rr;
         }
@@ -182,7 +182,7 @@ namespace siddiqsoft
         [[nodiscard]] static rest_request operator""_PATCH(const char* url, size_t sz)
         {
             rest_request rr;
-            rr.setMethod(HttpMethodType::PATCH);
+            rr.setMethod(HttpMethodType::METHOD_PATCH);
             rr.setUri(std::string {url, sz});
             return rr;
         }

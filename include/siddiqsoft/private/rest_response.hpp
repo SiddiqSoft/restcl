@@ -126,7 +126,7 @@ namespace siddiqsoft
             if (found && (matchStartLine.size() >= 3)) {
                 // The regex is very precise and there is no chance we will end up here
                 // with an ill-formed (or unsupported) start-line.
-                if (isHttpVerb(matchStartLine[3]) != HttpMethodType::UNKNOWN) {
+                if (isHttpVerb(matchStartLine[3]) != HttpMethodType::METHOD_UNKNOWN) {
                     httpm.setMethod(matchStartLine[3].str()).setUri(matchStartLine[2].str()).setProtocol(matchStartLine[3].str());
                 }
                 else if (isHttpProtocol(matchStartLine[1]) != HttpProtocolVersionType::UNKNOWN) {

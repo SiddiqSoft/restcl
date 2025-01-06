@@ -84,19 +84,19 @@ namespace siddiqsoft
     TEST(Validation, test1)
     {
         auto r1 = "https://www.siddiqsoft.com:65535/"_GET;
-        EXPECT_EQ(HttpMethodType::GET, r1.getMethod());
+        EXPECT_EQ(HttpMethodType::METHOD_GET, r1.getMethod());
 #if defined(DEBUG)
         EXPECT_EQ(65535, r1.uri.authority.port);
 #endif
 
         auto r2 = "https://localhost:65535/"_GET;
-        EXPECT_EQ(HttpMethodType::GET, r2.getMethod());
+        EXPECT_EQ(HttpMethodType::METHOD_GET, r2.getMethod());
 #if defined(DEBUG)
         EXPECT_EQ(65535, r2.uri.authority.port);
 #endif
 
         auto r3 = "https://user.name@reqbin.com:9090/echo/post/json?source=Validate::test1&param=r3"_OPTIONS;
-        EXPECT_EQ(HttpMethodType::OPTIONS, r3.getMethod());
+        EXPECT_EQ(HttpMethodType::METHOD_OPTIONS, r3.getMethod());
 
 #if defined(DEBUG)
         EXPECT_EQ(9090, r3.uri.authority.port);

@@ -10,7 +10,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     target_compile_features(${TESTPROJ} PRIVATE cxx_std_23)
     target_compile_options( ${TESTPROJ}
                             PRIVATE
-                            $<$<CXX_COMPILER_ID:MSVC>:/std:c++23> )
+                            $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest> )
     target_compile_options( ${TESTPROJ}
                             PRIVATE
                             $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
@@ -31,11 +31,6 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         add_compile_definitions(${TESTPROJ} PRIVATE DEBUG=1 _DEBUG=1)
     endif()
 
-    if( FORCE_USE_OPENSSL MATCHES "True")
-        message(STATUS "Windows build; force using OpenSSL implementation.")
-        add_compile_definitions(${TESTPROJ} PRIVATE FORCE_USE_OPENSSL=True)
-    endif()
-
     # Dependencies
     cpmaddpackage("gh:google/googletest#v1.15.2")
 
@@ -44,18 +39,17 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                     ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_basics.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_http2json.cpp
-                    $<$<CXX_COMPILER_ID:GNU>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
-                    $<$<CXX_COMPILER_ID:Clang>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
+                    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
+                    #$<$<CXX_COMPILER_ID:Clang>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
                     ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp)
     # Link dependencies..
     target_link_libraries(${TESTPROJ} PRIVATE
             GTest::gtest_main
             nlohmann_json::nlohmann_json
-            $<$<CXX_COMPILER_ID:Clang>:CURL::libcurl>
-            $<$<CXX_COMPILER_ID:GNU>:CURL::libcurl>
+            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:CURL::libcurl>
             $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
-            OpenSSL::SSL
-            OpenSSL::Crypto
+            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:OpenSSL::SSL>
+            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:OpenSSL::Crypto>
             RunOnEnd::RunOnEnd
             SplitUri::SplitUri
             string2map::string2map

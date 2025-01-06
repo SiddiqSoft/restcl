@@ -62,6 +62,7 @@ namespace siddiqsoft
     /// Essentially we're a convenience wrapper on the rest_request.
     class http_frame
     {
+    public:
         /**
          * @brief Store the Content-Type, Content-Length and the serialized content
          *
@@ -118,7 +119,7 @@ namespace siddiqsoft
                 if (v == fragment) return i;
             }
 
-            return HttpMethodType::UNKNOWN;
+            return HttpMethodType::METHOD_UNKNOWN;
         }
 
     public:
@@ -183,7 +184,7 @@ namespace siddiqsoft
             return *this;
         }
 
-        auto& getHeaders() const { return headers; }
+        nlohmann::json& getHeaders() { return headers; }
 
     protected:
         /// @brief Encode the headers to the given argument
@@ -212,6 +213,14 @@ namespace siddiqsoft
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.
         /// @return String
         [[nodiscard]] virtual std::string encode() const = 0;
+
+        [[nodiscard]] std::string encodeHeaders() const
+        {
+            std::string hs {};
+            encodeHeaders_to(hs);
+            return hs;
+        }
+
 
         auto getHost() const { return headers["Host"].template get<std::string>(); }
 
@@ -250,6 +259,10 @@ namespace siddiqsoft
             if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content.length;
             return *this;
         }
+
+        ContentType& getContent() { return content; }
+
+        [[nodiscard]] auto encodeContent() const { return content.str; }
 
         /// @brief Set the content to json
         /// @param c JSON content

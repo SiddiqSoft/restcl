@@ -73,39 +73,39 @@ namespace siddiqsoft
 
     enum class HttpMethodType
     {
-        UNKNOWN,
-        GET,
-        HEAD,
-        POST,
-        PUT,
-        DELETE,
-        CONNECT,
-        OPTIONS,
-        TRACE,
-        PATCH
+        METHOD_GET,
+        METHOD_HEAD,
+        METHOD_POST,
+        METHOD_PUT,
+        METHOD_DELETE,
+        METHOD_CONNECT,
+        METHOD_OPTIONS,
+        METHOD_TRACE,
+        METHOD_PATCH,
+        METHOD_UNKNOWN
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(HttpMethodType,
-                                 {{HttpMethodType::UNKNOWN, "UNKNOWN"},
-                                  {HttpMethodType::GET, "GET"},
-                                  {HttpMethodType::HEAD, "HEAD"},
-                                  {HttpMethodType::POST, "POST"},
-                                  {HttpMethodType::PUT, "PUT"},
-                                  {HttpMethodType::DELETE, "DELETE"},
-                                  {HttpMethodType::CONNECT, "CONNECT"},
-                                  {HttpMethodType::TRACE, "TRACE"},
-                                  {HttpMethodType::PATCH, "PATCH"},
-                                  {HttpMethodType::OPTIONS, "OPTIONS"}});
+                                 {{HttpMethodType::METHOD_UNKNOWN, "UNKNOWN"},
+                                  {HttpMethodType::METHOD_GET, "GET"},
+                                  {HttpMethodType::METHOD_HEAD, "HEAD"},
+                                  {HttpMethodType::METHOD_POST, "POST"},
+                                  {HttpMethodType::METHOD_PUT, "PUT"},
+                                  {HttpMethodType::METHOD_DELETE, "DELETE"},
+                                  {HttpMethodType::METHOD_CONNECT, "CONNECT"},
+                                  {HttpMethodType::METHOD_TRACE, "TRACE"},
+                                  {HttpMethodType::METHOD_PATCH, "PATCH"},
+                                  {HttpMethodType::METHOD_OPTIONS, "OPTIONS"}});
 
     /// @brief HTTP Protocol version: Http2, Http11 and Http3
-    static const std::map<HttpMethodType, std::string> HttpVerbs {{HttpMethodType::GET, "GET"},
-                                                                  {HttpMethodType::HEAD, "HEAD"},
-                                                                  {HttpMethodType::POST, "POST"},
-                                                                  {HttpMethodType::PUT, "PUT"},
-                                                                  {HttpMethodType::DELETE, "DELETE"},
-                                                                  {HttpMethodType::CONNECT, "CONNECT"},
-                                                                  {HttpMethodType::OPTIONS, "OPTIONS"},
-                                                                  {HttpMethodType::TRACE, "TRACE"},
-                                                                  {HttpMethodType::PATCH, "PATCH"}};
+    static const std::map<HttpMethodType, std::string> HttpVerbs {{HttpMethodType::METHOD_GET, "GET"},
+                                                                  {HttpMethodType::METHOD_HEAD, "HEAD"},
+                                                                  {HttpMethodType::METHOD_POST, "POST"},
+                                                                  {HttpMethodType::METHOD_PUT, "PUT"},
+                                                                  {HttpMethodType::METHOD_DELETE, "DELETE"},
+                                                                  {HttpMethodType::METHOD_CONNECT, "CONNECT"},
+                                                                  {HttpMethodType::METHOD_OPTIONS, "OPTIONS"},
+                                                                  {HttpMethodType::METHOD_TRACE, "TRACE"},
+                                                                  {HttpMethodType::METHOD_PATCH, "PATCH"}};
 
     static const std::string HF_CONTENT_LENGTH {"Content-Length"};
     static const std::string HF_CONTENT_TYPE {"Content-Type"};
@@ -117,6 +117,33 @@ namespace siddiqsoft
     static const std::string CONTENT_JSON {"json"};
     static const std::string CONTENT_APPLICATION_TEXT {"application/text"};
     static const std::string CONTENT_TEXT_PLAIN {"text/plain"};
+
+    static inline std::string to_string(const HttpMethodType& m)
+    {
+        switch (m) {
+            case siddiqsoft::HttpMethodType::METHOD_GET: return "GET";
+            case siddiqsoft::HttpMethodType::METHOD_HEAD: return "HEAD";
+            case siddiqsoft::HttpMethodType::METHOD_POST: return "POST";
+            case siddiqsoft::HttpMethodType::METHOD_PUT: return "PUT";
+            case siddiqsoft::HttpMethodType::METHOD_DELETE: return "DELETE";
+            case siddiqsoft::HttpMethodType::METHOD_CONNECT: return "CONNECT";
+            case siddiqsoft::HttpMethodType::METHOD_OPTIONS: return "OPTIONS";
+            case siddiqsoft::HttpMethodType::METHOD_TRACE: return "TRACE";
+            case siddiqsoft::HttpMethodType::METHOD_PATCH: return "PATCH";
+            default: return "UNKNOWN";
+        }
+    }
+
+    static inline std::string to_string(const HttpProtocolVersionType& m)
+    {
+        switch (m) {
+            case siddiqsoft::HttpProtocolVersionType::Http1: return "HTTP/1.0";
+            case siddiqsoft::HttpProtocolVersionType::Http11: return "HTTP/1.1";
+            case siddiqsoft::HttpProtocolVersionType::Http12: return "HTTP/1.2";
+            default: return "UNKNOWN";
+        }
+    }
+
 } // namespace siddiqsoft
 
 template <>
@@ -125,15 +152,15 @@ struct std::formatter<siddiqsoft::HttpMethodType> : std::formatter<std::string>
     auto format(const siddiqsoft::HttpMethodType& m, std::format_context& ctx) const
     {
         switch (m) {
-            case siddiqsoft::HttpMethodType::GET: return std::formatter<std::string>::format("GET", ctx);
-            case siddiqsoft::HttpMethodType::HEAD: return std::formatter<std::string>::format("HEAD", ctx);
-            case siddiqsoft::HttpMethodType::POST: return std::formatter<std::string>::format("POST", ctx);
-            case siddiqsoft::HttpMethodType::PUT: return std::formatter<std::string>::format("PUT", ctx);
-            case siddiqsoft::HttpMethodType::DELETE: return std::formatter<std::string>::format("DELETE", ctx);
-            case siddiqsoft::HttpMethodType::CONNECT: return std::formatter<std::string>::format("CONNECT", ctx);
-            case siddiqsoft::HttpMethodType::OPTIONS: return std::formatter<std::string>::format("OPTIONS", ctx);
-            case siddiqsoft::HttpMethodType::TRACE: return std::formatter<std::string>::format("TRACE", ctx);
-            case siddiqsoft::HttpMethodType::PATCH: return std::formatter<std::string>::format("PATCH", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_GET: return std::formatter<std::string>::format("GET", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_HEAD: return std::formatter<std::string>::format("HEAD", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_POST: return std::formatter<std::string>::format("POST", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_PUT: return std::formatter<std::string>::format("PUT", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_DELETE: return std::formatter<std::string>::format("DELETE", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_CONNECT: return std::formatter<std::string>::format("CONNECT", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_OPTIONS: return std::formatter<std::string>::format("OPTIONS", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_TRACE: return std::formatter<std::string>::format("TRACE", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_PATCH: return std::formatter<std::string>::format("PATCH", ctx);
             default: return std::formatter<std::string>::format("UNKNOWN", ctx);
         }
     }
