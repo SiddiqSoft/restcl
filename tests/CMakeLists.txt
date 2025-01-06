@@ -36,31 +36,32 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         add_compile_definitions(${TESTPROJ} PRIVATE FORCE_USE_OPENSSL=True)
     endif()
 
-    # Sources
+    # Dependencies
+    cpmaddpackage("gh:google/googletest#v1.15.2")
+
     target_sources( ${TESTPROJ}
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_basics.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_http2json.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp
+                    $<$<CXX_COMPILER_ID:GNU>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
+                    $<$<CXX_COMPILER_ID:Clang>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
                     ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp)
-
-    # Dependencies
-    cpmaddpackage("gh:google/googletest#v1.15.2")
-
+    # Link dependencies..
     target_link_libraries(${TESTPROJ} PRIVATE
-                            GTest::gtest_main
-                            nlohmann_json::nlohmann_json
-                            CURL::libcurl
-                            OpenSSL::SSL
-                            OpenSSL::Crypto
-                            RunOnEnd::RunOnEnd
-                            SplitUri::SplitUri
-                            acw32h::acw32h
-                            string2map::string2map
-                            asynchrony::asynchrony
-                            AzureCppUtils::AzureCppUtils
-                            StringHelpers::StringHelpers)
+            GTest::gtest_main
+            nlohmann_json::nlohmann_json
+            $<$<CXX_COMPILER_ID:Clang>:CURL::libcurl>
+            $<$<CXX_COMPILER_ID:GNU>:CURL::libcurl>
+            $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            RunOnEnd::RunOnEnd
+            SplitUri::SplitUri
+            string2map::string2map
+            asynchrony::asynchrony
+            AzureCppUtils::AzureCppUtils
+            StringHelpers::StringHelpers)
 
     include(GoogleTest)
     gtest_discover_tests(${TESTPROJ} XML_OUTPUT_DIR "${PROJECT_SOURCE_DIR}/tests/results")
