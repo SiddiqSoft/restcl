@@ -10,8 +10,12 @@
  */
 
 #pragma once
+
+#if defined(__linux__) || defined(__APPLE__)
+
 #ifndef LIBCURL_HELPERS_HPP
 #define LIBCURL_HELPERS_HPP
+
 #include <atomic>
 #include <chrono>
 #include <memory>
@@ -78,4 +82,5 @@ namespace siddiqsoft
     };
 } // namespace siddiqsoft
 
-#endif
+#endif // LIBCURL_HELPERS_HPP
+#endif // defined(__linux__) || defined(__APPLE__)

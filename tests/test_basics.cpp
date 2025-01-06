@@ -41,7 +41,6 @@
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
-#include "curl/curl.h"
 
 namespace siddiqsoft
 {

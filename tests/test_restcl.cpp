@@ -9,6 +9,8 @@
  *
  */
 
+#if defined(__linux__) || defined(__APPLE__)
+
 #include "gtest/gtest.h"
 #include <atomic>
 #include <cerrno>
@@ -505,3 +507,4 @@ namespace siddiqsoft
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 } // namespace siddiqsoft
+#endif
