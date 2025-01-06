@@ -9,7 +9,7 @@
  *
  */
 
-#if defined(__linux__) || defined(__APPLE__)
+//#if defined(__linux__) || defined(__APPLE__)
 
 #include "gtest/gtest.h"
 #include <atomic>
@@ -507,4 +507,4 @@ namespace siddiqsoft
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 } // namespace siddiqsoft
-#endif
+//#endif
