@@ -113,7 +113,7 @@ namespace siddiqsoft
         restcl           wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
                         // std::cerr << "Response\n" << *resp << std::endl;
@@ -139,7 +139,7 @@ namespace siddiqsoft
         restcl           wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send("https://www.bing.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://www.bing.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
                         // std::cerr << "Response\n" << *resp << std::endl;
@@ -166,7 +166,7 @@ namespace siddiqsoft
         restcl           wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send("https://httpbin.org/post"_POST, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://httpbin.org/post"_POST, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
                         // std::cerr << "Response\n" << *resp << std::endl;

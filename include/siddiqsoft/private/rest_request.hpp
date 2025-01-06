@@ -120,7 +120,7 @@ namespace siddiqsoft
             rest_request rr;
             rr.setMethod(HttpMethodType::METHOD_GET);
             rr.setUri(std::string {url, sz});
-            return rr;
+            return std::move(rr);
         }
 
         [[nodiscard]] static rest_request operator""_HEAD(const char* url, size_t sz)
@@ -128,7 +128,7 @@ namespace siddiqsoft
             rest_request rr;
             rr.setMethod(HttpMethodType::METHOD_HEAD);
             rr.setUri(std::string {url, sz});
-            return rr;
+            return std::move(rr);
         }
 
         [[nodiscard]] static rest_request operator""_POST(const char* url, size_t sz)
@@ -136,7 +136,7 @@ namespace siddiqsoft
             rest_request rr;
             rr.setMethod(HttpMethodType::METHOD_POST);
             rr.setUri(std::string {url, sz});
-            return rr;
+            return std::move(rr);
         }
 
         [[nodiscard]] static rest_request operator""_PUT(const char* url, size_t sz)

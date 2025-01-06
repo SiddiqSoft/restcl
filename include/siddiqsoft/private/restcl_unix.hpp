@@ -76,7 +76,7 @@ namespace siddiqsoft
 
         bool                  isInitialized {false};
         std::once_flag        hrcInitFlag {};
-        std::shared_ptr<CURL> sslCtx {};
+        std::shared_ptr<CURL> ctxCurl {};
 
     protected:
         std::atomic_uint64_t ioAttempt {0};
@@ -95,6 +95,7 @@ namespace siddiqsoft
     private:
         basic_callbacktype               _callback {};
         std::array<char, READBUFFERSIZE> _buff {};
+        std::string                      _buffers {};
 
         inline void dispatchCallback(basic_callbacktype& cb, rest_request& req, std::expected<rest_response, int> resp)
         {
@@ -133,7 +134,24 @@ namespace siddiqsoft
             }
         }};
 
-
+        /**
+         * @brief
+         *
+         * @param contents
+         * @param size
+         * @param nmemb
+         * @param userp This is ignored and we use the internal stringstream to hold our data
+         *              as we get contents from the remote server.
+         * @return size_t
+         */
+        /*static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void*)
+        {
+            size_t realSize = size * nmemb;
+            if (contents && (realSize > 0)) {
+                _buffStream.write(reinterpret_cast<char*>(contents), realSize);
+            }
+        }
+        */
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
@@ -142,7 +160,7 @@ namespace siddiqsoft
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         HttpRESTClient(HttpRESTClient&& src) noexcept
-            : sslCtx(std::move(src.sslCtx))
+            : ctxCurl(std::move(src.ctxCurl))
             , UserAgent(std::move(src.UserAgent))
             , _callback(std::move(src._callback))
         {
@@ -164,20 +182,17 @@ namespace siddiqsoft
             // Grab a context (configure and initialize)
             std::call_once(hrcInitFlag, [&]() {
                 // The SSL CTX is released when this client object goes out of scope.
-                if (sslCtx = g_ossl.configure().start().getEasyHandle(); sslCtx) {
+                if (ctxCurl = g_ossl.configure().start().getEasyHandle(); ctxCurl) {
                     isInitialized = true;
                 }
             });
-
-            std::cerr << __func__ << " - completed ok.\n";
-
             return *this;
         }
 
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(rest_request&& req, std::optional<basic_callbacktype> callback = std::nullopt) override
+        basic_restclient& sendAsync(rest_request&& req, std::optional<basic_callbacktype> callback = std::nullopt) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
@@ -186,8 +201,12 @@ namespace siddiqsoft
                                             "configure() or provide callback at point of invocation.");
 
             pool.queue(RestPoolArgsType {std::move(req), callback.has_value() ? callback.value() : _callback});
+
+            return *this;
         }
 
+
+        // https://curl.se/libcurl/c/postinmemory.html
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
@@ -202,25 +221,32 @@ namespace siddiqsoft
 
             std::cerr << std::format("{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json {req}.dump(3));
 
-            if (sslCtx && !destinationHost.empty()) {
+            if (ctxCurl && !destinationHost.empty()) {
+                _buffers.clear();
                 ioAttempt++;
+                curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEFUNCTION, [&](void* contents, size_t size, size_t nmemb, void*) {
+                    size_t realSize = size * nmemb;
+                    if (contents && (realSize > 0)) {
+                        _buffers.append(reinterpret_cast<char*>(contents), realSize);
+                    }
+                });
                 if (req.getMethod() == HttpMethodType::METHOD_GET) {
-                    curl_easy_setopt(sslCtx.get(), CURLOPT_URL, req.getUri().string().c_str());
+                    curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
                 }
                 else if (req.getMethod() == HttpMethodType::METHOD_POST) {
-                    curl_easy_setopt(sslCtx.get(), CURLOPT_URL, req.getUri().string().c_str());
-                    curl_easy_setopt(sslCtx.get(), CURLOPT_POST, 1L);
+                    curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
+                    curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 1L);
                 }
-                
+
 #if defined(DEBUG) || defined(_DEBUG)
-                curl_easy_setopt(sslCtx.get(), CURLOPT_VERBOSE, 1L);
+                curl_easy_setopt(ctxCurl.get(), CURLOPT_VERBOSE, 1L);
 #endif
 
                 // Send the request..
-                if (rc = curl_easy_perform(sslCtx.get()); rc == CURLE_OK) {
+                if (rc = curl_easy_perform(ctxCurl.get()); rc == CURLE_OK) {
                     ioSend++;
                     // std::cerr << "()()())()()()()()()()()()()()()()()()()()()()\n";
-                    return rest_response {};
+                    return rest_response::parse(_buffers);
                 }
                 else {
                     ioSendFailed++;

@@ -9,7 +9,7 @@
  *
  */
 
-//#if defined(__linux__) || defined(__APPLE__)
+// #if defined(__linux__) || defined(__APPLE__)
 
 #include "gtest/gtest.h"
 #include <atomic>
@@ -35,7 +35,7 @@ namespace siddiqsoft
         restcl           wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     nlohmann::json doc(req);
 
                     std::cerr << "From callback Serialized json: " << req << std::endl;
@@ -68,7 +68,7 @@ namespace siddiqsoft
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
                     // Checks the implementation of the encode() implementation
                     // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (passTest = resp ? resp->success() : false; passTest.load()) {
@@ -101,7 +101,7 @@ namespace siddiqsoft
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
                     // Checks the implementation of the encode() implementation
                     // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (passTest = resp ? resp->success() : false; passTest.load()) {
@@ -135,25 +135,26 @@ namespace siddiqsoft
         std::string responseContentType {};
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send(rest_request {HttpMethodType::METHOD_POST,
-                                    "https://httpbin.org/post"_Uri,
-                                    {{"Content-Type", "application/json"}},
-                                    std::format(
-                                            "{{ \"email\":\"jolly@email.com\", \"password\":\"123456\", \"date\":\"{:%FT%TZ}\" }}",
+                .sendAsync(
+                        rest_request {
+                                HttpMethodType::METHOD_POST,
+                                "https://httpbin.org/post"_Uri,
+                                {{"Content-Type", "application/json"}},
+                                std::format("{{ \"email\":\"jolly@email.com\", \"password\":\"123456\", \"date\":\"{:%FT%TZ}\" }}",
                                             std::chrono::system_clock::now())},
-                      [&passTest, &responseContentType](auto& req, std::expected<rest_response, int> resp) {
-                          responseContentType = req.getHeaders().value("Content-Type", "");
-                          //  Checks the implementation of the encode() implementation
-                          // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-                          if (passTest = resp->success(); passTest.load()) {
-                              std::cerr << "Response\n" << *resp << std::endl;
-                          }
-                          else {
-                              auto ec = resp ? resp->statusCode() : resp.error();
-                              std::cerr << "Got error: " << ec << std::endl;
-                          }
-                          passTest.notify_all();
-                      });
+                        [&passTest, &responseContentType](auto& req, std::expected<rest_response, int> resp) {
+                            responseContentType = req.getHeaders().value("Content-Type", "");
+                            //  Checks the implementation of the encode() implementation
+                            // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+                            if (passTest = resp->success(); passTest.load()) {
+                                std::cerr << "Response\n" << *resp << std::endl;
+                            }
+                            else {
+                                auto ec = resp ? resp->statusCode() : resp.error();
+                                std::cerr << "Got error: " << ec << std::endl;
+                            }
+                            passTest.notify_all();
+                        });
 
         passTest.wait(false);
         std::cerr << "Checking results..\n";
@@ -172,28 +173,28 @@ namespace siddiqsoft
         restcl wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send(rest_request {HttpMethodType::METHOD_POST,
-                                    "https://httpbin.org/post"_Uri,
-                                    {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/json+custom"}},
-                                    {{"foo", "bar"}, {"hello", "world"}, {"bin", __LINE__}}},
-                      [&passTest]( auto& req, std::expected<rest_response, int> resp) {
-                          // The request must be the same as we configured!
-                          EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
-                          // Checks the implementation of the std::format implementation
-                          std::cerr << std::format("From callback Wire serialize              : {}\n", req);
-                          if (passTest = resp->success(); passTest.load()) {
-                              std::cerr << "Response\n" << *resp << std::endl;
-                              // EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
-                          }
-                          else if (resp.has_value()) {
-                              auto [ec, emsg] = resp->status();
-                              std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
-                          }
-                          else {
-                              std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
-                          }
-                          passTest.notify_all();
-                      });
+                .sendAsync(rest_request {HttpMethodType::METHOD_POST,
+                                         "https://httpbin.org/post"_Uri,
+                                         {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/json+custom"}},
+                                         {{"foo", "bar"}, {"hello", "world"}, {"bin", __LINE__}}},
+                           [&passTest](auto& req, std::expected<rest_response, int> resp) {
+                               // The request must be the same as we configured!
+                               EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
+                               // Checks the implementation of the std::format implementation
+                               std::cerr << std::format("From callback Wire serialize              : {}\n", req);
+                               if (passTest = resp->success(); passTest.load()) {
+                                   std::cerr << "Response\n" << *resp << std::endl;
+                                   // EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
+                               }
+                               else if (resp.has_value()) {
+                                   auto [ec, emsg] = resp->status();
+                                   std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                               }
+                               else {
+                                   std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
+                               }
+                               passTest.notify_all();
+                           });
 
         passTest.wait(false);
         std::cerr << "Checking results..\n";
@@ -209,25 +210,25 @@ namespace siddiqsoft
         restcl wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send("https://www.siddiqsoft.com:65535/"_GET,
-                      [&passTest](const auto& req, std::expected<rest_response, int> resp) {
-                          if (resp.has_value() && resp->success()) {
-                              passTest = true;
-                              std::cerr << "Response\n" << *resp << std::endl;
-                          }
-                          else if (resp.has_value()) {
-                              auto [ec, emsg] = resp->status();
-                              passTest        = ((ec == 12002) || (ec == 12029));
-                              std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
-                          }
-                          else {
-                              // We MUST get a connection failure; the site does not exist!
-                              passTest = true;
-                              std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                        << strerror(resp.error()) << std::endl;
-                          }
-                          passTest.notify_all();
-                      });
+                .sendAsync("https://www.siddiqsoft.com:65535/"_GET,
+                           [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                               if (resp.has_value() && resp->success()) {
+                                   passTest = true;
+                                   std::cerr << "Response\n" << *resp << std::endl;
+                               }
+                               else if (resp.has_value()) {
+                                   auto [ec, emsg] = resp->status();
+                                   passTest        = ((ec == 12002) || (ec == 12029));
+                                   std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
+                               }
+                               else {
+                                   // We MUST get a connection failure; the site does not exist!
+                                   passTest = true;
+                                   std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                             << strerror(resp.error()) << std::endl;
+                               }
+                               passTest.notify_all();
+                           });
 
         passTest.wait(false);
         EXPECT_TRUE(passTest.load());
@@ -241,7 +242,7 @@ namespace siddiqsoft
         restcl wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send("https://localhost:65535/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://localhost:65535/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     nlohmann::json doc(req);
 
                     // Checks the implementation of the json implementation
@@ -276,7 +277,7 @@ namespace siddiqsoft
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send("https://httpbin.org:9090/get"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://httpbin.org:9090/get"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (resp->success()) {
                         std::cerr << "Response\n" << *resp << std::endl;
@@ -307,7 +308,7 @@ namespace siddiqsoft
         restcl wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (resp.has_value() && resp->success()) {
                         std::cerr << "Response\n" << *resp << std::endl;
@@ -339,7 +340,7 @@ namespace siddiqsoft
         restcl           wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     // std::cerr << "From callback Serialized json: " << req << std::endl;
                     if (resp->success()) {
                         passTest = resp->statusCode() == 200;
@@ -388,7 +389,7 @@ namespace siddiqsoft
                                   std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
                               }
                           })
-                    .send("https://www.google.com/"_GET);
+                    .sendAsync("https://www.google.com/"_GET);
         });
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -432,19 +433,19 @@ namespace siddiqsoft
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
-                    wrc.send("https://www.yahoo.com/"_GET);
+                    wrc.sendAsync("https://www.yahoo.com/"_GET);
 #ifdef _DEBUG0
                     std::cerr << std::format("Added i:{}  i%3:{}  \n", i, (i % 3));
 #endif
                 }
                 else if (i % 2 == 0) {
-                    wrc.send("https://www.duckduckgo.com/"_GET);
+                    wrc.sendAsync("https://www.duckduckgo.com/"_GET);
 #ifdef _DEBUG0
                     std::cerr << std::format("Added i:{}  i%2:{}  \n", i, (i % 2));
 #endif
                 }
                 else {
-                    wrc.send("https://www.google.com/"_GET);
+                    wrc.sendAsync("https://www.google.com/"_GET);
 #ifdef _DEBUG0
                     std::cerr << std::format("Added i:{}  ......  \n", i);
 #endif
@@ -507,4 +508,4 @@ namespace siddiqsoft
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 } // namespace siddiqsoft
-//#endif
+// #endif

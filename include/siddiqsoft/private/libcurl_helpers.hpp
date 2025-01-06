@@ -29,10 +29,9 @@
 namespace siddiqsoft
 {
     /**
-     * @brief LibSSLSingleton provides entry point and stores the various configuration for your
-     *        applications use of the OpenSSL library.
-     *        There is no need to perform explicit initialization and cleanup for the library.
-     *        https://docs.openssl.org/3.0/man7/migration_guide/#support-of-legacy-engines
+     * @brief LibCurSingleton provides for a facility to automatically initialize
+     *        and cleanup the libcurl global/per-application handles.
+     *          https://curl.se/libcurl/c/post-callback.html
      */
     class LibCurlSingleton
     {
@@ -56,9 +55,6 @@ namespace siddiqsoft
                 curl_global_init(CURL_GLOBAL_ALL);
                 isInitialized = true;
             });
-
-            std::cerr << "LibCurlSingleton - start() completed.\n";
-
             return *this;
         }
 

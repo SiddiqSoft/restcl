@@ -279,19 +279,15 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        void send(rest_request&& req) { pool.queue(RestPoolArgsType {std::move(req), callback}); }
-
-
-        /// @brief Implements an asynchronous invocation of the send() method
-        /// @param req Request object
-        /// @param callback The method will be async and there will not be a response object returned
-        void send(rest_request&& req, std::optional<basic_callbacktype> cb = std::nullopt) override
+        auto& sendAsync(rest_request&& req, std::optional<basic_callbacktype> cb = std::nullopt) override
         {
             if (!callback && !cb.has_value())
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
             pool.queue(RestPoolArgsType {std::move(req), cb.has_value() ? cb.value() : callback});
+
+            return *this;
         }
 
 
