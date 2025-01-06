@@ -204,10 +204,10 @@ namespace siddiqsoft
 
             if (sslCtx && !destinationHost.empty()) {
                 ioAttempt++;
-                if (req.getMethod() == HttpMethodType::GET) {
+                if (req.getMethod() == HttpMethodType::METHOD_GET) {
                     curl_easy_setopt(sslCtx.get(), CURLOPT_URL, req.getUri().string().c_str());
                 }
-                else if (req.getMethod() == HttpMethodType::POST) {
+                else if (req.getMethod() == HttpMethodType::METHOD_POST) {
                     curl_easy_setopt(sslCtx.get(), CURLOPT_URL, req.getUri().string().c_str());
                     curl_easy_setopt(sslCtx.get(), CURLOPT_POST, 1L);
                 }

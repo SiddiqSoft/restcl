@@ -135,13 +135,13 @@ namespace siddiqsoft
         std::string responseContentType {};
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .send(rest_request {HttpMethodType::POST,
+                .send(rest_request {HttpMethodType::METHOD_POST,
                                     "https://httpbin.org/post"_Uri,
                                     {{"Content-Type", "application/json"}},
                                     std::format(
                                             "{{ \"email\":\"jolly@email.com\", \"password\":\"123456\", \"date\":\"{:%FT%TZ}\" }}",
                                             std::chrono::system_clock::now())},
-                      [&passTest, &responseContentType](const auto& req, std::expected<rest_response, int> resp) {
+                      [&passTest, &responseContentType](auto& req, std::expected<rest_response, int> resp) {
                           responseContentType = req.getHeaders().value("Content-Type", "");
                           //  Checks the implementation of the encode() implementation
                           // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
@@ -172,11 +172,11 @@ namespace siddiqsoft
         restcl wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .send(rest_request {HttpMethodType::POST,
+                .send(rest_request {HttpMethodType::METHOD_POST,
                                     "https://httpbin.org/post"_Uri,
                                     {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/json+custom"}},
                                     {{"foo", "bar"}, {"hello", "world"}, {"bin", __LINE__}}},
-                      [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                      [&passTest]( auto& req, std::expected<rest_response, int> resp) {
                           // The request must be the same as we configured!
                           EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
                           // Checks the implementation of the std::format implementation
