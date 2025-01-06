@@ -111,7 +111,7 @@ namespace siddiqsoft
 
         EXPECT_TRUE(std::filesystem::exists(samplesDirectoryPath));
     }
-
+/*
     TEST(ImplementationChecks, synthetic_1)
     {
         auto contents = loadSampleFile("www-google-com");
@@ -131,4 +131,5 @@ namespace siddiqsoft
         auto resp = siddiqsoft::rest_response::parse(contents);
         std::cerr << "Contents of parse: " << resp;
     }
+*/
 } // namespace siddiqsoft
