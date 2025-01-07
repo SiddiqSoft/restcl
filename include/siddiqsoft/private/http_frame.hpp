@@ -276,13 +276,8 @@ namespace siddiqsoft
                 content->str           = c;
                 content->type          = ctype;
                 content->remainingSize = content->length = c.length();
-
-                if (!headers.contains(HF_CONTENT_TYPE)) {
-                    headers[HF_CONTENT_TYPE] = content->type;
-                }
-                if (!headers.contains(HF_CONTENT_LENGTH)) {
-                    headers[HF_CONTENT_LENGTH] = content->length;
-                }
+                headers[HF_CONTENT_TYPE]                 = content->type;
+                headers[HF_CONTENT_LENGTH]               = content->length;
             }
 
             return *this;
@@ -294,8 +289,8 @@ namespace siddiqsoft
             if (content && !src.empty()) {
                 content->str           = src;
                 content->remainingSize = content->length = src.length();
-                if (headers.contains(HF_CONTENT_TYPE)) content->type = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
-                if (headers.contains("content-type")) content->type = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
+
+                content->type = headers.value(HF_CONTENT_TYPE, headers.value("content-type", CONTENT_APPLICATION_TEXT));
 
                 if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content->length;
             }
