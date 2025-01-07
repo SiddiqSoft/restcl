@@ -174,6 +174,7 @@ namespace siddiqsoft
                         passTest = true;
                         nlohmann::json doc {resp.value()};
                         std::cerr << "Response\n" << doc.dump(3) << std::endl;
+                        // std::cerr << "Good Response:\n" << resp.value() << std::endl;
                     }
                     else if (resp) {
                         nlohmann::json doc {resp.value()};

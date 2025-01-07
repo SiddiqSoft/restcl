@@ -343,11 +343,14 @@ namespace siddiqsoft
 
                     extractStartLine(resp);
                     extractHeadersFromLibCurl(resp);
-                    _contents->type =
-                            resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
+                    // Fixup the content data..type and length
+                    _contents->type = resp.getHeaders().value("content-type",
+                                                              resp.getHeaders().value(HF_CONTENT_TYPE,
+                                                                                      CONTENT_TEXT_PLAIN));
                     // headers in libcurl are always string values so we'd need to convert them to integer
-                    _contents->length =
-                            std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
+                    _contents->length = std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH,
+                                                                          resp.getHeaders().value("content-length",
+                                                                                                  "0")));
                     resp.setContent(_contents);
                     return resp;
                 }
