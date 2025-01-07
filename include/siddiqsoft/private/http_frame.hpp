@@ -129,7 +129,7 @@ namespace siddiqsoft
         HttpMethodType                 method {};
         Uri<char, AuthorityHttp<char>> uri {};
         nlohmann::json                 headers {{"Accept", CONTENT_APPLICATION_JSON}, {"Date", DateUtils::RFC7231()}};
-        std::shared_ptr<ContentType>   content {};
+        std::shared_ptr<ContentType>   content {new ContentType()};
 
     protected:
         static auto isHttpProtocol(const std::string& fragment)
@@ -272,7 +272,7 @@ namespace siddiqsoft
             if (!ctype.empty() && c.empty())
                 throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype).c_str());
 
-            if (!ctype.empty() && !c.empty()) {
+            if (!ctype.empty() && !c.empty() && content) {
                 content->str           = c;
                 content->type          = ctype;
                 content->remainingSize = content->length = c.length();
@@ -291,11 +291,13 @@ namespace siddiqsoft
 
         auto& setContent(const std::string& src)
         {
-            content->str           = src;
-            content->remainingSize = content->length = src.length();
-            content->type                            = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
+            if (content && !src.empty()) {
+                content->str           = src;
+                content->remainingSize = content->length = src.length();
+                content->type                            = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
 
-            if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content->length;
+                if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content->length;
+            }
             return *this;
         }
 
@@ -318,10 +320,13 @@ namespace siddiqsoft
         /// @return Self
         auto& setContent(const nlohmann::json& c)
         {
-            // This allows us to handle such things as: application/json+custom
-            if (!headers.contains(HF_CONTENT_TYPE)) headers[HF_CONTENT_TYPE] = CONTENT_APPLICATION_JSON;
+            if (!c.empty() && c.is_object()) {
+                // This allows us to handle such things as: application/json+custom
+                if (!headers.contains(HF_CONTENT_TYPE)) headers[HF_CONTENT_TYPE] = CONTENT_APPLICATION_JSON;
 
-            return setContent(headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON), c.dump());
+                return setContent(headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON), c.dump());
+            }
+            return *this;
         }
     };
 
