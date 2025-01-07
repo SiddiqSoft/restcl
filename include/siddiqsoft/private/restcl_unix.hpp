@@ -319,8 +319,13 @@ namespace siddiqsoft
                     curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
                     curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 1L);
                     if (req.getContent() && req.getContent()->type.starts_with(CONTENT_APPLICATION_JSON)) {
-                        curl_easy_setopt(ctxCurl.get(), CURLOPT_POSTFIELDS, req.encodeContent().c_str());
-                        curl_easy_setopt(ctxCurl.get(), CURLOPT_POSTFIELDSIZE, req.getContent()->length);
+                        if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_COPYPOSTFIELDS, req.encodeContent().c_str());
+                            rc != CURLE_OK)
+                            return std::unexpected(rc);
+                        if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_POSTFIELDSIZE, req.getContent()->length); rc != CURLE_OK)
+                            return std::unexpected(rc);
+                        std::cerr << std::format(
+                                "{} - Length: {} - Content:{}\n", __func__, req.getContent()->length, req.encodeContent());
                     }
                     else {
                         // Set the output/send callback which will process the req's content
@@ -344,13 +349,11 @@ namespace siddiqsoft
                     extractStartLine(resp);
                     extractHeadersFromLibCurl(resp);
                     // Fixup the content data..type and length
-                    _contents->type = resp.getHeaders().value("content-type",
-                                                              resp.getHeaders().value(HF_CONTENT_TYPE,
-                                                                                      CONTENT_TEXT_PLAIN));
+                    _contents->type =
+                            resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
                     // headers in libcurl are always string values so we'd need to convert them to integer
-                    _contents->length = std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH,
-                                                                          resp.getHeaders().value("content-length",
-                                                                                                  "0")));
+                    _contents->length =
+                            std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
                     resp.setContent(_contents);
                     return resp;
                 }

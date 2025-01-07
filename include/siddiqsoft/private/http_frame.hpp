@@ -308,7 +308,11 @@ namespace siddiqsoft
         auto& getContent() { return content; }
 
 
-        [[nodiscard]] auto encodeContent() const { return content->str; }
+        [[nodiscard]] auto encodeContent() const
+        {
+            content->length = content->str.length();
+            return content->str;
+        }
 
 
         /// @brief Set the content to json
