@@ -272,13 +272,6 @@ namespace siddiqsoft
                 std::shared_ptr<ContentType> _contents {new ContentType()};
 
                 ioAttempt++;
-                // Set the output/send callback which will process the req's content
-                if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK)
-                    return std::unexpected(rc);
-
-                // If we have content to send then set the raw pointer into our callback
-                if (req.getContent()) rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_READDATA, req.getContent().get());
-
                 // Next, we setup the incoming/receive callback and data
                 if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK)
                     return std::unexpected(rc);
@@ -325,6 +318,17 @@ namespace siddiqsoft
                 else if (req.getMethod() == HttpMethodType::METHOD_POST) {
                     curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
                     curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 1L);
+                    if (req.getContent() && req.getContent()->type.starts_with(CONTENT_APPLICATION_JSON)) {
+                        curl_easy_setopt(ctxCurl.get(), CURLOPT_POSTFIELDS, req.encodeContent().c_str());
+                        curl_easy_setopt(ctxCurl.get(), CURLOPT_POSTFIELDSIZE, req.getContent()->length);
+                    }
+                    else {
+                        // Set the output/send callback which will process the req's content
+                        if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK)
+                            return std::unexpected(rc);
+                        // If we have content to send then set the raw pointer into our callback
+                        if (req.getContent()) rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_READDATA, req.getContent().get());
+                    }
                 }
 
 #if defined(DEBUG) || defined(_DEBUG)
@@ -339,6 +343,11 @@ namespace siddiqsoft
 
                     extractStartLine(resp);
                     extractHeadersFromLibCurl(resp);
+                    _contents->type =
+                            resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
+                    // headers in libcurl are always string values so we'd need to convert them to integer
+                    _contents->length =
+                            std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
                     resp.setContent(_contents);
                     return resp;
                 }

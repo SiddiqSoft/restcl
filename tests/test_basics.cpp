@@ -166,18 +166,21 @@ namespace siddiqsoft
         restcl           wrc;
         auto             postRequest = "https://httpbin.org/post"_POST;
 
-        postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}});
+        postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
                 .sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
-                        // std::cerr << "Response\n" << *resp << std::endl;
+                        nlohmann::json doc {resp.value()};
+                        std::cerr << "Response\n" << doc.dump(3) << std::endl;
                     }
                     else if (resp) {
+                        nlohmann::json doc {resp.value()};
+
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
-                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`..\n" << doc.dump(2) << std::endl;
                     }
                     else {
                         passTest = true;

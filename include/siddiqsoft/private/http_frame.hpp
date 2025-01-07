@@ -294,7 +294,8 @@ namespace siddiqsoft
             if (content && !src.empty()) {
                 content->str           = src;
                 content->remainingSize = content->length = src.length();
-                content->type                            = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
+                if (headers.contains(HF_CONTENT_TYPE)) content->type = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
+                if (headers.contains("content-type")) content->type = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
 
                 if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content->length;
             }
@@ -328,6 +329,8 @@ namespace siddiqsoft
             }
             return *this;
         }
+
+        friend void to_json(nlohmann::json&, const http_frame&);
     };
 
 
@@ -344,6 +347,12 @@ namespace siddiqsoft
         else {
             dest["content"] = {{"type", nullptr}, {"str", nullptr}, {"length", nullptr}};
         }
+    }
+
+    inline void to_json(nlohmann::json& dest, const http_frame& src)
+    {
+        dest["http_frame"] = {{"protocol", src.protocol}, {"method", src.method}, {"uri", src.uri}, {"headers", src.headers}};
+        if (src.content) dest["content"] = src.content;
     }
 } // namespace siddiqsoft
 #endif // !HTTP_FRAME_HPP

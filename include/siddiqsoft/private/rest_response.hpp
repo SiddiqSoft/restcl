@@ -33,6 +33,7 @@
  */
 
 #pragma once
+#include "rest_request.hpp"
 #include <exception>
 #ifndef REST_RESPONSE_HPP
 #define REST_RESPONSE_HPP
@@ -296,7 +297,17 @@ namespace siddiqsoft
 
             return resp;
         };
+
+        friend void to_json(nlohmann::json&, const rest_response&);
     };
+
+    inline void to_json(nlohmann::json& dest, const rest_response& src)
+    {
+        dest["response"] = {{"statusCode", src._statusCode}, {"statusMessage", src._reasonCode}, {"protocol", src.protocol}};
+        dest["headers"]  = src.headers;
+        dest["content"] = src.content;
+    }
+
 
     /// @brief Serializer to ostream for RESResponseType
     inline std::ostream& operator<<(std::ostream& os, const rest_response& src)
