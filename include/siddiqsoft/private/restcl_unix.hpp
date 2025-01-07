@@ -10,6 +10,7 @@
  */
 
 #pragma once
+#include "http_frame.hpp"
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
@@ -37,6 +38,7 @@
 #include <stop_token>
 #include <expected>
 #include <sstream>
+#include <stdio.h>
 
 #include "nlohmann/json.hpp"
 
@@ -93,9 +95,8 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackCompleted {0};
 
     private:
-        basic_callbacktype               _callback {};
-        std::array<char, READBUFFERSIZE> _buff {};
-        std::string                      _buffers {};
+        basic_callbacktype _callback {};
+
 
         inline void dispatchCallback(basic_callbacktype& cb, rest_request& req, std::expected<rest_response, int> resp)
         {
@@ -144,14 +145,42 @@ namespace siddiqsoft
          *              as we get contents from the remote server.
          * @return size_t
          */
-        /*static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void*)
+        static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
-            size_t realSize = size * nmemb;
-            if (contents && (realSize > 0)) {
-                _buffStream.write(reinterpret_cast<char*>(contents), realSize);
+            if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
+                contents && (contentPtr != nullptr) && (size > 0))
+            {
+                content->str.append(reinterpret_cast<char*>(contents), size * nmemb);
+                return size * nmemb;
             }
+            return 0;
+        }
+
+        /*
+        static size_t onSendCallback(char* ptr, size_t size, size_t nmemb, void* contentPtr)
+        {
+            if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)}; ptr && (contentPtr != nullptr) && (size > 0)) {
+                return fread(ptr, size, nmemb, content->str);
+            }
+            return EBADF;
         }
         */
+
+        auto& extractHeadersFromLibCurl(http_frame& dest)
+        {
+            curl_header* currentHeader {};
+            curl_header* previousHeader {};
+            do {
+                if (currentHeader = curl_easy_nextheader(ctxCurl.get(), CURLH_HEADER, -1, previousHeader); currentHeader) {
+                    dest.setHeader(currentHeader->name, currentHeader->value);
+                    previousHeader = currentHeader;
+                }
+
+            } while (currentHeader);
+
+            return dest;
+        }
+
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
@@ -213,7 +242,8 @@ namespace siddiqsoft
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
         [[nodiscard]] std::expected<rest_response, int> send(rest_request& req) override
         {
-            CURLcode rc {};
+            rest_response resp {};
+            CURLcode      rc {};
 
             if (!isInitialized) return std::unexpected(EBUSY);
 
@@ -222,37 +252,43 @@ namespace siddiqsoft
             std::cerr << std::format("{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json {req}.dump(3));
 
             if (ctxCurl && !destinationHost.empty()) {
-                _buffers.clear();
+                std::shared_ptr<ContentType> _contents {new ContentType()};
+
                 ioAttempt++;
-                curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEFUNCTION, [&](void* contents, size_t size, size_t nmemb, void*) {
-                    size_t realSize = size * nmemb;
-                    if (contents && (realSize > 0)) {
-                        _buffers.append(reinterpret_cast<char*>(contents), realSize);
-                    }
-                });
-                if (req.getMethod() == HttpMethodType::METHOD_GET) {
-                    curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
-                }
-                else if (req.getMethod() == HttpMethodType::METHOD_POST) {
-                    curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
-                    curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 1L);
-                }
+                if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc == CURLE_OK) {
+                    if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEDATA, _contents.get()); rc == CURLE_OK) {
+                        rc = curl_easy_setopt(
+                                ctxCurl.get(), CURLOPT_USERAGENT, req.getHeaders().value("User-Agent", UserAgent).c_str());
+
+                        if (req.getMethod() == HttpMethodType::METHOD_GET) {
+                            curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
+                        }
+                        else if (req.getMethod() == HttpMethodType::METHOD_POST) {
+                            curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
+                            curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 1L);
+                        }
 
 #if defined(DEBUG) || defined(_DEBUG)
-                curl_easy_setopt(ctxCurl.get(), CURLOPT_VERBOSE, 1L);
+                        curl_easy_setopt(ctxCurl.get(), CURLOPT_VERBOSE, 1L);
 #endif
 
-                // Send the request..
-                if (rc = curl_easy_perform(ctxCurl.get()); rc == CURLE_OK) {
-                    ioSend++;
-                    // std::cerr << "()()())()()()()()()()()()()()()()()()()()()()\n";
-                    return rest_response::parse(_buffers);
+                        // Send the request..
+                        if (rc = curl_easy_perform(ctxCurl.get()); rc == CURLE_OK) {
+                            ioSend++;
+
+                            std::cerr << "()()()()()()()()()()()()()()()()()()()()()()\n";
+
+                            extractHeadersFromLibCurl(resp);
+                            resp.setContent(_contents);
+                            return resp;
+                        }
+                    }
                 }
-                else {
-                    ioSendFailed++;
-                    std::cerr << std::format("{}:curl_easy_perform() failed:{}\n", __func__, curl_easy_strerror(rc));
-                    return std::unexpected(rc);
-                }
+
+                // To reach here is failure!
+                ioSendFailed++;
+                std::cerr << std::format("{}:curl_easy_perform() failed:{}\n", __func__, curl_easy_strerror(rc));
+                return std::unexpected(rc);
             }
             else {
                 ioAttemptFailed++;
@@ -260,6 +296,29 @@ namespace siddiqsoft
             }
 
             return std::unexpected(ENOTRECOVERABLE);
+        }
+
+        auto& extractStartLine(http_frame& dest)
+        {
+            CURLcode rc {0};
+            long     sc {0};
+
+            auto headerLine = curl_slist_first();
+            
+            if (rc = curl_easy_getinfo(ctxCurl.get(), CURLINFO_RESPONSE_CODE, &sc); rc == CURLE_OK) {
+                long vc {0};
+                if (rc = curl_easy_getinfo(ctxCurl.get(), CURLINFO_HTTP_VERSION, &vc); rc == CURLE_OK) {
+                    switch (vc) {
+                        case CURL_HTTP_VERSION_1_0: dest.setProtocol(HttpProtocolVersionType::Http1); break;
+                        case CURL_HTTP_VERSION_1_1: dest.setProtocol(HttpProtocolVersionType::Http11); break;
+                        case CURL_HTTP_VERSION_2:
+                        case CURL_HTTP_VERSION_2_0: dest.setProtocol(HttpProtocolVersionType::Http2); break;
+                        case CURL_HTTP_VERSION_3: dest.setProtocol(HttpProtocolVersionType::Http3); break;
+                        default: dest.setProtocol(HttpProtocolVersionType::UNKNOWN);
+                    }
+                    dest.setStatus(sc, "");
+                }
+            }
         }
 
         /// @brief Serializer to ostream for RESResponseType

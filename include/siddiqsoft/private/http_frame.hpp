@@ -58,40 +58,68 @@
 
 namespace siddiqsoft
 {
+    /**
+     * @brief Store the Content-Type, Content-Length and the serialized content
+     *
+     */
+    struct ContentType
+    {
+        std::string    type {};
+        std::string    str {};
+        nlohmann::json obj {};
+        uint64_t       length {0};
+
+
+        void operator=(const std::shared_ptr<ContentType>& src)
+        {
+            type   = src->type;
+            str    = src->str;
+            obj    = src->obj;
+            length = src->length;
+        }
+
+        void operator=(std::shared_ptr<ContentType>&& src)
+        {
+            type   = src->type;
+            str    = std::move(src->str);
+            obj    = std::move(src->obj);
+            length = src->length;
+        }
+
+        void operator=(const nlohmann::json& j)
+        {
+            obj    = j;
+            str    = j.dump();
+            length = str.length();
+            type   = CONTENT_APPLICATION_JSON;
+        }
+
+        void operator=(const std::string& s)
+        {
+            str    = s;
+            length = str.length();
+            type   = CONTENT_APPLICATION_TEXT;
+        }
+
+        operator std::string() const { return str; }
+
+        operator bool() const { return !str.empty(); }
+
+        void recalcLength()
+        {
+            if (str.empty() && !obj.empty()) {
+                str = obj.dump();
+                if (type.empty()) type = CONTENT_APPLICATION_JSON;
+            }
+            length = str.length();
+        }
+    };
+
+
     /// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
     /// Essentially we're a convenience wrapper on the rest_request.
     class http_frame
     {
-    public:
-        /**
-         * @brief Store the Content-Type, Content-Length and the serialized content
-         *
-         */
-        struct ContentType
-        {
-            std::string type {};
-            std::string str {};
-            uint64_t    length {0};
-
-            void operator=(const nlohmann::json& j)
-            {
-                str    = j.dump();
-                length = str.length();
-                type   = CONTENT_APPLICATION_JSON;
-            }
-
-            void operator=(const std::string& s)
-            {
-                str    = s;
-                length = str.length();
-                type   = CONTENT_APPLICATION_TEXT;
-            }
-
-            operator std::string() const { return str; }
-
-            operator bool() const { return !str.empty(); }
-        };
-
 #if defined(DEBUG) || defined(_DEBUG)
     public:
 #else
@@ -101,7 +129,7 @@ namespace siddiqsoft
         HttpMethodType                 method {};
         Uri<char, AuthorityHttp<char>> uri {};
         nlohmann::json                 headers {{"Accept", CONTENT_APPLICATION_JSON}, {"Date", DateUtils::RFC7231()}};
-        ContentType                    content {};
+        std::shared_ptr<ContentType>   content {};
 
     protected:
         static auto isHttpProtocol(const std::string& fragment)
@@ -184,6 +212,16 @@ namespace siddiqsoft
             return *this;
         }
 
+        auto& setHeader(const std::string& key, const std::string& value)
+        {
+            if (!value.empty())
+                headers[key] = value;
+            else
+                headers.erase(key);
+
+            return *this;
+        }
+
         nlohmann::json& getHeaders() { return headers; }
 
     protected:
@@ -236,14 +274,17 @@ namespace siddiqsoft
                 throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype).c_str());
 
             if (!ctype.empty() && !c.empty()) {
-                content.str    = c;
-                content.type   = ctype;
-                content.length = c.length();
+                content->obj.clear();
+
+                content->str    = c;
+                content->type   = ctype;
+                content->length = c.length();
+
                 if (!headers.contains(HF_CONTENT_TYPE)) {
-                    headers[HF_CONTENT_TYPE] = content.type;
+                    headers[HF_CONTENT_TYPE] = content->type;
                 }
                 if (!headers.contains(HF_CONTENT_LENGTH)) {
-                    headers[HF_CONTENT_LENGTH] = content.length;
+                    headers[HF_CONTENT_LENGTH] = content->length;
                 }
             }
 
@@ -253,16 +294,29 @@ namespace siddiqsoft
 
         auto& setContent(const std::string& src)
         {
-            content.str    = src;
-            content.length = src.length();
-            content.type   = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
-            if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content.length;
+            content->obj.clear();
+
+            content->str    = src;
+            content->length = src.length();
+            content->type   = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
+
+            if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content->length;
             return *this;
         }
 
-        ContentType& getContent() { return content; }
 
-        [[nodiscard]] auto encodeContent() const { return content.str; }
+        auto& setContent(std::shared_ptr<ContentType> src)
+        {
+            content = src;
+            return *this;
+        }
+
+
+        auto& getContent() { return content; }
+
+
+        [[nodiscard]] auto encodeContent() const { return content->str; }
+
 
         /// @brief Set the content to json
         /// @param c JSON content
@@ -272,8 +326,28 @@ namespace siddiqsoft
             // This allows us to handle such things as: application/json+custom
             if (!headers.contains(HF_CONTENT_TYPE)) headers[HF_CONTENT_TYPE] = CONTENT_APPLICATION_JSON;
 
-            return setContent(headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON), c.dump());
+            content->obj  = c;
+            content->type = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON);
+            content->recalcLength();
+
+            return *this;
         }
     };
+
+
+    inline void to_json(nlohmann::json& dest, const ContentType& src)
+    {
+        dest["content"] = {{"type", src.type}, {"str", src.str}, {"length", src.length}, {"obj", src.obj}};
+    }
+
+    inline void to_json(nlohmann::json& dest, const std::shared_ptr<ContentType> src)
+    {
+        if (src) {
+            dest["content"] = {{"type", src->type}, {"str", src->str}, {"length", src->length}, {"obj", src->obj}};
+        }
+        else {
+            dest["content"] = {{"type", nullptr}, {"str", nullptr}, {"length", nullptr}, {"obj", nullptr}};
+        }
+    }
 } // namespace siddiqsoft
 #endif // !HTTP_FRAME_HPP

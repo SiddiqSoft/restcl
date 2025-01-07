@@ -58,17 +58,23 @@ namespace siddiqsoft
         Http1,
         Http11,
         Http12,
-        // Http2,
-        // Http3,
+        Http2,
+        Http3,
         UNKNOWN
     };
     NLOHMANN_JSON_SERIALIZE_ENUM(HttpProtocolVersionType,
                                  {{HttpProtocolVersionType::Http1, "HTTP/1.0"},
                                   {HttpProtocolVersionType::Http11, "HTTP/1.1"},
+                                  {HttpProtocolVersionType::Http12, "HTTP/1.2"},
+                                  {HttpProtocolVersionType::Http2, "HTTP/2"},
+                                  {HttpProtocolVersionType::Http3, "HTTP/3"},
                                   {HttpProtocolVersionType::UNKNOWN, "UNKNOWN"}});
     static const std::map<HttpProtocolVersionType, std::string> HttpProtocolVersions {
             {HttpProtocolVersionType::Http1, "HTTP/1.0"},
             {HttpProtocolVersionType::Http11, "HTTP/1.1"},
+            {HttpProtocolVersionType::Http12, "HTTP/1.2"},
+            {HttpProtocolVersionType::Http2, "HTTP/2"},
+            {HttpProtocolVersionType::Http3, "HTTP/3"},
     };
 
     enum class HttpMethodType

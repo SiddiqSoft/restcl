@@ -164,9 +164,12 @@ namespace siddiqsoft
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
+        auto             postRequest = "https://httpbin.org/post"_POST;
+
+        postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}});
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .sendAsync("https://httpbin.org/post"_POST, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
                         // std::cerr << "Response\n" << *resp << std::endl;
