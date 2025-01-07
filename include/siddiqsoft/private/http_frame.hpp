@@ -33,6 +33,7 @@
 */
 
 #pragma once
+#include <cstddef>
 #ifndef HTTP_FRAME_HPP
 #define HTTP_FRAME_HPP
 
@@ -64,55 +65,54 @@ namespace siddiqsoft
      */
     struct ContentType
     {
-        std::string    type {};
-        std::string    str {};
-        nlohmann::json obj {};
-        uint64_t       length {0};
-
+        std::string type {};
+        std::string str {};
+        size_t      length {0};
+        size_t      offset {0};
+        size_t      chunkSize {0};
+        size_t      remainingSize {0};
 
         void operator=(const std::shared_ptr<ContentType>& src)
         {
-            type   = src->type;
-            str    = src->str;
-            obj    = src->obj;
-            length = src->length;
+            if (src) {
+                offset        = src->offset;
+                chunkSize     = src->chunkSize;
+                remainingSize = src->remainingSize;
+                type          = src->type;
+                str           = src->str;
+                length        = src->length;
+            }
         }
 
         void operator=(std::shared_ptr<ContentType>&& src)
         {
-            type   = src->type;
-            str    = std::move(src->str);
-            obj    = std::move(src->obj);
-            length = src->length;
+            if (src) {
+                offset        = src->offset;
+                chunkSize     = src->chunkSize;
+                remainingSize = src->remainingSize;
+                type          = src->type;
+                str           = std::move(src->str);
+                length        = src->length;
+            }
         }
 
         void operator=(const nlohmann::json& j)
         {
-            obj    = j;
-            str    = j.dump();
-            length = str.length();
-            type   = CONTENT_APPLICATION_JSON;
+            str           = j.dump();
+            remainingSize = length = str.length();
+            type                   = CONTENT_APPLICATION_JSON;
         }
 
         void operator=(const std::string& s)
         {
-            str    = s;
-            length = str.length();
-            type   = CONTENT_APPLICATION_TEXT;
+            str           = s;
+            remainingSize = length = str.length();
+            type                   = CONTENT_APPLICATION_TEXT;
         }
 
         operator std::string() const { return str; }
 
         operator bool() const { return !str.empty(); }
-
-        void recalcLength()
-        {
-            if (str.empty() && !obj.empty()) {
-                str = obj.dump();
-                if (type.empty()) type = CONTENT_APPLICATION_JSON;
-            }
-            length = str.length();
-        }
     };
 
 
@@ -154,7 +154,6 @@ namespace siddiqsoft
         virtual ~http_frame() = default;
         http_frame()          = default;
 
-        // http_frame() { headers["Date"] = DateUtils::RFC7231(); }
 
         auto& setProtocol(const HttpProtocolVersionType& p)
         {
@@ -274,11 +273,9 @@ namespace siddiqsoft
                 throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype).c_str());
 
             if (!ctype.empty() && !c.empty()) {
-                content->obj.clear();
-
-                content->str    = c;
-                content->type   = ctype;
-                content->length = c.length();
+                content->str           = c;
+                content->type          = ctype;
+                content->remainingSize = content->length = c.length();
 
                 if (!headers.contains(HF_CONTENT_TYPE)) {
                     headers[HF_CONTENT_TYPE] = content->type;
@@ -294,11 +291,9 @@ namespace siddiqsoft
 
         auto& setContent(const std::string& src)
         {
-            content->obj.clear();
-
-            content->str    = src;
-            content->length = src.length();
-            content->type   = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
+            content->str           = src;
+            content->remainingSize = content->length = src.length();
+            content->type                            = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_TEXT);
 
             if (!headers.contains(HF_CONTENT_LENGTH)) headers[HF_CONTENT_LENGTH] = content->length;
             return *this;
@@ -326,27 +321,23 @@ namespace siddiqsoft
             // This allows us to handle such things as: application/json+custom
             if (!headers.contains(HF_CONTENT_TYPE)) headers[HF_CONTENT_TYPE] = CONTENT_APPLICATION_JSON;
 
-            content->obj  = c;
-            content->type = headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON);
-            content->recalcLength();
-
-            return *this;
+            return setContent(headers.value(HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON), c.dump());
         }
     };
 
 
     inline void to_json(nlohmann::json& dest, const ContentType& src)
     {
-        dest["content"] = {{"type", src.type}, {"str", src.str}, {"length", src.length}, {"obj", src.obj}};
+        dest["content"] = {{"type", src.type}, {"str", src.str}, {"length", src.length}};
     }
 
     inline void to_json(nlohmann::json& dest, const std::shared_ptr<ContentType> src)
     {
         if (src) {
-            dest["content"] = {{"type", src->type}, {"str", src->str}, {"length", src->length}, {"obj", src->obj}};
+            dest["content"] = {{"type", src->type}, {"str", src->str}, {"length", src->length}};
         }
         else {
-            dest["content"] = {{"type", nullptr}, {"str", nullptr}, {"length", nullptr}, {"obj", nullptr}};
+            dest["content"] = {{"type", nullptr}, {"str", nullptr}, {"length", nullptr}};
         }
     }
 } // namespace siddiqsoft

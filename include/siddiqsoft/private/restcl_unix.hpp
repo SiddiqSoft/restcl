@@ -50,6 +50,7 @@
 #include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/conversion-utils.hpp"
+#include "siddiqsoft/RunOnEnd.hpp"
 
 #include "siddiqsoft/simple_pool.hpp"
 
@@ -156,15 +157,32 @@ namespace siddiqsoft
             return 0;
         }
 
-        /*
-        static size_t onSendCallback(char* ptr, size_t size, size_t nmemb, void* contentPtr)
+
+        static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
-            if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)}; ptr && (contentPtr != nullptr) && (size > 0)) {
-                return fread(ptr, size, nmemb, content->str);
+            if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
+                (libCurlBuffer != nullptr) && (contentPtr != nullptr) && (size > 0))
+            {
+                auto sizeToSendToLibCurlBuffer = size * nmemb;
+                if (content->remainingSize) {
+                    auto dataSizeToCopyToLibCurl = content->remainingSize;
+                    if (dataSizeToCopyToLibCurl > sizeToSendToLibCurlBuffer) {
+                        dataSizeToCopyToLibCurl = sizeToSendToLibCurlBuffer;
+                        memcpy(libCurlBuffer, content->str.data() + content->offset, dataSizeToCopyToLibCurl);
+                        content->offset += dataSizeToCopyToLibCurl;
+                        // If we reached the size of the content buffer then we have no more to send
+                        if (content->offset >= content->length)
+                            content->remainingSize = 0;
+                        else {
+                            content->remainingSize -= dataSizeToCopyToLibCurl;
+                        }
+                        return dataSizeToCopyToLibCurl;
+                    }
+                }
             }
             return EBADF;
         }
-        */
+
 
         auto& extractHeadersFromLibCurl(http_frame& dest)
         {
@@ -175,7 +193,6 @@ namespace siddiqsoft
                     dest.setHeader(currentHeader->name, currentHeader->value);
                     previousHeader = currentHeader;
                 }
-
             } while (currentHeader);
 
             return dest;
@@ -255,34 +272,75 @@ namespace siddiqsoft
                 std::shared_ptr<ContentType> _contents {new ContentType()};
 
                 ioAttempt++;
-                if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc == CURLE_OK) {
-                    if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEDATA, _contents.get()); rc == CURLE_OK) {
-                        rc = curl_easy_setopt(
-                                ctxCurl.get(), CURLOPT_USERAGENT, req.getHeaders().value("User-Agent", UserAgent).c_str());
+                // Set the output/send callback which will process the req's content
+                if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK)
+                    return std::unexpected(rc);
 
-                        if (req.getMethod() == HttpMethodType::METHOD_GET) {
-                            curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
-                        }
-                        else if (req.getMethod() == HttpMethodType::METHOD_POST) {
-                            curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
-                            curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 1L);
-                        }
+                // If we have content to send then set the raw pointer into our callback
+                if (req.getContent()) rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_READDATA, req.getContent().get());
+
+                // Next, we setup the incoming/receive callback and data
+                if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK)
+                    return std::unexpected(rc);
+                if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEDATA, _contents.get()); rc != CURLE_OK)
+                    return std::unexpected(rc);
+
+                // Set headers..
+                struct curl_slist*   curlHeaders = nullptr;
+                siddiqsoft::RunOnEnd cleanupCurlHeaders {[&curlHeaders]() {
+                    // Cleans up the curlHeaders pointer when we're out of scope at this nest.
+                    if (curlHeaders != nullptr) curl_slist_free_all(curlHeaders);
+                }};
+
+                for (auto& [k, v] : req.getHeaders().items()) {
+                    if (v.is_string()) {
+                        curlHeaders = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<std::string>()).c_str());
+                    }
+                    else if (v.is_number_unsigned()) {
+                        curlHeaders = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<uint64_t>()).c_str());
+                    }
+                    else if (v.is_number_integer()) {
+                        curlHeaders = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<int>()).c_str());
+                    }
+                    else if (v.is_null()) {
+                        curlHeaders = curl_slist_append(curlHeaders, std::format("{};", k).c_str());
+                    }
+                    else {
+                        curlHeaders = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.dump()).c_str());
+                    }
+                }
+                if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_HTTPHEADER, curlHeaders); rc != CURLE_OK)
+                    return std::unexpected(rc);
+
+                // Set User-Agent
+                if (rc = curl_easy_setopt(
+                            ctxCurl.get(), CURLOPT_USERAGENT, req.getHeaders().value("User-Agent", UserAgent).c_str());
+                    rc != CURLE_OK)
+                    return std::unexpected(rc);
+
+                // Set options for specific HTTP Methods..
+                if (req.getMethod() == HttpMethodType::METHOD_GET) {
+                    curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
+                }
+                else if (req.getMethod() == HttpMethodType::METHOD_POST) {
+                    curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
+                    curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 1L);
+                }
 
 #if defined(DEBUG) || defined(_DEBUG)
-                        curl_easy_setopt(ctxCurl.get(), CURLOPT_VERBOSE, 1L);
+                curl_easy_setopt(ctxCurl.get(), CURLOPT_VERBOSE, 1L);
 #endif
 
-                        // Send the request..
-                        if (rc = curl_easy_perform(ctxCurl.get()); rc == CURLE_OK) {
-                            ioSend++;
+                // Send the request..
+                if (rc = curl_easy_perform(ctxCurl.get()); rc == CURLE_OK) {
+                    ioSend++;
 
-                            std::cerr << "()()()()()()()()()()()()()()()()()()()()()()\n";
+                    std::cerr << "()()()()()()()()()()()()()()()()()()()()()()\n";
 
-                            extractHeadersFromLibCurl(resp);
-                            resp.setContent(_contents);
-                            return resp;
-                        }
-                    }
+                    extractStartLine(resp);
+                    extractHeadersFromLibCurl(resp);
+                    resp.setContent(_contents);
+                    return resp;
                 }
 
                 // To reach here is failure!
@@ -298,20 +356,20 @@ namespace siddiqsoft
             return std::unexpected(ENOTRECOVERABLE);
         }
 
-        auto& extractStartLine(http_frame& dest)
+        void extractStartLine(rest_response& dest)
         {
-            CURLcode rc {0};
+            CURLcode rc {CURLE_OK};
             long     sc {0};
+            // struct curl_slist* curlHeaders {nullptr};
 
-            auto headerLine = curl_slist_first();
-            
+            // auto headerLine = ;
+
             if (rc = curl_easy_getinfo(ctxCurl.get(), CURLINFO_RESPONSE_CODE, &sc); rc == CURLE_OK) {
                 long vc {0};
                 if (rc = curl_easy_getinfo(ctxCurl.get(), CURLINFO_HTTP_VERSION, &vc); rc == CURLE_OK) {
                     switch (vc) {
                         case CURL_HTTP_VERSION_1_0: dest.setProtocol(HttpProtocolVersionType::Http1); break;
                         case CURL_HTTP_VERSION_1_1: dest.setProtocol(HttpProtocolVersionType::Http11); break;
-                        case CURL_HTTP_VERSION_2:
                         case CURL_HTTP_VERSION_2_0: dest.setProtocol(HttpProtocolVersionType::Http2); break;
                         case CURL_HTTP_VERSION_3: dest.setProtocol(HttpProtocolVersionType::Http3); break;
                         default: dest.setProtocol(HttpProtocolVersionType::UNKNOWN);
