@@ -395,11 +395,12 @@ namespace siddiqsoft
                 if (rc = curl_easy_perform(ctxCurl.get()); rc == CURLE_OK) {
                     ioSend++;
 
-                    std::cerr << "()()()()()()()()()()()()()()()()()()()()()()\n";
+                    std::cerr << "( )()( )()( )()()()()()()()()()()()()( )()( )()( )\n";
 
                     extractStartLine(resp);
                     extractHeadersFromLibCurl(resp);
                     extractContents(_contents, resp);
+                    std::cerr << "(-)()(-)()(-)()()()()()()()()()()()()(-)()(-)()(-)\n";
                     return resp;
                 }
 
@@ -413,6 +414,7 @@ namespace siddiqsoft
                 return std::unexpected(ENETUNREACH);
             }
 
+            std::cerr << std::format("{} - Fall-through failure!\n", __func__);
             return std::unexpected(ENOTRECOVERABLE);
         }
 

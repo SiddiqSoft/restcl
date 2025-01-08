@@ -63,14 +63,30 @@ namespace siddiqsoft
      * @brief Store the Content-Type, Content-Length and the serialized content
      *
      */
-    struct ContentType
+    class ContentType
     {
+    public:
         std::string type {};
         std::string str {};
         size_t      length {0};
         size_t      offset {0};
         size_t      chunkSize {0};
         size_t      remainingSize {0};
+
+        ContentType() = default;
+        ~ContentType() = default;
+        
+        ContentType(const std::shared_ptr<ContentType> src)
+        {
+            if (src) {
+                offset        = src->offset;
+                chunkSize     = src->chunkSize;
+                remainingSize = src->remainingSize;
+                type          = src->type;
+                str           = src->str;
+                length        = src->length;
+            }
+        }
 
         void operator=(const std::shared_ptr<ContentType> src)
         {
@@ -304,7 +320,12 @@ namespace siddiqsoft
 
         auto& setContent(std::shared_ptr<ContentType> src)
         {
-            content.swap(src);
+            try {
+                content.swap(src);
+            }
+            catch (std::exception& e) {
+                std::cerr << std::format("{} - Exception: {}\n", __func__, e.what());
+            }
             return *this;
         }
 
