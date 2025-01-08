@@ -304,7 +304,7 @@ namespace siddiqsoft
 
         auto& setContent(std::shared_ptr<ContentType> src)
         {
-            content = src;
+            content.swap(src);
             return *this;
         }
 
