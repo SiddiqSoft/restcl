@@ -110,6 +110,20 @@ namespace siddiqsoft
             type                   = CONTENT_APPLICATION_TEXT;
         }
 
+        void parseFromSerializedJson(const std::string& s)
+        {
+            try {
+                auto obj      = nlohmann::json::parse(s);
+                str           = obj.dump();
+                remainingSize = length = str.length();
+                type                   = CONTENT_APPLICATION_JSON;
+                offset                 = 0;
+                chunkSize              = 0;
+            }
+            catch (...) {
+            }
+        }
+
         operator std::string() const { return str; }
 
         operator bool() const { return !str.empty(); }
@@ -351,7 +365,7 @@ namespace siddiqsoft
     inline void to_json(nlohmann::json& dest, const http_frame& src)
     {
         dest["http_frame"] = {{"protocol", src.protocol}, {"method", src.method}, {"uri", src.uri}, {"headers", src.headers}};
-        if (src.content) dest["content"] = src.content;
+        if (src.content) dest.emplace_back(src.content);
     }
 } // namespace siddiqsoft
 #endif // !HTTP_FRAME_HPP

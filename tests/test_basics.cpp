@@ -116,7 +116,8 @@ namespace siddiqsoft
                 .sendAsync("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
-                        // std::cerr << "Response\n" << *resp << std::endl;
+                        std::cerr << std::format(
+                                "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n", __func__, nlohmann::json(*resp).dump(3));
                     }
                     else if (resp) {
                         auto [ec, emsg] = resp->status();
@@ -133,16 +134,17 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(Validation, test_positive_bing_com)
+    TEST(Validation, test_positive_duckduckgo_com)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .sendAsync("https://www.bing.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
-                        // std::cerr << "Response\n" << *resp << std::endl;
+                        nlohmann::json doc =resp.value();
+                        std::cerr << "Response\n" << doc.dump(3) << std::endl;
                     }
                     else if (resp) {
                         auto [ec, emsg] = resp->status();
@@ -151,7 +153,7 @@ namespace siddiqsoft
                     }
                     else {
                         passTest = true;
-                        std::cerr << std::format("{}: failed:{}\n", __func__, resp.error());
+                        std::cerr << std::format("{}: failed: du{}\n", __func__, resp.error());
                     }
                     passTest.notify_all();
                 });
@@ -172,9 +174,8 @@ namespace siddiqsoft
                 .sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
-                        nlohmann::json doc {resp.value()};
+                        nlohmann::json doc =resp.value();
                         std::cerr << "Response\n" << doc.dump(3) << std::endl;
-                        // std::cerr << "Good Response:\n" << resp.value() << std::endl;
                     }
                     else if (resp) {
                         nlohmann::json doc {resp.value()};

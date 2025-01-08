@@ -305,7 +305,8 @@ namespace siddiqsoft
     {
         dest["response"] = {{"statusCode", src._statusCode}, {"statusMessage", src._reasonCode}, {"protocol", src.protocol}};
         dest["headers"]  = src.headers;
-        dest["content"] = src.content;
+        // dest["content"] = src.content;
+        dest.emplace_back(src.content);
     }
 
 

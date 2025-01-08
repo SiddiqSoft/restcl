@@ -148,18 +148,23 @@ namespace siddiqsoft
          */
         static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
+            std::cerr << std::format("{} - Invoked; size:{}  nmemb:{}\n", __func__, size, nmemb);
+
             if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
                 contents && (contentPtr != nullptr) && (size > 0))
             {
                 content->str.append(reinterpret_cast<char*>(contents), size * nmemb);
                 return size * nmemb;
             }
+
             return 0;
         }
 
 
         static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
+            std::cerr << std::format("{} - Invoked; size:{}  nmemb:{}\n", __func__, size, nmemb);
+
             if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
                 (libCurlBuffer != nullptr) && (contentPtr != nullptr) && (size > 0))
             {
@@ -180,7 +185,8 @@ namespace siddiqsoft
                     }
                 }
             }
-            return EBADF;
+
+            return 0;
         }
 
 
@@ -272,6 +278,19 @@ namespace siddiqsoft
                 std::shared_ptr<ContentType> _contents {new ContentType()};
 
                 ioAttempt++;
+                switch (req.getProtocol()) {
+                    case HttpProtocolVersionType::Http1:
+                        curl_easy_setopt(ctxCurl.get(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+                        break;
+                    case HttpProtocolVersionType::Http2:
+                        curl_easy_setopt(ctxCurl.get(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+                        break;
+                    case HttpProtocolVersionType::Http3:
+                        curl_easy_setopt(ctxCurl.get(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_3);
+                        break;
+                    default: curl_easy_setopt(ctxCurl.get(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1); break;
+                }
+
                 // Next, we setup the incoming/receive callback and data
                 if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK)
                     return std::unexpected(rc);
@@ -285,7 +304,10 @@ namespace siddiqsoft
                     if (curlHeaders != nullptr) curl_slist_free_all(curlHeaders);
                 }};
 
+                curlHeaders = curl_slist_append(curlHeaders, "Expect:");
                 for (auto& [k, v] : req.getHeaders().items()) {
+                    // std::cerr << std::format("{} - Setting the header....{} = {}\n", __func__, k, v.dump());
+
                     if (v.is_string()) {
                         curlHeaders = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<std::string>()).c_str());
                     }
@@ -314,20 +336,23 @@ namespace siddiqsoft
                 // Set options for specific HTTP Methods..
                 if (req.getMethod() == HttpMethodType::METHOD_GET) {
                     curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
+                    curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 0L);
                 }
                 else if (req.getMethod() == HttpMethodType::METHOD_POST) {
                     curl_easy_setopt(ctxCurl.get(), CURLOPT_URL, req.getUri().string().c_str());
                     curl_easy_setopt(ctxCurl.get(), CURLOPT_POST, 1L);
-                    if (req.getContent() && req.getContent()->type.starts_with(CONTENT_APPLICATION_JSON)) {
-                        if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_COPYPOSTFIELDS, req.encodeContent().c_str());
-                            rc != CURLE_OK)
-                            return std::unexpected(rc);
-                        if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_POSTFIELDSIZE, req.getContent()->length); rc != CURLE_OK)
-                            return std::unexpected(rc);
-                        std::cerr << std::format(
-                                "{} - Length: {} - Content:{}\n", __func__, req.getContent()->length, req.encodeContent());
-                    }
-                    else {
+                    // if (req.getContent() && req.getContent()->type.starts_with(CONTENT_APPLICATION_JSON)) {
+                    //     if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_COPYPOSTFIELDS, req.encodeContent().c_str());
+                    //         rc != CURLE_OK)
+                    //         return std::unexpected(rc);
+                    //     if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_POSTFIELDSIZE, req.getContent()->length); rc !=
+                    //     CURLE_OK)
+                    //         return std::unexpected(rc);
+                    //     std::cerr << std::format(
+                    //             "{} - Length: {} - Content:{}\n", __func__, req.getContent()->length, req.encodeContent());
+                    // }
+                    // else
+                    {
                         // Set the output/send callback which will process the req's content
                         if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK)
                             return std::unexpected(rc);
@@ -354,6 +379,11 @@ namespace siddiqsoft
                     // headers in libcurl are always string values so we'd need to convert them to integer
                     _contents->length =
                             std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
+                    // Make sure we have the content length properly
+                    if ((_contents->length == 0) && !_contents->str.empty()) _contents->length = _contents->str.length();
+                    // Fixup the content..
+                    //_contents->parseFromSerializedJson(_contents->str);
+
                     resp.setContent(_contents);
                     return resp;
                 }
