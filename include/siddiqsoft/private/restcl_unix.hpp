@@ -126,9 +126,9 @@ namespace siddiqsoft
             catch (std::system_error& se) {
                 // Failed; dispatch anyways and let the client figure out the issue.
                 std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
-                                          "******************************************\n",
-                                          callbackAttempt.load(),
-                                          se.what());
+                                         "******************************************\n",
+                                         callbackAttempt.load(),
+                                         se.what());
                 dispatchCallback(arg.callback, arg.request, std::unexpected<int>(reinterpret_cast<int>(se.code().value())));
             }
             catch (std::exception& ex) {
@@ -152,12 +152,19 @@ namespace siddiqsoft
          */
         static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
-            std::cerr << std::format("{} - Invoked; size:{}  nmemb:{}\n", __func__, size, nmemb);
+            std::cerr << std::format("{} - Invoked (reading content); size:{}  nmemb:{}\n", __func__, size, nmemb);
 
             if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
                 contents && (contentPtr != nullptr) && (size > 0))
             {
                 content->str.append(reinterpret_cast<char*>(contents), size * nmemb);
+
+                std::cerr << std::format("{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
+                                         __func__,
+                                         size,
+                                         nmemb,
+                                         size * nmemb);
+
                 return size * nmemb;
             }
 
@@ -167,12 +174,11 @@ namespace siddiqsoft
 
         static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
-            std::cerr << std::format("{} - Invoked; size:{}  nmemb:{}\n", __func__, size, nmemb);
-
             if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
                 (libCurlBuffer != nullptr) && (contentPtr != nullptr) && (size > 0))
             {
                 auto sizeToSendToLibCurlBuffer = size * nmemb;
+
                 if (content->remainingSize) {
                     auto dataSizeToCopyToLibCurl = content->remainingSize;
                     if (dataSizeToCopyToLibCurl > sizeToSendToLibCurlBuffer) {
@@ -185,6 +191,16 @@ namespace siddiqsoft
                         else {
                             content->remainingSize -= dataSizeToCopyToLibCurl;
                         }
+
+                        std::cerr << std::format("{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
+                                                 "remainingSize:{}  dataSizeToCopyToLibCurl:{}\n",
+                                                 __func__,
+                                                 size,
+                                                 nmemb,
+                                                 sizeToSendToLibCurlBuffer,
+                                                 content->remainingSize,
+                                                 dataSizeToCopyToLibCurl);
+
                         return dataSizeToCopyToLibCurl;
                     }
                 }
