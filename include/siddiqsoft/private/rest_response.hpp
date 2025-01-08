@@ -46,7 +46,7 @@
 #include <memory>
 #include <format>
 #include <iterator>
-
+#include <expected>
 
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"

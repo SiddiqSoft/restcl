@@ -16,6 +16,7 @@
 #include <optional>
 #include <functional>
 #include <expected>
+
 #include "restcl_definitions.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"

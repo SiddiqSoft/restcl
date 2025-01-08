@@ -23,6 +23,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <expected>
 
 #include "curl/curl.h"
 

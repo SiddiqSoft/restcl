@@ -125,7 +125,11 @@ namespace siddiqsoft
             }
             catch (std::system_error& se) {
                 // Failed; dispatch anyways and let the client figure out the issue.
-                dispatchCallback(arg.callback, arg.request, std::unexpected(reinterpret_cast<int>(se.code().value())));
+                std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
+                                          "******************************************\n",
+                                          callbackAttempt.load(),
+                                          se.what());
+                dispatchCallback(arg.callback, arg.request, std::unexpected<int>(reinterpret_cast<int>(se.code().value())));
             }
             catch (std::exception& ex) {
                 callbackFailed++;
@@ -293,7 +297,7 @@ namespace siddiqsoft
 
                 // Next, we setup the incoming/receive callback and data
                 if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK)
-                    return std::unexpected(rc);
+                    return std::unexpected<int>(rc);
                 if (rc = curl_easy_setopt(ctxCurl.get(), CURLOPT_WRITEDATA, _contents.get()); rc != CURLE_OK)
                     return std::unexpected(rc);
 

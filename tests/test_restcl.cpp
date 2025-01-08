@@ -19,6 +19,7 @@
 #include <iostream>
 #include <barrier>
 #include <version>
+#include <expected>
 
 #include "nlohmann/json.hpp"
 #include "../include/siddiqsoft/restcl.hpp"

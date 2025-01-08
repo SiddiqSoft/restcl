@@ -19,7 +19,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-
+#include <expected>
 
 #include "openssl/err.h"
 #include "openssl/ssl.h"
