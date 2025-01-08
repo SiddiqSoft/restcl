@@ -193,12 +193,13 @@ namespace siddiqsoft
                         }
 
                         std::cerr << std::format("{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
-                                                 "remainingSize:{}  dataSizeToCopyToLibCurl:{}\n",
+                                                 "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
                                                  __func__,
                                                  size,
                                                  nmemb,
                                                  sizeToSendToLibCurlBuffer,
                                                  content->remainingSize,
+                                                 content->offset,
                                                  dataSizeToCopyToLibCurl);
 
                         return dataSizeToCopyToLibCurl;
@@ -212,14 +213,19 @@ namespace siddiqsoft
 
         auto& extractHeadersFromLibCurl(http_frame& dest)
         {
-            curl_header* currentHeader {};
-            curl_header* previousHeader {};
+            int          headerCount {0};
+            curl_header* currentHeader {nullptr};
+            curl_header* previousHeader {nullptr};
+
             do {
                 if (currentHeader = curl_easy_nextheader(ctxCurl.get(), CURLH_HEADER, -1, previousHeader); currentHeader) {
                     dest.setHeader(currentHeader->name, currentHeader->value);
                     previousHeader = currentHeader;
+                    headerCount++;
                 }
             } while (currentHeader);
+
+            std::cerr << std::format("{} - Extracted headerCount:{}\n", __func__, headerCount);
 
             return dest;
         }
@@ -393,18 +399,7 @@ namespace siddiqsoft
 
                     extractStartLine(resp);
                     extractHeadersFromLibCurl(resp);
-                    // Fixup the content data..type and length
-                    _contents->type =
-                            resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
-                    // headers in libcurl are always string values so we'd need to convert them to integer
-                    _contents->length =
-                            std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
-                    // Make sure we have the content length properly
-                    if ((_contents->length == 0) && !_contents->str.empty()) _contents->length = _contents->str.length();
-                    // Fixup the content..
-                    //_contents->parseFromSerializedJson(_contents->str);
-
-                    resp.setContent(_contents);
+                    extractContents(_contents, resp);
                     return resp;
                 }
 
@@ -421,13 +416,34 @@ namespace siddiqsoft
             return std::unexpected(ENOTRECOVERABLE);
         }
 
+        void extractContents(std::shared_ptr<ContentType> cntnt, rest_response& resp)
+        {
+            // Fixup the content data..type and length
+            cntnt->type = resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
+            std::cerr << std::format("{} - Content-Type:{}\n", __func__, cntnt->type);
+            // headers in libcurl are always string values so we'd need to convert them to integer
+            cntnt->length = std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
+            std::cerr << std::format("{} - Content-Length:{}\n", __func__, cntnt->length);
+            // Make sure we have the content length properly
+            if ((cntnt->length == 0) && !cntnt->str.empty()) cntnt->length = cntnt->str.length();
+            // Fixup the content..
+            // cntnt->parseFromSerializedJson(cntnt->str);
+            std::cerr << std::format("{} - Fixed Content-Type:{}  Content-Length:{}\n{}\n",
+                                     __func__,
+                                     cntnt->type,
+                                     cntnt->length,
+                                     nlohmann::json(cntnt).dump(3));
+
+            resp.setContent(cntnt);
+
+            auto doc = nlohmann::json(resp);
+            std::cerr << std::format("{} - Finally the content block:\n{}\n", __func__, doc.dump(3));
+        }
+
         void extractStartLine(rest_response& dest)
         {
             CURLcode rc {CURLE_OK};
             long     sc {0};
-            // struct curl_slist* curlHeaders {nullptr};
-
-            // auto headerLine = ;
 
             if (rc = curl_easy_getinfo(ctxCurl.get(), CURLINFO_RESPONSE_CODE, &sc); rc == CURLE_OK) {
                 long vc {0};
@@ -441,6 +457,10 @@ namespace siddiqsoft
                     }
                     dest.setStatus(sc, "");
                 }
+            }
+
+            if (rc == CURLE_OK) {
+                std::cerr << std::format("{} - rc:{}  sc:{}", __func__, curl_easy_strerror(rc), sc);
             }
         }
 

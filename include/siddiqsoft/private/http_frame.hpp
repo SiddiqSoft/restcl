@@ -72,7 +72,7 @@ namespace siddiqsoft
         size_t      chunkSize {0};
         size_t      remainingSize {0};
 
-        void operator=(const std::shared_ptr<ContentType>& src)
+        void operator=(const std::shared_ptr<ContentType> src)
         {
             if (src) {
                 offset        = src->offset;
@@ -80,18 +80,6 @@ namespace siddiqsoft
                 remainingSize = src->remainingSize;
                 type          = src->type;
                 str           = src->str;
-                length        = src->length;
-            }
-        }
-
-        void operator=(std::shared_ptr<ContentType>&& src)
-        {
-            if (src) {
-                offset        = src->offset;
-                chunkSize     = src->chunkSize;
-                remainingSize = src->remainingSize;
-                type          = src->type;
-                str           = std::move(src->str);
                 length        = src->length;
             }
         }
@@ -288,6 +276,7 @@ namespace siddiqsoft
 
             if (!ctype.empty() && !c.empty() && content) {
                 content->str           = c;
+                content->offset        = 0;
                 content->type          = ctype;
                 content->remainingSize = content->length = c.length();
                 headers[HF_CONTENT_TYPE]                 = content->type;
@@ -302,6 +291,7 @@ namespace siddiqsoft
         {
             if (content && !src.empty()) {
                 content->str           = src;
+                content->offset        = 0;
                 content->remainingSize = content->length = src.length();
 
                 content->type = headers.value(HF_CONTENT_TYPE, headers.value("content-type", CONTENT_APPLICATION_TEXT));
