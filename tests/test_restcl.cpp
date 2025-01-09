@@ -417,11 +417,10 @@ namespace siddiqsoft
             // std::print( std::cerr, "Post wrc..\n");
             basic_callbacktype valid = [&](const auto& req, std::expected<rest_response, int> resp) {
                 callbackCounter++;
-                // std::cerr << "From callback Serialized json: " << req << std::endl;
+
                 if (resp->success()) {
                     passTest += resp->statusCode() == 200;
                     passTest.notify_all();
-                    // std::cerr << "Response\n"<< *resp << std::endl;
                 }
                 else {
                     std::cerr << "Got error: " << resp->statusCode() << " for " << req.getUri().authority.host << " -- "
@@ -463,7 +462,7 @@ namespace siddiqsoft
             std::this_thread::sleep_for(std::chrono::milliseconds(1900));
         }
 
-        // std::this_thread::sleep_for(std::chrono::seconds(9));
+        std::this_thread::sleep_for(std::chrono::seconds(9));
 
         std::cerr << "Wrapup; ITER_COUNT: " << ITER_COUNT << "\npassTest: " << passTest.load()
                   << "\ncallbackCounter: " << callbackCounter.load() << std::endl;
