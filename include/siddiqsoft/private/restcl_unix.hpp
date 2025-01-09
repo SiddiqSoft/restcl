@@ -125,7 +125,7 @@ namespace siddiqsoft
             }
             catch (std::system_error& se) {
                 // Failed; dispatch anyways and let the client figure out the issue.
-                std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
+                std::print( std::cerr, "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
                                          "******************************************\n",
                                          callbackAttempt.load(),
                                          se.what());
@@ -133,7 +133,7 @@ namespace siddiqsoft
             }
             catch (std::exception& ex) {
                 callbackFailed++;
-                std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
+                std::print( std::cerr, "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
                                          "******************************************\n",
                                          callbackAttempt.load(),
                                          ex.what());
@@ -152,14 +152,14 @@ namespace siddiqsoft
          */
         static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
-            std::cerr << std::format("{} - Invoked (reading content); size:{}  nmemb:{}\n", __func__, size, nmemb);
+            std::print( std::cerr, "{} - Invoked (reading content); size:{}  nmemb:{}\n", __func__, size, nmemb);
 
             if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
                 contents && (contentPtr != nullptr) && (size > 0))
             {
                 content->str.append(reinterpret_cast<char*>(contents), size * nmemb);
 
-                std::cerr << std::format("{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
+                std::print( std::cerr, "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
                                          __func__,
                                          size,
                                          nmemb,
@@ -192,7 +192,7 @@ namespace siddiqsoft
                             content->remainingSize -= dataSizeToCopyToLibCurl;
                         }
 
-                        std::cerr << std::format("{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
+                        std::print( std::cerr, "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
                                                  "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
                                                  __func__,
                                                  size,
@@ -225,7 +225,7 @@ namespace siddiqsoft
                 }
             } while (currentHeader);
 
-            std::cerr << std::format("{} - Extracted headerCount:{}\n", __func__, headerCount);
+            std::print( std::cerr, "{} - Extracted headerCount:{}\n", __func__, headerCount);
 
             return dest;
         }
@@ -298,7 +298,7 @@ namespace siddiqsoft
 
             auto destinationHost = req.getHost();
 
-            std::cerr << std::format("{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json {req}.dump(3));
+            std::print( std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json {req}.dump(3));
 
             if (ctxCurl && !destinationHost.empty()) {
                 std::shared_ptr<ContentType> _contents {new ContentType()};
@@ -332,7 +332,7 @@ namespace siddiqsoft
 
                 curlHeaders = curl_slist_append(curlHeaders, "Expect:");
                 for (auto& [k, v] : req.getHeaders().items()) {
-                    // std::cerr << std::format("{} - Setting the header....{} = {}\n", __func__, k, v.dump());
+                    // std::print( std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
 
                     if (v.is_string()) {
                         curlHeaders = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<std::string>()).c_str());
@@ -406,7 +406,7 @@ namespace siddiqsoft
 
                 // To reach here is failure!
                 ioSendFailed++;
-                std::cerr << std::format("{}:curl_easy_perform() failed:{}\n", __func__, curl_easy_strerror(rc));
+                std::print( std::cerr, "{}:curl_easy_perform() failed:{}\n", __func__, curl_easy_strerror(rc));
                 return std::unexpected(rc);
             }
             else {
@@ -414,7 +414,7 @@ namespace siddiqsoft
                 return std::unexpected(ENETUNREACH);
             }
 
-            std::cerr << std::format("{} - Fall-through failure!\n", __func__);
+            std::print( std::cerr, "{} - Fall-through failure!\n", __func__);
             return std::unexpected(ENOTRECOVERABLE);
         }
 
@@ -422,15 +422,15 @@ namespace siddiqsoft
         {
             // Fixup the content data..type and length
             cntnt->type = resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
-            std::cerr << std::format("{} - Content-Type:{}\n", __func__, cntnt->type);
+            std::print( std::cerr, "{} - Content-Type:{}\n", __func__, cntnt->type);
             // headers in libcurl are always string values so we'd need to convert them to integer
             cntnt->length = std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
-            std::cerr << std::format("{} - Content-Length:{}\n", __func__, cntnt->length);
+            std::print( std::cerr, "{} - Content-Length:{}\n", __func__, cntnt->length);
             // Make sure we have the content length properly
             if ((cntnt->length == 0) && !cntnt->str.empty()) cntnt->length = cntnt->str.length();
             // Fixup the content..
             // cntnt->parseFromSerializedJson(cntnt->str);
-            std::cerr << std::format("{} - Fixed Content-Type:{}  Content-Length:{}\n{}\n",
+            std::print( std::cerr, "{} - Fixed Content-Type:{}  Content-Length:{}\n{}\n",
                                      __func__,
                                      cntnt->type,
                                      cntnt->length,
@@ -439,7 +439,7 @@ namespace siddiqsoft
             resp.setContent(cntnt);
 
             auto doc = nlohmann::json(resp);
-            std::cerr << std::format("{} - Finally the content block:\n{}\n", __func__, doc.dump(3));
+            std::print( std::cerr, "{} - Finally the content block:\n{}\n", __func__, doc.dump(3));
         }
 
         void extractStartLine(rest_response& dest)
@@ -462,7 +462,7 @@ namespace siddiqsoft
             }
 
             if (rc == CURLE_OK) {
-                std::cerr << std::format("{} - rc:{}  sc:{}", __func__, curl_easy_strerror(rc), sc);
+                std::print( std::cerr, "{} - rc:{}  sc:{}", __func__, curl_easy_strerror(rc), sc);
             }
         }
 

@@ -248,14 +248,14 @@ namespace siddiqsoft
                                 hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
                     {
 #ifdef _DEBUG
-                        std::cerr << std::format("{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+                        std::print( std::cerr, "{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
 #endif
                     }
 
                     // Enable decompression
                     if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
 #ifdef _DEBUG
-                        std::cerr << std::format("{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+                        std::print( std::cerr, "{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
 #endif
                     }
                 }

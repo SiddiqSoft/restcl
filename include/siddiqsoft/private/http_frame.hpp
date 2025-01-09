@@ -74,6 +74,8 @@ namespace siddiqsoft
         size_t      chunkSize {0};
         size_t      remainingSize {0};
 
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(ContentType, type, str, length, offset, chunkSize, remainingSize);
+
         ContentType()  = default;
         ~ContentType() = default;
 
@@ -325,7 +327,7 @@ namespace siddiqsoft
                 content.swap(src);
             }
             catch (std::exception& e) {
-                std::cerr << std::format("{} - Exception: {}\n", __func__, e.what());
+                std::print(std::cerr, "{} - Exception: {}\n", __func__, e.what());
             }
             return *this;
         }
@@ -358,32 +360,33 @@ namespace siddiqsoft
         friend void to_json(nlohmann::json&, const http_frame&);
     };
 
-
-    inline void to_json(nlohmann::json& dest, const ContentType& src)
-    {
-        dest = nlohmann::json {{"type", src.type},
-                               {"str", src.str},
-                               {"length", src.length},
-                               {"offset", src.offset},
-                               {"chunkSize", src.chunkSize},
-                               {"remainingSize", src.remainingSize}};
-    }
-
-    inline void to_json(nlohmann::json& dest, const std::shared_ptr<ContentType> src)
-    {
-        if (src) {
-            dest = nlohmann::json {{"type", src->type},
-                                   {"str", src->str},
-                                   {"length", src->length},
-                                   {"offset", src->offset},
-                                   {"chunkSize", src->chunkSize},
-                                   {"remainingSize", src->remainingSize}};
+    /*
+        inline void to_json(nlohmann::json& dest, const ContentType& src)
+        {
+            dest = nlohmann::json {{"type", src.type},
+                                   {"str", src.str},
+                                   {"length", src.length},
+                                   {"offset", src.offset},
+                                   {"chunkSize", src.chunkSize},
+                                   {"remainingSize", src.remainingSize}};
         }
-        else {
-            dest = {};
-        }
-    }
 
+        inline void to_json(nlohmann::json& dest, const std::shared_ptr<ContentType> src)
+        {
+            if (src) {
+                dest = nlohmann::json {{"type", src->type},
+                                       {"str", src->str},
+                                       {"length", src->length},
+                                       {"offset", src->offset},
+                                       {"chunkSize", src->chunkSize},
+                                       {"remainingSize", src->remainingSize}};
+            }
+            else {
+                dest = {};
+            }
+        }
+    */
+    
     inline void to_json(nlohmann::json& dest, const http_frame& src)
     {
         dest = nlohmann::json {{"protocol", src.protocol},
@@ -392,5 +395,6 @@ namespace siddiqsoft
                                {"headers", src.headers},
                                {"content", src.content}};
     }
+    
 } // namespace siddiqsoft
 #endif // !HTTP_FRAME_HPP

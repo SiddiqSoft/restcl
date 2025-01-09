@@ -78,7 +78,7 @@ namespace siddiqsoft
         auto srt = "https://www.siddiqsoft.com/"_GET;
 
         // Checks the implementation of the std::formatter implementation
-        std::cerr << std::format("Wire serialize              : {}\n", srt);
+        std::print(std::cerr, "Wire serialize              : {}\n", srt);
     }
 
 
@@ -117,8 +117,10 @@ namespace siddiqsoft
                 .sendAsync("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
-                        std::cerr << std::format(
-                                "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n", __func__, nlohmann::json(*resp).dump(3));
+                        std::print(std::cerr,
+                                   "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
+                                   __func__,
+                                   nlohmann::json(*resp).dump(3));
                     }
                     else if (resp) {
                         auto [ec, emsg] = resp->status();
@@ -154,7 +156,7 @@ namespace siddiqsoft
                     }
                     else {
                         passTest = true;
-                        std::cerr << std::format("{}: failed: du{}\n", __func__, resp.error());
+                        std::print(std::cerr, "{}: failed: du{}\n", __func__, resp.error());
                     }
                     passTest.notify_all();
                 });
@@ -176,18 +178,18 @@ namespace siddiqsoft
                     if (resp && resp->success()) {
                         passTest           = true;
                         nlohmann::json doc = resp.value();
-                        std::cerr << std::format("{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
+                        std::print(std::cerr, "{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
                     }
                     else if (resp) {
-                        nlohmann::json doc (resp.value());
+                        nlohmann::json doc(resp.value());
 
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
-                        std::cerr << std::format("{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
+                        std::print(std::cerr, "{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
                     }
                     else {
                         passTest = true;
-                        std::cerr << std::format("{}: failed:{}\n", __func__, resp.error());
+                        std::print(std::cerr, "{}: failed:{}\n", __func__, resp.error());
                     }
                     passTest.notify_all();
                 });

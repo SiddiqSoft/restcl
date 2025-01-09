@@ -182,7 +182,7 @@ namespace siddiqsoft
                                // The request must be the same as we configured!
                                EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
                                // Checks the implementation of the std::format implementation
-                               std::cerr << std::format("From callback Wire serialize              : {}\n", req);
+                               std::print( std::cerr, "From callback Wire serialize              : {}\n", req);
                                if (passTest = resp->success(); passTest.load()) {
                                    std::cerr << "Response\n" << *resp << std::endl;
                                    // EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
@@ -409,7 +409,7 @@ namespace siddiqsoft
             restcl               wrc;
             siddiqsoft::RunOnEnd roe([&]() { std::cerr << "Final Stats of the client: " << wrc << std::endl; });
 
-            // std::cerr << std::format("Post wrc..\n");
+            // std::print( std::cerr, "Post wrc..\n");
             basic_callbacktype valid = [&](const auto& req, std::expected<rest_response, int> resp) {
                 callbackCounter++;
                 // std::cerr << "From callback Serialized json: " << req << std::endl;
@@ -429,31 +429,31 @@ namespace siddiqsoft
             wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__), std::move(valid));
 
 #ifdef _DEBUG0
-            std::cerr << std::format("Adding {} items..\n", ITER_COUNT);
+            std::print( std::cerr, "Adding {} items..\n", ITER_COUNT);
 #endif
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
                     wrc.sendAsync("https://www.yahoo.com/"_GET);
 #ifdef _DEBUG0
-                    std::cerr << std::format("Added i:{}  i%3:{}  \n", i, (i % 3));
+                    std::print( std::cerr, "Added i:{}  i%3:{}  \n", i, (i % 3));
 #endif
                 }
                 else if (i % 2 == 0) {
                     wrc.sendAsync("https://www.duckduckgo.com/"_GET);
 #ifdef _DEBUG0
-                    std::cerr << std::format("Added i:{}  i%2:{}  \n", i, (i % 2));
+                    std::print( std::cerr, "Added i:{}  i%2:{}  \n", i, (i % 2));
 #endif
                 }
                 else {
                     wrc.sendAsync("https://www.google.com/"_GET);
 #ifdef _DEBUG0
-                    std::cerr << std::format("Added i:{}  ......  \n", i);
+                    std::print( std::cerr, "Added i:{}  ......  \n", i);
 #endif
                 }
             }
 #ifdef _DEBUG0
-            std::cerr << std::format("Finished adding {} items..\n", ITER_COUNT);
+            std::print( std::cerr, "Finished adding {} items..\n", ITER_COUNT);
 #endif
             std::this_thread::sleep_for(std::chrono::milliseconds(1900));
         }
@@ -470,7 +470,7 @@ namespace siddiqsoft
     {
         const unsigned   ITER_COUNT = 1;
         std::atomic_uint passTest   = 0;
-        std::cerr << std::format("Starting..\n");
+        std::print( std::cerr, "Starting..\n");
 
         try {
             using namespace std::chrono_literals;
@@ -495,7 +495,7 @@ namespace siddiqsoft
                 myStats["timeDrift"]       = deltastr;
                 myStats["timeNow"]         = siddiqsoft::DateUtils::ISO8601(timeNow);
 
-                std::cerr << std::format("Time drift check {}", myStats.dump()) << std::endl;
+                std::print( std::cerr, "Time drift check {}", myStats.dump());
 
                 if ((deltaMS > 1500ms) || (deltaMS < -1500ms)) {
                     std::cerr << "  Found drift from clock more than 1500ms" << std::endl;
@@ -503,7 +503,7 @@ namespace siddiqsoft
             }
         }
         catch (const std::exception& ex) {
-            std::cerr << std::format("Housekeeping exception: {}", ex.what()) << std::endl;
+            std::print( std::cerr, "Housekeeping exception: {}", ex.what());
         }
 
         EXPECT_EQ(ITER_COUNT, passTest.load());
