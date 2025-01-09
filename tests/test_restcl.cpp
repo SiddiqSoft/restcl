@@ -182,7 +182,7 @@ namespace siddiqsoft
                                // The request must be the same as we configured!
                                EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
                                // Checks the implementation of the std::format implementation
-                               std::print( std::cerr, "From callback Wire serialize              : {}\n", req);
+                               std::print(std::cerr, "From callback Wire serialize              : {}\n", req);
                                if (passTest = resp->success(); passTest.load()) {
                                    std::cerr << "Response\n" << *resp << std::endl;
                                    // EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
@@ -278,24 +278,25 @@ namespace siddiqsoft
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
-                .sendAsync("https://httpbin.org:9090/get"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
-                    std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-                    if (resp->success()) {
-                        std::cerr << "Response\n" << *resp << std::endl;
-                    }
-                    else if (resp.has_value()) {
-                        auto [ec, emsg] = resp->status();
-                        passTest        = ((ec == 12002) || (ec == 12029));
-                        std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
-                    }
-                    else {
-                        // We MUST get a connection failure; the site does not exist!
-                        passTest = true;
-                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --" << strerror(resp.error())
-                                  << std::endl;
-                    }
-                    passTest.notify_all();
-                });
+                .sendAsync("https://httpbin.org:9090/get"_OPTIONS,
+                           [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                               std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+                               if (resp->success()) {
+                                   std::cerr << "Response\n" << *resp << std::endl;
+                               }
+                               else if (resp.has_value()) {
+                                   auto [ec, emsg] = resp->status();
+                                   passTest        = ((ec == 12002) || (ec == 12029));
+                                   std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
+                               }
+                               else {
+                                   // We MUST get a connection failure; the site does not exist!
+                                   passTest = true;
+                                   std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                             << strerror(resp.error()) << std::endl;
+                               }
+                               passTest.notify_all();
+                           });
 
         passTest.wait(false);
         EXPECT_TRUE(passTest.load());
@@ -369,6 +370,7 @@ namespace siddiqsoft
     {
         std::atomic_uint                passTest {0};
         std::vector<siddiqsoft::restcl> clients;
+        int                             clientIndex {0};
 
         for (auto i = 0; i < 4; i++) {
             clients.push_back(siddiqsoft::restcl {});
@@ -378,12 +380,11 @@ namespace siddiqsoft
 
         // Send data over each client (if we mess up the move constructors this will fail)
         std::for_each(clients.begin(), clients.end(), [&](auto& wrc) {
-            wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__),
+            wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:4; s:{0})", __FUNCTION__, ++clientIndex),
                           [&](const auto& req, std::expected<rest_response, int> resp) {
-                              // std::cerr << "From callback Serialized json: " << req << std::endl;
                               if (resp->success()) {
                                   passTest += resp->statusCode() == 200;
-                                  // std::cerr << "Response\n"<< *resp << std::endl;
+                                  EXPECT_EQ("-1", resp->getHeader("Expires"));
                               }
                               else {
                                   auto [ec, emsg] = resp->status();
@@ -393,6 +394,10 @@ namespace siddiqsoft
                     .sendAsync("https://www.google.com/"_GET);
         });
 
+        // This sleep is important otherwise we will end up destroying the IO workers before
+        // any activity has had a chance to complete!
+        // The underlying libraries do not "hold" and spool out their
+        // transactions!
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
         EXPECT_EQ(4, passTest.load());
@@ -429,31 +434,31 @@ namespace siddiqsoft
             wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__), std::move(valid));
 
 #ifdef _DEBUG0
-            std::print( std::cerr, "Adding {} items..\n", ITER_COUNT);
+            std::print(std::cerr, "Adding {} items..\n", ITER_COUNT);
 #endif
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
                     wrc.sendAsync("https://www.yahoo.com/"_GET);
 #ifdef _DEBUG0
-                    std::print( std::cerr, "Added i:{}  i%3:{}  \n", i, (i % 3));
+                    std::print(std::cerr, "Added i:{}  i%3:{}  \n", i, (i % 3));
 #endif
                 }
                 else if (i % 2 == 0) {
                     wrc.sendAsync("https://www.duckduckgo.com/"_GET);
 #ifdef _DEBUG0
-                    std::print( std::cerr, "Added i:{}  i%2:{}  \n", i, (i % 2));
+                    std::print(std::cerr, "Added i:{}  i%2:{}  \n", i, (i % 2));
 #endif
                 }
                 else {
                     wrc.sendAsync("https://www.google.com/"_GET);
 #ifdef _DEBUG0
-                    std::print( std::cerr, "Added i:{}  ......  \n", i);
+                    std::print(std::cerr, "Added i:{}  ......  \n", i);
 #endif
                 }
             }
 #ifdef _DEBUG0
-            std::print( std::cerr, "Finished adding {} items..\n", ITER_COUNT);
+            std::print(std::cerr, "Finished adding {} items..\n", ITER_COUNT);
 #endif
             std::this_thread::sleep_for(std::chrono::milliseconds(1900));
         }
@@ -466,36 +471,39 @@ namespace siddiqsoft
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 
-    TEST(Threads, Test_Send_Synchronous)
+    TEST(Validation, GET_Akamai_Time)
     {
         const unsigned   ITER_COUNT = 1;
         std::atomic_uint passTest   = 0;
-        std::print( std::cerr, "Starting..\n");
+        std::print(std::cerr, "Starting..\n");
 
         try {
             using namespace std::chrono_literals;
             using namespace siddiqsoft::restcl_literals;
 
             siddiqsoft::restcl wrc;
-            nlohmann::json     myStats {"Test", "drift-check"};
+            nlohmann::json     myStats {{"Test", "drift-check"}};
 
             wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
             auto req = "https://time.akamai.com/?iso"_GET;
             if (auto resp = wrc.send(req); resp->success()) {
-                std::cerr << *resp << std::endl;
+                // std::cerr << *resp << std::endl;
+                EXPECT_EQ("Akamai/Time Server", resp->getHeader("Server"));
+                // Expect the contents are date time stamp between 18-20 chars.
+                EXPECT_TRUE(resp->getContent()->length > 16);
 
                 passTest++;
                 auto timeNow                = std::chrono::system_clock::now();
                 myStats["timeRemoteSource"] = "https://time.akamai.com/?iso";
-                myStats["timeRemoteTS"]     = resp->encode();
+                myStats["timeRemoteTS"]     = resp->getContent()->body;
 
                 auto [deltaMS, deltastr] =
-                        siddiqsoft::DateUtils::diff(timeNow, siddiqsoft::DateUtils::parseISO8601(resp->encode()));
+                        siddiqsoft::DateUtils::diff(timeNow, siddiqsoft::DateUtils::parseISO8601(resp->getContent()->body));
                 myStats["timeDriftMillis"] = std::to_string(deltaMS.count());
                 myStats["timeDrift"]       = deltastr;
                 myStats["timeNow"]         = siddiqsoft::DateUtils::ISO8601(timeNow);
 
-                std::print( std::cerr, "Time drift check {}", myStats.dump());
+                std::print(std::cerr, "{} - Time drift check:\n{}\n", __func__, myStats.dump(3));
 
                 if ((deltaMS > 1500ms) || (deltaMS < -1500ms)) {
                     std::cerr << "  Found drift from clock more than 1500ms" << std::endl;
@@ -503,7 +511,7 @@ namespace siddiqsoft
             }
         }
         catch (const std::exception& ex) {
-            std::print( std::cerr, "Housekeeping exception: {}", ex.what());
+            std::print(std::cerr, "Housekeeping exception: {}", ex.what());
         }
 
         EXPECT_EQ(ITER_COUNT, passTest.load());

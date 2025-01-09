@@ -82,7 +82,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(Validation, test1)
+    TEST(Validation, restrequest_checks)
     {
         auto r1 = "https://www.siddiqsoft.com:65535/"_GET;
         EXPECT_EQ(HttpMethodType::METHOD_GET, r1.getMethod());
@@ -96,19 +96,21 @@ namespace siddiqsoft
         EXPECT_EQ(65535, r2.uri.authority.port);
 #endif
 
-        auto r3 = "https://user.name@reqbin.com:9090/echo/post/json?source=Validate::test1&param=r3"_OPTIONS;
+        auto r3 = "https://user.name@reqbin.com:9090/echo/post/json?source=Validation::restrequest_checks&param=r3"_OPTIONS;
         EXPECT_EQ(HttpMethodType::METHOD_OPTIONS, r3.getMethod());
 
-#if defined(DEBUG)
-        EXPECT_EQ(9090, r3.uri.authority.port);
-#endif
+        EXPECT_EQ(9090, r3.getUri().authority.port);
+        EXPECT_EQ("user.name", r3.getUri().authority.userInfo);
+        EXPECT_EQ(9090, r3.getUri().authority.port);
+        EXPECT_EQ("/echo/post/json", r3.getUri().pathPart);
+        EXPECT_EQ("source=Validation::restrequest_checks&param=r3", r3.getUri().queryPart);
 
         nlohmann::json doc {r3};
         std::cerr << "Serialized (encoded): " << r3 << std::endl;
         std::cerr << "Serialized (json'd) : " << doc.dump(2) << std::endl;
     }
 
-    TEST(Validation, test_positive_google_com)
+    TEST(Validation, GET_google_com)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
@@ -137,7 +139,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(Validation, test_positive_duckduckgo_com)
+    TEST(Validation, GET_duckduckgo_com)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
@@ -165,18 +167,18 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(Validation, test_positive_httpbin)
+    TEST(Validation, POST_httpbin)
     {
-        std::atomic_bool passTest = false;
-        restcl           wrc;
-        auto             postRequest = "https://httpbin.org/post"_POST;
+        std::atomic_int passTest = 0;
+        restcl          wrc;
+        auto            postRequest = "https://httpbin.org/post"_POST;
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
                 .sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
-                        passTest           = true;
+                        passTest           = 1;
                         nlohmann::json doc = resp.value();
                         std::print(std::cerr, "{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
                     }
@@ -184,17 +186,17 @@ namespace siddiqsoft
                         nlohmann::json doc(resp.value());
 
                         auto [ec, emsg] = resp->status();
-                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
+                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400)) ? 1 : -1;
                         std::print(std::cerr, "{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
                     }
                     else {
-                        passTest = true;
+                        passTest = -1;
                         std::print(std::cerr, "{}: failed:{}\n", __func__, resp.error());
                     }
                     passTest.notify_all();
                 });
 
-        passTest.wait(false);
+        passTest.wait(0);
         EXPECT_TRUE(passTest.load());
     }
 } // namespace siddiqsoft

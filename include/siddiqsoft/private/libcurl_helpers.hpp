@@ -1,7 +1,7 @@
 /**
- * @file openssl_helpers.hpp
+ * @file libcurl_helpers.hpp
  * @author Abdulkareem Siddiq (github@siddiqsoft.com)
- * @brief OpenSSL v3.0 Helpers
+ * @brief LibCURL Helpers
  * @version 0.1
  * @date 2024-12-23
  *
@@ -51,8 +51,7 @@ namespace siddiqsoft
         auto start() -> LibCurlSingleton&
         {
             std::call_once(initFlag, [&]() {
-                // Perform once-per-application OpenSSL initialization logic
-                /* Setup encryption algorithms and load error strings */
+                // Perform once-per-application LibCURL initialization logic
                 curl_global_init(CURL_GLOBAL_ALL);
                 isInitialized = true;
             });

@@ -14,12 +14,12 @@
 # Objective
 
 Design a library where JSON is a first-class API metaphor for interacting with RESTful servers.
-- Focused on REST interactions with JSON. Limiting allows us to simplify the usage and make it feel very C++ instead of the C-like API of Win32 or OpenSSL.
+- Focused on REST interactions with JSON. Limiting allows us to simplify the usage and make it feel very C++ instead of the C-like API of Win32 or LibCURL.
 - Modern C++ features: C++20 is required!
 - Header only
 - Use native implementations for the actual IO: Windows support uses WinHttp library.
   - Initial implementation is for Windows using WinHTTP.
-  - Alternate implementation using OpenSSL tbd.
+  - Alternate implementation using LibCURL tbd.
 - Support for literals to allow `_GET`, `_DELETE`, etc.
 - Support for std::format and concepts.
 - Be instructional and use as little code as necessary.

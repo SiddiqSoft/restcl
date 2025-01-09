@@ -36,19 +36,16 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     CPMAddPackage("gh:google/googletest#7d76a231b0e29caf86e68d1df858308cd53b2a66")
     target_sources( ${TESTPROJ}
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_basics.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_http2json.cpp
                     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
-                    ${PROJECT_SOURCE_DIR}/tests/test_openssl_helpers.cpp)
+                    ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp)
     # Link dependencies..
     target_link_libraries(${TESTPROJ} PRIVATE
             GTest::gtest_main
             nlohmann_json::nlohmann_json
             $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:CURL::libcurl>
             $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
-            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:OpenSSL::SSL>
-            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:OpenSSL::Crypto>
             RunOnEnd::RunOnEnd
             SplitUri::SplitUri
             string2map::string2map

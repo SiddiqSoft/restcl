@@ -70,7 +70,7 @@ namespace siddiqsoft
         {
             std::string rs;
 
-            if (!content->type.empty() && content->str.empty())
+            if (!content->type.empty() && content->body.empty())
                 throw std::invalid_argument("Missing content body when content type is present!");
 
             // Request Line
@@ -80,8 +80,8 @@ namespace siddiqsoft
             encodeHeaders_to(rs);
 
             // Finally the content->.
-            if (!content->str.empty() && !content->type.empty()) {
-                std::format_to(std::back_inserter(rs), "{}", content->str);
+            if (!content->body.empty() && !content->type.empty()) {
+                std::format_to(std::back_inserter(rs), "{}", content->body);
             }
 
             return rs;

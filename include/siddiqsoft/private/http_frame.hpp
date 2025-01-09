@@ -68,13 +68,12 @@ namespace siddiqsoft
     {
     public:
         std::string type {};
-        std::string str {};
+        std::string body {};
         size_t      length {0};
         size_t      offset {0};
-        size_t      chunkSize {0};
         size_t      remainingSize {0};
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(ContentType, type, str, length, offset, chunkSize, remainingSize);
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(ContentType, type, body, length, offset, remainingSize);
 
         ContentType()  = default;
         ~ContentType() = default;
@@ -83,10 +82,9 @@ namespace siddiqsoft
         {
             if (src) {
                 offset        = src->offset;
-                chunkSize     = src->chunkSize;
                 remainingSize = src->remainingSize;
                 type          = src->type;
-                str           = src->str;
+                body          = src->body;
                 length        = src->length;
             }
         }
@@ -95,25 +93,24 @@ namespace siddiqsoft
         {
             if (src) {
                 offset        = src->offset;
-                chunkSize     = src->chunkSize;
                 remainingSize = src->remainingSize;
                 type          = src->type;
-                str           = src->str;
+                body          = src->body;
                 length        = src->length;
             }
         }
 
         void operator=(const nlohmann::json& j)
         {
-            str           = j.dump();
-            remainingSize = length = str.length();
+            body          = j.dump();
+            remainingSize = length = body.length();
             type                   = CONTENT_APPLICATION_JSON;
         }
 
         void operator=(const std::string& s)
         {
-            str           = s;
-            remainingSize = length = str.length();
+            body          = s;
+            remainingSize = length = body.length();
             type                   = CONTENT_APPLICATION_TEXT;
         }
 
@@ -121,19 +118,18 @@ namespace siddiqsoft
         {
             try {
                 auto obj      = nlohmann::json::parse(s);
-                str           = obj.dump();
-                remainingSize = length = str.length();
+                body          = obj.dump();
+                remainingSize = length = body.length();
                 type                   = CONTENT_APPLICATION_JSON;
                 offset                 = 0;
-                chunkSize              = 0;
             }
             catch (...) {
             }
         }
 
-        operator std::string() const { return str; }
+        operator std::string() const { return body; }
 
-        operator bool() const { return !str.empty(); }
+        operator bool() const { return !body.empty(); }
     };
 
 
@@ -242,6 +238,8 @@ namespace siddiqsoft
             return *this;
         }
 
+        auto& getHeader(const std::string& key) noexcept(false) { return headers.at(key); }
+
         nlohmann::json& getHeaders() { return headers; }
 
     protected:
@@ -294,7 +292,7 @@ namespace siddiqsoft
                 throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype).c_str());
 
             if (!ctype.empty() && !c.empty() && content) {
-                content->str           = c;
+                content->body          = c;
                 content->offset        = 0;
                 content->type          = ctype;
                 content->remainingSize = content->length = c.length();
@@ -309,7 +307,7 @@ namespace siddiqsoft
         auto& setContent(const std::string& src)
         {
             if (content && !src.empty()) {
-                content->str           = src;
+                content->body          = src;
                 content->offset        = 0;
                 content->remainingSize = content->length = src.length();
 
@@ -338,8 +336,8 @@ namespace siddiqsoft
 
         [[nodiscard]] auto encodeContent() const
         {
-            content->length = content->str.length();
-            return content->str;
+            content->length = content->body.length();
+            return content->body;
         }
 
 
@@ -360,33 +358,7 @@ namespace siddiqsoft
         friend void to_json(nlohmann::json&, const http_frame&);
     };
 
-    /*
-        inline void to_json(nlohmann::json& dest, const ContentType& src)
-        {
-            dest = nlohmann::json {{"type", src.type},
-                                   {"str", src.str},
-                                   {"length", src.length},
-                                   {"offset", src.offset},
-                                   {"chunkSize", src.chunkSize},
-                                   {"remainingSize", src.remainingSize}};
-        }
 
-        inline void to_json(nlohmann::json& dest, const std::shared_ptr<ContentType> src)
-        {
-            if (src) {
-                dest = nlohmann::json {{"type", src->type},
-                                       {"str", src->str},
-                                       {"length", src->length},
-                                       {"offset", src->offset},
-                                       {"chunkSize", src->chunkSize},
-                                       {"remainingSize", src->remainingSize}};
-            }
-            else {
-                dest = {};
-            }
-        }
-    */
-    
     inline void to_json(nlohmann::json& dest, const http_frame& src)
     {
         dest = nlohmann::json {{"protocol", src.protocol},
@@ -395,6 +367,6 @@ namespace siddiqsoft
                                {"headers", src.headers},
                                {"content", src.content}};
     }
-    
+
 } // namespace siddiqsoft
 #endif // !HTTP_FRAME_HPP

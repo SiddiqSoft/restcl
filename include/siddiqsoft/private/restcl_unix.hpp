@@ -1,7 +1,7 @@
 /**
  * @file restcl_unix.hpp
  * @author Abdulkareem Siddiq (github@siddiqsoft.com)
- * @brief OpenSSL based implementation of the basic_restclient
+ * @brief LibCURL based implementation of the basic_restclient
  * @version
  * @date 2024-12-24
  *
@@ -19,7 +19,6 @@
 #include <atomic>
 #include <cerrno>
 #include <cstdint>
-#include <openssl/bio.h>
 #include <sstream>
 #include <system_error>
 #include <optional>
@@ -46,7 +45,7 @@
 #include "rest_response.hpp"
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
-#include "openssl_helpers.hpp"
+
 #include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/conversion-utils.hpp"
@@ -60,10 +59,10 @@
 namespace siddiqsoft
 {
     /**
-     * @brief Global singleton for this library users OpenSSL library entry point
-     *
+     * @brief Global singleton for this library users LibCURL library entry point
+     *        You must install libcurl-devel on UNIX systems
      */
-    static LibCurlSingleton g_ossl;
+    static LibCurlSingleton g_LibCURLSingleton;
 
     /// @brief Unix implementation of the basic_restclient
     class HttpRESTClient : public basic_restclient
@@ -73,8 +72,6 @@ namespace siddiqsoft
 
     private:
         static const uint32_t     READBUFFERSIZE {8192};
-        static const uint32_t     MAX_ZERO_READ_FROM_SSL_THRESHOLD = 5;
-        static const uint32_t     MAX_SAME_READ_FROM_SSL_THRESHOLD = 10;
         static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
 
         bool                  isInitialized {false};
@@ -125,18 +122,18 @@ namespace siddiqsoft
             }
             catch (std::system_error& se) {
                 // Failed; dispatch anyways and let the client figure out the issue.
-                std::print( std::cerr, "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
-                                         "******************************************\n",
-                                         callbackAttempt.load(),
-                                         se.what());
+                std::print(std::cerr,
+                           "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
+                           callbackAttempt.load(),
+                           se.what());
                 dispatchCallback(arg.callback, arg.request, std::unexpected<int>(reinterpret_cast<int>(se.code().value())));
             }
             catch (std::exception& ex) {
                 callbackFailed++;
-                std::print( std::cerr, "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
-                                         "******************************************\n",
-                                         callbackAttempt.load(),
-                                         ex.what());
+                std::print(std::cerr,
+                           "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
+                           callbackAttempt.load(),
+                           ex.what());
             }
         }};
 
@@ -152,19 +149,19 @@ namespace siddiqsoft
          */
         static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
-            std::print( std::cerr, "{} - Invoked (reading content); size:{}  nmemb:{}\n", __func__, size, nmemb);
-
             if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
                 contents && (contentPtr != nullptr) && (size > 0))
             {
-                content->str.append(reinterpret_cast<char*>(contents), size * nmemb);
+                content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
 
-                std::print( std::cerr, "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
-                                         __func__,
-                                         size,
-                                         nmemb,
-                                         size * nmemb);
-
+#if defined(DEBUG)
+                std::print(std::cerr,
+                           "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
+                           __func__,
+                           size,
+                           nmemb,
+                           size * nmemb);
+#endif
                 return size * nmemb;
             }
 
@@ -183,7 +180,7 @@ namespace siddiqsoft
                     auto dataSizeToCopyToLibCurl = content->remainingSize;
                     if (dataSizeToCopyToLibCurl > sizeToSendToLibCurlBuffer) {
                         dataSizeToCopyToLibCurl = sizeToSendToLibCurlBuffer;
-                        memcpy(libCurlBuffer, content->str.data() + content->offset, dataSizeToCopyToLibCurl);
+                        memcpy(libCurlBuffer, content->body.data() + content->offset, dataSizeToCopyToLibCurl);
                         content->offset += dataSizeToCopyToLibCurl;
                         // If we reached the size of the content buffer then we have no more to send
                         if (content->offset >= content->length)
@@ -191,16 +188,18 @@ namespace siddiqsoft
                         else {
                             content->remainingSize -= dataSizeToCopyToLibCurl;
                         }
-
-                        std::print( std::cerr, "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
-                                                 "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
-                                                 __func__,
-                                                 size,
-                                                 nmemb,
-                                                 sizeToSendToLibCurlBuffer,
-                                                 content->remainingSize,
-                                                 content->offset,
-                                                 dataSizeToCopyToLibCurl);
+#if defined(DEBUG)
+                        std::print(std::cerr,
+                                   "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
+                                   "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
+                                   __func__,
+                                   size,
+                                   nmemb,
+                                   sizeToSendToLibCurlBuffer,
+                                   content->remainingSize,
+                                   content->offset,
+                                   dataSizeToCopyToLibCurl);
+#endif
 
                         return dataSizeToCopyToLibCurl;
                     }
@@ -225,8 +224,6 @@ namespace siddiqsoft
                 }
             } while (currentHeader);
 
-            std::print( std::cerr, "{} - Extracted headerCount:{}\n", __func__, headerCount);
-
             return dest;
         }
 
@@ -245,7 +242,7 @@ namespace siddiqsoft
         }
 
         /**
-         * @brief Performs ONETIME configuration of the underlying provider (OpenSSL)
+         * @brief Performs ONETIME configuration of the underlying provider (LibCURL)
          *
          * @param ua The UserAgent string
          * @param func Optional callback the client-level. You can also provider per-call callbacks for each REST send() operation
@@ -260,7 +257,7 @@ namespace siddiqsoft
             // Grab a context (configure and initialize)
             std::call_once(hrcInitFlag, [&]() {
                 // The SSL CTX is released when this client object goes out of scope.
-                if (ctxCurl = g_ossl.configure().start().getEasyHandle(); ctxCurl) {
+                if (ctxCurl = g_LibCURLSingleton.configure().start().getEasyHandle(); ctxCurl) {
                     isInitialized = true;
                 }
             });
@@ -298,7 +295,7 @@ namespace siddiqsoft
 
             auto destinationHost = req.getHost();
 
-            std::print( std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json {req}.dump(3));
+            std::print(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json {req}.dump(3));
 
             if (ctxCurl && !destinationHost.empty()) {
                 std::shared_ptr<ContentType> _contents {new ContentType()};
@@ -394,19 +391,15 @@ namespace siddiqsoft
                 // Send the request..
                 if (rc = curl_easy_perform(ctxCurl.get()); rc == CURLE_OK) {
                     ioSend++;
-
-                    std::cerr << "( )()( )()( )()()()()()()()()()()()()( )()( )()( )\n";
-
                     extractStartLine(resp);
                     extractHeadersFromLibCurl(resp);
                     extractContents(_contents, resp);
-                    std::cerr << "(-)()(-)()(-)()()()()()()()()()()()()(-)()(-)()(-)\n";
                     return resp;
                 }
 
                 // To reach here is failure!
                 ioSendFailed++;
-                std::print( std::cerr, "{}:curl_easy_perform() failed:{}\n", __func__, curl_easy_strerror(rc));
+                std::print(std::cerr, "{}:curl_easy_perform() failed:{}\n", __func__, curl_easy_strerror(rc));
                 return std::unexpected(rc);
             }
             else {
@@ -414,7 +407,7 @@ namespace siddiqsoft
                 return std::unexpected(ENETUNREACH);
             }
 
-            std::print( std::cerr, "{} - Fall-through failure!\n", __func__);
+            std::print(std::cerr, "{} - Fall-through failure!\n", __func__);
             return std::unexpected(ENOTRECOVERABLE);
         }
 
@@ -422,25 +415,15 @@ namespace siddiqsoft
         {
             // Fixup the content data..type and length
             cntnt->type = resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
-            std::print( std::cerr, "{} - Content-Type:{}\n", __func__, cntnt->type);
             // headers in libcurl are always string values so we'd need to convert them to integer
             cntnt->length = std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
-            std::print( std::cerr, "{} - Content-Length:{}\n", __func__, cntnt->length);
             // Make sure we have the content length properly
-            if ((cntnt->length == 0) && !cntnt->str.empty()) cntnt->length = cntnt->str.length();
+            if ((cntnt->length == 0) && !cntnt->body.empty()) cntnt->length = cntnt->body.length();
             // Fixup the content..
-            // cntnt->parseFromSerializedJson(cntnt->str);
-            std::print( std::cerr, "{} - Fixed Content-Type:{}  Content-Length:{}\n{}\n",
-                                     __func__,
-                                     cntnt->type,
-                                     cntnt->length,
-                                     nlohmann::json(cntnt).dump(3));
-
+            // cntnt->parseFromSerializedJson(cntnt->body);
             resp.setContent(cntnt);
-
-            auto doc = nlohmann::json(resp);
-            std::print( std::cerr, "{} - Finally the content block:\n{}\n", __func__, doc.dump(3));
         }
+
 
         void extractStartLine(rest_response& dest)
         {
@@ -462,7 +445,7 @@ namespace siddiqsoft
             }
 
             if (rc == CURLE_OK) {
-                std::print( std::cerr, "{} - rc:{}  sc:{}", __func__, curl_easy_strerror(rc), sc);
+                std::print(std::cerr, "{} - rc:{}  sc:{}", __func__, curl_easy_strerror(rc), sc);
             }
         }
 
@@ -473,24 +456,24 @@ namespace siddiqsoft
 
     inline void to_json(nlohmann::json& dest, const HttpRESTClient& src)
     {
-        dest["UserAgent"] = src.UserAgent;
-        dest["counters"]  = {{"ioAttempt", src.ioAttempt.load()},
-                             {"ioAttemptFailed", src.ioAttemptFailed.load()},
-                             {"callbackAttempt", src.callbackAttempt.load()},
-                             {"callbackCompleted", src.callbackCompleted.load()},
-                             {"callbackFailed", src.callbackFailed.load()},
-                             {"ioConnect", src.ioConnect.load()},
-                             {"ioConnectFailed", src.ioConnectFailed.load()},
-                             {"ioReadAttempt", src.ioReadAttempt.load()},
-                             {"ioRead", src.ioRead.load()},
-                             {"ioReadFailed", src.ioReadFailed.load()},
-                             {"ioSendFailed", src.ioSendFailed.load()},
-                             {"ioSend", src.ioSend.load()}};
+        dest = nlohmann::json {{"UserAgent", src.UserAgent},
+                               {"ioAttempt", src.ioAttempt.load()},
+                               {"ioAttemptFailed", src.ioAttemptFailed.load()},
+                               {"callbackAttempt", src.callbackAttempt.load()},
+                               {"callbackCompleted", src.callbackCompleted.load()},
+                               {"callbackFailed", src.callbackFailed.load()},
+                               {"ioConnect", src.ioConnect.load()},
+                               {"ioConnectFailed", src.ioConnectFailed.load()},
+                               {"ioReadAttempt", src.ioReadAttempt.load()},
+                               {"ioRead", src.ioRead.load()},
+                               {"ioReadFailed", src.ioReadFailed.load()},
+                               {"ioSendFailed", src.ioSendFailed.load()},
+                               {"ioSend", src.ioSend.load()}};
     }
 
     inline std::ostream& operator<<(std::ostream& os, const HttpRESTClient& src)
     {
-        nlohmann::json doc {src};
+        nlohmann::json doc(src);
 
         os << doc.dump(3);
         return os;
