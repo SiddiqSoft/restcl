@@ -143,8 +143,8 @@ namespace siddiqsoft
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
                 .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
-                        passTest = true;
-                        nlohmann::json doc =resp.value();
+                        passTest           = true;
+                        nlohmann::json doc = resp.value();
                         std::cerr << "Response\n" << doc.dump(3) << std::endl;
                     }
                     else if (resp) {
@@ -174,16 +174,16 @@ namespace siddiqsoft
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
                 .sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
-                        passTest = true;
-                        nlohmann::json doc =resp.value();
-                        std::cerr << "Response\n" << doc.dump(3) << std::endl;
+                        passTest           = true;
+                        nlohmann::json doc = resp.value();
+                        std::cerr << std::format("{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
                     }
                     else if (resp) {
-                        nlohmann::json doc {resp.value()};
+                        nlohmann::json doc (resp.value());
 
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
-                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`..\n" << doc.dump(2) << std::endl;
+                        std::cerr << std::format("{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
                     }
                     else {
                         passTest = true;

@@ -34,6 +34,7 @@
 
 #pragma once
 #include <cstddef>
+#include <optional>
 #ifndef HTTP_FRAME_HPP
 #define HTTP_FRAME_HPP
 
@@ -73,9 +74,9 @@ namespace siddiqsoft
         size_t      chunkSize {0};
         size_t      remainingSize {0};
 
-        ContentType() = default;
+        ContentType()  = default;
         ~ContentType() = default;
-        
+
         ContentType(const std::shared_ptr<ContentType> src)
         {
             if (src) {
@@ -360,23 +361,36 @@ namespace siddiqsoft
 
     inline void to_json(nlohmann::json& dest, const ContentType& src)
     {
-        dest["content"] = {{"type", src.type}, {"str", src.str}, {"length", src.length}};
+        dest = nlohmann::json {{"type", src.type},
+                               {"str", src.str},
+                               {"length", src.length},
+                               {"offset", src.offset},
+                               {"chunkSize", src.chunkSize},
+                               {"remainingSize", src.remainingSize}};
     }
 
     inline void to_json(nlohmann::json& dest, const std::shared_ptr<ContentType> src)
     {
         if (src) {
-            dest["content"] = {{"type", src->type}, {"str", src->str}, {"length", src->length}};
+            dest = nlohmann::json {{"type", src->type},
+                                   {"str", src->str},
+                                   {"length", src->length},
+                                   {"offset", src->offset},
+                                   {"chunkSize", src->chunkSize},
+                                   {"remainingSize", src->remainingSize}};
         }
         else {
-            dest["content"] = {{"type", nullptr}, {"str", nullptr}, {"length", nullptr}};
+            dest = {};
         }
     }
 
     inline void to_json(nlohmann::json& dest, const http_frame& src)
     {
-        dest["http_frame"] = {{"protocol", src.protocol}, {"method", src.method}, {"uri", src.uri}, {"headers", src.headers}};
-        if (src.content) dest.emplace_back(src.content);
+        dest = nlohmann::json {{"protocol", src.protocol},
+                               {"method", src.method},
+                               {"uri", src.uri},
+                               {"headers", src.headers},
+                               {"content", src.content}};
     }
 } // namespace siddiqsoft
 #endif // !HTTP_FRAME_HPP

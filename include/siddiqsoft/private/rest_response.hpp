@@ -33,18 +33,13 @@
  */
 
 #pragma once
-#include "rest_request.hpp"
 #include <exception>
 #ifndef REST_RESPONSE_HPP
 #define REST_RESPONSE_HPP
 
 
 #include <iostream>
-#include <chrono>
 #include <string>
-#include <functional>
-#include <memory>
-#include <format>
 #include <iterator>
 #include <expected>
 
@@ -303,10 +298,10 @@ namespace siddiqsoft
 
     inline void to_json(nlohmann::json& dest, const rest_response& src)
     {
-        dest["response"] = {{"statusCode", src._statusCode}, {"statusMessage", src._reasonCode}, {"protocol", src.protocol}};
-        dest["headers"]  = src.headers;
-        // dest["content"] = src.content;
-        dest.emplace_back(src.content);
+        dest = nlohmann::json {
+                {"response", {{"statusCode", src._statusCode}, {"statusMessage", src._reasonCode}, {"protocol", src.protocol}}},
+                {"headers", src.headers},
+                {"content", src.content}};
     }
 
 

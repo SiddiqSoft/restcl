@@ -133,10 +133,10 @@ namespace siddiqsoft
             }
             catch (std::exception& ex) {
                 callbackFailed++;
-                // std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
-                //                          "******************************************\n",
-                //                          callbackAttempt.load(),
-                //                          ex.what());
+                std::cerr << std::format("simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\\033[39;49m "
+                                         "******************************************\n",
+                                         callbackAttempt.load(),
+                                         ex.what());
             }
         }};
 
