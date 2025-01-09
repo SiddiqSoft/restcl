@@ -36,8 +36,9 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     CPMAddPackage("gh:google/googletest#7d76a231b0e29caf86e68d1df858308cd53b2a66")
     target_sources( ${TESTPROJ}
                     PRIVATE
-                    ${PROJECT_SOURCE_DIR}/tests/test_basics.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/test_http2json.cpp
+                    ${PROJECT_SOURCE_DIR}/tests/test_serializers.cpp
+                    ${PROJECT_SOURCE_DIR}/tests/test_validation.cpp
+                    ${PROJECT_SOURCE_DIR}/tests/test_ImplementationChecks.cpp
                     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
                     ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp)
     # Link dependencies..

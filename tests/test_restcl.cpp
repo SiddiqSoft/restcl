@@ -366,7 +366,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(restcl, MoveConstructor)
+    TEST(Threads, MoveConstructor)
     {
         std::atomic_uint                passTest {0};
         std::vector<siddiqsoft::restcl> clients;
@@ -466,52 +466,6 @@ namespace siddiqsoft
 
         std::cerr << "Wrapup; ITER_COUNT: " << ITER_COUNT << "\npassTest: " << passTest.load()
                   << "\ncallbackCounter: " << callbackCounter.load() << std::endl;
-
-        EXPECT_EQ(ITER_COUNT, passTest.load());
-    }
-
-    TEST(Validation, GET_Akamai_Time)
-    {
-        const unsigned   ITER_COUNT = 1;
-        std::atomic_uint passTest   = 0;
-        std::print(std::cerr, "Starting..\n");
-
-        try {
-            using namespace std::chrono_literals;
-            using namespace siddiqsoft::restcl_literals;
-
-            siddiqsoft::restcl wrc;
-            nlohmann::json     myStats {{"Test", "drift-check"}};
-
-            wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
-            auto req = "https://time.akamai.com/?iso"_GET;
-            if (auto resp = wrc.send(req); resp->success()) {
-                // std::cerr << *resp << std::endl;
-                EXPECT_EQ("Akamai/Time Server", resp->getHeader("Server"));
-                // Expect the contents are date time stamp between 18-20 chars.
-                EXPECT_TRUE(resp->getContent()->length > 16);
-
-                passTest++;
-                auto timeNow                = std::chrono::system_clock::now();
-                myStats["timeRemoteSource"] = "https://time.akamai.com/?iso";
-                myStats["timeRemoteTS"]     = resp->getContent()->body;
-
-                auto [deltaMS, deltastr] =
-                        siddiqsoft::DateUtils::diff(timeNow, siddiqsoft::DateUtils::parseISO8601(resp->getContent()->body));
-                myStats["timeDriftMillis"] = std::to_string(deltaMS.count());
-                myStats["timeDrift"]       = deltastr;
-                myStats["timeNow"]         = siddiqsoft::DateUtils::ISO8601(timeNow);
-
-                std::print(std::cerr, "{} - Time drift check:\n{}\n", __func__, myStats.dump(3));
-
-                if ((deltaMS > 1500ms) || (deltaMS < -1500ms)) {
-                    std::cerr << "  Found drift from clock more than 1500ms" << std::endl;
-                }
-            }
-        }
-        catch (const std::exception& ex) {
-            std::print(std::cerr, "Housekeeping exception: {}", ex.what());
-        }
 
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }

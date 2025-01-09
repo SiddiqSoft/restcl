@@ -66,7 +66,7 @@ endif()
 
 CPMAddPackage("gh:nlohmann/json#v3.11.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
-CPMAddPackage("gh:SiddiqSoft/SplitUri#d0f1a9a25905a7ebee51204e9891646217ac67dd")
+CPMAddPackage("gh:SiddiqSoft/SplitUri#2.1.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
 CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.0.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
