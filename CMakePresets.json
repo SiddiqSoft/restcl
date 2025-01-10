@@ -22,20 +22,12 @@
             "displayName": "Apple-Debug (Clang19)",
             "description": "Using compilers: C = /opt/homebrew/opt/llvm/bin/clang, CXX = /opt/homebrew/opt/llvm/bin/clang++",
             "binaryDir": "${sourceDir}/build/${presetName}",
-            "environment": {
-                "LDFLAGS": "-L/opt/homebrew/opt/llvm/lib/unwind -lunwind",
-                "CLANG_CONFIG_FILE_SYSTEM_DIR": "/opt/homebrew/etc/clang",
-                "CLANG_CONFIG_FILE_USER_DIR": "~/.config/clang"
-            },
             "inherits": "Project-Base",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
                 "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "LDFLAGS": "-L/opt/llvm/lib/unwind -lunwind",
-                "CLANG_CONFIG_FILE_SYSTEM_DIR": "/opt/homebrew/etc/clang",
-                "CLANG_CONFIG_FILE_USER_DIR": "~/.config/clang"
+                "CMAKE_BUILD_TYPE": "Debug"
             },
             "condition": {
                 "type": "equals",
