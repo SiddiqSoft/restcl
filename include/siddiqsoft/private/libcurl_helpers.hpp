@@ -31,6 +31,30 @@
 
 namespace siddiqsoft
 {
+    class borrowed_curl_ptr
+    {
+    private:
+        std::shared_ptr<CURL>                 _hndl;
+        resource_pool<std::shared_ptr<CURL>>& _pool;
+
+    public:
+        borrowed_curl_ptr() = delete;
+        borrowed_curl_ptr(resource_pool<std::shared_ptr<CURL>>& pool, std::shared_ptr<CURL> item)
+            : _pool {pool}
+            , _hndl {std::move(item)}
+        {
+        }
+
+        operator CURL*() { return _hndl.get(); }
+
+        ~borrowed_curl_ptr()
+        {
+            if (_hndl) {
+                _pool.checkin(std::move(_hndl));
+            }
+        }
+    };
+
     /**
      * @brief LibCurSingleton provides for a facility to automatically initialize
      *        and cleanup the libcurl global/per-application handles.
@@ -42,19 +66,6 @@ namespace siddiqsoft
         std::once_flag                       initFlag {};
         resource_pool<std::shared_ptr<CURL>> curlHandlePool {};
 
-        struct auto_return_handle_to_pool
-        {
-            std::shared_ptr<CURL>                 curl {};
-            resource_pool<std::shared_ptr<CURL>>& owningPool;
-
-            auto_return_handle_to_pool() = delete;
-            auto_return_handle_to_pool(resource_pool<std::shared_ptr<CURL>>& pool, std::shared_ptr<CURL> item)
-                : curl {item}
-                , owningPool {pool}
-            {
-                pool.checkin(curl);
-            }
-        };
 
     public:
         LibCurlSingleton()                   = default;
@@ -80,18 +91,19 @@ namespace siddiqsoft
          * Auto-clears the CURL* when this object goes out of scope.
          * @return std::shared_ptr<CURL>
          */
-        [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> std::shared_ptr<CURL>
+        [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle()
+                -> borrowed_curl_ptr
         {
             try {
                 // return an existing handle..
-                return curlHandlePool.checkout();
+                return borrowed_curl_ptr(curlHandlePool, curlHandlePool.checkout());
             }
             catch (std::runtime_error& re) {
                 // ignore the exception.. and..
             }
 
             // ..return a new handle..
-            return {curl_easy_init(), curl_easy_cleanup};
+            return borrowed_curl_ptr {curlHandlePool, {curl_easy_init(), curl_easy_cleanup}};
         };
 
 #if defined(DEBUG) || defined(_DEBUG)
