@@ -33,7 +33,6 @@
  */
 
 
-#include "gtest/gtest.h"
 #include <iostream>
 #include <barrier>
 #include <version>
@@ -42,6 +41,8 @@
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
+
+#include "gtest/gtest.h"
 
 namespace siddiqsoft
 {
@@ -55,7 +56,10 @@ namespace siddiqsoft
 #if defined(DEBUG)
         EXPECT_EQ(65535, r1.uri.authority.port);
 #endif
+    }
 
+    TEST(Validation, restrequest_checks2)
+    {
         auto r2 = "https://localhost:65535/"_GET;
         EXPECT_EQ(HttpMethodType::METHOD_GET, r2.getMethod());
 #if defined(DEBUG)
@@ -90,7 +94,7 @@ namespace siddiqsoft
                                    __func__,
                                    nlohmann::json(*resp).dump(3));
                     }
-                    else if (resp) {
+                    else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
                         std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
@@ -114,10 +118,10 @@ namespace siddiqsoft
                 .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest           = true;
-                        nlohmann::json doc = resp.value();
+                        nlohmann::json doc(*resp);
                         std::cerr << "Response\n" << doc.dump(3) << std::endl;
                     }
-                    else if (resp) {
+                    else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
                         std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
@@ -143,17 +147,18 @@ namespace siddiqsoft
 
         wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
                 .sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
-                    if (resp && resp->success()) {
+                    if (resp.has_value() && resp->success()) {
                         passTest           = 1;
-                        nlohmann::json doc = resp.value();
+                        nlohmann::json doc (*resp);
                         std::print(std::cerr, "{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
                     }
-                    else if (resp) {
-                        nlohmann::json doc(resp.value());
+                    else if (resp.has_value()) {
+                        nlohmann::json doc(*resp);
 
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400)) ? 1 : -1;
                         std::print(std::cerr, "{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
+                        //std::print(std::cerr, "{} - Got error:\n{}\n", __func__, doc.dump(2));
                     }
                     else {
                         passTest = -1;

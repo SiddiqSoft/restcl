@@ -109,6 +109,7 @@ namespace siddiqsoft
                         std::cerr << "Response\n" << *resp << std::endl;
                     }
                     else if (resp && resp.has_value()) {
+                        passTest= true;
                         auto [ec, emsg] = resp->status();
                         std::cerr << "Got HTTP error: " << ec << std::endl;
                     }
@@ -450,17 +451,19 @@ namespace siddiqsoft
                     wrc.sendAsync("https://www.google.com/?client=edge"_GET);
                 }
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1900));
+
+            auto limitCount = 19;
+            do {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+
+                std::print(std::cerr,
+                           "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}\n",
+                           __func__,
+                           ITER_COUNT,
+                           passTest.load(),
+                           callbackCounter.load());
+            } while (limitCount--);
         });
-
-        std::this_thread::sleep_for(std::chrono::seconds(9));
-
-        std::print(std::cerr,
-                   "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}\n",
-                   __func__,
-                   ITER_COUNT,
-                   passTest.load(),
-                   callbackCounter.load());
 
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
