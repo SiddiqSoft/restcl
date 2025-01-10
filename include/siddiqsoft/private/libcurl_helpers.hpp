@@ -25,6 +25,8 @@
 #include <string>
 #include <expected>
 
+#include "siddiqsoft/resource_pool.hpp"
+
 #include "curl/curl.h"
 
 namespace siddiqsoft
@@ -37,7 +39,22 @@ namespace siddiqsoft
     class LibCurlSingleton
     {
     private:
-        std::once_flag initFlag {};
+        std::once_flag                       initFlag {};
+        resource_pool<std::shared_ptr<CURL>> curlHandlePool {};
+
+        struct auto_return_handle_to_pool
+        {
+            std::shared_ptr<CURL>                 curl {};
+            resource_pool<std::shared_ptr<CURL>>& owningPool;
+
+            auto_return_handle_to_pool() = delete;
+            auto_return_handle_to_pool(resource_pool<std::shared_ptr<CURL>>& pool, std::shared_ptr<CURL> item)
+                : curl {item}
+                , owningPool {pool}
+            {
+                pool.checkin(curl);
+            }
+        };
 
     public:
         LibCurlSingleton()                   = default;
@@ -65,6 +82,15 @@ namespace siddiqsoft
          */
         [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> std::shared_ptr<CURL>
         {
+            try {
+                // return an existing handle..
+                return curlHandlePool.checkout();
+            }
+            catch (std::runtime_error& re) {
+                // ignore the exception.. and..
+            }
+
+            // ..return a new handle..
             return {curl_easy_init(), curl_easy_cleanup};
         };
 

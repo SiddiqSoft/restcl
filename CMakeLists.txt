@@ -72,7 +72,7 @@ CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.0.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
 CPMAddPackage("gh:SiddiqSoft/string2map#2.4.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#1.8.0")
+CPMAddPackage("gh:SiddiqSoft/asynchrony#1.9.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
 

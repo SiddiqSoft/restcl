@@ -410,62 +410,57 @@ namespace siddiqsoft
         std::atomic_uint passTest   = 0;
         std::atomic_uint callbackCounter {0};
 
-        {
+
+        EXPECT_NO_THROW({
             restcl               wrc;
             siddiqsoft::RunOnEnd roe([&]() { std::cerr << "Final Stats of the client: " << wrc << std::endl; });
 
-            // std::print( std::cerr, "Post wrc..\n");
-            basic_callbacktype valid = [&](const auto& req, std::expected<rest_response, int> resp) {
-                callbackCounter++;
 
-                if (resp->success()) {
-                    passTest += resp->statusCode() == 200;
-                    passTest.notify_all();
-                }
-                else {
-                    std::cerr << "Got error: " << resp->statusCode() << " for " << req.getUri().authority.host << " -- "
-                              << resp->reasonCode() << std::endl;
-                }
+            wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__),
+                          [&](const auto& req, std::expected<rest_response, int> resp) {
+                              callbackCounter++;
 
-                std::cerr << "Stats of the client #" << callbackCounter << "..: " << wrc << std::endl;
-            };
+                              if (resp->success()) {
+                                  passTest += resp->statusCode() == 200;
+                                  passTest.notify_all();
+                              }
+                              else if (resp.has_value()) {
+                                  std::print(std::cerr,
+                                             "{} - Got error: {} for {} -- {}\n",
+                                             __func__,
+                                             resp->statusCode(),
+                                             req.getUri().authority.host,
+                                             resp->reasonCode());
+                              }
+                              else {
+                                  std::print(std::cerr, "{} - Unknown error!", __func__);
+                              }
 
-            wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__), std::move(valid));
-
-#ifdef _DEBUG0
-            std::print(std::cerr, "Adding {} items..\n", ITER_COUNT);
-#endif
+                              std::print(std::cerr, "{} - Stats of the client #{}...:{}\n", __func__, callbackCounter.load(), wrc);
+                          });
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
-                    wrc.sendAsync("https://www.yahoo.com/"_GET);
-#ifdef _DEBUG0
-                    std::print(std::cerr, "Added i:{}  i%3:{}  \n", i, (i % 3));
-#endif
+                    wrc.sendAsync("https://www.yahoo.com/?client=chrome"_GET);
                 }
                 else if (i % 2 == 0) {
-                    wrc.sendAsync("https://www.duckduckgo.com/"_GET);
-#ifdef _DEBUG0
-                    std::print(std::cerr, "Added i:{}  i%2:{}  \n", i, (i % 2));
-#endif
+                    wrc.sendAsync("https://www.duckduckgo.com/?client=firefox"_GET);
                 }
                 else {
-                    wrc.sendAsync("https://www.google.com/"_GET);
-#ifdef _DEBUG0
-                    std::print(std::cerr, "Added i:{}  ......  \n", i);
-#endif
+                    wrc.sendAsync("https://www.google.com/?client=edge"_GET);
                 }
             }
-#ifdef _DEBUG0
-            std::print(std::cerr, "Finished adding {} items..\n", ITER_COUNT);
-#endif
             std::this_thread::sleep_for(std::chrono::milliseconds(1900));
-        }
+        });
 
         std::this_thread::sleep_for(std::chrono::seconds(9));
 
-        std::cerr << "Wrapup; ITER_COUNT: " << ITER_COUNT << "\npassTest: " << passTest.load()
-                  << "\ncallbackCounter: " << callbackCounter.load() << std::endl;
+        std::print(std::cerr,
+                   "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}\n",
+                   __func__,
+                   ITER_COUNT,
+                   passTest.load(),
+                   callbackCounter.load());
 
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }

@@ -192,9 +192,9 @@ namespace siddiqsoft
     inline void to_json(nlohmann::json& dest, const rest_request& src)
     {
         dest = nlohmann::json {{"request",
-                                {{"method", src.method}, {"uri", src.uri}, {"protocol", src.protocol}},
+                                {{"method", src.method}, {"uri", src.uri}, {"protocol", src.protocol}}},
                                 {"headers", src.headers},
-                                {"content", src.content}}};
+                                {"content", src.content}};
     }
 
 } // namespace siddiqsoft

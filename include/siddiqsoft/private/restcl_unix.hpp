@@ -10,7 +10,6 @@
  */
 
 #pragma once
-#include "http_frame.hpp"
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
@@ -19,24 +18,12 @@
 #include <atomic>
 #include <cerrno>
 #include <cstdint>
-#include <sstream>
-#include <system_error>
-#include <optional>
 #include <stdexcept>
 #include <iostream>
-#include <chrono>
 #include <string>
-#include <functional>
 #include <memory>
-#include <format>
-#include <thread>
 #include <mutex>
-#include <shared_mutex>
-#include <deque>
-#include <semaphore>
-#include <stop_token>
 #include <expected>
-#include <sstream>
 #include <stdio.h>
 
 #include "nlohmann/json.hpp"
@@ -45,6 +32,7 @@
 #include "rest_response.hpp"
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
+#include "http_frame.hpp"
 
 #include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/string2map.hpp"
@@ -52,9 +40,12 @@
 #include "siddiqsoft/RunOnEnd.hpp"
 
 #include "siddiqsoft/simple_pool.hpp"
+#include "siddiqsoft/resource_pool.hpp"
 
 #include "curl/curl.h"
+#include "curl/easy.h"
 #include "libcurl_helpers.hpp"
+
 
 namespace siddiqsoft
 {
@@ -74,9 +65,8 @@ namespace siddiqsoft
         static const uint32_t     READBUFFERSIZE {8192};
         static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
 
-        bool                  isInitialized {false};
-        std::once_flag        hrcInitFlag {};
-        std::shared_ptr<CURL> ctxCurl {};
+        bool                                 isInitialized {false};
+        std::once_flag                       hrcInitFlag {};
 
     protected:
         std::atomic_uint64_t ioAttempt {0};
@@ -235,8 +225,7 @@ namespace siddiqsoft
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         HttpRESTClient(HttpRESTClient&& src) noexcept
-            : ctxCurl(std::move(src.ctxCurl))
-            , UserAgent(std::move(src.UserAgent))
+            : UserAgent(std::move(src.UserAgent))
             , _callback(std::move(src._callback))
         {
         }
@@ -267,15 +256,15 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        basic_restclient& sendAsync(rest_request&& req, std::optional<basic_callbacktype> callback = std::nullopt) override
+        basic_restclient& sendAsync(rest_request&& req, basic_callbacktype&& callback = {}) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
-            if (!_callback && !callback.has_value())
+            if (!_callback && !callback)
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            pool.queue(RestPoolArgsType {std::move(req), callback.has_value() ? callback.value() : _callback});
+            pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
 
             return *this;
         }
@@ -295,10 +284,12 @@ namespace siddiqsoft
 
             auto destinationHost = req.getHost();
 
-            std::print(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json {req}.dump(3));
+            std::print(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
 
             if (ctxCurl && !destinationHost.empty()) {
                 std::shared_ptr<ContentType> _contents {new ContentType()};
+
+                curl_easy_reset(ctxCurl.get());
 
                 ioAttempt++;
                 switch (req.getProtocol()) {
@@ -391,6 +382,7 @@ namespace siddiqsoft
                 // Send the request..
                 if (rc = curl_easy_perform(ctxCurl.get()); rc == CURLE_OK) {
                     ioSend++;
+                    // Parse the response..
                     extractStartLine(resp);
                     extractHeadersFromLibCurl(resp);
                     extractContents(_contents, resp);
@@ -399,7 +391,7 @@ namespace siddiqsoft
 
                 // To reach here is failure!
                 ioSendFailed++;
-                std::print(std::cerr, "{}:curl_easy_perform() failed:{}\n", __func__, curl_easy_strerror(rc));
+                std::print(std::cerr, "{}:curl_easy_perform() failed: {}\n", __func__, curl_easy_strerror(rc));
                 return std::unexpected(rc);
             }
             else {

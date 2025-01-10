@@ -13,7 +13,6 @@
 #define BASIC_RESTCLIENT_HPP
 
 #include <tuple>
-#include <optional>
 #include <functional>
 #include <expected>
 
@@ -53,7 +52,7 @@ namespace siddiqsoft
         ///                 If not present then the one provided during configuration is used.
         ///                 If no callback has been registered or provided here then an invalid_argument
         ///                 exception should be thrown.
-        virtual basic_restclient& sendAsync(rest_request&&, std::optional<basic_callbacktype> = std::nullopt)    = 0;
+        virtual basic_restclient& sendAsync(rest_request&&, basic_callbacktype&& = {}) = 0;
     };
 
     /**
@@ -74,16 +73,7 @@ namespace siddiqsoft
         {
         }
 
-        /**
-         * @brief Represents the rest_request object
-         *
-         */
         rest_request request;
-
-        /**
-         * @brief Holds the callback to the client code
-         *
-         */
         basic_callbacktype callback {};
     };
 

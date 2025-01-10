@@ -33,11 +33,11 @@
 */
 
 #pragma once
-#include <cstddef>
-#include <optional>
 #ifndef HTTP_FRAME_HPP
 #define HTTP_FRAME_HPP
 
+#include <cstddef>
+#include <optional>
 #include <cstdint>
 #include <stdexcept>
 #include <type_traits>
