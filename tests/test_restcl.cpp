@@ -109,7 +109,7 @@ namespace siddiqsoft
                         std::cerr << "Response\n" << *resp << std::endl;
                     }
                     else if (resp && resp.has_value()) {
-                        passTest= true;
+                        passTest        = true;
                         auto [ec, emsg] = resp->status();
                         std::cerr << "Got HTTP error: " << ec << std::endl;
                     }
@@ -342,7 +342,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc;
 
-        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)))
+        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{},test9a)", __FUNCTION__)))
                 .sendAsync("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     // std::cerr << "From callback Serialized json: " << req << std::endl;
                     if (resp->success()) {
@@ -414,7 +414,7 @@ namespace siddiqsoft
 
         EXPECT_NO_THROW({
             restcl               wrc;
-            siddiqsoft::RunOnEnd roe([&]() { std::cerr << "Final Stats of the client: " << wrc << std::endl; });
+            //siddiqsoft::RunOnEnd roe([&]() { std::cerr << "Final Stats of the client: " << wrc << std::endl; });
 
 
             wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__),
@@ -436,8 +436,6 @@ namespace siddiqsoft
                               else {
                                   std::print(std::cerr, "{} - Unknown error!", __func__);
                               }
-
-                              std::print(std::cerr, "{} - Stats of the client #{}...:{}\n", __func__, callbackCounter.load(), wrc);
                           });
 
             for (auto i = 0; i < ITER_COUNT; i++) {
@@ -462,6 +460,8 @@ namespace siddiqsoft
                            ITER_COUNT,
                            passTest.load(),
                            callbackCounter.load());
+                
+                if (ITER_COUNT == passTest.load()) break;
             } while (limitCount--);
         });
 

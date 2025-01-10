@@ -10,6 +10,7 @@
  */
 
 #pragma once
+#include <exception>
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
@@ -25,6 +26,7 @@
 #include <mutex>
 #include <expected>
 #include <stdio.h>
+
 
 #include "nlohmann/json.hpp"
 
@@ -144,7 +146,7 @@ namespace siddiqsoft
             {
                 content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
 
-#if defined(DEBUG)
+#if defined(DEBUG0)
                 std::print(std::cerr,
                            "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
                            __func__,
@@ -178,7 +180,7 @@ namespace siddiqsoft
                         else {
                             content->remainingSize -= dataSizeToCopyToLibCurl;
                         }
-#if defined(DEBUG)
+#if defined(DEBUG0)
                         std::print(std::cerr,
                                    "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
                                    "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
@@ -230,6 +232,13 @@ namespace siddiqsoft
         {
         }
 
+        ~HttpRESTClient()
+        {
+#if defined(DEBUG)
+            std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
+#endif
+        }
+
         /**
          * @brief Performs ONETIME configuration of the underlying provider (LibCURL)
          *
@@ -275,13 +284,18 @@ namespace siddiqsoft
             rest_response resp {};
             CURLcode      rc {};
 
-            if (!isInitialized) return std::unexpected(EBUSY);
+            if (!isInitialized) {
+                std::print(std::cerr, "{} - Not INITIALIZED for `{}` Uri: {}\n", __func__, req.getMethod(), req.getUri());
+                return std::unexpected(EBUSY);
+            }
 
             auto destinationHost = req.getHost();
 
+#if defined(DEBUG0)
             std::print(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
+#endif
 
-            if (auto ctxCurl= g_LibCURLSingleton.getEasyHandle(); ctxCurl && !destinationHost.empty()) {
+            if (auto ctxCurl = g_LibCURLSingleton.getEasyHandle(); ctxCurl && !destinationHost.empty()) {
                 std::shared_ptr<ContentType> _contents {new ContentType()};
 
                 curl_easy_reset(ctxCurl);
@@ -303,8 +317,7 @@ namespace siddiqsoft
                 // Next, we setup the incoming/receive callback and data
                 if (rc = curl_easy_setopt(ctxCurl, CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK)
                     return std::unexpected<int>(rc);
-                if (rc = curl_easy_setopt(ctxCurl, CURLOPT_WRITEDATA, _contents.get()); rc != CURLE_OK)
-                    return std::unexpected(rc);
+                if (rc = curl_easy_setopt(ctxCurl, CURLOPT_WRITEDATA, _contents.get()); rc != CURLE_OK) return std::unexpected(rc);
 
                 // Set headers..
                 struct curl_slist*   curlHeaders = nullptr;
@@ -333,12 +346,10 @@ namespace siddiqsoft
                         curlHeaders = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.dump()).c_str());
                     }
                 }
-                if (rc = curl_easy_setopt(ctxCurl, CURLOPT_HTTPHEADER, curlHeaders); rc != CURLE_OK)
-                    return std::unexpected(rc);
+                if (rc = curl_easy_setopt(ctxCurl, CURLOPT_HTTPHEADER, curlHeaders); rc != CURLE_OK) return std::unexpected(rc);
 
                 // Set User-Agent
-                if (rc = curl_easy_setopt(
-                            ctxCurl, CURLOPT_USERAGENT, req.getHeaders().value("User-Agent", UserAgent).c_str());
+                if (rc = curl_easy_setopt(ctxCurl, CURLOPT_USERAGENT, req.getHeaders().value("User-Agent", UserAgent).c_str());
                     rc != CURLE_OK)
                     return std::unexpected(rc);
 
@@ -370,7 +381,7 @@ namespace siddiqsoft
                     }
                 }
 
-#if defined(DEBUG) || defined(_DEBUG)
+#if defined(DEBUG)
                 curl_easy_setopt(ctxCurl, CURLOPT_VERBOSE, 1L);
 #endif
 
@@ -378,15 +389,21 @@ namespace siddiqsoft
                 if (rc = curl_easy_perform(ctxCurl); rc == CURLE_OK) {
                     ioSend++;
                     // Parse the response..
-                    extractStartLine( ctxCurl, resp);
+                    extractStartLine(ctxCurl, resp);
                     extractHeadersFromLibCurl(ctxCurl, resp);
                     extractContents(_contents, resp);
                     return resp;
                 }
+                else {
+                    ioSendFailed++;
+                    std::print(std::cerr,
+                               "{} - curl_easy_perform() failed: {}\n{}\n",
+                               __func__,
+                               curl_easy_strerror(rc),
+                               nlohmann::json(req).dump(2));
+                }
 
                 // To reach here is failure!
-                ioSendFailed++;
-                std::print(std::cerr, "{}:curl_easy_perform() failed: {}\n", __func__, curl_easy_strerror(rc));
                 return std::unexpected(rc);
             }
             else {
@@ -400,15 +417,21 @@ namespace siddiqsoft
 
         void extractContents(std::shared_ptr<ContentType> cntnt, rest_response& resp)
         {
-            // Fixup the content data..type and length
-            cntnt->type = resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
-            // headers in libcurl are always string values so we'd need to convert them to integer
-            cntnt->length = std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
-            // Make sure we have the content length properly
-            if ((cntnt->length == 0) && !cntnt->body.empty()) cntnt->length = cntnt->body.length();
-            // Fixup the content..
-            // cntnt->parseFromSerializedJson(cntnt->body);
-            resp.setContent(cntnt);
+            try {
+                // Fixup the content data..type and length
+                cntnt->type = resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
+                // headers in libcurl are always string values so we'd need to convert them to integer
+                cntnt->length =
+                        std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
+                // Make sure we have the content length properly
+                if ((cntnt->length == 0) && !cntnt->body.empty()) cntnt->length = cntnt->body.length();
+                // Fixup the content..
+                // cntnt->parseFromSerializedJson(cntnt->body);
+                resp.setContent(cntnt);
+            }
+            catch (std::exception& ex) {
+                std::print(std::cerr, "{} - Error:{}\n", __func__, ex.what());
+            }
         }
 
 
@@ -431,7 +454,7 @@ namespace siddiqsoft
                 }
             }
 
-            if (rc == CURLE_OK) {
+            if (rc != CURLE_OK) {
                 std::print(std::cerr, "{} - rc:{}  sc:{}", __func__, curl_easy_strerror(rc), sc);
             }
         }
