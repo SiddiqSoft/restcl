@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <thread>
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef LIBCURL_HELPERS_HPP
@@ -33,6 +34,10 @@ namespace siddiqsoft
 {
     class borrowed_curl_ptr
     {
+#if defined(DEBUG)
+    public:
+        std::thread::id _owningTid {};
+#endif
     private:
         std::shared_ptr<CURL>                 _hndl;
         resource_pool<std::shared_ptr<CURL>>& _pool;
@@ -43,9 +48,20 @@ namespace siddiqsoft
             : _pool {pool}
             , _hndl {std::move(item)}
         {
+#if defined(DEBUG)
+            _owningTid = std::this_thread::get_id();
+#endif
         }
 
         operator CURL*() { return _hndl.get(); }
+
+        /**
+         * @brief Abandon the borrowed_curl_ptr so we do not return it to the pool!
+         *        The shared_ptr is released and will be freed when ref count zero
+         *        clearing the underlying CURL resource.
+         *
+         */
+        void abandon() { _hndl.reset(); }
 
         ~borrowed_curl_ptr()
         {
@@ -91,8 +107,7 @@ namespace siddiqsoft
          * Auto-clears the CURL* when this object goes out of scope.
          * @return std::shared_ptr<CURL>
          */
-        [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle()
-                -> borrowed_curl_ptr
+        [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> borrowed_curl_ptr
         {
             try {
                 // return an existing handle..

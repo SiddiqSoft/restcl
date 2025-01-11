@@ -414,8 +414,6 @@ namespace siddiqsoft
 
         EXPECT_NO_THROW({
             restcl               wrc;
-            //siddiqsoft::RunOnEnd roe([&]() { std::cerr << "Final Stats of the client: " << wrc << std::endl; });
-
 
             wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__),
                           [&](const auto& req, std::expected<rest_response, int> resp) {
@@ -427,14 +425,14 @@ namespace siddiqsoft
                               }
                               else if (resp.has_value()) {
                                   std::print(std::cerr,
-                                             "{} - Got error: {} for {} -- {}\n",
+                                             "{} Threads::test_1 - Got error: {} for {} -- {}\n",
                                              __func__,
                                              resp->statusCode(),
                                              req.getUri().authority.host,
                                              resp->reasonCode());
                               }
                               else {
-                                  std::print(std::cerr, "{} - Unknown error!", __func__);
+                                  std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);
                               }
                           });
 
