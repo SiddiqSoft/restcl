@@ -392,7 +392,7 @@ namespace siddiqsoft
                                   std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
                               }
                           })
-                    .sendAsync("https://www.google.com/"_GET);
+                    .sendAsync("https://www.bing.com/"_GET);
         });
 
         // This sleep is important otherwise we will end up destroying the IO workers before

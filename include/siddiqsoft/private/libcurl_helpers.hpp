@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <string>
 #include <expected>
+#include <format>
 
 #include "siddiqsoft/resource_pool.hpp"
 
@@ -34,10 +35,9 @@ namespace siddiqsoft
 {
     class borrowed_curl_ptr
     {
-#if defined(DEBUG)
     public:
         std::thread::id _owningTid {};
-#endif
+
     private:
         std::shared_ptr<CURL>                 _hndl;
         resource_pool<std::shared_ptr<CURL>>& _pool;
@@ -48,9 +48,7 @@ namespace siddiqsoft
             : _pool {pool}
             , _hndl {std::move(item)}
         {
-#if defined(DEBUG)
             _owningTid = std::this_thread::get_id();
-#endif
         }
 
         operator CURL*() { return _hndl.get(); }
@@ -61,7 +59,14 @@ namespace siddiqsoft
          *        clearing the underlying CURL resource.
          *
          */
-        void abandon() { _hndl.reset(); }
+        void abandon()
+        {
+            std::print(std::cerr,
+                       "borrowed_curl_ptr::abandon - {} Abandoning "
+                       "*********************************************************************\n",
+                       _owningTid);
+            _hndl.reset();
+        }
 
         ~borrowed_curl_ptr()
         {
