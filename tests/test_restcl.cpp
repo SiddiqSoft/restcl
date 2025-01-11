@@ -223,7 +223,7 @@ namespace siddiqsoft
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
                                    std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                             << curl_url_strerror(resp.error()) << std::endl;
+                                             << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                }
                                passTest.notify_all();
                            });
@@ -257,7 +257,7 @@ namespace siddiqsoft
                                           // We MUST get a connection failure; the site does not exist!
                                           passTest = true;
                                           std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                                    << curl_url_strerror(resp.error()) << std::endl;
+                                                    << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                       }
                                       passTest.notify_all();
                                   });
@@ -288,7 +288,7 @@ namespace siddiqsoft
                     else {
                         // We MUST get a connection failure; the site does not exist!
                         passTest = true;
-                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --" << curl_url_strerror(resp.error())
+                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --" << curl_easy_strerror((CURLcode)resp.error())
                                   << std::endl;
                     }
                     passTest.notify_all();
@@ -323,7 +323,7 @@ namespace siddiqsoft
                                           // We MUST get a connection failure; the site does not exist!
                                           passTest = true;
                                           std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                                    << curl_url_strerror(resp.error()) << std::endl;
+                                                    << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                       }
                                       passTest.notify_all();
                                   });
@@ -352,7 +352,7 @@ namespace siddiqsoft
                                           // We MUST get a connection failure; the site does not exist!
                                           passTest = true;
                                           std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                                    << curl_url_strerror(resp.error()) << std::endl;
+                                                    << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                       }
                                       passTest.notify_all();
                                   });
