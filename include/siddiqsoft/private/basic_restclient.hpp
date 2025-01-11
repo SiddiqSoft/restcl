@@ -9,6 +9,7 @@
  *
  */
 #pragma once
+#include <optional>
 #ifndef BASIC_RESTCLIENT_HPP
 #define BASIC_RESTCLIENT_HPP
 
@@ -39,7 +40,7 @@ namespace siddiqsoft
          *            One of the variable arguments would be the callback for sendAsync operations.
          * @return basic_restclient& Returns reference to self to allow chaining
          */
-        virtual basic_restclient& configure(const std::string& ua, basic_callbacktype&& = {}) = 0;
+        virtual basic_restclient& configure(const nlohmann::json& ={}, basic_callbacktype&& = {}) = 0;
 
         /// @brief Synchronous implementation of the IO
         /// @param req Request

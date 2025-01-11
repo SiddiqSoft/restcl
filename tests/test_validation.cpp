@@ -75,9 +75,9 @@ namespace siddiqsoft
         EXPECT_EQ("/echo/post/json", r3.getUri().pathPart);
         EXPECT_EQ("source=Validation::restrequest_checks&param=r3", r3.getUri().queryPart);
 
-        nlohmann::json doc {r3};
-        std::cerr << "Serialized (encoded): " << r3 << std::endl;
-        std::cerr << "Serialized (json'd) : " << doc.dump(2) << std::endl;
+        // nlohmann::json doc {r3};
+        // std::cerr << "Serialized (encoded): " << r3 << std::endl;
+        // std::cerr << "Serialized (json'd) : " << doc.dump(2) << std::endl;
     }
 
     TEST(Validation, GET_google_com)
@@ -85,14 +85,14 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc;
 
-        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
-                .sendAsync("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+        wrc.configure().sendAsync(
+                "https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
-                        std::print(std::cerr,
-                                   "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
-                                   __func__,
-                                   nlohmann::json(*resp).dump(3));
+                        // std::print(std::cerr,
+                        //            "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
+                        //            __func__,
+                        //            nlohmann::json(*resp).dump(3));
                     }
                     else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
@@ -114,12 +114,12 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc;
 
-        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
+        wrc.configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
                 .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
-                        passTest           = true;
-                        nlohmann::json doc(*resp);
-                        std::cerr << "Response\n" << doc.dump(3) << std::endl;
+                        passTest = true;
+                        // nlohmann::json doc(*resp);
+                        // std::cerr << "Response\n" << doc.dump(3) << std::endl;
                     }
                     else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
@@ -145,12 +145,14 @@ namespace siddiqsoft
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
-        wrc.configure((std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)))
+        wrc.configure({{"trace", false},
+                       {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
+                       {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}})
                 .sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp.has_value() && resp->success()) {
-                        passTest           = 1;
-                        nlohmann::json doc (*resp);
-                        std::print(std::cerr, "{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
+                        passTest = 1;
+                        // nlohmann::json doc(*resp);
+                        // std::print(std::cerr, "{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
                     }
                     else if (resp.has_value()) {
                         nlohmann::json doc(*resp);
@@ -158,7 +160,7 @@ namespace siddiqsoft
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400)) ? 1 : -1;
                         std::print(std::cerr, "{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
-                        //std::print(std::cerr, "{} - Got error:\n{}\n", __func__, doc.dump(2));
+                        // std::print(std::cerr, "{} - Got error:\n{}\n", __func__, doc.dump(2));
                     }
                     else {
                         passTest = -1;
@@ -176,7 +178,6 @@ namespace siddiqsoft
     {
         const unsigned   ITER_COUNT = 1;
         std::atomic_uint passTest   = 0;
-        std::print(std::cerr, "Starting..\n");
 
         try {
             using namespace std::chrono_literals;
@@ -185,7 +186,7 @@ namespace siddiqsoft
             siddiqsoft::restcl wrc;
             nlohmann::json     myStats {{"Test", "drift-check"}};
 
-            wrc.configure(std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__));
+            wrc.configure();
             auto req = "https://time.akamai.com/?iso"_GET;
             if (auto resp = wrc.send(req); resp->success()) {
                 // std::cerr << *resp << std::endl;
@@ -216,5 +217,48 @@ namespace siddiqsoft
         }
 
         EXPECT_EQ(ITER_COUNT, passTest.load());
+    }
+
+    TEST(Validation, MoveConstructor)
+    {
+        int                             CLIENT_COUNT = 3;
+        std::atomic_uint                passTest {0};
+        std::vector<siddiqsoft::restcl> clients;
+        int                             clientIndex {0};
+
+        for (auto i = 0; i < CLIENT_COUNT; i++) {
+            clients.push_back(siddiqsoft::restcl {});
+        }
+
+        EXPECT_EQ(CLIENT_COUNT, clients.size());
+
+        // Send data over each client (if we mess up the move constructors this will fail)
+        std::for_each(clients.begin(), clients.end(), [&](auto& wrc) {
+            wrc.configure({{"trace", false},{"freshConnect",true},
+                           {"userAgent",
+                            std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
+                                        "Validation, MoveConstructor",
+                                        ++clientIndex,
+                                        CLIENT_COUNT)}},
+                          [&](const auto& req, std::expected<rest_response, int> resp) {
+                              if (resp->success()) {
+                                  passTest += resp->statusCode() == 200;
+                                  // EXPECT_TRUE(resp->getHeaders().contains("X-EventID"));
+                              }
+                              else {
+                                  auto [ec, emsg] = resp->status();
+                                  std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                              }
+                          })
+                    .sendAsync("https://www.cnn.com/"_GET);
+        });
+
+        // This sleep is important otherwise we will end up destroying the IO workers before
+        // any activity has had a chance to complete!
+        // The underlying libraries do not "hold" and spool out their
+        // transactions!
+        std::this_thread::sleep_for(std::chrono::seconds(4 * CLIENT_COUNT));
+
+        EXPECT_EQ(CLIENT_COUNT, passTest.load());
     }
 } // namespace siddiqsoft

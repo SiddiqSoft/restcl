@@ -12,6 +12,7 @@
 #pragma once
 #include <exception>
 #include <functional>
+#include <optional>
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
@@ -61,9 +62,6 @@ namespace siddiqsoft
     /// @brief Unix implementation of the basic_restclient
     class HttpRESTClient : public basic_restclient
     {
-    public:
-        std::string UserAgent {"siddiqsoft.restcl/1.6.0"};
-
     private:
         static const uint32_t     READBUFFERSIZE {8192};
         static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
@@ -87,6 +85,11 @@ namespace siddiqsoft
 
     private:
         basic_callbacktype _callback {};
+        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
+                                    {"trace", false},
+                                    {"freshConnect", false},
+                                    {"downloadDirectory", nullptr},
+                                    {"headers", nullptr}};
 
 
         inline void dispatchCallback(basic_callbacktype& cb, rest_request& req, std::expected<rest_response, int> resp)
@@ -109,8 +112,6 @@ namespace siddiqsoft
             // method completes the lifetime of the object ends;
             // typically this is *after* we invoke the callback.
             try {
-                if (!arg.request.getHeaders().contains("Connection")) arg.request.setHeaders({{"Connection", "Keep-Alive"}});
-
                 dispatchCallback(arg.callback, arg.request, send(arg.request));
             }
             catch (std::system_error& se) {
@@ -228,16 +229,15 @@ namespace siddiqsoft
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
         HttpRESTClient(HttpRESTClient&& src) noexcept
-            : UserAgent(std::move(src.UserAgent))
-            , _callback(std::move(src._callback))
+            : _callback(std::move(src._callback))
         {
         }
 
         ~HttpRESTClient()
         {
-#if defined(DEBUG)
-            std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
-#endif
+            if (_config.value("trace", false)) {
+                std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
+            }
         }
 
         /**
@@ -247,9 +247,9 @@ namespace siddiqsoft
          * @param func Optional callback the client-level. You can also provider per-call callbacks for each REST send() operation
          * @return basic_restclient& Returns self reference for chaining.
          */
-        basic_restclient& configure(const std::string& ua, basic_callbacktype&& func = {}) override
+        basic_restclient& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& func = {}) override
         {
-            UserAgent = ua;
+            if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
 
             if (func) _callback = std::move(func);
 
@@ -280,6 +280,8 @@ namespace siddiqsoft
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
         [[nodiscard]] std::expected<rest_response, int> send(rest_request& req) override
         {
+            using namespace nlohmann::literals;
+
             rest_response resp {};
             CURLcode      rc {};
 
@@ -290,15 +292,28 @@ namespace siddiqsoft
 
             auto destinationHost = req.getHost();
 
-#if defined(DEBUG0)
-            std::print(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
-#endif
+            if (_config.value("trace", false)) {
+                std::print(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
+            }
 
             if (auto ctxCurl = g_LibCURLSingleton.getEasyHandle(); ((CURL*)ctxCurl != nullptr) && !destinationHost.empty()) {
                 curl_easy_reset(ctxCurl);
 
+                if (_config.value("freshConnect", false)) {
+                    curl_easy_setopt(ctxCurl, CURLOPT_FRESH_CONNECT, 1L);
+                }
+
                 // Set User-Agent
-                if (rc = curl_easy_setopt(ctxCurl, CURLOPT_USERAGENT, req.getHeaders().value("User-Agent", UserAgent).c_str());
+                // Use the one present in the request..
+                // otherwise use the one configured in the config
+                // or the one set in the config headers
+                if (rc = curl_easy_setopt(
+                            ctxCurl,
+                            CURLOPT_USERAGENT,
+                            req.getHeaders()
+                                    .value("User-Agent",
+                                           _config.value("userAgent", _config.value("/headers/User-Agent"_json_pointer, "")))
+                                    .c_str());
                     rc == CURLE_OK)
                 {
                     ioAttempt++;
@@ -307,9 +322,9 @@ namespace siddiqsoft
 
                         if (rc = prepareIOHandlers(ctxCurl, req, _contents); rc == CURLE_OK) {
                             if (auto curlHeaders = prepareCurlHeaders(ctxCurl, req); curlHeaders) {
-#if defined(DEBUG)
-                                curl_easy_setopt(ctxCurl, CURLOPT_VERBOSE, 1L);
-#endif
+                                if (_config.value("trace", false)) {
+                                    curl_easy_setopt(ctxCurl, CURLOPT_VERBOSE, 1L);
+                                }
 
                                 // Send the request..
                                 if (rc = curl_easy_perform(ctxCurl); rc == CURLE_OK) {
@@ -518,7 +533,7 @@ namespace siddiqsoft
 
     inline void to_json(nlohmann::json& dest, const HttpRESTClient& src)
     {
-        dest = nlohmann::json {{"UserAgent", src.UserAgent},
+        dest = nlohmann::json {{"config", src._config},
                                {"ioAttempt", src.ioAttempt.load()},
                                {"ioAttemptFailed", src.ioAttemptFailed.load()},
                                {"callbackAttempt", src.callbackAttempt.load()},

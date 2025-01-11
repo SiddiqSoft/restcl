@@ -145,7 +145,7 @@ namespace siddiqsoft
         HttpProtocolVersionType        protocol {HttpProtocolVersionType::Http11};
         HttpMethodType                 method {};
         Uri<char, AuthorityHttp<char>> uri {};
-        nlohmann::json                 headers {{"Accept", CONTENT_APPLICATION_JSON}, {"Date", DateUtils::RFC7231()}};
+        nlohmann::json                 headers {{"Date", DateUtils::RFC7231()}};
         std::shared_ptr<ContentType>   content {new ContentType()};
 
     protected:
