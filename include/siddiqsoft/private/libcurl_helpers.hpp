@@ -11,7 +11,6 @@
 
 #pragma once
 
-#include <thread>
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef LIBCURL_HELPERS_HPP
@@ -26,53 +25,71 @@
 #include <string>
 #include <expected>
 #include <format>
+#include <thread>
 
 #include "siddiqsoft/resource_pool.hpp"
+#include "http_frame.hpp"
 
 #include "curl/curl.h"
 
 namespace siddiqsoft
 {
-    class borrowed_curl_ptr
+    /**
+     * @brief Groups together the pooled CURL* and the ContentType object
+     *        with the ability to on destruction return the CURL shared_ptr
+     *        back to the resource_pool container.
+     *
+     */
+    class CurlContextBundle
     {
     public:
+#if defined(DEBUG)
         std::thread::id _owningTid {};
-
-    private:
-        std::shared_ptr<CURL>                 _hndl;
-        resource_pool<std::shared_ptr<CURL>>& _pool;
+#endif
+        std::shared_ptr<CURL>                 _hndl;                         // The checkout'd curl handle
+        resource_pool<std::shared_ptr<CURL>>& _pool;                         // Reference to where we should checkin
+        std::shared_ptr<ContentType>          _contents {new ContentType()}; // Always a new instance
 
     public:
-        borrowed_curl_ptr() = delete;
-        borrowed_curl_ptr(resource_pool<std::shared_ptr<CURL>>& pool, std::shared_ptr<CURL> item)
+        CurlContextBundle() = delete;
+        CurlContextBundle(resource_pool<std::shared_ptr<CURL>>& pool, std::shared_ptr<CURL> item)
             : _pool {pool}
             , _hndl {std::move(item)}
         {
+#if defined(DEBUG)
             _owningTid = std::this_thread::get_id();
+#endif
         }
 
         operator CURL*() { return _hndl.get(); }
+        operator std::shared_ptr<ContentType>() { return _contents; }
 
         /**
-         * @brief Abandon the borrowed_curl_ptr so we do not return it to the pool!
+         * @brief Abandon the CurlContextBundle so we do not return it to the pool!
          *        The shared_ptr is released and will be freed when ref count zero
          *        clearing the underlying CURL resource.
          *
          */
         void abandon()
         {
+#if defined(DEBUG)
             std::print(std::cerr,
-                       "borrowed_curl_ptr::abandon - {} Abandoning "
+                       "CurlContextBundle::abandon - {} Abandoning CURL handle"
                        "*********************************************************************\n",
                        _owningTid);
+#endif
             _hndl.reset();
         }
 
-        ~borrowed_curl_ptr()
+        ~CurlContextBundle()
         {
+            // std::print(std::cerr, "{} - 1/2 Clearing contents..\n", __func__);
+            _contents.reset();
             if (_hndl) {
+                // std::print(std::cerr, "{} - 2/2 Returning CURL handle..\n", __func__);
                 _pool.checkin(std::move(_hndl));
             }
+            // std::print(std::cerr, "{} - 2/2 Done ..\n", __func__);
         }
     };
 
@@ -112,14 +129,14 @@ namespace siddiqsoft
          * Auto-clears the CURL* when this object goes out of scope.
          * @return std::shared_ptr<CURL>
          */
-        [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> borrowed_curl_ptr
+        [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> CurlContextBundle
         {
             try {
                 // It is critical for us to check if we are non-empty otherwise
                 // there will be a race-condition during the checkout
                 if (isInitialized && (curlHandlePool.getCapacity() > 0)) {
                     // return an existing handle..
-                    return borrowed_curl_ptr(curlHandlePool, curlHandlePool.checkout());
+                    return CurlContextBundle(curlHandlePool, curlHandlePool.checkout());
                 }
             }
             catch (std::runtime_error& re) {
@@ -131,7 +148,7 @@ namespace siddiqsoft
             }
 
             // ..return a new handle..
-            return borrowed_curl_ptr {curlHandlePool, {curl_easy_init(), curl_easy_cleanup}};
+            return CurlContextBundle {curlHandlePool, {curl_easy_init(), curl_easy_cleanup}};
         };
 
 #if defined(DEBUG) || defined(_DEBUG)

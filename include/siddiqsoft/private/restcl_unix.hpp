@@ -206,7 +206,7 @@ namespace siddiqsoft
         }
 
 
-        auto& extractHeadersFromLibCurl(borrowed_curl_ptr ctxCurl, http_frame& dest)
+        auto& extractHeadersFromLibCurl(CurlContextBundle ctxCurl, http_frame& dest)
         {
             int          headerCount {0};
             curl_header* currentHeader {nullptr};
@@ -276,7 +276,7 @@ namespace siddiqsoft
             return *this;
         }
 
-        void prepareContext(borrowed_curl_ptr ctxCurl)
+        void prepareContext(CurlContextBundle ctxCurl)
         {
             curl_easy_reset(ctxCurl);
 
@@ -336,9 +336,7 @@ namespace siddiqsoft
                 {
                     ioAttempt++;
                     if (rc = prepareStartLine(ctxCurl, req); rc == CURLE_OK) {
-                        std::shared_ptr<ContentType> _contents {new ContentType()};
-
-                        if (rc = prepareIOHandlers(ctxCurl, req, _contents); rc == CURLE_OK) {
+                        if (rc = prepareIOHandlers(ctxCurl, req, ctxCurl._contents); rc == CURLE_OK) {
                             if (auto curlHeaders = prepareCurlHeaders(ctxCurl, req); curlHeaders) {
                                 // Send the request..
                                 if (rc = curl_easy_perform(ctxCurl); rc == CURLE_OK) {
@@ -346,7 +344,7 @@ namespace siddiqsoft
                                     // Parse the response..
                                     extractStartLine(ctxCurl, resp);
                                     extractHeadersFromLibCurl(ctxCurl, resp);
-                                    extractContents(_contents, resp);
+                                    extractContents(ctxCurl, resp);
                                     return resp;
                                 }
                                 else {
@@ -365,8 +363,11 @@ namespace siddiqsoft
                 // To reach here is failure!
                 // Abandon so we we dot re-use a failed resource!
                 ctxCurl.abandon();
-                std::print(
-                        std::cerr, "{} - some failure {}; abandon context !!\n{}\n", __func__, curl_easy_strerror(rc), nlohmann::json(req).dump(2));
+                std::print(std::cerr,
+                           "{} - some failure {}; abandon context !!\n{}\n",
+                           __func__,
+                           curl_easy_strerror(rc),
+                           nlohmann::json(req).dump(2));
                 return std::unexpected(rc);
             }
             else {
@@ -379,7 +380,7 @@ namespace siddiqsoft
             return std::unexpected(ENOTRECOVERABLE);
         }
 
-        CURLcode prepareIOHandlers(borrowed_curl_ptr ctxCurl, rest_request& req, std::shared_ptr<ContentType> cntnts)
+        CURLcode prepareIOHandlers(CurlContextBundle ctxCurl, rest_request& req, std::shared_ptr<ContentType> cntnts)
         {
             CURLcode rc {CURLE_OK};
 
@@ -397,7 +398,7 @@ namespace siddiqsoft
             return rc;
         }
 
-        CURLcode prepareStartLine(borrowed_curl_ptr ctxCurl, rest_request& req)
+        CURLcode prepareStartLine(CurlContextBundle ctxCurl, rest_request& req)
         {
             CURLcode rc {CURLE_OK};
 
@@ -450,53 +451,53 @@ namespace siddiqsoft
             return rc;
         }
 
-        [[nodiscard]] auto prepareCurlHeaders(borrowed_curl_ptr ctxCurl, rest_request& req) -> std::shared_ptr<struct curl_slist>
+        auto prepareCurlHeaders(CurlContextBundle ctxCurl, rest_request& req) -> std::shared_ptr<struct curl_slist>
         {
-            /*siddiqsoft::RunOnEnd cleanupCurlHeaders {[&curlHeaders]() {
-                // Cleans up the curlHeaders pointer when we're out of scope at this nest.
-                if (curlHeaders != nullptr) curl_slist_free_all(curlHeaders);
-            }};*/
+            CURLcode rc = CURLE_NOT_BUILT_IN;
 
-            if (auto curlHeaders = curl_slist_append(NULL, "Expect:"); curlHeaders != NULL) {
-                for (auto& [k, v] : req.getHeaders().items()) {
-                    // std::print( std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
-                    if (v.is_string()) {
-                        if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<std::string>()).c_str());
-                            ch != NULL)
-                            curlHeaders = ch;
+            // Always capture the structure to ensure we do not lose track and cleanup as and when needed
+            if (auto curlHeaders = curl_slist_append(NULL, "X-restcl-v2:"); curlHeaders != NULL) {
+                try {
+                    for (auto& [k, v] : req.getHeaders().items()) {
+                        std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
+                        if (v.is_string()) {
+                            if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<std::string>()).c_str());
+                                ch != NULL)
+                                curlHeaders = ch;
+                        }
+                        else if (v.is_number_unsigned()) {
+                            if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<uint64_t>()).c_str());
+                                ch != NULL)
+                                curlHeaders = ch;
+                        }
+                        else if (v.is_number_integer()) {
+                            if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<int>()).c_str());
+                                ch != NULL)
+                                curlHeaders = ch;
+                        }
+                        else if (v.is_null()) {
+                            if (auto ch = curl_slist_append(curlHeaders, std::format("{};", k).c_str()); ch != NULL)
+                                curlHeaders = ch;
+                        }
+                        else {
+                            if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.dump()).c_str()); ch != NULL)
+                                curlHeaders = ch;
+                        }
                     }
-                    else if (v.is_number_unsigned()) {
-                        if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<uint64_t>()).c_str());
-                            ch != NULL)
-                            curlHeaders = ch;
-                    }
-                    else if (v.is_number_integer()) {
-                        if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<int>()).c_str()); ch != NULL)
-                            curlHeaders = ch;
-                    }
-                    else if (v.is_null()) {
-                        if (auto ch = curl_slist_append(curlHeaders, std::format("{};", k).c_str()); ch != NULL) curlHeaders = ch;
-                    }
-                    else {
-                        if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.dump()).c_str()); ch != NULL)
-                            curlHeaders = ch;
-                    }
+                }
+                catch (...) {
                 }
 
                 if (curlHeaders != NULL) {
-                    if (CURLE_OK == curl_easy_setopt(ctxCurl, CURLOPT_HTTPHEADER, curlHeaders)) {
-                        // Return a shared_ptr as it is the only facility allowing us to
-                        // ensure that the client scope cleans up the curl_slist header
-                        // after the completion of the curl_easy_perform()
-                        return std::shared_ptr<struct curl_slist>(curlHeaders, curl_slist_free_all);
+                    // Immediately save so we ensure proper cleanup
+                    std::shared_ptr<struct curl_slist> retHeaders {curlHeaders, curl_slist_free_all};
+                    if (rc = curl_easy_setopt(ctxCurl, CURLOPT_HTTPHEADER, curlHeaders); rc == CURLE_OK) {
+                        return retHeaders;
                     }
                 }
-
-                if (curlHeaders != nullptr) curl_slist_free_all(curlHeaders);
             }
 
-            // This is failure; cleanup and return nullptr
-            return nullptr;
+            return {};
         }
 
         void extractContents(std::shared_ptr<ContentType> cntnt, rest_response& resp)
@@ -519,7 +520,7 @@ namespace siddiqsoft
         }
 
 
-        void extractStartLine(borrowed_curl_ptr ctxCurl, rest_response& dest)
+        void extractStartLine(CurlContextBundle ctxCurl, rest_response& dest)
         {
             CURLcode rc {CURLE_OK};
             long     sc {0};
