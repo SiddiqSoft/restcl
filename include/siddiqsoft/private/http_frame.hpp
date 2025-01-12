@@ -333,6 +333,23 @@ namespace siddiqsoft
 
         auto& getContent() { return content; }
 
+        auto& getContentBody() { return content->body; }
+
+        [[nodiscard]] nlohmann::json getContentBodyJSON()
+        {
+            try {
+                if (content->type.find("json") != std::string::npos) {
+                    // Content-Type is json..
+                    if (!content->body.empty()) {
+                        return nlohmann::json::parse(content->body);
+                    }
+                }
+            }
+            catch (...) {
+            }
+
+            return nullptr;
+        }
 
         [[nodiscard]] auto encodeContent() const
         {

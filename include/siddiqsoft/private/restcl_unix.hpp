@@ -291,7 +291,7 @@ namespace siddiqsoft
             if (_config.value("freshConnect", false)) {
                 curl_easy_setopt(ctxCurl, CURLOPT_FRESH_CONNECT, 1L);
             }
-            
+
             if (_config.value("trace", false)) {
                 curl_easy_setopt(ctxCurl, CURLOPT_VERBOSE, 1L);
             }
@@ -365,10 +365,13 @@ namespace siddiqsoft
                 // To reach here is failure!
                 // Abandon so we we dot re-use a failed resource!
                 ctxCurl.abandon();
+                std::print(
+                        std::cerr, "{} - some failure {}; abandon context !!\n{}\n", __func__, curl_easy_strerror(rc), nlohmann::json(req).dump(2));
                 return std::unexpected(rc);
             }
             else {
                 ioAttemptFailed++;
+                std::print(std::cerr, "{} - getting context failed!\n{}\n", __func__, nlohmann::json(req).dump(2));
                 return std::unexpected(ENETUNREACH);
             }
 

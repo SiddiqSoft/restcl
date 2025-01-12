@@ -115,11 +115,19 @@ namespace siddiqsoft
         [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> borrowed_curl_ptr
         {
             try {
-                // return an existing handle..
-                return borrowed_curl_ptr(curlHandlePool, curlHandlePool.checkout());
+                // It is critical for us to check if we are non-empty otherwise
+                // there will be a race-condition during the checkout
+                if (isInitialized && (curlHandlePool.getCapacity() > 0)) {
+                    // return an existing handle..
+                    return borrowed_curl_ptr(curlHandlePool, curlHandlePool.checkout());
+                }
             }
             catch (std::runtime_error& re) {
                 // ignore the exception.. and..
+                std::print(std::cerr, "{} - Failed getting existing handle from pool. {}\n", __func__, re.what());
+            }
+            catch (...) {
+                std::print(std::cerr, "{} - Failed getting existing handle from pool. unknown error\n", __func__);
             }
 
             // ..return a new handle..
