@@ -197,7 +197,6 @@ namespace siddiqsoft
                 });
 
         passTest.wait(false);
-        std::cerr << "Checking results..\n";
         EXPECT_TRUE(passTest.load());
     }
 

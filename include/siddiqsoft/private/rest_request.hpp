@@ -68,6 +68,12 @@ namespace siddiqsoft
     public:
         rest_request() = default;
 
+        rest_request(const HttpMethodType& v, const Uri<char, AuthorityHttp<char>> u)
+        {
+            setMethod(v);
+            setUri(u);
+        }
+
         rest_request(const HttpMethodType&                v,
                      const Uri<char, AuthorityHttp<char>> u,
                      const nlohmann::json&                h,
@@ -191,10 +197,9 @@ namespace siddiqsoft
 
     inline void to_json(nlohmann::json& dest, const rest_request& src)
     {
-        dest = nlohmann::json {{"request",
-                                {{"method", src.method}, {"uri", src.uri}, {"protocol", src.protocol}}},
-                                {"headers", src.headers},
-                                {"content", src.content}};
+        dest = nlohmann::json {{"request", {{"method", src.method}, {"uri", src.uri}, {"protocol", src.protocol}}},
+                               {"headers", src.headers},
+                               {"content", src.content}};
     }
 
 } // namespace siddiqsoft
