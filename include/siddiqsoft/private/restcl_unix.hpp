@@ -88,6 +88,8 @@ namespace siddiqsoft
         nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
                                     {"trace", false},
                                     {"freshConnect", false},
+                                    {"connectTimeout", 0L},
+                                    {"timeout", 0L},
                                     {"downloadDirectory", nullptr},
                                     {"headers", nullptr}};
 
@@ -274,6 +276,26 @@ namespace siddiqsoft
             return *this;
         }
 
+        void prepareContext(borrowed_curl_ptr ctxCurl)
+        {
+            curl_easy_reset(ctxCurl);
+
+            if (long v = _config.value("connectTimeout", 0); v > 0) {
+                curl_easy_setopt(ctxCurl, CURLOPT_CONNECTTIMEOUT_MS, v);
+            }
+
+            if (long v = _config.value("timeout", 0); v > 0) {
+                curl_easy_setopt(ctxCurl, CURLOPT_TIMEOUT_MS, v);
+            }
+
+            if (_config.value("freshConnect", false)) {
+                curl_easy_setopt(ctxCurl, CURLOPT_FRESH_CONNECT, 1L);
+            }
+            
+            if (_config.value("trace", false)) {
+                curl_easy_setopt(ctxCurl, CURLOPT_VERBOSE, 1L);
+            }
+        }
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
@@ -297,12 +319,8 @@ namespace siddiqsoft
             }
 
             if (auto ctxCurl = g_LibCURLSingleton.getEasyHandle(); ((CURL*)ctxCurl != nullptr) && !destinationHost.empty()) {
-                curl_easy_reset(ctxCurl);
-
-                if (_config.value("freshConnect", false)) {
-                    curl_easy_setopt(ctxCurl, CURLOPT_FRESH_CONNECT, 1L);
-                }
-
+                // Configures the context with options such as timeout, connectionTimeout, verbose, freshConnect..
+                prepareContext(ctxCurl);
                 // Set User-Agent
                 // Use the one present in the request..
                 // otherwise use the one configured in the config
@@ -322,10 +340,6 @@ namespace siddiqsoft
 
                         if (rc = prepareIOHandlers(ctxCurl, req, _contents); rc == CURLE_OK) {
                             if (auto curlHeaders = prepareCurlHeaders(ctxCurl, req); curlHeaders) {
-                                if (_config.value("trace", false)) {
-                                    curl_easy_setopt(ctxCurl, CURLOPT_VERBOSE, 1L);
-                                }
-
                                 // Send the request..
                                 if (rc = curl_easy_perform(ctxCurl); rc == CURLE_OK) {
                                     ioSend++;

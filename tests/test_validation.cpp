@@ -226,6 +226,7 @@ namespace siddiqsoft
         std::vector<siddiqsoft::restcl> clients;
         int                             clientIndex {0};
 
+        std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
             clients.push_back(siddiqsoft::restcl {});
         }
@@ -234,7 +235,13 @@ namespace siddiqsoft
 
         // Send data over each client (if we mess up the move constructors this will fail)
         std::for_each(clients.begin(), clients.end(), [&](auto& wrc) {
-            wrc.configure({{"trace", false},{"freshConnect",true},
+            std::print(std::cerr,
+                       "{} - Configuring client {}/{} individually...............\n",
+                       __FUNCTION__,
+                       clientIndex,
+                       CLIENT_COUNT);
+            wrc.configure({{"trace", false},
+                           {"freshConnect", true},
                            {"userAgent",
                             std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
                                         "Validation, MoveConstructor",
@@ -250,7 +257,7 @@ namespace siddiqsoft
                                   std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
                               }
                           })
-                    .sendAsync("https://www.cnn.com/"_GET);
+                    .sendAsync("https://reqbin.com/"_GET);
         });
 
         // This sleep is important otherwise we will end up destroying the IO workers before

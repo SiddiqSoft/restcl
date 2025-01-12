@@ -75,8 +75,8 @@ stages:
         "SAMPLES_DIR": "$(System.DefaultWorkingDirectory)/samples"
       inputs:
         cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure'
+      continueOnError: true
       condition: succeeded()
-      continueOnError: false
     - task: PublishTestResults@2
       displayName: 'Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml'
       inputs:
@@ -84,7 +84,7 @@ stages:
           testResultsFiles: '$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml'
           mergeTestResults: false
           buildConfiguration: '$(BuildType)'
-      continueOnError: false
+      continueOnError: true
       condition: succeeded()
     - task: NuGetToolInstaller@1
       displayName: 'Install Nuget on Windows'
