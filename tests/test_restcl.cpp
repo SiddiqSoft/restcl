@@ -45,7 +45,7 @@ namespace siddiqsoft
     TEST_F(TestSends, test1a)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc;
+        restcl           wrc      = CreateClient();
 
         wrc.configure({{"connectTimeout", 3000}, // timeout for the connect phase
                        {"timeout", 5000},        // timeout for the overall IO phase
@@ -77,12 +77,12 @@ namespace siddiqsoft
     TEST_F(TestSends, test2a_OPTIONS)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc;
+        restcl           wrc      = CreateClient();
 
-        auto optionsRequest = "https://reqbin.com/echo/post/json"_OPTIONS;
+        auto optionsRequest       = "https://reqbin.com/echo/post/json"_OPTIONS;
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
 
-        wrc.configure().sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
+        wrc.sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
             // Checks the implementation of the encode() implementation
             // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (passTest = resp ? resp->success() : false; passTest.load()) {
@@ -109,9 +109,9 @@ namespace siddiqsoft
     TEST_F(TestSends, test2a_POST)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc;
+        restcl           wrc      = CreateClient();
 
-        auto optionsRequest = "https://reqbin.com/echo/post/json"_POST;
+        auto optionsRequest       = "https://reqbin.com/echo/post/json"_POST;
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
 
         wrc.configure().sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
@@ -145,7 +145,7 @@ namespace siddiqsoft
         using namespace siddiqsoft::splituri_literals;
         std::atomic_bool passTest = false;
 
-        restcl      wrc;
+        restcl      wrc           = CreateClient();
         std::string responseContentType {};
 
         wrc.configure().sendAsync(
@@ -182,7 +182,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         // auto auth     = base64encode("aau:paau");
 
-        restcl wrc;
+        restcl wrc = CreateClient();
 
         wrc.configure().sendAsync(
                 rest_request {HttpMethodType::METHOD_POST,
@@ -218,7 +218,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        restcl wrc;
+        restcl wrc = CreateClient();
 
         wrc.configure({{"connectTimeout", 3000}, // timeout for the connect phase
                        {"timeout", 5000},        // timeout for the overall IO phase
@@ -252,7 +252,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        restcl wrc;
+        restcl wrc = CreateClient();
 
         wrc.configure({
                               {"connectTimeout", 3000}, // timeout for the connect phase
@@ -289,7 +289,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        restcl wrc;
+        restcl wrc = CreateClient();
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
         wrc.configure({
@@ -325,7 +325,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        restcl wrc;
+        restcl wrc = CreateClient();
 
         wrc.configure().sendAsync("https://google.com/"_OPTIONS,
                                   [&passTest](const auto& req, std::expected<rest_response, int> resp) {
@@ -357,7 +357,7 @@ namespace siddiqsoft
     TEST_F(TestSends, test9a)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc;
+        restcl           wrc      = CreateClient();
 
         wrc.configure().sendAsync("https://www.google.com/"_GET,
                                   [&passTest](const auto& req, std::expected<rest_response, int> resp) {
@@ -392,7 +392,7 @@ namespace siddiqsoft
 
 
         EXPECT_NO_THROW({
-            restcl wrc;
+            auto wrc = CreateClient();
 
             wrc.configure({{"freshConnect", true},
                            {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},

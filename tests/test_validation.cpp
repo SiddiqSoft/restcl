@@ -94,7 +94,7 @@ namespace siddiqsoft
     TEST_F(Validation, GET_google_com)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc;
+        restcl           wrc      = CreateClient();
 
         wrc.configure().sendAsync(
                 "https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
@@ -123,7 +123,7 @@ namespace siddiqsoft
     TEST_F(Validation, GET_duckduckgo_com)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc;
+        restcl           wrc      = CreateClient();
 
         wrc.configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
                 .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
@@ -150,35 +150,34 @@ namespace siddiqsoft
 
     TEST_F(Validation, POST_httpbin)
     {
-        std::atomic_int passTest = 0;
-        restcl          wrc;
+        std::atomic_int passTest    = 0;
+        restcl          wrc         = CreateClient({{"trace", false},
+                                                    {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
+                                                    {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
         auto            postRequest = "https://httpbin.org/post"_POST;
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
-        wrc.configure({{"trace", false},
-                       {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
-                       {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}})
-                .sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
-                    if (resp.has_value() && resp->success()) {
-                        passTest = 1;
-                        // nlohmann::json doc(*resp);
-                        // std::print(std::cerr, "{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
-                    }
-                    else if (resp.has_value()) {
-                        nlohmann::json doc(*resp);
+        wrc.sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+            if (resp.has_value() && resp->success()) {
+                passTest = 1;
+                // nlohmann::json doc(*resp);
+                // std::print(std::cerr, "{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
+            }
+            else if (resp.has_value()) {
+                nlohmann::json doc(*resp);
 
-                        auto [ec, emsg] = resp->status();
-                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400)) ? 1 : -1;
-                        std::print(std::cerr, "{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
-                        // std::print(std::cerr, "{} - Got error:\n{}\n", __func__, doc.dump(2));
-                    }
-                    else {
-                        passTest = -1;
-                        std::print(std::cerr, "{}: failed:{}\n", __func__, resp.error());
-                    }
-                    passTest.notify_all();
-                });
+                auto [ec, emsg] = resp->status();
+                passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400)) ? 1 : -1;
+                std::print(std::cerr, "{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
+                // std::print(std::cerr, "{} - Got error:\n{}\n", __func__, doc.dump(2));
+            }
+            else {
+                passTest = -1;
+                std::print(std::cerr, "{}: failed:{}\n", __func__, resp.error());
+            }
+            passTest.notify_all();
+        });
 
         passTest.wait(0);
         EXPECT_TRUE(passTest.load());
@@ -194,10 +193,9 @@ namespace siddiqsoft
             using namespace std::chrono_literals;
             using namespace siddiqsoft::restcl_literals;
 
-            siddiqsoft::restcl wrc;
+            siddiqsoft::restcl wrc = CreateClient();
             nlohmann::json     myStats {{"Test", "drift-check"}};
 
-            wrc.configure();
             auto req = "https://time.akamai.com/?iso"_GET;
             if (auto resp = wrc.send(req); resp->success()) {
                 // std::cerr << *resp << std::endl;
@@ -237,9 +235,15 @@ namespace siddiqsoft
         std::vector<siddiqsoft::restcl> clients;
         int                             clientIndex {0};
 
-        //std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
+        // std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
-            clients.push_back(siddiqsoft::restcl {});
+            clients.push_back(CreateClient({{"trace", false},
+                                            {"freshConnect", true},
+                                            {"userAgent",
+                                             std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
+                                                         "Validation, MoveConstructor",
+                                                         i,
+                                                         CLIENT_COUNT)}}));
         }
 
         EXPECT_EQ(CLIENT_COUNT, clients.size());
@@ -251,24 +255,16 @@ namespace siddiqsoft
                        __FUNCTION__,
                        clientIndex,
                        CLIENT_COUNT);*/
-            wrc.configure({{"trace", false},
-                           {"freshConnect", true},
-                           {"userAgent",
-                            std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
-                                        "Validation, MoveConstructor",
-                                        ++clientIndex,
-                                        CLIENT_COUNT)}},
-                          [&](const auto& req, std::expected<rest_response, int> resp) {
-                              if (resp->success()) {
-                                  passTest += resp->statusCode() == 200;
-                                  // EXPECT_TRUE(resp->getHeaders().contains("X-EventID"));
-                              }
-                              else {
-                                  auto [ec, emsg] = resp->status();
-                                  std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
-                              }
-                          })
-                    .sendAsync("https://reqbin.com/"_GET);
+            wrc.sendAsync("https://reqbin.com/"_GET, [&](const auto& req, std::expected<rest_response, int> resp) {
+                if (resp->success()) {
+                    passTest += resp->statusCode() == 200;
+                    // EXPECT_TRUE(resp->getHeaders().contains("X-EventID"));
+                }
+                else {
+                    auto [ec, emsg] = resp->status();
+                    std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                }
+            });
         });
 
         // This sleep is important otherwise we will end up destroying the IO workers before

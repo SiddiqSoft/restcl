@@ -228,7 +228,7 @@ namespace siddiqsoft
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
-        HttpRESTClient()                                 = default;
+        // HttpRESTClient()                                 = default;
 
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
@@ -237,6 +237,13 @@ namespace siddiqsoft
         {
         }
 
+    protected:
+        HttpRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+        {
+            configure(cfg, std::forward<basic_callbacktype&&>(cb));
+        }
+
+    public:
         ~HttpRESTClient()
         {
             if (_config.value("trace", false)) {
@@ -550,6 +557,15 @@ namespace siddiqsoft
         /// @brief Serializer to ostream for RESResponseType
         friend std::ostream& operator<<(std::ostream& os, const HttpRESTClient& src);
         friend void          to_json(nlohmann::json& dest, const HttpRESTClient& src);
+
+    public:
+        [[nodiscard]] static auto CreateClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+        {
+            g_LibCURLSingleton.configure().start();
+            // return std::move(HttpRESTClient(cfg,std::forward<basic_callbacktype&&>(cb)));
+            HttpRESTClient rcl(cfg, std::forward<basic_callbacktype&&>(cb));
+            return rcl;
+        }
     };
 
     inline void to_json(nlohmann::json& dest, const HttpRESTClient& src)
@@ -579,13 +595,6 @@ namespace siddiqsoft
 
 
     using restcl = HttpRESTClient;
-
-    [[nodiscard]] static basic_restclient&& CreateClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
-    {
-        g_LibCURLSingleton.configure().start();
-        HttpRESTClient rcl(cfg, std::forward<basic_callbacktype>(cb));
-        return std::move(rcl);
-    }
 
 } // namespace siddiqsoft
 

@@ -60,14 +60,14 @@ namespace siddiqsoft
         }
     };
 
-    
+
     static std::string CreateBinId()
     {
-        restcl wrc;
+        restcl wrc = CreateClient({{"trace", false}, {"freshConnect", true}});
 
         rest_request req(HttpMethodType::METHOD_POST, siddiqsoft::Uri(std::format("https://www.postb.in/api/bin")));
         // ),{{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}});
-        if (auto ret = wrc.configure({{"trace", false}, {"freshConnect", true}}).send(req); ret.has_value()) {
+        if (auto ret = wrc.send(req); ret.has_value()) {
             auto doc = ret->getContentBodyJSON();
             return doc.at("binId");
         }
@@ -86,7 +86,7 @@ namespace siddiqsoft
         EXPECT_FALSE(SessionBinId.empty());
 
         EXPECT_NO_THROW({
-            restcl wrc;
+            restcl wrc = CreateClient();
 
             wrc.configure({{"freshConnect", true},
                            {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
@@ -113,8 +113,9 @@ namespace siddiqsoft
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
-                    rest_request req(HttpMethodType::METHOD_GET,
-                                     siddiqsoft::Uri(std::format("https://www.postb.in/api/bin/{}?iteration=3--{}", SessionBinId, i)));
+                    rest_request req(
+                            HttpMethodType::METHOD_GET,
+                            siddiqsoft::Uri(std::format("https://www.postb.in/api/bin/{}?iteration=3--{}", SessionBinId, i)));
                     wrc.sendAsync(std::move(req));
                 }
                 else if (i % 2 == 0) {

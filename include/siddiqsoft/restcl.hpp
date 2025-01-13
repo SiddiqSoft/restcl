@@ -9,6 +9,7 @@
  *
  */
 #pragma once
+#include "private/basic_restclient.hpp"
 #ifndef RESTCL_HPP
 #define RESTCL_HPP
 
@@ -23,7 +24,16 @@
 
 namespace siddiqsoft
 {
-    [[nodiscard]] basic_restclient&& CreateClient(const nlohmann::json& ={}, basic_callbacktype&& = {});
-}
+    [[nodiscard]] static auto CreateClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+    {
+#if defined(__linux__) || defined(__APPLE__)
+        return HttpRESTClient::CreateClient(cfg, std::forward<basic_callbacktype&&>(cb));
+#elif (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
+        return WinHttpRESTClient::CreateClient(cfg, std::forward<basic_callbacktype&&>(cb));
+#else
+#error "Platform not supported"
+#endif
+    }
+} // namespace siddiqsoft
 
 #endif // !RESTCL_HPP
