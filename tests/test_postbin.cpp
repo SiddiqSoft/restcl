@@ -49,7 +49,19 @@ namespace siddiqsoft
 {
     static std::string SessionBinId {};
 
-    std::string CreateBinId()
+    static LibCurlSingleton g_PostBin;
+    class PostBin : public ::testing::Test
+    {
+    protected:
+        void SetUp() override
+        {
+            std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            g_PostBin.configure().start();
+        }
+    };
+
+    
+    static std::string CreateBinId()
     {
         restcl wrc;
 
@@ -63,7 +75,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(postbin, multiple_simultaneously)
+    TEST_F(PostBin, multiple_simultaneously)
     {
         const unsigned   ITER_COUNT = 9;
         std::atomic_uint passTest   = 0;

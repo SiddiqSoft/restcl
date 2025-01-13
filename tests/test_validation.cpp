@@ -37,6 +37,7 @@
 #include <barrier>
 #include <version>
 #include <expected>
+#include <format>
 
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
@@ -48,15 +49,14 @@ namespace siddiqsoft
 {
     using namespace restcl_literals;
 
-    static LibCurlSingleton g_curlLib;
-
+    static LibCurlSingleton g_Validation;
     class Validation : public ::testing::Test
     {
     protected:
         void SetUp() override
         {
             std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
-            g_curlLib.configure().start();
+            g_Validation.configure().start();
         }
     };
 

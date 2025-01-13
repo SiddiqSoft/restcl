@@ -31,8 +31,18 @@ namespace siddiqsoft
 {
     using namespace restcl_literals;
 
+    static LibCurlSingleton g_TestSends;
+    class TestSends : public ::testing::Test
+    {
+    protected:
+        void SetUp() override
+        {
+            std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            g_TestSends.configure().start();
+        }
+    };
 
-    TEST(TSendRequest, test1a)
+    TEST_F(TestSends, test1a)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
@@ -64,7 +74,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(TSendRequest, test2a_OPTIONS)
+    TEST_F(TestSends, test2a_OPTIONS)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
@@ -96,7 +106,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(TSendRequest, test2a_POST)
+    TEST_F(TestSends, test2a_POST)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
@@ -130,7 +140,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(TSendRequest, test3a)
+    TEST_F(TestSends, test3a)
     {
         using namespace siddiqsoft::splituri_literals;
         std::atomic_bool passTest = false;
@@ -164,7 +174,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(TSendRequest, test3b)
+    TEST_F(TestSends, test3b)
     {
         using namespace siddiqsoft::splituri_literals;
 
@@ -203,7 +213,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(TSendRequest, Fails_1a_InvalidPort)
+    TEST_F(TestSends, Fails_1a_InvalidPort)
     {
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
@@ -237,7 +247,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(TSendRequest, Fails_1b_InvalidHostAndPort)
+    TEST_F(TestSends, Fails_1b_InvalidHostAndPort)
     {
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
@@ -274,7 +284,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(TSendRequest, Fails_1c_InvalidPortAndVerb)
+    TEST_F(TestSends, Fails_1c_InvalidPortAndVerb)
     {
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
@@ -310,7 +320,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(TSendRequest, Fails_2a_InvalidVerb)
+    TEST_F(TestSends, Fails_2a_InvalidVerb)
     {
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
@@ -344,7 +354,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(TSendRequest, test9a)
+    TEST_F(TestSends, test9a)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
@@ -374,9 +384,9 @@ namespace siddiqsoft
     }
 
 
-    TEST(Threads, test_1)
+    TEST_F(TestSends, StressSitesParallel)
     {
-        const unsigned   ITER_COUNT = 9;
+        const unsigned   ITER_COUNT = 12;
         std::atomic_uint passTest   = 0;
         std::atomic_uint callbackCounter {0};
 
