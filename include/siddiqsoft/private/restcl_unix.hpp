@@ -69,7 +69,7 @@ namespace siddiqsoft
         static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
 
         bool           isInitialized {false};
-        std::once_flag hrcInitFlag {};
+        //std::once_flag hrcInitFlag {};
 
     protected:
         std::atomic_uint64_t ioAttempt {0};
@@ -234,7 +234,21 @@ namespace siddiqsoft
         /// @param src Source object is "cleared"
         HttpRESTClient(HttpRESTClient&& src) noexcept
             : _callback(std::move(src._callback))
+            , _config(src._config)
         {
+            isInitialized     = src.isInitialized;
+            ioAttempt         = src.ioAttempt.load();
+            ioAttemptFailed   = src.ioAttemptFailed.load();
+            ioConnect         = src.ioConnect.load();
+            ioConnectFailed   = src.ioConnectFailed.load();
+            ioSend            = src.ioSend.load();
+            ioSendFailed      = src.ioSendFailed.load();
+            ioReadAttempt     = src.ioReadAttempt.load();
+            ioRead            = src.ioRead.load();
+            ioReadFailed      = src.ioReadFailed.load();
+            callbackAttempt   = src.callbackAttempt.load();
+            callbackFailed    = src.callbackFailed.load();
+            callbackCompleted = src.callbackCompleted.load();
         }
 
     protected:
@@ -263,10 +277,7 @@ namespace siddiqsoft
             if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
 
             if (func) _callback = std::move(func);
-
-            // Grab a context (configure and initialize)
-            std::call_once(hrcInitFlag, [&]() { isInitialized = true; });
-
+            isInitialized = true;
             return *this;
         }
 
@@ -564,6 +575,7 @@ namespace siddiqsoft
             g_LibCURLSingleton.configure().start();
             // return std::move(HttpRESTClient(cfg,std::forward<basic_callbacktype&&>(cb)));
             HttpRESTClient rcl(cfg, std::forward<basic_callbacktype&&>(cb));
+
             return rcl;
         }
     };
