@@ -48,8 +48,20 @@ namespace siddiqsoft
 {
     using namespace restcl_literals;
 
+    static LibCurlSingleton g_curlLib;
 
-    TEST(Validation, restrequest_checks)
+    class Validation : public ::testing::Test
+    {
+    protected:
+        void SetUp() override
+        {
+            std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            g_curlLib.configure().start();
+        }
+    };
+
+
+    TEST_F(Validation, restrequest_checks)
     {
         auto r1 = "https://www.siddiqsoft.com:65535/"_GET;
         EXPECT_EQ(HttpMethodType::METHOD_GET, r1.getMethod());
@@ -58,7 +70,7 @@ namespace siddiqsoft
 #endif
     }
 
-    TEST(Validation, restrequest_checks2)
+    TEST_F(Validation, restrequest_checks2)
     {
         auto r2 = "https://localhost:65535/"_GET;
         EXPECT_EQ(HttpMethodType::METHOD_GET, r2.getMethod());
@@ -80,7 +92,7 @@ namespace siddiqsoft
         // std::cerr << "Serialized (json'd) : " << doc.dump(2) << std::endl;
     }
 
-    TEST(Validation, GET_google_com)
+    TEST_F(Validation, GET_google_com)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
@@ -109,7 +121,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(Validation, GET_duckduckgo_com)
+    TEST_F(Validation, GET_duckduckgo_com)
     {
         std::atomic_bool passTest = false;
         restcl           wrc;
@@ -137,7 +149,7 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
-    TEST(Validation, POST_httpbin)
+    TEST_F(Validation, POST_httpbin)
     {
         std::atomic_int passTest = 0;
         restcl          wrc;
@@ -174,7 +186,7 @@ namespace siddiqsoft
     }
 
 
-    TEST(Validation, GET_Akamai_Time)
+    TEST_F(Validation, GET_Akamai_Time)
     {
         const unsigned   ITER_COUNT = 1;
         std::atomic_uint passTest   = 0;
@@ -219,7 +231,7 @@ namespace siddiqsoft
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 
-    TEST(Validation, MoveConstructor)
+    TEST_F(Validation, MoveConstructor)
     {
         int                             CLIENT_COUNT = 3;
         std::atomic_uint                passTest {0};
