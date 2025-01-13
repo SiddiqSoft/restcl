@@ -34,7 +34,6 @@
 
 
 #include <iostream>
-#include <barrier>
 #include <version>
 #include <expected>
 #include <format>
