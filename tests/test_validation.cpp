@@ -238,7 +238,7 @@ namespace siddiqsoft
         std::vector<siddiqsoft::restcl> clients;
         int                             clientIndex {0};
 
-        std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
+        //std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
             clients.push_back(siddiqsoft::restcl {});
         }
@@ -247,11 +247,11 @@ namespace siddiqsoft
 
         // Send data over each client (if we mess up the move constructors this will fail)
         std::for_each(clients.begin(), clients.end(), [&](auto& wrc) {
-            std::print(std::cerr,
+            /*std::print(std::cerr,
                        "{} - Configuring client {}/{} individually...............\n",
                        __FUNCTION__,
                        clientIndex,
-                       CLIENT_COUNT);
+                       CLIENT_COUNT);*/
             wrc.configure({{"trace", false},
                            {"freshConnect", true},
                            {"userAgent",
@@ -276,7 +276,7 @@ namespace siddiqsoft
         // any activity has had a chance to complete!
         // The underlying libraries do not "hold" and spool out their
         // transactions!
-        std::this_thread::sleep_for(std::chrono::seconds(4 * CLIENT_COUNT));
+        std::this_thread::sleep_for(std::chrono::seconds(2 * CLIENT_COUNT));
 
         EXPECT_EQ(CLIENT_COUNT, passTest.load());
     }

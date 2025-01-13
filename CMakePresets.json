@@ -1,5 +1,5 @@
 {
-    "version": 6,
+    "version": 8,
     "cmakeMinimumRequired": {
         "major": 3,
         "minor": 29
@@ -10,7 +10,8 @@
             "hidden": true,
             "generator": "Ninja",
             "environment": {
-                "CTEST_PARALLEL_LEVEL": "7"
+                "CTEST_PARALLEL_LEVEL": "0",
+                "CMAKE_COLOR_DIAGNOSTICS": "1"
             },
             "cacheVariables": {
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
