@@ -13,6 +13,7 @@
 #include <exception>
 #include <functional>
 #include <optional>
+#include <utility>
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
@@ -58,6 +59,7 @@ namespace siddiqsoft
      *        You must install libcurl-devel on UNIX systems
      */
     static LibCurlSingleton g_LibCURLSingleton;
+
 
     /// @brief Unix implementation of the basic_restclient
     class HttpRESTClient : public basic_restclient
@@ -256,10 +258,8 @@ namespace siddiqsoft
             if (func) _callback = std::move(func);
 
             // Grab a context (configure and initialize)
-            std::call_once(hrcInitFlag, [&]() {
-                isInitialized = true;
-            });
-            
+            std::call_once(hrcInitFlag, [&]() { isInitialized = true; });
+
             return *this;
         }
 
@@ -576,7 +576,17 @@ namespace siddiqsoft
         os << doc.dump(3);
         return os;
     }
+
+
     using restcl = HttpRESTClient;
+
+    [[nodiscard]] static basic_restclient&& CreateClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+    {
+        g_LibCURLSingleton.configure().start();
+        HttpRESTClient rcl(cfg, std::forward<basic_callbacktype>(cb));
+        return std::move(rcl);
+    }
+
 } // namespace siddiqsoft
 
 template <>

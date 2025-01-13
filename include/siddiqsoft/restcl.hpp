@@ -4,9 +4,9 @@
  * @brief Simple REST client using LibCURL 8.7 for Unix/Linux and Windows WinHTTP library for Windows platform
  * @version 0.1
  * @date 2024-12-24
- * 
+ *
  * @copyright Copyright (c) 2024 Siddiq Software
- * 
+ *
  */
 #pragma once
 #ifndef RESTCL_HPP
@@ -20,4 +20,10 @@
 #else
 #error "Platform not supported"
 #endif
+
+namespace siddiqsoft
+{
+    [[nodiscard]] basic_restclient&& CreateClient(const nlohmann::json& ={}, basic_callbacktype&& = {});
+}
+
 #endif // !RESTCL_HPP
