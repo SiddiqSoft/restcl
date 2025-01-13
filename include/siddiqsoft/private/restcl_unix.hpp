@@ -256,7 +256,10 @@ namespace siddiqsoft
             if (func) _callback = std::move(func);
 
             // Grab a context (configure and initialize)
-            std::call_once(hrcInitFlag, [&]() { isInitialized = true; });
+            std::call_once(hrcInitFlag, [&]() {
+                isInitialized = true;
+            });
+            
             return *this;
         }
 
@@ -459,7 +462,7 @@ namespace siddiqsoft
             if (auto curlHeaders = curl_slist_append(NULL, "X-restcl-v2:"); curlHeaders != NULL) {
                 try {
                     for (auto& [k, v] : req.getHeaders().items()) {
-                        //std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
+                        // std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
                         if (v.is_string()) {
                             if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<std::string>()).c_str());
                                 ch != NULL)

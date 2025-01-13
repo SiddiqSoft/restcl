@@ -112,7 +112,7 @@ namespace siddiqsoft
 
         ~LibCurlSingleton() { curl_global_cleanup(); }
 
-        auto configure() -> LibCurlSingleton& { return *this; }
+        auto configure() -> LibCurlSingleton& { start(); return *this; }
 
         auto start() -> LibCurlSingleton&
         {
@@ -124,6 +124,7 @@ namespace siddiqsoft
             return *this;
         }
 
+        
         /**
          * @brief Get a new easy CURL context.
          * Auto-clears the CURL* when this object goes out of scope.

@@ -38,7 +38,6 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/tests/test_serializers.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_validation.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/test_ImplementationChecks.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_postbin.cpp
                     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
                     ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp)

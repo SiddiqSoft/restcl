@@ -20,6 +20,8 @@
 #include <barrier>
 #include <version>
 #include <expected>
+#include <format>
+
 
 #include "nlohmann/json.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
@@ -49,7 +51,7 @@ namespace siddiqsoft
                     else if (resp) {
                         auto [ec, emsg] = resp->status();
                         passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
-                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                        std::print(std::cerr, " test1a - Got error: {} - {}\n", ec, emsg);
                     }
                     else {
                         std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
