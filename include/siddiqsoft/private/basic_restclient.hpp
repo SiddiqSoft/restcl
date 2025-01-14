@@ -17,7 +17,7 @@
 #include <functional>
 #include <expected>
 
-#include "restcl_definitions.hpp"
+#include "http_frame.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"
 

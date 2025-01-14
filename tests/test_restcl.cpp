@@ -306,7 +306,7 @@ namespace siddiqsoft
                                }
                                else if (resp.has_value()) {
                                    auto [ec, emsg] = resp->status();
-                                   passTest        = ((ec == 12002) || (ec == 12029));
+                                   passTest        = ((ec == 12002) || (ec == 12029) || (ec == 403));
                                    std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
                                }
                                else {

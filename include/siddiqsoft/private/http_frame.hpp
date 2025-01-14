@@ -51,15 +51,121 @@
 #include <format>
 #include <iterator>
 #include <expected>
+#include <regex>
 
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/date-utils.hpp"
 
-#include "restcl_definitions.hpp"
 
 namespace siddiqsoft
 {
+    static const std::regex  HTTP_RESPONSE_REGEX {"(HTTP.*)\\s(\\d+)\\s([^\\r\\n]*)\\r\\n"};
+    static const std::string HTTP_NEWLINE {"\r\n"};
+    static const std::string ELEM_NEWLINE_LF {"\r"};
+    static const std::string ELEM_SEPERATOR {": "};
+    static const std::string HTTP_EMPTY_STRING {};
+    static const std::string HTTP_END_OF_HEADERS {"\r\n\r\n"};
+    static const std::string HTTP_PROTOCOLPREFIX {"HTTP/"};
+
+    enum class HttpProtocolVersionType
+    {
+        Http1,
+        Http11,
+        Http12,
+        Http2,
+        Http3,
+        UNKNOWN
+    };
+    NLOHMANN_JSON_SERIALIZE_ENUM(HttpProtocolVersionType,
+                                 {{HttpProtocolVersionType::Http1, "HTTP/1.0"},
+                                  {HttpProtocolVersionType::Http11, "HTTP/1.1"},
+                                  {HttpProtocolVersionType::Http12, "HTTP/1.2"},
+                                  {HttpProtocolVersionType::Http2, "HTTP/2"},
+                                  {HttpProtocolVersionType::Http3, "HTTP/3"},
+                                  {HttpProtocolVersionType::UNKNOWN, "UNKNOWN"}});
+    static const std::map<HttpProtocolVersionType, std::string> HttpProtocolVersions {
+            {HttpProtocolVersionType::Http1, "HTTP/1.0"},
+            {HttpProtocolVersionType::Http11, "HTTP/1.1"},
+            {HttpProtocolVersionType::Http12, "HTTP/1.2"},
+            {HttpProtocolVersionType::Http2, "HTTP/2"},
+            {HttpProtocolVersionType::Http3, "HTTP/3"},
+    };
+
+    enum class HttpMethodType
+    {
+        METHOD_GET,
+        METHOD_HEAD,
+        METHOD_POST,
+        METHOD_PUT,
+        METHOD_DELETE,
+        METHOD_CONNECT,
+        METHOD_OPTIONS,
+        METHOD_TRACE,
+        METHOD_PATCH,
+        METHOD_UNKNOWN
+    };
+    NLOHMANN_JSON_SERIALIZE_ENUM(HttpMethodType,
+                                 {{HttpMethodType::METHOD_UNKNOWN, "UNKNOWN"},
+                                  {HttpMethodType::METHOD_GET, "GET"},
+                                  {HttpMethodType::METHOD_HEAD, "HEAD"},
+                                  {HttpMethodType::METHOD_POST, "POST"},
+                                  {HttpMethodType::METHOD_PUT, "PUT"},
+                                  {HttpMethodType::METHOD_DELETE, "DELETE"},
+                                  {HttpMethodType::METHOD_CONNECT, "CONNECT"},
+                                  {HttpMethodType::METHOD_TRACE, "TRACE"},
+                                  {HttpMethodType::METHOD_PATCH, "PATCH"},
+                                  {HttpMethodType::METHOD_OPTIONS, "OPTIONS"}});
+
+    /// @brief HTTP Protocol version: Http2, Http11 and Http3
+    static const std::map<HttpMethodType, std::string> HttpVerbs {{HttpMethodType::METHOD_GET, "GET"},
+                                                                  {HttpMethodType::METHOD_HEAD, "HEAD"},
+                                                                  {HttpMethodType::METHOD_POST, "POST"},
+                                                                  {HttpMethodType::METHOD_PUT, "PUT"},
+                                                                  {HttpMethodType::METHOD_DELETE, "DELETE"},
+                                                                  {HttpMethodType::METHOD_CONNECT, "CONNECT"},
+                                                                  {HttpMethodType::METHOD_OPTIONS, "OPTIONS"},
+                                                                  {HttpMethodType::METHOD_TRACE, "TRACE"},
+                                                                  {HttpMethodType::METHOD_PATCH, "PATCH"}};
+
+    static const std::string HF_CONTENT_LENGTH {"Content-Length"};
+    static const std::string HF_CONTENT_TYPE {"Content-Type"};
+    static const std::string HF_DATE {"Date"};
+    static const std::string HF_ACCEPT {"Accept"};
+    static const std::string HF_HOST {"Host"};
+
+    static const std::string CONTENT_APPLICATION_JSON {"application/json"};
+    static const std::string CONTENT_JSON {"json"};
+    static const std::string CONTENT_APPLICATION_TEXT {"application/text"};
+    static const std::string CONTENT_TEXT_PLAIN {"text/plain"};
+
+    static inline std::string to_string(const HttpMethodType& m)
+    {
+        switch (m) {
+            case siddiqsoft::HttpMethodType::METHOD_GET: return "GET";
+            case siddiqsoft::HttpMethodType::METHOD_HEAD: return "HEAD";
+            case siddiqsoft::HttpMethodType::METHOD_POST: return "POST";
+            case siddiqsoft::HttpMethodType::METHOD_PUT: return "PUT";
+            case siddiqsoft::HttpMethodType::METHOD_DELETE: return "DELETE";
+            case siddiqsoft::HttpMethodType::METHOD_CONNECT: return "CONNECT";
+            case siddiqsoft::HttpMethodType::METHOD_OPTIONS: return "OPTIONS";
+            case siddiqsoft::HttpMethodType::METHOD_TRACE: return "TRACE";
+            case siddiqsoft::HttpMethodType::METHOD_PATCH: return "PATCH";
+            default: return "UNKNOWN";
+        }
+    }
+
+    static inline std::string to_string(const HttpProtocolVersionType& m)
+    {
+        switch (m) {
+            case siddiqsoft::HttpProtocolVersionType::Http1: return "HTTP/1.0";
+            case siddiqsoft::HttpProtocolVersionType::Http11: return "HTTP/1.1";
+            case siddiqsoft::HttpProtocolVersionType::Http12: return "HTTP/1.2";
+            default: return "UNKNOWN";
+        }
+    }
+
+
     /**
      * @brief Store the Content-Type, Content-Length and the serialized content
      *
@@ -386,4 +492,38 @@ namespace siddiqsoft
     }
 
 } // namespace siddiqsoft
+
+template <>
+struct std::formatter<siddiqsoft::HttpMethodType> : std::formatter<std::string>
+{
+    auto format(const siddiqsoft::HttpMethodType& m, std::format_context& ctx) const
+    {
+        switch (m) {
+            case siddiqsoft::HttpMethodType::METHOD_GET: return std::formatter<std::string>::format("GET", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_HEAD: return std::formatter<std::string>::format("HEAD", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_POST: return std::formatter<std::string>::format("POST", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_PUT: return std::formatter<std::string>::format("PUT", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_DELETE: return std::formatter<std::string>::format("DELETE", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_CONNECT: return std::formatter<std::string>::format("CONNECT", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_OPTIONS: return std::formatter<std::string>::format("OPTIONS", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_TRACE: return std::formatter<std::string>::format("TRACE", ctx);
+            case siddiqsoft::HttpMethodType::METHOD_PATCH: return std::formatter<std::string>::format("PATCH", ctx);
+            default: return std::formatter<std::string>::format("UNKNOWN", ctx);
+        }
+    }
+};
+
+template <>
+struct std::formatter<siddiqsoft::HttpProtocolVersionType> : std::formatter<std::string>
+{
+    auto format(const siddiqsoft::HttpProtocolVersionType& p, std::format_context& ctx) const
+    {
+        switch (p) {
+            case siddiqsoft::HttpProtocolVersionType::Http1: return std::formatter<std::string>::format("HTTP/1.0", ctx);
+            case siddiqsoft::HttpProtocolVersionType::Http11: return std::formatter<std::string>::format("HTTP/1.1", ctx);
+            default: return std::formatter<std::string>::format("UNKNOWN", ctx);
+        }
+    }
+};
+
 #endif // !HTTP_FRAME_HPP

@@ -6,7 +6,7 @@
 #include <version>
 
 #include "nlohmann/json.hpp"
-#include "../include/siddiqsoft/private/libcurl_helpers.hpp"
+#include "../include/siddiqsoft/private/restcl_unix.hpp"
 
 namespace siddiqsoft
 {

@@ -9,10 +9,10 @@
  *
  */
 #pragma once
-#include "private/basic_restclient.hpp"
 #ifndef RESTCL_HPP
 #define RESTCL_HPP
 
+#include "private/basic_restclient.hpp"
 
 #if defined(__linux__) || defined(__APPLE__)
 #include "private/restcl_unix.hpp"

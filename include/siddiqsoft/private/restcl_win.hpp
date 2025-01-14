@@ -41,7 +41,7 @@
 
 #include "nlohmann/json.hpp"
 
-#include "restcl_definitions.hpp"
+#include "http_frame.hpp"
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"

@@ -45,7 +45,6 @@
 #include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/date-utils.hpp"
 
-#include "restcl_definitions.hpp"
 #include "http_frame.hpp"
 
 namespace siddiqsoft
