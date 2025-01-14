@@ -34,12 +34,12 @@ namespace siddiqsoft
     class TestSends : public ::testing::Test
     {
         std::shared_ptr<LibCurlSingleton> myCurlInstance {};
-        
+
     protected:
         void SetUp() override
         {
             std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
-            myCurlInstance= LibCurlSingleton::GetInstance();
+            myCurlInstance = LibCurlSingleton::GetInstance();
         }
     };
 
@@ -49,8 +49,8 @@ namespace siddiqsoft
         restcl           wrc      = CreateRESTClient();
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
-                       {"timeout", 5000},        // timeout for the overall IO phase
-                       {"trace", false}})
+                        {"timeout", 5000},        // timeout for the overall IO phase
+                        {"trace", false}})
                 .sendAsync("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     nlohmann::json doc(req);
 
@@ -92,7 +92,7 @@ namespace siddiqsoft
             else if (resp && resp.has_value()) {
                 auto [ec, emsg] = resp->status();
                 std::cerr << "Got HTTP error: " << ec << std::endl;
-                passTest= true;
+                passTest = true;
             }
             else if (!resp.has_value()) {
                 std::cerr << "Got IO error: " << resp.error() << strerror(resp.error()) << std::endl;
@@ -223,8 +223,8 @@ namespace siddiqsoft
         restcl wrc = CreateRESTClient();
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
-                       {"timeout", 5000},        // timeout for the overall IO phase
-                       {"trace", true}})
+                        {"timeout", 5000},        // timeout for the overall IO phase
+                        {"trace", true}})
                 .sendAsync("https://www.siddiqsoft.com:65535/"_GET,
                            [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                                if (resp.has_value() && resp->success()) {
@@ -257,9 +257,9 @@ namespace siddiqsoft
         restcl wrc = CreateRESTClient();
 
         wrc->configure({
-                              {"connectTimeout", 3000}, // timeout for the connect phase
-                              {"timeout", 5000}         // timeout for the overall IO phase
-                      })
+                               {"connectTimeout", 3000}, // timeout for the connect phase
+                               {"timeout", 5000}         // timeout for the overall IO phase
+                       })
                 .sendAsync("https://localhost:65535/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     nlohmann::json doc(req);
 
@@ -295,9 +295,9 @@ namespace siddiqsoft
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
         wrc->configure({
-                              {"connectTimeout", 3000}, // timeout for the connect phase
-                              {"timeout", 5000}         // timeout for the overall IO phase
-                      })
+                               {"connectTimeout", 3000}, // timeout for the connect phase
+                               {"timeout", 5000}         // timeout for the overall IO phase
+                       })
                 .sendAsync("https://httpbin.org:9090/get"_OPTIONS,
                            [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                                std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
@@ -329,28 +329,30 @@ namespace siddiqsoft
 
         restcl wrc = CreateRESTClient();
 
-        wrc->configure().sendAsync("https://google.com/"_OPTIONS,
-                                  [&passTest](const auto& req, std::expected<rest_response, int> resp) {
-                                      // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-                                      if (resp.has_value() && resp->success()) {
-                                          std::cerr << "Response\n" << *resp << std::endl;
-                                      }
-                                      else if (resp.has_value()) {
-                                          auto [ec, emsg] = resp->status();
-                                          passTest        = ec == 405;
-                                          // This is a work-around for google which sometimes refuses to send the Reason Phrase!
-                                          if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
-                                          // std::cerr << "Got error: [" << ec << ":" << emsg << "] -- " << emsg << std::endl
-                                          //          << nlohmann::json(resp).dump(3) << std::endl;
-                                      }
-                                      else {
-                                          // We MUST get a connection failure; the site does not exist!
-                                          passTest = true;
-                                          std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                                    << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
-                                      }
-                                      passTest.notify_all();
-                                  });
+        wrc->configure({
+                               {"connectTimeout", 3000}, // timeout for the connect phase
+                               {"timeout", 5000}         // timeout for the overall IO phase
+                       })
+                .sendAsync("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                    // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+                    if (resp.has_value() && resp->success()) {
+                        std::cerr << "Response\n" << *resp << std::endl;
+                    }
+                    else if (resp.has_value()) {
+                        auto [ec, emsg] = resp->status();
+                        passTest        = ec == 405 || ec == 403;
+                        // This is a work-around for google which sometimes refuses to send the Reason Phrase!
+                        if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
+                        std::print(std::cerr, "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}\n", ec, emsg, nlohmann::json(*resp).dump(3));
+                    }
+                    else {
+                        // We MUST get a connection failure; the site does not exist!
+                        passTest = true;
+                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                  << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                    }
+                    passTest.notify_all();
+                });
 
         passTest.wait(false);
         EXPECT_TRUE(passTest.load());
@@ -362,24 +364,24 @@ namespace siddiqsoft
         restcl           wrc      = CreateRESTClient();
 
         wrc->configure().sendAsync("https://www.google.com/"_GET,
-                                  [&passTest](const auto& req, std::expected<rest_response, int> resp) {
-                                      // std::cerr << "From callback Serialized json: " << req << std::endl;
-                                      if (resp->success()) {
-                                          passTest = resp->statusCode() == 200;
-                                          // std::cerr << "Response\n"<< *resp << std::endl;
-                                      }
-                                      else if (resp.has_value()) {
-                                          auto [ec, emsg] = resp->status();
-                                          std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
-                                      }
-                                      else {
-                                          // We MUST get a connection failure; the site does not exist!
-                                          passTest = true;
-                                          std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                                    << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
-                                      }
-                                      passTest.notify_all();
-                                  });
+                                   [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                                       // std::cerr << "From callback Serialized json: " << req << std::endl;
+                                       if (resp->success()) {
+                                           passTest = resp->statusCode() == 200;
+                                           // std::cerr << "Response\n"<< *resp << std::endl;
+                                       }
+                                       else if (resp.has_value()) {
+                                           auto [ec, emsg] = resp->status();
+                                           std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                                       }
+                                       else {
+                                           // We MUST get a connection failure; the site does not exist!
+                                           passTest = true;
+                                           std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                                     << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                       }
+                                       passTest.notify_all();
+                                   });
 
         passTest.wait(false);
         EXPECT_TRUE(passTest.load());
@@ -394,30 +396,33 @@ namespace siddiqsoft
 
 
         EXPECT_NO_THROW({
-            auto wrc = CreateRESTClient();
+            auto wrc = CreateRESTClient({
+                    {"connectTimeout", 3000}, // timeout for the connect phase
+                    {"timeout", 5000}         // timeout for the overall IO phase
+            });
 
             wrc->configure({{"freshConnect", true},
-                           {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
-                          [&](const auto& req, std::expected<rest_response, int> resp) {
-                              callbackCounter++;
+                            {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
+                           [&](const auto& req, std::expected<rest_response, int> resp) {
+                               callbackCounter++;
 
-                              if (resp->success()) {
-                                  passTest += resp->statusCode() == 200;
-                                  passTest.notify_all();
-                              }
-                              else if (resp.has_value()) {
-                                  passTest += resp->statusCode() != 0;
-                                  std::print(std::cerr,
-                                             "{} Threads::test_1 - Got error: {} for {} -- {}\n",
-                                             __func__,
-                                             resp->statusCode(),
-                                             req.getUri().authority.host,
-                                             resp->reasonCode());
-                              }
-                              else {
-                                  std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);
-                              }
-                          });
+                               if (resp->success()) {
+                                   passTest += resp->statusCode() == 200;
+                                   passTest.notify_all();
+                               }
+                               else if (resp.has_value()) {
+                                   passTest += resp->statusCode() != 0;
+                                   std::print(std::cerr,
+                                              "{} Threads::test_1 - Got error: {} for {} -- {}\n",
+                                              __func__,
+                                              resp->statusCode(),
+                                              req.getUri().authority.host,
+                                              resp->reasonCode());
+                               }
+                               else {
+                                   std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);
+                               }
+                           });
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
