@@ -1,3 +1,4 @@
+#include <memory>
 #if defined(__linux__) || defined(__APPLE__)
 #include "gtest/gtest.h"
 #include <iostream>
@@ -11,18 +12,18 @@ namespace siddiqsoft
 {
     TEST(libcurl_helpers, test_init)
     {
-        LibCurlSingleton ossl;
+        std::shared_ptr<LibCurlSingleton> myCurlInstance;
 
         // configure
         // start
         // get a context object
-        ossl.configure().start();
+        myCurlInstance= LibCurlSingleton::GetInstance();
         
         EXPECT_NO_THROW({
-            auto ctx = ossl.getEasyHandle();
+            auto ctx = myCurlInstance->getEasyHandle();
             //EXPECT_TRUE(ctx);
 #if defined(DEBUG) || defined(_DEBUG)
-            EXPECT_TRUE(ossl.isInitialized);
+            EXPECT_TRUE(myCurlInstance->isInitialized);
 #endif
         });
     }

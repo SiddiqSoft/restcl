@@ -519,6 +519,17 @@ namespace siddiqsoft
                 return std::unexpected {static_cast<int>(hr)};
             }
         }
+
+    public:
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+        {
+            g_LibCURLSingleton.configure().start();
+            // return std::move(HttpRESTClient(cfg,std::forward<basic_callbacktype&&>(cb)));
+            WinHttpRESTClient rcl(cfg, std::forward<basic_callbacktype&&>(cb));
+
+            return rcl;
+        }
+
     };
 
     using restcl = WinHttpRESTClient;

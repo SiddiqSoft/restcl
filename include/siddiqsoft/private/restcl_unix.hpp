@@ -10,10 +10,6 @@
  */
 
 #pragma once
-#include <exception>
-#include <functional>
-#include <optional>
-#include <utility>
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
@@ -29,6 +25,10 @@
 #include <mutex>
 #include <expected>
 #include <stdio.h>
+#include <exception>
+#include <functional>
+#include <optional>
+#include <utility>
 
 
 #include "nlohmann/json.hpp"
@@ -58,18 +58,16 @@ namespace siddiqsoft
      * @brief Global singleton for this library users LibCURL library entry point
      *        You must install libcurl-devel on UNIX systems
      */
-    static LibCurlSingleton g_LibCURLSingleton;
-
 
     /// @brief Unix implementation of the basic_restclient
     class HttpRESTClient : public basic_restclient
     {
     private:
-        static const uint32_t     READBUFFERSIZE {8192};
-        static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
-
-        bool           isInitialized {false};
-        //std::once_flag hrcInitFlag {};
+        static const uint32_t             READBUFFERSIZE {8192};
+        static inline const char*         RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+        std::shared_ptr<LibCurlSingleton> singletonInstance {};
+        bool                              isInitialized {false};
+        // std::once_flag hrcInitFlag {};
 
     protected:
         std::atomic_uint64_t ioAttempt {0};
@@ -339,7 +337,7 @@ namespace siddiqsoft
                 std::print(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
             }
 
-            if (auto ctxCurl = g_LibCURLSingleton.getEasyHandle(); ((CURL*)ctxCurl != nullptr) && !destinationHost.empty()) {
+            if (auto ctxCurl = singletonInstance->getEasyHandle(); ((CURL*)ctxCurl != nullptr) && !destinationHost.empty()) {
                 // Configures the context with options such as timeout, connectionTimeout, verbose, freshConnect..
                 prepareContext(ctxCurl);
                 // Set User-Agent
@@ -570,12 +568,12 @@ namespace siddiqsoft
         friend void          to_json(nlohmann::json& dest, const HttpRESTClient& src);
 
     public:
-        [[nodiscard]] static auto CreateClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
         {
-            g_LibCURLSingleton.configure().start();
             // return std::move(HttpRESTClient(cfg,std::forward<basic_callbacktype&&>(cb)));
+            std::print(std::cerr, "{} - Invoked. New Instance..", __func__);
             HttpRESTClient rcl(cfg, std::forward<basic_callbacktype&&>(cb));
-
+            rcl.singletonInstance = LibCurlSingleton::GetInstance();
             return rcl;
         }
     };

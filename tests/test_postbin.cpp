@@ -49,21 +49,26 @@ namespace siddiqsoft
 {
     static std::string SessionBinId {};
 
-    static LibCurlSingleton g_PostBin;
+
     class PostBin : public ::testing::Test
     {
+        std::shared_ptr<LibCurlSingleton> myCurlInstance;
+
     protected:
         void SetUp() override
         {
             std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
-            g_PostBin.configure().start();
+            // configure
+            // start
+            // get a context object
+            myCurlInstance = LibCurlSingleton::GetInstance();
         }
     };
 
 
     static std::string CreateBinId()
     {
-        restcl wrc = CreateClient({{"trace", false}, {"freshConnect", true}});
+        restcl wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
 
         rest_request req(HttpMethodType::METHOD_POST, siddiqsoft::Uri(std::format("https://www.postb.in/api/bin")));
         // ),{{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}});
@@ -86,7 +91,7 @@ namespace siddiqsoft
         EXPECT_FALSE(SessionBinId.empty());
 
         EXPECT_NO_THROW({
-            restcl wrc = CreateClient();
+            restcl wrc = CreateRESTClient();
 
             wrc.configure({{"freshConnect", true},
                            {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
@@ -99,12 +104,12 @@ namespace siddiqsoft
                               }
                               else if (resp.has_value()) {
                                   passTest += resp->statusCode() != 0;
-                                  std::print(std::cerr,
+                                  /*std::print(std::cerr,
                                              "{} Threads::test_1 - Got error: {} for {} -- {}\n",
                                              __func__,
                                              resp->statusCode(),
                                              req.getUri().authority.host,
-                                             resp->reasonCode());
+                                             resp->reasonCode());*/
                               }
                               else {
                                   std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);

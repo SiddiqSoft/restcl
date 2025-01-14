@@ -48,14 +48,15 @@ namespace siddiqsoft
 {
     using namespace restcl_literals;
 
-    static LibCurlSingleton g_Validation;
     class Validation : public ::testing::Test
     {
+        std::shared_ptr<LibCurlSingleton> myCurlInstance {};
+
     protected:
         void SetUp() override
         {
             std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
-            g_Validation.configure().start();
+            myCurlInstance = LibCurlSingleton::GetInstance();
         }
     };
 
@@ -94,7 +95,7 @@ namespace siddiqsoft
     TEST_F(Validation, GET_google_com)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc      = CreateClient();
+        restcl           wrc      = CreateRESTClient();
 
         wrc.configure().sendAsync(
                 "https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
@@ -123,7 +124,7 @@ namespace siddiqsoft
     TEST_F(Validation, GET_duckduckgo_com)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc      = CreateClient();
+        restcl           wrc      = CreateRESTClient();
 
         wrc.configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
                 .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
@@ -151,9 +152,9 @@ namespace siddiqsoft
     TEST_F(Validation, POST_httpbin)
     {
         std::atomic_int passTest    = 0;
-        restcl          wrc         = CreateClient({{"trace", false},
-                                                    {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
-                                                    {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
+        restcl          wrc         = CreateRESTClient({{"trace", false},
+                                                        {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
+                                                        {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
         auto            postRequest = "https://httpbin.org/post"_POST;
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
@@ -193,7 +194,7 @@ namespace siddiqsoft
             using namespace std::chrono_literals;
             using namespace siddiqsoft::restcl_literals;
 
-            siddiqsoft::restcl wrc = CreateClient();
+            siddiqsoft::restcl wrc = CreateRESTClient();
             nlohmann::json     myStats {{"Test", "drift-check"}};
 
             auto req = "https://time.akamai.com/?iso"_GET;
@@ -237,13 +238,13 @@ namespace siddiqsoft
 
         // std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
-            clients.push_back(CreateClient({{"trace", false},
-                                            {"freshConnect", true},
-                                            {"userAgent",
-                                             std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
-                                                         "Validation, MoveConstructor",
-                                                         i,
-                                                         CLIENT_COUNT)}}));
+            clients.push_back(CreateRESTClient({{"trace", false},
+                                                {"freshConnect", true},
+                                                {"userAgent",
+                                                 std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
+                                                             "Validation, MoveConstructor",
+                                                             i,
+                                                             CLIENT_COUNT)}}));
         }
 
         EXPECT_EQ(CLIENT_COUNT, clients.size());

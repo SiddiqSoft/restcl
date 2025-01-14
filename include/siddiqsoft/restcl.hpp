@@ -24,12 +24,12 @@
 
 namespace siddiqsoft
 {
-    [[nodiscard]] static auto CreateClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+    [[nodiscard]] static auto CreateRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
     {
 #if defined(__linux__) || defined(__APPLE__)
-        return HttpRESTClient::CreateClient(cfg, std::forward<basic_callbacktype&&>(cb));
+        return HttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype&&>(cb));
 #elif (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
-        return WinHttpRESTClient::CreateClient(cfg, std::forward<basic_callbacktype&&>(cb));
+        return WinHttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype&&>(cb));
 #else
 #error "Platform not supported"
 #endif
