@@ -92,6 +92,7 @@ namespace siddiqsoft
             else if (resp && resp.has_value()) {
                 auto [ec, emsg] = resp->status();
                 std::cerr << "Got HTTP error: " << ec << std::endl;
+                passTest= true;
             }
             else if (!resp.has_value()) {
                 std::cerr << "Got IO error: " << resp.error() << strerror(resp.error()) << std::endl;

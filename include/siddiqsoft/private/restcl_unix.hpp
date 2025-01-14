@@ -592,9 +592,9 @@ namespace siddiqsoft
 
     public:
         [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
-                -> std::unique_ptr<HttpRESTClient>
+                -> std::shared_ptr<HttpRESTClient>
         {
-            std::unique_ptr<HttpRESTClient> rcl(new HttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
+            std::shared_ptr<HttpRESTClient> rcl(new HttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
             rcl->singletonInstance = LibCurlSingleton::GetInstance();
             std::print(std::cerr, "{} - New HttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
             return rcl;
@@ -628,7 +628,7 @@ namespace siddiqsoft
     }
 
     // using restcl= HttpRESTClient;
-    using restcl = std::unique_ptr<HttpRESTClient>;
+    using restcl = std::shared_ptr<HttpRESTClient>;
 
 } // namespace siddiqsoft
 
