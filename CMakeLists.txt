@@ -73,7 +73,7 @@ CPMAddPackage("gh:SiddiqSoft/string2map#2.4.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.3.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#1.9.1")
+CPMAddPackage("gh:SiddiqSoft/asynchrony#7b8f1f0ccb0636dd4516161a9815b0df51fcd03d")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
 

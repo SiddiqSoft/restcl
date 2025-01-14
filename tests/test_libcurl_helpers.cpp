@@ -12,13 +12,12 @@ namespace siddiqsoft
 {
     TEST(libcurl_helpers, test_init)
     {
-        std::shared_ptr<LibCurlSingleton> myCurlInstance;
-
         // configure
         // start
         // get a context object
-        myCurlInstance= LibCurlSingleton::GetInstance();
-        
+        auto myCurlInstance= LibCurlSingleton::GetInstance();
+        EXPECT_TRUE(myCurlInstance);
+
         EXPECT_NO_THROW({
             auto ctx = myCurlInstance->getEasyHandle();
             //EXPECT_TRUE(ctx);

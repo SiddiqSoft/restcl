@@ -413,7 +413,7 @@ Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or t
 
     // Create a simple GET request from the endpoint string
     // Send the request and invoke the callback.
-    wrc.send( "https://google.com"_GET,
+    wrc->send( "https://google.com"_GET,
               [](const auto& req, const auto& resp) {
                  if(resp.success())
                     doSomething();
@@ -439,7 +439,7 @@ Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or t
     // headers Content-Length and Content-Type
     myPost.setContent( { {"foo", "bar"}, {"goto", 99} } );
     // Send the request and invoke the callback
-    wrc.send( std::move(myReq), [](auto& req, auto& resp){
+    wrc->send( std::move(myReq), [](auto& req, auto& resp){
                                     if(resp.success())
                                         doSomething();
                                     else

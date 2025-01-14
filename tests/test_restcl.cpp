@@ -48,7 +48,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc      = CreateRESTClient();
 
-        wrc.configure({{"connectTimeout", 3000}, // timeout for the connect phase
+        wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                        {"timeout", 5000},        // timeout for the overall IO phase
                        {"trace", false}})
                 .sendAsync("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
@@ -83,7 +83,7 @@ namespace siddiqsoft
         auto optionsRequest       = "https://reqbin.com/echo/post/json"_OPTIONS;
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
 
-        wrc.sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
+        wrc->sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
             // Checks the implementation of the encode() implementation
             // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (passTest = resp ? resp->success() : false; passTest.load()) {
@@ -115,7 +115,7 @@ namespace siddiqsoft
         auto optionsRequest       = "https://reqbin.com/echo/post/json"_POST;
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
 
-        wrc.configure().sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
+        wrc->configure().sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response, int> resp) {
             // Checks the implementation of the encode() implementation
             // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
             if (passTest = resp ? resp->success() : false; passTest.load()) {
@@ -149,7 +149,7 @@ namespace siddiqsoft
         restcl      wrc           = CreateRESTClient();
         std::string responseContentType {};
 
-        wrc.configure().sendAsync(
+        wrc->configure().sendAsync(
                 rest_request {HttpMethodType::METHOD_POST,
                               "https://httpbin.org/post"_Uri,
                               {{"Content-Type", "application/json"}},
@@ -185,7 +185,7 @@ namespace siddiqsoft
 
         restcl wrc = CreateRESTClient();
 
-        wrc.configure().sendAsync(
+        wrc->configure().sendAsync(
                 rest_request {HttpMethodType::METHOD_POST,
                               "https://httpbin.org/post"_Uri,
                               {{"Authorization", "Basic YWF1OnBhYXU="}, {"Content-Type", "application/json+custom"}},
@@ -221,7 +221,7 @@ namespace siddiqsoft
 
         restcl wrc = CreateRESTClient();
 
-        wrc.configure({{"connectTimeout", 3000}, // timeout for the connect phase
+        wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                        {"timeout", 5000},        // timeout for the overall IO phase
                        {"trace", true}})
                 .sendAsync("https://www.siddiqsoft.com:65535/"_GET,
@@ -255,7 +255,7 @@ namespace siddiqsoft
 
         restcl wrc = CreateRESTClient();
 
-        wrc.configure({
+        wrc->configure({
                               {"connectTimeout", 3000}, // timeout for the connect phase
                               {"timeout", 5000}         // timeout for the overall IO phase
                       })
@@ -293,7 +293,7 @@ namespace siddiqsoft
         restcl wrc = CreateRESTClient();
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
-        wrc.configure({
+        wrc->configure({
                               {"connectTimeout", 3000}, // timeout for the connect phase
                               {"timeout", 5000}         // timeout for the overall IO phase
                       })
@@ -328,7 +328,7 @@ namespace siddiqsoft
 
         restcl wrc = CreateRESTClient();
 
-        wrc.configure().sendAsync("https://google.com/"_OPTIONS,
+        wrc->configure().sendAsync("https://google.com/"_OPTIONS,
                                   [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                                       // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                                       if (resp.has_value() && resp->success()) {
@@ -360,7 +360,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc      = CreateRESTClient();
 
-        wrc.configure().sendAsync("https://www.google.com/"_GET,
+        wrc->configure().sendAsync("https://www.google.com/"_GET,
                                   [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                                       // std::cerr << "From callback Serialized json: " << req << std::endl;
                                       if (resp->success()) {
@@ -395,7 +395,7 @@ namespace siddiqsoft
         EXPECT_NO_THROW({
             auto wrc = CreateRESTClient();
 
-            wrc.configure({{"freshConnect", true},
+            wrc->configure({{"freshConnect", true},
                            {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
                           [&](const auto& req, std::expected<rest_response, int> resp) {
                               callbackCounter++;
@@ -420,13 +420,13 @@ namespace siddiqsoft
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
-                    wrc.sendAsync("https://www.cnn.com/?client=chrome"_GET);
+                    wrc->sendAsync("https://www.cnn.com/?client=chrome"_GET);
                 }
                 else if (i % 2 == 0) {
-                    wrc.sendAsync("https://www.bbc.com/?client=firefox"_GET);
+                    wrc->sendAsync("https://www.bbc.com/?client=firefox"_GET);
                 }
                 else {
-                    wrc.sendAsync("https://www.cnet.com/?client=edge"_GET);
+                    wrc->sendAsync("https://www.cnet.com/?client=edge"_GET);
                 }
             }
 

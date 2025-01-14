@@ -97,7 +97,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc      = CreateRESTClient();
 
-        wrc.configure().sendAsync(
+        wrc->configure().sendAsync(
                 "https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
@@ -126,7 +126,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc      = CreateRESTClient();
 
-        wrc.configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
+        wrc->configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
                 .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
@@ -159,7 +159,7 @@ namespace siddiqsoft
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
-        wrc.sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+        wrc->sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
             if (resp.has_value() && resp->success()) {
                 passTest = 1;
                 // nlohmann::json doc(*resp);
@@ -198,7 +198,7 @@ namespace siddiqsoft
             nlohmann::json     myStats {{"Test", "drift-check"}};
 
             auto req = "https://time.akamai.com/?iso"_GET;
-            if (auto resp = wrc.send(req); resp->success()) {
+            if (auto resp = wrc->send(req); resp->success()) {
                 // std::cerr << *resp << std::endl;
                 EXPECT_EQ("Akamai/Time Server", resp->getHeader("Server"));
                 // Expect the contents are date time stamp between 18-20 chars.
@@ -256,7 +256,7 @@ namespace siddiqsoft
                        __FUNCTION__,
                        clientIndex,
                        CLIENT_COUNT);*/
-            wrc.sendAsync("https://reqbin.com/"_GET, [&](const auto& req, std::expected<rest_response, int> resp) {
+            wrc->sendAsync("https://reqbin.com/"_GET, [&](const auto& req, std::expected<rest_response, int> resp) {
                 if (resp->success()) {
                     passTest += resp->statusCode() == 200;
                     // EXPECT_TRUE(resp->getHeaders().contains("X-EventID"));

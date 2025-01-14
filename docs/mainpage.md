@@ -37,7 +37,7 @@ Design a library where JSON is a first-class API metaphor for interacting with R
 
     // Create a simple GET request from the endpoint string
     // Send the request and invoke the callback.
-    wrc.send( "https://google.com"_GET,
+    wrc->send( "https://google.com"_GET,
               [](const auto& req, const auto& resp) {
                  if(resp.success())
                     doSomething();
@@ -52,7 +52,7 @@ Design a library where JSON is a first-class API metaphor for interacting with R
     // headers Content-Length and Content-Type
     myPost.setContent( {{"foo", "bar"}, {"goto", 99}} );
     // Send the request and invoke the callback
-    wrc.send( std::move(myReq), [](auto& req, auto& resp){
+    wrc->send( std::move(myReq), [](auto& req, auto& resp){
                                    if(resp.success())
                                       doSomething();
                                    else
