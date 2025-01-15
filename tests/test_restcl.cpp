@@ -33,20 +33,24 @@ namespace siddiqsoft
 
     class TestSends : public ::testing::Test
     {
+#if defined(__linux__) || defined(__APPLE__)
         std::shared_ptr<LibCurlSingleton> myCurlInstance {};
+#endif
 
     protected:
         void SetUp() override
         {
+#if defined(__linux__) || defined(__APPLE__)
             std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
             myCurlInstance = LibCurlSingleton::GetInstance();
+#endif
         }
     };
 
     TEST_F(TestSends, test1a)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc      = CreateRESTClient();
+        auto           wrc      = CreateRESTClient();
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
@@ -239,8 +243,8 @@ namespace siddiqsoft
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                             << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                   //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                   //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                }
                                passTest.notify_all();
                            });
@@ -276,8 +280,8 @@ namespace siddiqsoft
                     else {
                         // We MUST get a connection failure; the site does not exist!
                         passTest = true;
-                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                  << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                        //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                        //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                     }
                     passTest.notify_all();
                 });
@@ -312,8 +316,8 @@ namespace siddiqsoft
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                             << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                   //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                   //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                }
                                passTest.notify_all();
                            });
@@ -343,13 +347,17 @@ namespace siddiqsoft
                         passTest        = ec == 405 || ec == 403;
                         // This is a work-around for google which sometimes refuses to send the Reason Phrase!
                         if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
-                        std::print(std::cerr, "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}\n", ec, emsg, nlohmann::json(*resp).dump(3));
+                        std::print(std::cerr,
+                                   "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}\n",
+                                   ec,
+                                   emsg,
+                                   nlohmann::json(*resp).dump(3));
                     }
                     else {
                         // We MUST get a connection failure; the site does not exist!
                         passTest = true;
-                        std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                  << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                        //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                        //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                     }
                     passTest.notify_all();
                 });
@@ -377,8 +385,8 @@ namespace siddiqsoft
                                        else {
                                            // We MUST get a connection failure; the site does not exist!
                                            passTest = true;
-                                           std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                                     << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                           //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                           //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                        }
                                        passTest.notify_all();
                                    });

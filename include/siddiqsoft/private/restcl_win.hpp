@@ -27,6 +27,7 @@
 #include <deque>
 #include <semaphore>
 #include <stop_token>
+#include <print>
 
 
 #include <windows.h>
@@ -210,7 +211,9 @@ namespace siddiqsoft
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
 
-        basic_callbacktype callback {};
+        basic_callbacktype _callback {};
+        nlohmann::json     _config {};
+        uint32_t           id = __COUNTER__;
 
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
@@ -226,16 +229,33 @@ namespace siddiqsoft
             }
         }};
 
+    protected:
+        WinHttpRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+        {
+            configure(cfg, std::forward<basic_callbacktype&&>(cb));
+        }
+
+    public:
+        ~WinHttpRESTClient() { }
+
+
     public:
         WinHttpRESTClient()                                    = default;
         WinHttpRESTClient(const WinHttpRESTClient&)            = delete;
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
-        basic_restclient& configure(const std::string& ua, basic_callbacktype&& cb = {}) override
+
+        basic_restclient& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
-            callback   = std::move(cb);
-            UserAgent  = ua;
-            UserAgentW = ConversionUtils::convert_to<char, wchar_t>(ua);
+            if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
+
+            if (cb) _callback = std::move(cb);
+
+            _callback  = std::move(cb);
+
+
+            UserAgent  = _config.value("userAgent", _config.value("/headers/User-Agent"_json_pointer, ""));
+            UserAgentW = ConversionUtils::convert_to<char, wchar_t>(UserAgent);
 
             if (hSession == NULL) {
                 hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
@@ -248,14 +268,14 @@ namespace siddiqsoft
                                 hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
                     {
 #ifdef _DEBUG
-                        std::print( std::cerr, "{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+                        std::print(std::cerr, "{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
 #endif
                     }
 
                     // Enable decompression
                     if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
 #ifdef _DEBUG
-                        std::print( std::cerr, "{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+                        std::print(std::cerr, "{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
 #endif
                     }
                 }
@@ -269,9 +289,10 @@ namespace siddiqsoft
         /// @param src Source object is "cleared"
         WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
             : hSession(std::move(src.hSession))
+            , _config(src._config)
             , UserAgent(src.UserAgent)
             , UserAgentW(src.UserAgentW)
-            , callback(std::move(src.callback))
+            , _callback(std::move(src._callback))
         {
         }
 
@@ -279,13 +300,13 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        auto& sendAsync(rest_request&& req, std::optional<basic_callbacktype> cb = std::nullopt) override
+        basic_restclient& sendAsync(rest_request&& req, basic_callbacktype&& cb = {}) override
         {
-            if (!callback && !cb.has_value())
+            if (!_callback && !cb)
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            pool.queue(RestPoolArgsType {std::move(req), cb.has_value() ? cb.value() : callback});
+            pool.queue(RestPoolArgsType {std::move(req), cb ? std::move(cb) : _callback});
 
             return *this;
         }
@@ -521,18 +542,16 @@ namespace siddiqsoft
         }
 
     public:
-        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {},
+                                                 basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
         {
-            g_LibCURLSingleton.configure().start();
-            // return std::move(HttpRESTClient(cfg,std::forward<basic_callbacktype&&>(cb)));
-            WinHttpRESTClient rcl(cfg, std::forward<basic_callbacktype&&>(cb));
-
+            std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
+            std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
             return rcl;
         }
-
     };
 
-    using restcl = WinHttpRESTClient;
+    using restcl = std::shared_ptr<WinHttpRESTClient>;
 } // namespace siddiqsoft
 #else
 #pragma message("Windows required")

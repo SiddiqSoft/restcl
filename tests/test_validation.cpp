@@ -50,13 +50,16 @@ namespace siddiqsoft
 
     class Validation : public ::testing::Test
     {
+#if defined(__linux__) || defined(__APPLE__)
         std::shared_ptr<LibCurlSingleton> myCurlInstance {};
-
+#endif
     protected:
         void SetUp() override
         {
+#if defined(__linux__) || defined(__APPLE__)
             std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
             myCurlInstance = LibCurlSingleton::GetInstance();
+#endif
         }
     };
 
