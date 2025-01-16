@@ -196,12 +196,19 @@ namespace siddiqsoft
     }
 #pragma endregion
 
+    struct rest_result_error
+    {
+        uint32_t error {0};
+        operator std::string() { return messageFromWininetCode(error); }
+    };
+
+
     /// @brief Windows implementation of the basic_restclient
     class WinHttpRESTClient : public basic_restclient
     {
     public:
-        std::string  UserAgent {"siddiqsoft.restcl/1.6.0"};
-        std::wstring UserAgentW {L"siddiqsoft.restcl/1.6.0"};
+        std::string  UserAgent {"siddiqsoft.restcl/2"};
+        std::wstring UserAgentW {L"siddiqsoft.restcl/2"};
 
     private:
         static const DWORD           READBUFFERSIZE {8192};
@@ -544,8 +551,8 @@ namespace siddiqsoft
         }
 
     public:
-        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {},
-                                                 basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+                -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
             std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}\n", __FUNCTION__, rcl->id);

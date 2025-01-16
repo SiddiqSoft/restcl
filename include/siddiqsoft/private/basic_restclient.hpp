@@ -23,6 +23,8 @@
 
 namespace siddiqsoft
 {
+    struct rest_result_error;
+    
     /// @brief The function or lambda must accept const rest_request& and const rest_response&
     using basic_callbacktype = std::function<void(rest_request&, std::expected<rest_response, int>)>;
 

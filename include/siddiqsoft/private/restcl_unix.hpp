@@ -10,6 +10,8 @@
  */
 
 #pragma once
+#include <cstring>
+#include <type_traits>
 #if defined(__linux__) || defined(__APPLE__)
 
 #ifndef RESTCL_UNIX_HPP
@@ -29,7 +31,7 @@
 #include <functional>
 #include <optional>
 #include <utility>
-
+#include <variant>
 
 #include "nlohmann/json.hpp"
 
@@ -52,6 +54,58 @@
 
 namespace siddiqsoft
 {
+    struct rest_result_error
+    {
+        std::variant<CURLcode, CURLMcode, CURLHcode, CURLSHcode, CURLUcode, uint32_t> error {};
+
+
+        rest_result_error(const std::variant<CURLcode, CURLMcode, CURLHcode, CURLSHcode, CURLUcode, uint32_t>& ve)
+            : error(ve)
+        {
+        }
+
+        operator std::string() const { return to_string(); }
+
+        std::string to_string() const
+        {
+            return std::visit(
+                    [](auto&& ec) -> std::string {
+                        using T = std::decay_t<decltype(ec)>;
+                        if constexpr (std::is_same_v<T, CURLcode>) {
+                            return curl_easy_strerror(ec);
+                        }
+                        else if constexpr (std::is_same_v<T, CURLMcode>) {
+                            return curl_multi_strerror(ec);
+                        }
+                        else if constexpr (std::is_same_v<T, CURLHcode>) {
+                            switch (ec) {
+                                case CURLHE_OK: return "All fine. Proceed as usual";
+                                case CURLHE_BADINDEX: return "There is no header with the requested index.";
+                                case CURLHE_MISSING: return "No such header exists.";
+                                case CURLHE_NOHEADERS: return "No headers at all have been recorded.";
+                                case CURLHE_NOREQUEST: return " There was no such request number.";
+                                case CURLHE_OUT_OF_MEMORY: return " Out of resources";
+                                case CURLHE_BAD_ARGUMENT: return " One or more of the given arguments are bad.";
+                                case CURLHE_NOT_BUILT_IN: return "HTTP support or the header API has been disabled in the build.";
+                                default: return "Unknown CURLHcode";
+                            }
+                        }
+                        else if constexpr (std::is_same_v<T, CURLSHcode>) {
+                            return curl_share_strerror(ec);
+                        }
+                        else if constexpr (std::is_same_v<T, CURLUcode>) {
+                            return curl_url_strerror(ec);
+                        }
+                        else if constexpr (std::is_same_v<T, uint32_t>) {
+                            return strerror(ec);
+                        }
+                        // Unknown
+                        return "rest_result_error:Unknown or Unsupported error code";
+                    },
+                    error);
+        }
+    };
+
     /**
      * @brief Groups together the pooled CURL* and the ContentType object
      *        with the ability to on destruction return the CURL shared_ptr
@@ -169,10 +223,7 @@ namespace siddiqsoft
 
         ~LibCurlSingleton()
         {
-            std::print(std::cerr,
-                       "{} - Invoked. Cleanup {} resource_pool objects..\n",
-                       __func__,
-                       curlHandlePool.size());
+            std::print(std::cerr, "{} - Invoked. Cleanup {} resource_pool objects..\n", __func__, curlHandlePool.size());
             curlHandlePool.clear();
             std::print(std::cerr,
                        "{} - Invoked. Cleanup global LibCURL..\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-**-*\n",
@@ -832,6 +883,15 @@ struct std::formatter<siddiqsoft::HttpRESTClient> : std::formatter<std::string>
     }
 };
 
+template <>
+struct std::formatter<siddiqsoft::rest_result_error> : std::formatter<std::string>
+{
+    template <class FC>
+    auto format(const siddiqsoft::rest_result_error& rrc, FC& ctx) const
+    {
+        return std::formatter<std::string>::format(rrc.to_string(), ctx);
+    }
+};
 
 #else
 #pragma message("Windows required")
