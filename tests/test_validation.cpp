@@ -76,7 +76,7 @@ namespace siddiqsoft
 
     TEST_F(Validation, test_rest_result_error_posix)
     {
-        uint32_t             cc {ECONNRESET};
+        uint32_t          cc {ECONNRESET};
         rest_result_error rre {cc};
         std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
         EXPECT_EQ("Connection reset by peer", rre.to_string());
@@ -85,13 +85,18 @@ namespace siddiqsoft
 
     TEST_F(Validation, test_rest_result_error_unknown)
     {
-        uint32_t             cc {909090};
+        uint32_t          cc {909090};
         rest_result_error rre {cc};
         std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
-        EXPECT_EQ("Unknown error: 909090", rre.to_string());
+        // the value returned by unix strerror varies
+        // Unknown error: 909090
+        // Unknown error 909090
+        // with the difference of the `:` in the message
+        // EXPECT_TRUE("Unknown error: 909090", rre.to_string());
+        EXPECT_TRUE(rre.to_string().contains("909090"));
     }
 
-    
+
     TEST_F(Validation, restrequest_checks)
     {
         auto r1 = "https://www.siddiqsoft.com:65535/"_GET;
