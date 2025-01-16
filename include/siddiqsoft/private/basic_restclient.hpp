@@ -24,7 +24,7 @@
 namespace siddiqsoft
 {
     struct rest_result_error;
-    
+
     /// @brief The function or lambda must accept const rest_request& and const rest_response&
     using basic_callbacktype = std::function<void(rest_request&, std::expected<rest_response, int>)>;
 
@@ -42,7 +42,7 @@ namespace siddiqsoft
          *            One of the variable arguments would be the callback for sendAsync operations.
          * @return basic_restclient& Returns reference to self to allow chaining
          */
-        virtual basic_restclient& configure(const nlohmann::json& ={}, basic_callbacktype&& = {}) = 0;
+        virtual basic_restclient& configure(const nlohmann::json& = {}, basic_callbacktype&& = {}) = 0;
 
         /// @brief Synchronous implementation of the IO
         /// @param req Request
@@ -76,7 +76,7 @@ namespace siddiqsoft
         {
         }
 
-        rest_request request;
+        rest_request       request;
         basic_callbacktype callback {};
     };
 

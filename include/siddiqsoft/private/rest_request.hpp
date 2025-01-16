@@ -73,9 +73,7 @@ namespace siddiqsoft
             setUri(u);
         }
 
-        rest_request(const HttpMethodType&                v,
-                     const Uri<char, AuthorityHttp<char>> u,
-                     const nlohmann::json&                h)
+        rest_request(const HttpMethodType& v, const Uri<char, AuthorityHttp<char>> u, const nlohmann::json& h)
         {
             setHeaders(h);
             setMethod(v);

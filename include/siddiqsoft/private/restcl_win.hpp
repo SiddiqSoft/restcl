@@ -557,8 +557,8 @@ namespace siddiqsoft
         }
 
     public:
-        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {},
-                                                 basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+                -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
             std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}\n", __FUNCTION__, rcl->id);

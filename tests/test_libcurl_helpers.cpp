@@ -47,7 +47,7 @@ namespace siddiqsoft
 
     TEST(libcurl_helpers, test_rest_result_error_curlhcode)
     {
-        CURLHcode          cc {CURLHE_MISSING};
+        CURLHcode         cc {CURLHE_MISSING};
         rest_result_error rre {cc};
         std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
         EXPECT_EQ("No such header exists.", rre.to_string());
@@ -55,7 +55,7 @@ namespace siddiqsoft
 
     TEST(libcurl_helpers, test_rest_result_error_curlshcode)
     {
-        CURLSHcode          cc {CURLSHE_BAD_OPTION};
+        CURLSHcode        cc {CURLSHE_BAD_OPTION};
         rest_result_error rre {cc};
         std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
         EXPECT_EQ("Unknown share option", rre.to_string());
@@ -64,7 +64,7 @@ namespace siddiqsoft
 
     TEST(libcurl_helpers, test_rest_result_error_curlucode)
     {
-        CURLUcode          cc {CURLUE_BAD_FILE_URL};
+        CURLUcode         cc {CURLUE_BAD_FILE_URL};
         rest_result_error rre {cc};
         std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
         EXPECT_EQ("Bad file:// URL", rre.to_string());
