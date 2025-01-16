@@ -63,6 +63,7 @@ namespace siddiqsoft
         }
     };
 
+#if (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
     TEST_F(Validation, test_rest_result_error)
     {
         DWORD             cc {12001};
@@ -70,6 +71,7 @@ namespace siddiqsoft
         std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
         EXPECT_EQ("12001-ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.", rre.to_string());
     }
+#endif
 
     TEST_F(Validation, restrequest_checks)
     {
