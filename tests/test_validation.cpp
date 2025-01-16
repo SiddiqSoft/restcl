@@ -73,7 +73,8 @@ namespace siddiqsoft
         EXPECT_EQ("12001-ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.", rre.to_string());
     }
 #endif
-
+    
+#if defined(__linux__) || defined(__APPLE__)
     TEST_F(Validation, test_rest_result_error_posix)
     {
         uint32_t          cc {ECONNRESET};
@@ -81,6 +82,7 @@ namespace siddiqsoft
         std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
         EXPECT_EQ("Connection reset by peer", rre.to_string());
     }
+#endif
 
 
     TEST_F(Validation, test_rest_result_error_unknown)
