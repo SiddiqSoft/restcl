@@ -74,15 +74,17 @@ namespace siddiqsoft
     }
 #endif
     
-#if defined(__linux__) || defined(__APPLE__)
     TEST_F(Validation, test_rest_result_error_posix)
     {
         uint32_t          cc {ECONNRESET};
         rest_result_error rre {cc};
         std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
+#if defined(__linux__) || defined(__APPLE__)
         EXPECT_EQ("Connection reset by peer", rre.to_string());
-    }
+#elif (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
+        EXPECT_EQ("108", rre.to_string());
 #endif
+    }
 
 
     TEST_F(Validation, test_rest_result_error_unknown)
