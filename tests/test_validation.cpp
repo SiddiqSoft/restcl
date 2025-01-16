@@ -33,6 +33,7 @@
  */
 
 
+#include <cstdint>
 #include <iostream>
 #include <version>
 #include <expected>
@@ -64,7 +65,7 @@ namespace siddiqsoft
     };
 
 #if (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
-    TEST_F(Validation, test_rest_result_error)
+    TEST_F(Validation, test_rest_result_error_winhttp)
     {
         DWORD             cc {12001};
         rest_result_error rre {cc};
@@ -73,6 +74,24 @@ namespace siddiqsoft
     }
 #endif
 
+    TEST_F(Validation, test_rest_result_error_posix)
+    {
+        uint32_t             cc {ECONNRESET};
+        rest_result_error rre {cc};
+        std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
+        EXPECT_EQ("Connection reset by peer", rre.to_string());
+    }
+
+
+    TEST_F(Validation, test_rest_result_error_unknown)
+    {
+        uint32_t             cc {909090};
+        rest_result_error rre {cc};
+        std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
+        EXPECT_EQ("Unknown error: 909090", rre.to_string());
+    }
+
+    
     TEST_F(Validation, restrequest_checks)
     {
         auto r1 = "https://www.siddiqsoft.com:65535/"_GET;
