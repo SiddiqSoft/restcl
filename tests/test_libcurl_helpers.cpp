@@ -27,11 +27,11 @@ namespace siddiqsoft
         });
     }
 
-    TEST(libcurl_helpers, test_result_code)
+    TEST(libcurl_helpers, test_rest_result_error)
     {
-        CURLcode cc {CURLE_ABORTED_BY_CALLBACK};
-        rest_result_error rre{cc};
-        std::print("Error code -> {}\n", rest_result_error {cc});
+        CURLcode          cc {CURLE_ABORTED_BY_CALLBACK};
+        rest_result_error rre {cc};
+        std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
         EXPECT_EQ("Operation was aborted by an application callback", rre.to_string());
     }
 

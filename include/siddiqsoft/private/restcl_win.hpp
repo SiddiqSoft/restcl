@@ -199,7 +199,13 @@ namespace siddiqsoft
     struct rest_result_error
     {
         uint32_t error {0};
+
+        rest_result_error(const uint32_t ec)
+            : error(ec)
+        {
+        }
         operator std::string() { return messageFromWininetCode(error); }
+        auto to_string() const { return messageFromWininetCode(error); }
     };
 
 
@@ -551,8 +557,8 @@ namespace siddiqsoft
         }
 
     public:
-        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
-                -> std::shared_ptr<WinHttpRESTClient>
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {},
+                                                 basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
             std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}\n", __FUNCTION__, rcl->id);
@@ -562,6 +568,18 @@ namespace siddiqsoft
 
     using restcl = std::shared_ptr<WinHttpRESTClient>;
 } // namespace siddiqsoft
+
+
+template <>
+struct std::formatter<siddiqsoft::rest_result_error> : std::formatter<std::string>
+{
+    template <class FC>
+    auto format(const siddiqsoft::rest_result_error& rrc, FC& ctx) const
+    {
+        return std::formatter<std::string>::format(rrc.to_string(), ctx);
+    }
+};
+
 #else
 #pragma message("Windows required")
 #endif
