@@ -268,7 +268,7 @@ namespace siddiqsoft
                 }
                 else {
                     auto [ec, emsg] = resp->status();
-                    passTest        = true;
+                    passTest++;
                     std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
                 }
             });
