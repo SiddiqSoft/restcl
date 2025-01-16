@@ -50,7 +50,7 @@ namespace siddiqsoft
     TEST_F(TestSends, test1a)
     {
         std::atomic_bool passTest = false;
-        auto           wrc      = CreateRESTClient();
+        auto             wrc      = CreateRESTClient();
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
@@ -164,7 +164,8 @@ namespace siddiqsoft
                     responseContentType = req.getHeaders().value("Content-Type", "");
                     //  Checks the implementation of the encode() implementation
                     // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-                    if (passTest = resp->success(); passTest.load()) {
+                    if (resp.has_value() && resp->success()) {
+                        passTest = true;
                         std::cerr << "Response\n" << *resp << std::endl;
                     }
                     else {
@@ -200,7 +201,8 @@ namespace siddiqsoft
                     EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
                     // Checks the implementation of the std::format implementation
                     std::print(std::cerr, "From callback Wire serialize              : {}\n", req);
-                    if (passTest = resp->success(); passTest.load()) {
+                    if (resp.has_value() && resp->success()) {
+                        passTest = true;
                         std::cerr << "Response\n" << *resp << std::endl;
                         // EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
                     }
@@ -243,8 +245,8 @@ namespace siddiqsoft
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                   //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                   // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                   //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                }
                                passTest.notify_all();
                            });
@@ -269,7 +271,7 @@ namespace siddiqsoft
 
                     // Checks the implementation of the json implementation
                     // std::cerr << "From callback Serialized json: " << req << std::endl;
-                    if (resp->success()) {
+                    if (resp.has_value() && resp->success()) {
                         std::cerr << "Response\n" << *resp << std::endl;
                     }
                     else if (resp.has_value()) {
@@ -280,8 +282,8 @@ namespace siddiqsoft
                     else {
                         // We MUST get a connection failure; the site does not exist!
                         passTest = true;
-                        //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                        //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                        // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                        //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                     }
                     passTest.notify_all();
                 });
@@ -298,29 +300,25 @@ namespace siddiqsoft
         restcl wrc = CreateRESTClient();
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
-        wrc->configure({
-                               {"connectTimeout", 3000}, // timeout for the connect phase
-                               {"timeout", 5000}         // timeout for the overall IO phase
-                       })
-                .sendAsync("https://httpbin.org:9090/get"_OPTIONS,
-                           [&passTest](const auto& req, std::expected<rest_response, int> resp) {
-                               std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-                               if (resp->success()) {
-                                   std::cerr << "Response\n" << *resp << std::endl;
-                               }
-                               else if (resp.has_value()) {
-                                   auto [ec, emsg] = resp->status();
-                                   passTest        = ((ec == 12002) || (ec == 12029) || (ec == 403));
-                                   std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
-                               }
-                               else {
-                                   // We MUST get a connection failure; the site does not exist!
-                                   passTest = true;
-                                   //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                   //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
-                               }
-                               passTest.notify_all();
-                           });
+        wrc->configure({{"connectTimeout", 3000}, {"timeout", 5000}});
+        wrc->sendAsync("https://httpbin.org:9090/get"_OPTIONS,
+                       [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                           if (resp.has_value() && resp->success()) {
+                               std::cerr << "Response\n" << nlohmann::json(*resp).dump(2) << std::endl;
+                           }
+                           else if (resp.has_value()) {
+                               auto [ec, emsg] = resp->status();
+                               passTest        = ((ec == 12002) || (ec == 12029) || (ec == 403));
+                               std::print(std::cerr, "ec: {}  Response\n{}\n", ec, nlohmann::json(*resp).dump(2));
+                           }
+                           else {
+                               // We MUST get a connection failure; the site does not exist!
+                               passTest = true;
+                               // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                               //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                           }
+                           passTest.notify_all();
+                       });
 
         passTest.wait(false);
         EXPECT_TRUE(passTest.load());
@@ -356,8 +354,8 @@ namespace siddiqsoft
                     else {
                         // We MUST get a connection failure; the site does not exist!
                         passTest = true;
-                        //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                        //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                        // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                        //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                     }
                     passTest.notify_all();
                 });
@@ -374,7 +372,7 @@ namespace siddiqsoft
         wrc->configure().sendAsync("https://www.google.com/"_GET,
                                    [&passTest](const auto& req, std::expected<rest_response, int> resp) {
                                        // std::cerr << "From callback Serialized json: " << req << std::endl;
-                                       if (resp->success()) {
+                                       if (resp.has_value() && resp->success()) {
                                            passTest = resp->statusCode() == 200;
                                            // std::cerr << "Response\n"<< *resp << std::endl;
                                        }
@@ -385,8 +383,8 @@ namespace siddiqsoft
                                        else {
                                            // We MUST get a connection failure; the site does not exist!
                                            passTest = true;
-                                           //std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                           //          << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                           // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                           //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
                                        }
                                        passTest.notify_all();
                                    });
@@ -414,7 +412,7 @@ namespace siddiqsoft
                            [&](const auto& req, std::expected<rest_response, int> resp) {
                                callbackCounter++;
 
-                               if (resp->success()) {
+                               if (resp.has_value() && resp->success()) {
                                    passTest += resp->statusCode() == 200;
                                    passTest.notify_all();
                                }

@@ -190,19 +190,19 @@ namespace siddiqsoft
 
     TEST_F(Validation, GET_Akamai_Time)
     {
+        using namespace std::chrono_literals;
+        using namespace siddiqsoft::restcl_literals;
+
         const unsigned   ITER_COUNT = 1;
         std::atomic_uint passTest   = 0;
 
         try {
-            using namespace std::chrono_literals;
-            using namespace siddiqsoft::restcl_literals;
-
             siddiqsoft::restcl wrc = CreateRESTClient();
             nlohmann::json     myStats {{"Test", "drift-check"}};
 
             auto req = "https://time.akamai.com/?iso"_GET;
             if (auto resp = wrc->send(req); resp->success()) {
-                // std::cerr << *resp << std::endl;
+                std::cerr << nlohmann::json(*resp).dump(2) << std::endl;
                 EXPECT_EQ("Akamai/Time Server", resp->getHeader("Server"));
                 // Expect the contents are date time stamp between 18-20 chars.
                 EXPECT_TRUE(resp->getContent()->length > 16);
@@ -229,6 +229,7 @@ namespace siddiqsoft
             std::print(std::cerr, "Housekeeping exception: {}", ex.what());
         }
 
+        std::this_thread::sleep_for(1000ms);
         EXPECT_EQ(ITER_COUNT, passTest.load());
     }
 

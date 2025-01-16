@@ -212,8 +212,14 @@ namespace siddiqsoft
         ACW32HINTERNET hSession {};
 
         basic_callbacktype _callback {};
-        nlohmann::json     _config {};
         uint32_t           id = __COUNTER__;
+        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
+                                    {"trace", false},
+                                    {"id", id},
+                                    {"connectTimeout", 0L},
+                                    {"timeout", 0L},
+                                    {"downloadDirectory", nullptr},
+                                    {"headers", nullptr}};
 
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
@@ -248,11 +254,7 @@ namespace siddiqsoft
         basic_restclient& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
             if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
-
             if (cb) _callback = std::move(cb);
-
-            _callback  = std::move(cb);
-
 
             UserAgent  = _config.value("userAgent", _config.value("/headers/User-Agent"_json_pointer, ""));
             UserAgentW = ConversionUtils::convert_to<char, wchar_t>(UserAgent);
@@ -546,7 +548,7 @@ namespace siddiqsoft
                                                  basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
-            std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
+            std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}\n", __FUNCTION__, rcl->id);
             return rcl;
         }
     };
