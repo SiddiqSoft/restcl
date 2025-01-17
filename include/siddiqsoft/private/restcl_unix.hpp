@@ -400,7 +400,7 @@ namespace siddiqsoft
             {
                 content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
 
-#if defined(DEBUG0)
+#if defined(DEBUG)
                 std::print(std::cerr,
                            "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
                            __func__,
@@ -551,11 +551,11 @@ namespace siddiqsoft
         {
             CURLcode rc = CURLcode::CURLE_NOT_BUILT_IN;
 
-            std::print(std::cerr, "{} - Invoked.. ctxCurl:{}\n", __func__, (void*)ctxCurl->curlHandle());
+            // std::print(std::cerr, "{} - Invoked.. ctxCurl:{}\n", __func__, (void*)ctxCurl->curlHandle());
 
-            // if (ctxCurl && ((CURL*)ctxCurl->curlHandle()) != NULL) curl_easy_reset((CURL*)ctxCurl->curlHandle());
+            if (ctxCurl && ((CURL*)ctxCurl->curlHandle()) != NULL) curl_easy_reset((CURL*)ctxCurl->curlHandle());
 
-            std::print(std::cerr, "{} - Configuring options...\n", __func__);
+            // std::print(std::cerr, "{} - Configuring options...\n", __func__);
             if (long v = _config.value("connectTimeout", 0); v > 0) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CONNECTTIMEOUT_MS, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
@@ -576,7 +576,7 @@ namespace siddiqsoft
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
-            std::print(std::cerr, "{} - Completed.\n", __func__);
+            // std::print(std::cerr, "{} - Completed.\n", __func__);
         }
 
 
@@ -800,7 +800,7 @@ namespace siddiqsoft
                     // Immediately save so we ensure proper cleanup
                     std::shared_ptr<struct curl_slist> retHeaders {curlHeaders, curl_slist_free_all};
                     if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTPHEADER, curlHeaders); rc == CURLE_OK) {
-                        std::print(std::cerr, "{} - Completed.", __func__);
+                        //std::print(std::cerr, "{} - Completed.", __func__);
                         return retHeaders;
                     }
                 }

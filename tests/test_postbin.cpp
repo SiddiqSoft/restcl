@@ -213,12 +213,12 @@ namespace siddiqsoft
     TEST_F(PostBin, verb_POST_1)
     {
         // https://jsonplaceholder.typicode.com/guide/
-        auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+        auto wrc = CreateRESTClient({{"trace", true}, {"freshConnect", true}});
 
         rest_request req {
                 HttpMethodType::METHOD_POST,
                 siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}, {HF_EXPECT, nullptr}},
+                {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}},
                 {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
@@ -245,7 +245,7 @@ namespace siddiqsoft
         rest_request req {
                 HttpMethodType::METHOD_PUT,
                 siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}, {HF_EXPECT, nullptr}},
+                {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}},
                 {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
