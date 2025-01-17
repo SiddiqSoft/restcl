@@ -146,7 +146,7 @@ namespace siddiqsoft
          */
         void abandon()
         {
-#if defined(DEBUG)
+#if defined(DEBUG0)
             std::print(std::cerr,
                        "CurlContextBundle::abandon - id:{}  {} Abandoning BUNDLE "
                        "*********************************************************************\n",
@@ -162,15 +162,16 @@ namespace siddiqsoft
             if (_contents) _contents.reset();
             if (_hndl) {
                 _pool.checkin(std::move(_hndl));
+#if defined(DEBUG)
                 std::print(std::cerr,
                            "{} - 2/2 Returning BUNDLE  id:{}:{}  Capacity:{}..\n",
                            __func__,
                            _id,
                            (void*)_hndl.get(),
                            _pool.size());
+#endif
                 _hndl.reset();
             }
-            // std::print(std::cerr, "{} - 2/2 Done ..\n", __func__);
         }
     };
 
@@ -197,14 +198,20 @@ namespace siddiqsoft
 
             if (_singleton == nullptr) {
                 if (_singleton = std::shared_ptr<LibCurlSingleton>(new LibCurlSingleton()); _singleton) {
+#if defined(DEBUG0)
                     std::print(std::cerr, "{} - Onetime initialization!\n", __func__);
+#endif
                     // Perform once-per-application LibCURL initialization logic
                     if (auto rc = curl_global_init(CURL_GLOBAL_ALL); rc == CURLE_OK) {
                         _singleton->isInitialized = true;
+#if defined(DEBUG0)
                         std::print(std::cerr, "{} - Initialized:{} curl_global_init()\n", __func__, _singleton->isInitialized);
+#endif
                     }
                     else {
+#if defined(DEBUG0)
                         std::print(std::cerr, "{} - Initialize failed! {}\n", __func__, curl_easy_strerror(rc));
+#endif
                         throw std::runtime_error(curl_easy_strerror(rc));
                     }
                 }
@@ -246,7 +253,7 @@ namespace siddiqsoft
                     // return an existing handle..
                     auto ctxbndl = std::shared_ptr<CurlContextBundle>(
                             new CurlContextBundle {curlHandlePool, std::move(curlHandlePool.checkout())});
-#if defined(DEBUG)
+#if defined(DEBUG0)
                     std::print(std::cerr,
                                "{} - Existing BUNDLE id:{}:{}; Capacity:{}\n",
                                __func__,
@@ -270,7 +277,9 @@ namespace siddiqsoft
 
             // ..return a new handle..
             auto curlHandle = curl_easy_init();
+#if defined(DEBUG0)
             std::print(std::cerr, "{} - Invoking curl_easy_init...{}\n", __func__, (void*)curlHandle);
+#endif
             auto ctxbndlnew = std::shared_ptr<CurlContextBundle>(new CurlContextBundle {
                     curlHandlePool, std::shared_ptr<CURL> {curlHandle, [](CURL* cc) {
                                                                std::print(std::cerr,
@@ -278,7 +287,7 @@ namespace siddiqsoft
                                                                           reinterpret_cast<void*>(cc));
                                                                if (cc != NULL) curl_easy_cleanup(cc);
                                                            }}});
-#if defined(DEBUG)
+#if defined(DEBUG0)
             std::print(std::cerr,
                        "{} - NEW BUNDLE id:{}:{}; Capacity:{}\n",
                        __func__,
@@ -425,7 +434,7 @@ namespace siddiqsoft
                         else {
                             content->remainingSize -= dataSizeToCopyToLibCurl;
                         }
-#if defined(DEBUG0)
+#if defined(DEBUG)
                         std::print(std::cerr,
                                    "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
                                    "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
@@ -625,11 +634,13 @@ namespace siddiqsoft
                                 }
                                 else {
                                     ioSendFailed++;
-                                    std::print(std::cerr,
-                                               "{} - curl_easy_perform() failed: `{}`\n{}\n",
-                                               __func__,
-                                               curl_easy_strerror(rc),
-                                               nlohmann::json(req).dump(2));
+                                    if (_config.value("trace", false)) {
+                                        std::print(std::cerr,
+                                                   "{} - curl_easy_perform() failed: `{}`\n{}\n",
+                                                   __func__,
+                                                   curl_easy_strerror(rc),
+                                                   nlohmann::json(req).dump(2));
+                                    }
                                 }
                             }
                         }
@@ -639,11 +650,13 @@ namespace siddiqsoft
                 // To reach here is failure!
                 // Abandon so we we dot re-use a failed resource!
                 ctxCurl->abandon();
-                std::print(std::cerr,
-                           "{} - some failure `{}`; abandon context !!\n{}\n",
-                           __func__,
-                           curl_easy_strerror(rc),
-                           nlohmann::json(req).dump(2));
+                if (_config.value("trace", false)) {
+                    std::print(std::cerr,
+                               "{} - some failure `{}`; abandon context !!\n{}\n",
+                               __func__,
+                               curl_easy_strerror(rc),
+                               nlohmann::json(req).dump(2));
+                }
                 return std::unexpected(rc);
             }
             else {
@@ -662,37 +675,34 @@ namespace siddiqsoft
 
             // Setup the CURL library for callback for the *response* from the remote!
             if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK) return rc;
+            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) return rc;
 
             // Special cases for each verb..
+
             if ((req.getMethod() == HttpMethodType::METHOD_PATCH) || (req.getMethod() == HttpMethodType::METHOD_POST)) {
-                std::println(std::cerr,
-                             "{} - Method:{}  POSTFIELDS: -- {}:{}",
-                             __func__,
-                             req.getMethod(),
-                             req.getContent()->length,
-                             req.getContentBody());
+                if (_config.value("trace", false)) {
+                    std::println(std::cerr,
+                                 "{} - Method:{}  POSTFIELDS: -- {}:{}",
+                                 __func__,
+                                 req.getMethod(),
+                                 req.getContent()->length,
+                                 req.getContentBody());
+                }
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDS, cntnts.get()); rc != CURLE_OK) return rc;
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDSIZE, cntnts.get()->length); rc != CURLE_OK)
                     return rc;
             }
-            // else
-            {
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) return rc;
-            }
 
-            // if (req.getMethod() == HttpMethodType::METHOD_POST) {
             //  Set the output/send callback which will process the req's content
             if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK) return rc;
-            // If we have content to send then set the raw pointer into our callback
             if (req.getContent()) rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, req.getContent().get());
-            //}
 
             return rc;
         }
 
         /**
          * @brief Set the Http version, the verb/method for this request against libCURL
-         * 
+         *
          * @param ctxCurl The context bundle ptr
          * @param req Reference to the request
          * @return CURLcode Error from libCurl
@@ -734,7 +744,9 @@ namespace siddiqsoft
                     break;
             }
 
-            std::print(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
+            if (_config.value("trace", false)) {
+                std::print(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
+            }
             return rc;
         }
 
@@ -746,11 +758,20 @@ namespace siddiqsoft
             if (auto curlHeaders = curl_slist_append(NULL, "X-restcl-v2:"); curlHeaders != NULL) {
                 try {
                     for (auto& [k, v] : req.getHeaders().items()) {
-                        // std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
+                        if (_config.value("trace", false)) {
+                            std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
+                        }
                         if (v.is_string()) {
-                            if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<std::string>()).c_str());
-                                ch != NULL)
-                                curlHeaders = ch;
+                            if (auto val = v.get<std::string>(); !val.empty() && (val.length() > 0)) {
+                                // Only add non-empty string contents..otherwise will treat it as a remove header
+                                if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, val).c_str()); ch != NULL)
+                                    curlHeaders = ch;
+                            }
+                            else {
+                                // Empty value means remove that field.
+                                if (auto ch = curl_slist_append(curlHeaders, std::format("{};", k).c_str()); ch != NULL)
+                                    curlHeaders = ch;
+                            }
                         }
                         else if (v.is_number_unsigned()) {
                             if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.get<uint64_t>()).c_str());
@@ -762,11 +783,11 @@ namespace siddiqsoft
                                 ch != NULL)
                                 curlHeaders = ch;
                         }
-                        else if (v.is_null()) {
+                        else if (v.empty() || v.is_null()) {
                             if (auto ch = curl_slist_append(curlHeaders, std::format("{};", k).c_str()); ch != NULL)
                                 curlHeaders = ch;
                         }
-                        else {
+                        else if (!v.empty()) {
                             if (auto ch = curl_slist_append(curlHeaders, std::format("{}: {}", k, v.dump()).c_str()); ch != NULL)
                                 curlHeaders = ch;
                         }
@@ -788,6 +809,7 @@ namespace siddiqsoft
             return {};
         }
 
+
         void extractContents(std::shared_ptr<ContentType> cntnt, rest_response& resp)
         {
             try {
@@ -797,7 +819,7 @@ namespace siddiqsoft
                 cntnt->length =
                         std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
                 // Make sure we have the content length properly
-                if ((cntnt->length == 0) && !cntnt->body.empty()) cntnt->length = cntnt->body.length();
+                if ((cntnt->length == 0) && !cntnt->body.empty()) cntnt->remainingSize = cntnt->length = cntnt->body.length();
                 // Fixup the content..
                 // cntnt->parseFromSerializedJson(cntnt->body);
                 resp.setContent(cntnt);
@@ -826,11 +848,23 @@ namespace siddiqsoft
                         default: dest.setProtocol(HttpProtocolVersionType::UNKNOWN);
                     }
                     dest.setStatus(sc, "");
+
+                    // Get the read/data size from server
+                    curl_off_t cl {};
+                    if (rc = curl_easy_getinfo(ctxCurl->curlHandle(), CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &cl); rc == CURLE_OK) {
+                        if ((cl > 0) && (cl != -1) && (dest.content->length == 0))
+                            dest.content->remainingSize = dest.content->length = cl;
+                    }
                 }
             }
 
             if (rc != CURLE_OK) {
-                std::print(std::cerr, "{} - rc:{}  sc:{}", __func__, curl_easy_strerror(rc), sc);
+                std::print(std::cerr,
+                           "{} - rc:{}  sc:{}  content-length:{}",
+                           __func__,
+                           curl_easy_strerror(rc),
+                           sc,
+                           dest.content->length);
             }
 
             std::print(std::cerr, "{} - Completed.", __func__);
@@ -846,7 +880,9 @@ namespace siddiqsoft
         {
             std::shared_ptr<HttpRESTClient> rcl(new HttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
             rcl->singletonInstance = LibCurlSingleton::GetInstance();
+#if defined(DEBUG0)
             std::print(std::cerr, "{} - New HttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
+#endif
             return rcl;
         }
     };

@@ -72,7 +72,7 @@ namespace siddiqsoft
 
             rest_request req {HttpMethodType::METHOD_GET,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
-                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
             if (auto ret = wrc->send(req); ret.has_value()) {
                 if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
@@ -90,7 +90,7 @@ namespace siddiqsoft
 
             rest_request req {HttpMethodType::METHOD_POST,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
-                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
             req.setContent(d);
             if (auto ret = wrc->send(req); ret.has_value()) {
                 if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
@@ -106,9 +106,9 @@ namespace siddiqsoft
             // https://designer.mocky.io/design
             auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
 
-            rest_request req {HttpMethodType::METHOD_POST,
+            rest_request req {HttpMethodType::METHOD_PUT,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
-                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
             req.setContent(d);
             if (auto ret = wrc->send(req); ret.has_value()) {
                 if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
@@ -126,7 +126,7 @@ namespace siddiqsoft
 
             rest_request req {HttpMethodType::METHOD_PATCH,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
-                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
             req.setContent(d);
             if (auto ret = wrc->send(req); ret.has_value()) {
                 if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
@@ -144,7 +144,7 @@ namespace siddiqsoft
 
             rest_request req {HttpMethodType::METHOD_DELETE,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
-                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
             if (auto ret = wrc->send(req); ret.has_value()) {
                 if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
                     return doc;
@@ -162,7 +162,7 @@ namespace siddiqsoft
 
         rest_request req {HttpMethodType::METHOD_POST,
                           siddiqsoft::Uri(std::format("https://www.postb.in/api/bin")),
-                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
             if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) return doc.at("binId");
@@ -178,7 +178,7 @@ namespace siddiqsoft
 
         rest_request req {HttpMethodType::METHOD_GET,
                           siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
             std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
@@ -189,6 +189,7 @@ namespace siddiqsoft
         }
     }
 
+
     TEST_F(PostBin, verb_GET_All)
     {
         // https://designer.mocky.io/design
@@ -196,7 +197,7 @@ namespace siddiqsoft
 
         rest_request req {HttpMethodType::METHOD_GET,
                           siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
-                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
             std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
@@ -209,14 +210,43 @@ namespace siddiqsoft
         }
     }
 
-    TEST_F(PostBin, verb_PUT_1)
+    TEST_F(PostBin, verb_POST_1)
     {
         // https://jsonplaceholder.typicode.com/guide/
         auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
 
-        rest_request req {HttpMethodType::METHOD_PUT,
-                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+        rest_request req {
+                HttpMethodType::METHOD_POST,
+                siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
+                {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}, {HF_EXPECT, nullptr}},
+                {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}}};
+
+        if (auto ret = wrc->send(req); ret.has_value()) {
+            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
+            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
+                EXPECT_EQ(1, doc.at("id"));
+            }
+            else {
+                EXPECT_FALSE(true) << ret.error();
+            }
+        }
+        else {
+            EXPECT_FALSE(true) << ret.error();
+        }
+    }
+
+
+    TEST_F(PostBin, verb_PUT_1)
+    {
+        // https://jsonplaceholder.typicode.com/guide/
+        auto wrc = CreateRESTClient({{"trace", true}, {"freshConnect", true}});
+
+        rest_request req {
+                HttpMethodType::METHOD_PUT,
+                siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
+                {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}, {HF_EXPECT, nullptr}},
+                {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
             std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
@@ -240,7 +270,7 @@ namespace siddiqsoft
 
         rest_request req {HttpMethodType::METHOD_PATCH,
                           siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}},
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}},
                           {{"title", __func__}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
@@ -264,7 +294,7 @@ namespace siddiqsoft
 
         rest_request req {HttpMethodType::METHOD_DELETE,
                           siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
             std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));

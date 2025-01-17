@@ -134,6 +134,7 @@ namespace siddiqsoft
     static const std::string HF_CONTENT_TYPE {"Content-Type"};
     static const std::string HF_DATE {"Date"};
     static const std::string HF_ACCEPT {"Accept"};
+    static const std::string HF_EXPECT {"Expect"};
     static const std::string HF_HOST {"Host"};
 
     static const std::string CONTENT_APPLICATION_JSON {"application/json"};
