@@ -63,6 +63,96 @@ namespace siddiqsoft
             //  get a context object
             // myCurlInstance = LibCurlSingleton::GetInstance();
         }
+
+    public:
+        auto listResources() -> nlohmann::json
+        {
+            // https://designer.mocky.io/design
+            auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+            rest_request req {HttpMethodType::METHOD_GET,
+                              siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+
+            if (auto ret = wrc->send(req); ret.has_value()) {
+                if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                    return doc;
+                }
+            }
+
+            return nullptr;
+        }
+
+        auto createResource(const nlohmann::json& d) -> nlohmann::json
+        {
+            // https://designer.mocky.io/design
+            auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+            rest_request req {HttpMethodType::METHOD_POST,
+                              siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+            req.setContent(d);
+            if (auto ret = wrc->send(req); ret.has_value()) {
+                if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                    return doc;
+                }
+            }
+
+            return nullptr;
+        }
+
+        auto updateResource(const std::string id, const nlohmann::json& d) -> nlohmann::json
+        {
+            // https://designer.mocky.io/design
+            auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+            rest_request req {HttpMethodType::METHOD_POST,
+                              siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+            req.setContent(d);
+            if (auto ret = wrc->send(req); ret.has_value()) {
+                if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                    return doc;
+                }
+            }
+
+            return nullptr;
+        }
+
+        auto patchResource(const std::string id, const nlohmann::json& d) -> nlohmann::json
+        {
+            // https://designer.mocky.io/design
+            auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+            rest_request req {HttpMethodType::METHOD_PATCH,
+                              siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+            req.setContent(d);
+            if (auto ret = wrc->send(req); ret.has_value()) {
+                if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                    return doc;
+                }
+            }
+
+            return nullptr;
+        }
+
+        auto deleteResource(const std::string id) -> nlohmann::json
+        {
+            // https://designer.mocky.io/design
+            auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+            rest_request req {HttpMethodType::METHOD_DELETE,
+                              siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
+                              {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+            if (auto ret = wrc->send(req); ret.has_value()) {
+                if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                    return doc;
+                }
+            }
+
+            return nullptr;
+        }
     };
 
 
@@ -73,11 +163,129 @@ namespace siddiqsoft
         rest_request req {HttpMethodType::METHOD_POST,
                           siddiqsoft::Uri(std::format("https://www.postb.in/api/bin")),
                           {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+
         if (auto ret = wrc->send(req); ret.has_value()) {
-            auto doc = ret->getContentBodyJSON();
-            return doc.at("binId");
+            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) return doc.at("binId");
         }
+
         return {};
+    }
+
+    TEST_F(PostBin, verb_GET_1)
+    {
+        // https://designer.mocky.io/design
+        auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+        rest_request req {HttpMethodType::METHOD_GET,
+                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+
+        if (auto ret = wrc->send(req); ret.has_value()) {
+            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
+            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
+                EXPECT_EQ(1, doc.at("userId"));
+            }
+        }
+    }
+
+    TEST_F(PostBin, verb_GET_All)
+    {
+        // https://designer.mocky.io/design
+        auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+        rest_request req {HttpMethodType::METHOD_GET,
+                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+
+        if (auto ret = wrc->send(req); ret.has_value()) {
+            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
+            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                // std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
+                EXPECT_TRUE(doc.is_array());
+                std::println(std::cerr, "{} - Array Size: {}", __func__, doc.size());
+                EXPECT_TRUE(doc.size() > 1);
+            }
+        }
+    }
+
+    TEST_F(PostBin, verb_PUT_1)
+    {
+        // https://jsonplaceholder.typicode.com/guide/
+        auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+        rest_request req {HttpMethodType::METHOD_PUT,
+                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+
+        if (auto ret = wrc->send(req); ret.has_value()) {
+            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
+            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
+                EXPECT_TRUE(doc.is_array());
+                std::println(std::cerr, "{} - Array Size: {}", __func__, doc.size());
+                EXPECT_TRUE(doc.size() > 1);
+            }
+            else {
+                EXPECT_FALSE(true) << ret.error();
+            }
+        }
+        else {
+            EXPECT_FALSE(true) << ret.error();
+        }
+    }
+
+    TEST_F(PostBin, verb_PATCH_1)
+    {
+        // https://designer.mocky.io/design
+        auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+        rest_request req {HttpMethodType::METHOD_PATCH,
+                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}},
+                          {{"title", "verb_PATCH_1"}}};
+
+        if (auto ret = wrc->send(req); ret.has_value()) {
+            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
+            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
+                EXPECT_TRUE(doc.is_array());
+                std::println(std::cerr, "{} - Array Size: {}", __func__, doc.size());
+                EXPECT_TRUE(doc.size() > 1);
+            }
+            else {
+                EXPECT_FALSE(true) << ret.error();
+            }
+        }
+        else {
+            EXPECT_FALSE(true) << ret.error();
+        }
+    }
+
+    TEST_F(PostBin, verb_DELETE_1)
+    {
+        // https://designer.mocky.io/design
+        auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+
+        rest_request req {HttpMethodType::METHOD_DELETE,
+                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
+                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}}};
+
+        if (auto ret = wrc->send(req); ret.has_value()) {
+            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
+            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
+                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
+                EXPECT_TRUE(doc.is_array());
+                std::println(std::cerr, "{} - Array Size: {}", __func__, doc.size());
+                EXPECT_TRUE(doc.size() > 1);
+            }
+            else {
+                EXPECT_FALSE(true) << ret.error();
+            }
+        }
+        else {
+            EXPECT_FALSE(true) << ret.error();
+        }
     }
 
     TEST_F(PostBin, multiple_simultaneously_1)
