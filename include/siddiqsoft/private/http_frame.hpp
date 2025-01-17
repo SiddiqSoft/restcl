@@ -77,6 +77,7 @@ namespace siddiqsoft
         Http3,
         UNKNOWN
     };
+
     NLOHMANN_JSON_SERIALIZE_ENUM(HttpProtocolVersionType,
                                  {{HttpProtocolVersionType::Http1, "HTTP/1.0"},
                                   {HttpProtocolVersionType::Http11, "HTTP/1.1"},
@@ -84,6 +85,7 @@ namespace siddiqsoft
                                   {HttpProtocolVersionType::Http2, "HTTP/2"},
                                   {HttpProtocolVersionType::Http3, "HTTP/3"},
                                   {HttpProtocolVersionType::UNKNOWN, "UNKNOWN"}});
+
     static const std::map<HttpProtocolVersionType, std::string> HttpProtocolVersions {
             {HttpProtocolVersionType::Http1, "HTTP/1.0"},
             {HttpProtocolVersionType::Http11, "HTTP/1.1"},
@@ -179,8 +181,6 @@ namespace siddiqsoft
         size_t      offset {0};
         size_t      remainingSize {0};
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(ContentType, type, body, length, offset, remainingSize);
-
         ContentType()  = default;
         ~ContentType() = default;
 
@@ -236,6 +236,8 @@ namespace siddiqsoft
         operator std::string() const { return body; }
 
         operator bool() const { return !body.empty(); }
+
+        friend void to_json(nlohmann::json&, const ContentType&);
     };
 
 
@@ -491,6 +493,15 @@ namespace siddiqsoft
                                {"content", src.content}};
     }
 
+    inline void to_json(nlohmann::json& dest, const ContentType& src)
+    {
+        dest = nlohmann::json {{"type", src.type},
+                               {"body", src.body},
+                               {"length", src.length},
+                               {"offset", src.offset},
+                               {"remainingSize", src.remainingSize}};
+    }
+
 } // namespace siddiqsoft
 
 template <>
@@ -525,5 +536,32 @@ struct std::formatter<siddiqsoft::HttpProtocolVersionType> : std::formatter<std:
         }
     }
 };
+
+template <>
+struct std::formatter<siddiqsoft::ContentType> : std::formatter<std::string>
+{
+    auto format(const siddiqsoft::ContentType& cntnt, std::format_context& ctx) const
+    {
+        return std::format_to(ctx.out(),
+                              "Content-Type:- type:{}\nlength:{}\noffset:{}\nremainingSize:{}\nbody:{}\n",
+                              cntnt.type,
+                              cntnt.length,
+                              cntnt.offset,
+                              cntnt.remainingSize,
+                              cntnt.body);
+    }
+    /*
+        auto format(const siddiqsoft::ContentType* cntnt, std::format_context& ctx) const
+        {
+            return std::formatter<std::string>::format(nlohmann::json(*cntnt).dump(), ctx);
+        }
+
+        auto format(const std::shared_ptr<siddiqsoft::ContentType> cntnt, std::format_context& ctx) const
+        {
+            return std::formatter<std::string>::format(nlohmann::json(*cntnt).dump(), ctx);
+        }
+    */
+};
+
 
 #endif // !HTTP_FRAME_HPP

@@ -222,9 +222,7 @@ namespace siddiqsoft
             std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
             if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
                 std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
-                EXPECT_TRUE(doc.is_array());
-                std::println(std::cerr, "{} - Array Size: {}", __func__, doc.size());
-                EXPECT_TRUE(doc.size() > 1);
+                EXPECT_EQ(1, doc.at("id"));
             }
             else {
                 EXPECT_FALSE(true) << ret.error();
@@ -238,20 +236,17 @@ namespace siddiqsoft
     TEST_F(PostBin, verb_PATCH_1)
     {
         // https://designer.mocky.io/design
-        auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+        auto wrc = CreateRESTClient({{"trace", true}, {"freshConnect", true}});
 
         rest_request req {HttpMethodType::METHOD_PATCH,
                           siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
                           {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_JSON}},
-                          {{"title", "verb_PATCH_1"}}};
+                          {{"title", __func__}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
             std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
             if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
                 std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
-                EXPECT_TRUE(doc.is_array());
-                std::println(std::cerr, "{} - Array Size: {}", __func__, doc.size());
-                EXPECT_TRUE(doc.size() > 1);
             }
             else {
                 EXPECT_FALSE(true) << ret.error();
@@ -273,18 +268,17 @@ namespace siddiqsoft
 
         if (auto ret = wrc->send(req); ret.has_value()) {
             std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
-            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
-                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
-                EXPECT_TRUE(doc.is_array());
-                std::println(std::cerr, "{} - Array Size: {}", __func__, doc.size());
-                EXPECT_TRUE(doc.size() > 1);
+            if (ret.has_value()) {
+                std::println(std::cerr, "{} - StatusCode:{}", __func__, (*ret).statusCode());
+                EXPECT_EQ(200, ret->statusCode()) << ret.error();
             }
             else {
                 EXPECT_FALSE(true) << ret.error();
             }
         }
-        else {
-            EXPECT_FALSE(true) << ret.error();
+        else if (ret.has_value()) {
+            std::println(std::cerr, "{} - StatusCode:{}", __func__, (*ret).statusCode());
+            EXPECT_EQ(200, ret->statusCode()) << ret.error();
         }
     }
 

@@ -662,18 +662,41 @@ namespace siddiqsoft
 
             // Setup the CURL library for callback for the *response* from the remote!
             if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK) return rc;
-            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) return rc;
 
-            if (req.getMethod() == HttpMethodType::METHOD_POST) {
-                // Set the output/send callback which will process the req's content
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK) return rc;
-                // If we have content to send then set the raw pointer into our callback
-                if (req.getContent()) rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, req.getContent().get());
+            // Special cases for each verb..
+            if ((req.getMethod() == HttpMethodType::METHOD_PATCH) || (req.getMethod() == HttpMethodType::METHOD_POST)) {
+                std::println(std::cerr,
+                             "{} - Method:{}  POSTFIELDS: -- {}:{}",
+                             __func__,
+                             req.getMethod(),
+                             req.getContent()->length,
+                             req.getContentBody());
+                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDS, cntnts.get()); rc != CURLE_OK) return rc;
+                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDSIZE, cntnts.get()->length); rc != CURLE_OK)
+                    return rc;
             }
+            // else
+            {
+                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) return rc;
+            }
+
+            // if (req.getMethod() == HttpMethodType::METHOD_POST) {
+            //  Set the output/send callback which will process the req's content
+            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK) return rc;
+            // If we have content to send then set the raw pointer into our callback
+            if (req.getContent()) rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, req.getContent().get());
+            //}
 
             return rc;
         }
 
+        /**
+         * @brief Set the Http version, the verb/method for this request against libCURL
+         * 
+         * @param ctxCurl The context bundle ptr
+         * @param req Reference to the request
+         * @return CURLcode Error from libCurl
+         */
         CURLcode prepareStartLine(CurlContextBundlePtr ctxCurl, rest_request& req)
         {
             CURLcode rc {CURLE_OK};
@@ -689,42 +712,29 @@ namespace siddiqsoft
                 case HttpProtocolVersionType::Http3:
                     rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_3);
                     break;
+                case HttpProtocolVersionType::Http11:
                 default: rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1); break;
             }
 
+            // Set the URL..
+            curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_URL, req.getUri().string().c_str());
             // Setup the method..
-            if (req.getMethod() == HttpMethodType::METHOD_GET) {
-                curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_URL, req.getUri().string().c_str());
-                curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 0L);
-            }
-            else if (req.getMethod() == HttpMethodType::METHOD_POST) {
-                curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_URL, req.getUri().string().c_str());
-                curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L);
-                // if (req.getContent() && req.getContent()->type.starts_with(CONTENT_APPLICATION_JSON)) {
-                //     if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_COPYPOSTFIELDS,
-                //     req.encodeContent().c_str());
-                //         rc != CURLE_OK)
-                //         return std::unexpected(rc);
-                //     if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDSIZE,
-                //     req.getContent()->length); rc
-                //     != CURLE_OK)
-                //         return std::unexpected(rc);
-                //     std::cerr << std::format(
-                //             "{} - Length: {} - Content:{}\n", __func__, req.getContent()->length,
-                //             req.encodeContent());
-                // }
-                // else
-                //{
-                //    // Set the output/send callback which will process the req's content
-                //    if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK)
-                //        return std::unexpected(rc);
-                //    // If we have content to send then set the raw pointer into our callback
-                //    if (req.getContent()) rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA,
-                //    req.getContent().get());
-                //}
+            switch (req.getMethod()) {
+                case HttpMethodType::METHOD_PUT: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_PUT, 1L); break;
+                case HttpMethodType::METHOD_PATCH:
+                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L);
+                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PATCH");
+                    break;
+                case HttpMethodType::METHOD_DELETE: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "DELETE"); break;
+                case HttpMethodType::METHOD_POST: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L); break;
+                case HttpMethodType::METHOD_GET:
+                default:
+                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTPGET, 1L);
+                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 0L);
+                    break;
             }
 
-            std::print(std::cerr, "{} - Completed.", __func__);
+            std::print(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
             return rc;
         }
 
