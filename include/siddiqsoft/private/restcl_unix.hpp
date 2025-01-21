@@ -893,8 +893,8 @@ namespace siddiqsoft
                     // Get the read/data size from server
                     curl_off_t cl {};
                     if (rc = curl_easy_getinfo(ctxCurl->curlHandle(), CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &cl); rc == CURLE_OK) {
-                        if ((cl > 0) && (cl != -1) && (dest.content->length == 0))
-                            dest.content->remainingSize = dest.content->length = cl;
+                        if ((cl > 0) && (cl != -1) && dest.getContent() && (dest.getContent()->length == 0))
+                            dest.getContent()->remainingSize = dest.getContent()->length = cl;
                     }
                 }
             }
@@ -905,7 +905,7 @@ namespace siddiqsoft
                            __func__,
                            curl_easy_strerror(rc),
                            sc,
-                           dest.content->length);
+                           dest.getContent()->length);
             }
 
             std::print(std::cerr, "{} - Completed.", __func__);
