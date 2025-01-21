@@ -509,9 +509,9 @@ namespace siddiqsoft
     public:
         ~HttpRESTClient()
         {
-            if (_config.value("trace", false)) {
+            #if defined (DEBUG)
                 std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
-            }
+            #endif
         }
 
         /**
@@ -914,10 +914,8 @@ namespace siddiqsoft
                            curl_easy_strerror(rc),
                            sc,
                            dest.getContent()->length);
-#endif
             }
 
-#if defined(DEBUG)
             std::print(std::cerr, "{} - Completed.", __func__);
 #endif
         }
