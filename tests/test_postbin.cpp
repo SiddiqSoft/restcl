@@ -104,13 +104,14 @@ namespace siddiqsoft
         auto updateResource(const std::string id, const nlohmann::json& d) -> nlohmann::json
         {
             // https://designer.mocky.io/design
-            auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
+            auto wrc = CreateRESTClient({{"trace", true}, {"freshConnect", true}});
 
             rest_request req {HttpMethodType::METHOD_PUT,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
                               {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
             req.setContent(d);
             if (auto ret = wrc->send(req); ret.has_value()) {
+                std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
                 if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
                     return doc;
                 }
@@ -212,88 +213,56 @@ namespace siddiqsoft
 
     TEST_F(PostBin, verb_POST_1)
     {
-        // https://jsonplaceholder.typicode.com/guide/
-        auto wrc = CreateRESTClient({{"trace", true}, {"freshConnect", true}});
-
-        rest_request req {
-                HttpMethodType::METHOD_POST,
-                siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}},
-                {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}}};
-
-        if (auto ret = wrc->send(req); ret.has_value()) {
-            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
-            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
-                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
-                EXPECT_EQ(1, doc.at("id"));
-            }
-            else {
-                EXPECT_FALSE(true) << ret.error();
-            }
-        }
-        else {
-            EXPECT_FALSE(true) << ret.error();
-        }
+        auto doc = PostBin::createResource(
+                {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
+        std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
+        EXPECT_EQ(1, doc.at("userId"));
+        EXPECT_EQ(__func__, doc.at("source"));
     }
 
 
     TEST_F(PostBin, verb_PUT_1)
     {
-        // https://jsonplaceholder.typicode.com/guide/
-        auto wrc = CreateRESTClient({{"trace", true}, {"freshConnect", true}});
+        auto doc = PostBin::createResource(
+                {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
+        std::println(std::cerr, "{} - Create'd Response:\n{}", __func__, doc.dump(2));
+        EXPECT_EQ(1, doc.at("userId"));
+        EXPECT_EQ(__func__, doc.at("source"));
 
-        rest_request req {
-                HttpMethodType::METHOD_PUT,
-                siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}},
-                {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}}};
-
-        if (auto ret = wrc->send(req); ret.has_value()) {
-            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
-            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
-                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
-                EXPECT_EQ(1, doc.at("id"));
-            }
-            else {
-                EXPECT_FALSE(true) << ret.error();
-            }
-        }
-        else {
-            EXPECT_FALSE(true) << ret.error();
-        }
+        auto docUpdated = PostBin::updateResource("1", doc);
+        std::println(std::cerr, "{} - Update'd Response:\n{}", __func__, docUpdated.dump(2));
+        EXPECT_EQ(doc.at("index"), docUpdated.at("index"));
+        EXPECT_EQ(__func__, docUpdated.at("source"));
     }
 
     TEST_F(PostBin, verb_PATCH_1)
     {
-        // https://designer.mocky.io/design
-        auto wrc = CreateRESTClient({{"trace", true}, {"freshConnect", true}});
+        auto doc = PostBin::createResource(
+                {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
+        std::println(std::cerr, "{} - Create'd Response:\n{}", __func__, doc.dump(2));
+        EXPECT_EQ(1, doc.at("userId"));
+        EXPECT_EQ(__func__, doc.at("source"));
 
-        rest_request req {HttpMethodType::METHOD_PATCH,
-                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
-                          {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}},
-                          {{"title", __func__}}};
-
-        if (auto ret = wrc->send(req); ret.has_value()) {
-            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump(2));
-            if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
-                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump(2));
-            }
-            else {
-                EXPECT_FALSE(true) << ret.error();
-            }
-        }
-        else {
-            EXPECT_FALSE(true) << ret.error();
-        }
+        doc["source"]   = "New Source Name";
+        auto docUpdated = PostBin::patchResource(doc.at("id").dump(), doc);
+        std::println(std::cerr, "{} - Update'd Response:\n{}", __func__, docUpdated.dump(2));
+        EXPECT_EQ(1, docUpdated.at("userId"));
+        EXPECT_EQ("New Source Name", docUpdated.at("source"));
     }
 
     TEST_F(PostBin, verb_DELETE_1)
     {
+        auto doc = PostBin::createResource(
+                {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
+        std::println(std::cerr, "{} - Create'd Response:\n{}", __func__, doc.dump(2));
+        EXPECT_EQ(1, doc.at("userId"));
+        EXPECT_EQ(__func__, doc.at("source"));
+
         // https://designer.mocky.io/design
         auto wrc = CreateRESTClient({{"trace", false}, {"freshConnect", true}});
 
         rest_request req {HttpMethodType::METHOD_DELETE,
-                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
+                          siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", doc.at("id").dump())),
                           {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
@@ -336,12 +305,12 @@ namespace siddiqsoft
                                }
                                else if (resp.has_value()) {
                                    passTest += resp->statusCode() != 0;
-                                   /*std::print(std::cerr,
+                                   std::print(std::cerr,
                                               "{} Threads::test_1 - Got error: {} for {} -- {}\n",
                                               __func__,
                                               resp->statusCode(),
                                               req.getUri().authority.host,
-                                              resp->reasonCode());*/
+                                              resp->reasonCode());
                                }
                                else {
                                    std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);

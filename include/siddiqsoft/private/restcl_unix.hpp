@@ -678,24 +678,50 @@ namespace siddiqsoft
             if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) return rc;
 
             // Special cases for each verb..
-
-            if ((req.getMethod() == HttpMethodType::METHOD_PATCH) || (req.getMethod() == HttpMethodType::METHOD_POST)) {
-                if (_config.value("trace", false)) {
-                    std::println(std::cerr,
-                                 "{} - Method:{}  POSTFIELDS: -- {}:{}",
-                                 __func__,
-                                 req.getMethod(),
-                                 req.getContent()->length,
-                                 req.getContentBody());
-                }
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDS, cntnts.get()); rc != CURLE_OK) return rc;
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDSIZE, cntnts.get()->length); rc != CURLE_OK)
+            if ((req.getMethod() == HttpMethodType::METHOD_PUT) || (req.getMethod() == HttpMethodType::METHOD_PATCH) ||
+                (req.getMethod() == HttpMethodType::METHOD_POST))
+            {
+                // WARNING!
+                // The cntnts is the *incoming* or *response* FROM the remote server!
+                // The req object contains contents that is to be SENT *to* the remote server!
+                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDS, req.getContentBody().c_str()); rc != CURLE_OK)
                     return rc;
+                else {
+                    if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDSIZE, req.getContent()->length);
+                        rc != CURLE_OK)
+                        return rc;
+                    else {
+                        // Why do this again?!
+                        // When you call the POSTFIELDS it resets the verb to POST so we have to ensure that it is set
+                        // back to the requested verb such as PUT or PATCH!
+                        prepareStartLine(ctxCurl, req);
+
+                        if (_config.value("trace", false)) {
+                            std::println(std::cerr,
+                                         "{} - Method:{}  POSTFIELDS: -- {}:{}",
+                                         __func__,
+                                         req.getMethod(),
+                                         req.getContent()->length,
+                                         req.getContentBody());
+                        }
+                    }
+                }
             }
 
-            //  Set the output/send callback which will process the req's content
-            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK) return rc;
-            if (req.getContent()) rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, req.getContent().get());
+            // else
+            {
+                if (req.getContent() && (req.getContent()->length > 0)) {
+                    std::println(std::cerr,
+                                 "{} - Method:{}  Registering data sender for {} bytes.",
+                                 __func__,
+                                 req.getMethod(),
+                                 req.getContent()->length);
+                    //  Set the output/send callback which will process the req's content
+                    if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK)
+                        return rc;
+                    if (req.getContent()) rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, req.getContent().get());
+                }
+            }
 
             return rc;
         }
@@ -730,18 +756,33 @@ namespace siddiqsoft
             curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_URL, req.getUri().string().c_str());
             // Setup the method..
             switch (req.getMethod()) {
-                case HttpMethodType::METHOD_PUT: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_PUT, 1L); break;
+                case HttpMethodType::METHOD_PUT:
+                    // req.setHeader("Transfer-Encoding", "chunked");
+                    //curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_PUT, 1L);
+                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PUT");
+                    //curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_UPLOAD, 1L);
+                    req.setHeader("Transfer-Encoding", {});
+                    req.setHeader("Expect", {});
+                    break;
                 case HttpMethodType::METHOD_PATCH:
-                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L);
+                    // req.setHeader("Transfer-Encoding", "chunked");
                     curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PATCH");
                     break;
                 case HttpMethodType::METHOD_DELETE: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "DELETE"); break;
-                case HttpMethodType::METHOD_POST: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L); break;
+                case HttpMethodType::METHOD_OPTIONS:
+                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "OPTIONS");
+                    break;
+                case HttpMethodType::METHOD_POST:
+                    // req.setHeader("Transfer-Encoding", "chunked");
+                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L);
+                    // curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_UPLOAD, 0L);
+                    break;
+                case HttpMethodType::METHOD_HEAD: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_NOBODY, 1L); break;
                 case HttpMethodType::METHOD_GET:
-                default:
                     curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTPGET, 1L);
                     curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 0L);
                     break;
+                default: std::print(std::cerr, "{} - {} to {} UNSUPPORTED verb!", __func__, req.getMethod(), req.getHost()); break;
             }
 
             if (_config.value("trace", false)) {
@@ -769,7 +810,7 @@ namespace siddiqsoft
                             }
                             else {
                                 // Empty value means remove that field.
-                                if (auto ch = curl_slist_append(curlHeaders, std::format("{};", k).c_str()); ch != NULL)
+                                if (auto ch = curl_slist_append(curlHeaders, std::format("{}:", k).c_str()); ch != NULL)
                                     curlHeaders = ch;
                             }
                         }
@@ -784,7 +825,7 @@ namespace siddiqsoft
                                 curlHeaders = ch;
                         }
                         else if (v.empty() || v.is_null()) {
-                            if (auto ch = curl_slist_append(curlHeaders, std::format("{};", k).c_str()); ch != NULL)
+                            if (auto ch = curl_slist_append(curlHeaders, std::format("{}:", k).c_str()); ch != NULL)
                                 curlHeaders = ch;
                         }
                         else if (!v.empty()) {
@@ -800,7 +841,7 @@ namespace siddiqsoft
                     // Immediately save so we ensure proper cleanup
                     std::shared_ptr<struct curl_slist> retHeaders {curlHeaders, curl_slist_free_all};
                     if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTPHEADER, curlHeaders); rc == CURLE_OK) {
-                        //std::print(std::cerr, "{} - Completed.", __func__);
+                        // std::print(std::cerr, "{} - Completed.", __func__);
                         return retHeaders;
                     }
                 }
