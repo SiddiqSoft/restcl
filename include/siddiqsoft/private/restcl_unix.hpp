@@ -591,7 +591,9 @@ namespace siddiqsoft
             CURLcode      rc {};
 
             if (!isInitialized) {
+#if defined(DEBUG)
                 std::print(std::cerr, "{} - Not INITIALIZED for `{}` Uri: {}\n", __func__, req.getMethod(), req.getUri());
+#endif
                 return std::unexpected(EBUSY);
             }
 
@@ -661,7 +663,9 @@ namespace siddiqsoft
             }
             else {
                 ioAttemptFailed++;
+#if defined(DEBUG)
                 std::print(std::cerr, "{} - getting context failed!\n{}\n", __func__, nlohmann::json(req).dump(2));
+#endif
                 return std::unexpected(ENETUNREACH);
             }
 
@@ -696,14 +700,14 @@ namespace siddiqsoft
                         // back to the requested verb such as PUT or PATCH!
                         prepareStartLine(ctxCurl, req);
 
-                        if (_config.value("trace", false)) {
-                            std::println(std::cerr,
-                                         "{} - Method:{}  POSTFIELDS: -- {}:{}",
-                                         __func__,
-                                         req.getMethod(),
-                                         req.getContent()->length,
-                                         req.getContentBody());
-                        }
+#if defined(DEBUG)
+                        std::println(std::cerr,
+                                     "{} - Method:{}  POSTFIELDS: -- {}:{}",
+                                     __func__,
+                                     req.getMethod(),
+                                     req.getContent()->length,
+                                     req.getContentBody());
+#endif
                     }
                 }
             }
@@ -711,11 +715,13 @@ namespace siddiqsoft
             // else
             {
                 if (req.getContent() && (req.getContent()->length > 0)) {
+#if defined(DEBUG)
                     std::println(std::cerr,
                                  "{} - Method:{}  Registering data sender for {} bytes.",
                                  __func__,
                                  req.getMethod(),
                                  req.getContent()->length);
+#endif
                     //  Set the output/send callback which will process the req's content
                     if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK)
                         return rc;
@@ -758,9 +764,9 @@ namespace siddiqsoft
             switch (req.getMethod()) {
                 case HttpMethodType::METHOD_PUT:
                     // req.setHeader("Transfer-Encoding", "chunked");
-                    //curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_PUT, 1L);
+                    // curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_PUT, 1L);
                     curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PUT");
-                    //curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_UPLOAD, 1L);
+                    // curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_UPLOAD, 1L);
                     req.setHeader("Transfer-Encoding", {});
                     req.setHeader("Expect", {});
                     break;
@@ -869,7 +875,9 @@ namespace siddiqsoft
                 std::print(std::cerr, "{} - Error:{}\n", __func__, ex.what());
             }
 
+#if defined(DEBUG)
             std::print(std::cerr, "{} - Completed.", __func__);
+#endif
         }
 
 
@@ -898,7 +906,7 @@ namespace siddiqsoft
                     }
                 }
             }
-
+#if defined(DEBUG)
             if (rc != CURLE_OK) {
                 std::print(std::cerr,
                            "{} - rc:{}  sc:{}  content-length:{}",
@@ -906,9 +914,12 @@ namespace siddiqsoft
                            curl_easy_strerror(rc),
                            sc,
                            dest.getContent()->length);
+#endif
             }
 
+#if defined(DEBUG)
             std::print(std::cerr, "{} - Completed.", __func__);
+#endif
         }
 
         /// @brief Serializer to ostream for RESResponseType
