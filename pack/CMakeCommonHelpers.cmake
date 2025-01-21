@@ -8,7 +8,7 @@ include(pack/CPM.cmake)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     # Detect and normalize the version
     if(DEFINED CI_BUILDID)
-        message(STATUS "Using the CI supplied buildid: CURRENT_PROJECT_VERSION --> ${CI_BUILDID}")
+        #message(STATUS "Using the CI supplied buildid: CURRENT_PROJECT_VERSION --> ${CI_BUILDID}")
 
         # Check if we have a last fragment.
         # When building a non release we end up with fragmented/temporary gitversion
@@ -16,14 +16,14 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         # where the `99` at the end indicates the commit count on this branch.
         set(VERSION_LAST "")
         string(REGEX MATCH "[\+]\+([0-9]+)$" VERSION_END_MATCH ${CI_BUILDID})
-        message(STATUS "Match count: ${CMAKE_MATCH_COUNT}")
+        #message(STATUS "Match count: ${CMAKE_MATCH_COUNT}")
         if(CMAKE_MATCH_COUNT EQUAL 1)
             set(VERSION_LAST         "${CMAKE_MATCH_1}")
         endif()
 
         # Match the first full version
         string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.*([0-9]+)*" VERSION_MATCH ${CI_BUILDID})
-        message(STATUS "Match count: ${CMAKE_MATCH_COUNT}")
+        #message(STATUS "Match count: ${CMAKE_MATCH_COUNT}")
         if(CMAKE_MATCH_COUNT EQUAL 3)
             set(VERSION_MAJOR         "${CMAKE_MATCH_1}")
             set(VERSION_MINOR         "${CMAKE_MATCH_2}")
@@ -38,9 +38,9 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         if(NOT (VERSION_LAST STREQUAL ""))
             string(APPEND CURRENT_PROJECT_VERSION ".${VERSION_LAST}")
         endif()
-        message(STATUS "Parsed out the CI_BUILDID  --> CURRENT_PROJECT_VERSION:${CURRENT_PROJECT_VERSION}")
+        #message(STATUS "Parsed out the CI_BUILDID  --> CURRENT_PROJECT_VERSION:${CURRENT_PROJECT_VERSION}")
     else()
         set(CURRENT_PROJECT_VERSION "0.0.0.0")
-        message(STATUS "Using the dev-only version --> CURRENT_PROJECT_VERSION:${CURRENT_PROJECT_VERSION}")
+        #message(STATUS "Using the dev-only version --> CURRENT_PROJECT_VERSION:${CURRENT_PROJECT_VERSION}")
     endif()
 endif()

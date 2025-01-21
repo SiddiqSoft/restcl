@@ -27,7 +27,7 @@ We use [NuGet](https://nuget.org) for dependencies. Why? Simply put, it is the *
 Package     | Comments
 -----------:|:----------
 [nlohmann.json](https://github.com/nlohmann/json)<br/>![](https://img.shields.io/nuget/v/nlohmann.json)| This is one of the simplest JSON libraries for C++.<br/>We have to make choices and this is our choice: clean, simple and elegant over efficiency. Our use-case <br/>The library is quite conformant and lends itself to general purpose use since it uses `<vector>` underneath it all.<br/>We leave time and experience (plus manpower) to optimize this library for us. So long as it works and we do not have to worry about some JAVA-esque or C-style interface!
-[azure-cpp-utils](https://github.com/SiddiqSoft/azure-cpp-utils)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.AzureCppUtils) | This is library with helpers for encryption, base64 encode/decode and conversion of utf8<-->wide strings.
+[azure-cpp-utils](https://github.com/SiddiqSoft/azure-cpp-utils)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.restcl) | This is library with helpers for encryption, base64 encode/decode and conversion of utf8<-->wide strings.
 [SplitUri](https://github.com/SiddiqSoft/SplitUri)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.SplitUri) | This is library provides parsing of the url.
 [string2map](https://github.com/SiddiqSoft/string2map)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.string2map) | This library provides for parsing of HTTP headers into a std::map
 [acw32h](https://github.com/SiddiqSoft/acw32h)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.acw32h) | This library provides for an auto-closing wrapper for HINTERNET, HSESSION and HINSTANCE objects.
@@ -61,9 +61,9 @@ This is the starting point for your client. We make extensive use of initializer
         WinHttpRESTClient(WinHttpRESTClient&&);
         WinHttpRESTClient(const std::string& ua = {});
 
-        basic_response send(basic_request& req);
-        void send(basic_request&& req, basic_callbacktype&& callback);
-        void send(basic_request&& req, basic_callbacktype& callback);
+        rest_response send(rest_request& req);
+        void send(rest_request&& req, basic_callbacktype&& callback);
+        void send(rest_request&& req, basic_callbacktype& callback);
     };
 ```
 
@@ -89,7 +89,7 @@ Sets the HTTP/2 option and the decompression options
 
 #### `WinHttpRESTClient::send`
 ```cpp
-    basic_response send(basic_request& req);
+    rest_response send(rest_request& req);
 ```
 
 Uses the existing hSession to connect, send, receive data from the remote server and returns the response in **synchronous mode**.
@@ -99,16 +99,16 @@ Uses the existing hSession to connect, send, receive data from the remote server
 
 Parameter | Type | Description
 ---------:|------|:-----------
-`req` | [`basic_request`](#class-basic_request) | The Request to be sent to the remote server.
-return | [`basic_response`](#alias-basic_response) | The Response from the remote server or IO error code and message.
+`req` | [`rest_request`](#class-rest_request) | The Request to be sent to the remote server.
+return | [`rest_response`](#alias-rest_response) | The Response from the remote server or IO error code and message.
 
 See the [examples](#examples) section.
 
 
 #### `WinHttpRESTClient::send`
 ```cpp
-    void send(basic_request&& req, basic_callbacktype&& callback);
-    void send(basic_request&& req, basic_callbacktype& callback);
+    void send(rest_request&& req, basic_callbacktype&& callback);
+    void send(rest_request&& req, basic_callbacktype& callback);
 ```
 
 Uses the existing hSession to connect, send, receive data from the remote server and fire the callback.
@@ -124,7 +124,7 @@ Returns immediately once the request has been queued into the threadpool.
 
 Parameter | Type | Description
 ---------:|------|:-----------
-`req` | [`basic_request`](#class-basic_request) | The Request to be sent to the remote server. The data is required to be moved into the function as it takes ownership of the request lifetime.
+`req` | [`rest_request`](#class-rest_request) | The Request to be sent to the remote server. The data is required to be moved into the function as it takes ownership of the request lifetime.
 `callback` | [`basic_callbacktype`](#alias-basic_callbacktype) | The callback is invoked on completion or an error. There are two versions: you can pass an existing function/member or a lambda.
 
 See the [examples](#examples) section.
@@ -134,8 +134,8 @@ See the [examples](#examples) section.
 
 ### Signature
 ```cpp
-    using basic_callbacktype = std::function<void(const basic_request&  req,
-                                                  const basic_response& resp)>;
+    using basic_callbacktype = std::function<void(const rest_request&  req,
+                                                  const rest_response& resp)>;
 ```
 
 Callback invoked by the library on error / success. The request and response are valid for the lifespan of the call but may not be modified.
@@ -144,28 +144,28 @@ Callback invoked by the library on error / success. The request and response are
 
 Parameter | Type | Description
 ---------:|------|:-----------
-`req` | [`const basic_request`](#class-basic_request) | The Request to be sent to the remote server.
-`resp` | [`const basic_response`](#class-basic_response) | The Response from the remote server.
+`req` | [`const rest_request`](#class-rest_request) | The Request to be sent to the remote server.
+`resp` | [`const rest_response`](#class-rest_response) | The Response from the remote server.
 
 <hr/>
 
 
-## class `basic_request`
+## class `rest_request`
 
 ### Signature
 ```cpp
-class basic_request
+class rest_request
 {
 protected:
-    basic_request();
-    explicit basic_request(const std::string& endpoint);
-    explicit basic_request(const Uri<char>& s);
+    rest_request();
+    explicit rest_request(const std::string& endpoint);
+    explicit rest_request(const Uri<char>& s);
 
 public:
     const auto&     operator[](const auto& key) const;
     auto&           operator[](const auto& key);
-    basic_request&  setContent(const std::string& contentType, const std::string& content);
-    basic_request&  setContent(const nlohmann::json& c);
+    rest_request&  setContent(const std::string& contentType, const std::string& content);
+    rest_request&  setContent(const nlohmann::json& c);
     std::string     getContent() const;
     void            encodeHeaders_to(std::string& rs) const;
     std::string     encode() const;
@@ -192,7 +192,7 @@ Field | Type | Description
 
 #### Member Functions
 
-##### `basic_request::operator[] const`
+##### `rest_request::operator[] const`
 ```cpp
     const auto&        operator[](const auto& key) const;
 ```
@@ -205,7 +205,7 @@ To access the request path: `req["request"]["url"]` and to access the `Content-T
 
 > API simplicity. Use an access model that is simple and flexible without the need for adding specific methods
 
-##### `basic_request::operator[]`
+##### `rest_request::operator[]`
 ```cpp
     auto&              operator[](const auto& key);
 ```
@@ -216,10 +216,10 @@ Mutator for `request`, `headers` and `content` (returns the key within the under
 
 To access the request path: `req["request"]["url"]` and to access the `Content-Type`, you'd use `req["headers"]["Content-Type"]`. You can also use `json_pointer` notation to access the elements: `req["/headers/Content-Type"_json_pointer]`
 
-##### `basic_request::setContent`
+##### `rest_request::setContent`
 
 ```cpp
-    basic_request& setContent(const std::string& contentType,
+    rest_request& setContent(const std::string& contentType,
                               const std::string& content);
 ```
 
@@ -235,10 +235,10 @@ Functionally equivalent to the following:
 ```
 > If the header `Content-Length` is not set then the value is calculated during the `encode()` invocation.
 
-##### `basic_request::setContent`
+##### `rest_request::setContent`
 
 ```cpp
-    basic_request& setContent(const nlohmann::json& c);
+    rest_request& setContent(const nlohmann::json& c);
 ```
 
 - contentType - Set the content type header
@@ -248,7 +248,7 @@ Convenience method to set non-JSON content along with the headers `Content-Type`
 
 Functionally equivalent to the following: `req["content"]= content; // where content is json`
 
-##### `basic_request::getContent const`
+##### `rest_request::getContent const`
 
 ```cpp
     std::string        getContent() const;
@@ -258,7 +258,7 @@ Returns a serialized representation of the content.
 
 If the content is json then the method `.dump()` is invoked to serialized the json.
 
-##### `basic_request::encodeHeaders_to`
+##### `rest_request::encodeHeaders_to`
 
 ```cpp
     void               encodeHeaders_to(std::string& rs) const;
@@ -266,7 +266,7 @@ If the content is json then the method `.dump()` is invoked to serialized the js
 
 Helper to encode the headers to a given string using `std::format` and `std::back_inserter`.
 
-##### `basic_request::encode`
+##### `rest_request::encode`
 
 ```cpp
     std::string        encode() const;
@@ -277,14 +277,14 @@ Helper encodes the HTTP request with request line, header section and the conten
 <hr/>
 
 
-## class `basic_response`
+## class `rest_response`
 
 ### Signature
 ```cpp
-class basic_response
+class rest_response
 {
 protected:
-    basic_response();
+    rest_response();
 
 public:
     struct response_code
@@ -293,12 +293,12 @@ public:
         std::string message {};
     };
 
-    basic_response(const basic_response&);
-    basic_response(basic_response&&);
+    rest_response(const rest_response&);
+    rest_response(rest_response&&);
 
-    basic_response& operator=(basic_response&&);
-    basic_response& operator=(const basic_response&);
-    basic_response& setContent(const std::string&);
+    rest_response& operator=(rest_response&&);
+    rest_response& operator=(const rest_response&);
+    rest_response& setContent(const std::string&);
     const auto&     operator[](const auto&) const;
     auto&           operator[](const auto&);
     std::string     encode() const;
@@ -313,7 +313,7 @@ protected:
                          {"content", nullptr} };
 ```
 
-#### `basic_response::response_code`
+#### `rest_response::response_code`
 
 Name        | Type | Description
 -----------:|------|:-----------
@@ -334,10 +334,10 @@ The internal `response_code` struct represents the IO error code and IO error me
 > Omit eplanations for constructors. They're pretty standard default/empty, move constructors and move assignment operator.
 
 
-##### `basic_response::setContent`
+##### `rest_response::setContent`
 
 ```cpp
-    basic_response&              setContent(const std::string& content);
+    rest_response&              setContent(const std::string& content);
 ```
 - content - Set the content body as read by the server.
 
@@ -346,7 +346,7 @@ This method should not be used by the client.
 The client must use the headers to figure out the type of the content and its length.
 
 
-##### `basic_response::success`
+##### `rest_response::success`
 
 ```cpp
     bool                             success() const;
@@ -355,7 +355,7 @@ The client must use the headers to figure out the type of the content and its le
 Returns true if the HTTP status >=99 and <400. False if there is any IO error or status >400 from the remote server.
 
 
-##### `basic_response::operator[] const`
+##### `rest_response::operator[] const`
 ```cpp
     const auto&        operator[](const auto& key) const;
 ```
@@ -368,7 +368,7 @@ To access the request path: `req["response"]["url"]` and to access the `Content-
 
 > API simplicity. Use an access model that is simple and flexible without the need for adding specific methods
 
-##### `basic_response::operator[]`
+##### `rest_response::operator[]`
 ```cpp
     auto&              operator[](const auto& key);
 ```
@@ -379,19 +379,19 @@ Mutator for `response`, `headers` and `content` (returns the key within the unde
 
 To access the request path: `resp["request"]["url"]` and to access the `Content-Type`, you'd use `resp["headers"]["Content-Type"]`. You can also use `json_pointer` notation to access the elements: `req["/headers/Content-Type"_json_pointer]`
 
-##### `basic_response::encode`
+##### `rest_response::encode`
 
 ```cpp
     std::string                      encode() const;
 ```
 
-##### `basic_response::status`
+##### `rest_response::status`
 
 ```cpp
     response_code status() const;
 ```
 
-Returns [`response_code`](#basic_responseresponse_code) status/ioerror and the reason-phrase or ioerror message.
+Returns [`response_code`](#rest_responseresponse_code) status/ioerror and the reason-phrase or ioerror message.
 
 Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or the WinHTTP error code and the corresponding WinHTTP message.
 
@@ -413,7 +413,7 @@ Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or t
 
     // Create a simple GET request from the endpoint string
     // Send the request and invoke the callback.
-    wrc.send( "https://google.com"_GET,
+    wrc->send( "https://google.com"_GET,
               [](const auto& req, const auto& resp) {
                  if(resp.success())
                     doSomething();
@@ -439,7 +439,7 @@ Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or t
     // headers Content-Length and Content-Type
     myPost.setContent( { {"foo", "bar"}, {"goto", 99} } );
     // Send the request and invoke the callback
-    wrc.send( std::move(myReq), [](auto& req, auto& resp){
+    wrc->send( std::move(myReq), [](auto& req, auto& resp){
                                     if(resp.success())
                                         doSomething();
                                     else
