@@ -510,7 +510,8 @@ namespace siddiqsoft
         }
 
     protected:
-        HttpRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+        HttpRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}, std::shared_ptr<LibCurlSingleton> lci = {})
+            : singletonInstance(lci)
         {
             configure(cfg, std::forward<basic_callbacktype&&>(cb));
         }
@@ -935,14 +936,9 @@ namespace siddiqsoft
 
     public:
         [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
-                -> std::shared_ptr<HttpRESTClient>
         {
-            std::shared_ptr<HttpRESTClient> rcl(new HttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
-            rcl->singletonInstance = LibCurlSingleton::GetInstance();
-#if defined(DEBUG0)
-            std::print(std::cerr, "{} - New HttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
-#endif
-            return rcl;
+            return std::shared_ptr<HttpRESTClient> {
+                    new HttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb), LibCurlSingleton::GetInstance())};
         }
     };
 
