@@ -158,7 +158,10 @@ namespace siddiqsoft
 
         ~CurlContextBundle()
         {
+#if defined(DEBUG)
             std::print(std::cerr, "{} - 1/2 Clearing contents..\n", __func__);
+#endif
+
             if (_contents) _contents.reset();
             if (_hndl) {
                 _pool.checkin(std::move(_hndl));
@@ -230,11 +233,15 @@ namespace siddiqsoft
 
         ~LibCurlSingleton()
         {
+#if defined(DEBUG)
             std::print(std::cerr, "{} - Invoked. Cleanup {} resource_pool objects..\n", __func__, curlHandlePool.size());
+#endif
             curlHandlePool.clear();
+#if defined(DEBUG)
             std::print(std::cerr,
                        "{} - Invoked. Cleanup global LibCURL..\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-**-*\n",
                        __func__);
+#endif
             curl_global_cleanup();
         }
 
@@ -282,9 +289,11 @@ namespace siddiqsoft
 #endif
             auto ctxbndlnew = std::shared_ptr<CurlContextBundle>(new CurlContextBundle {
                     curlHandlePool, std::shared_ptr<CURL> {curlHandle, [](CURL* cc) {
+#if defined(DEBUG)
                                                                std::print(std::cerr,
                                                                           "Invoking curl_easy_cleanup...{}\n",
                                                                           reinterpret_cast<void*>(cc));
+#endif
                                                                if (cc != NULL) curl_easy_cleanup(cc);
                                                            }}});
 #if defined(DEBUG0)
@@ -509,9 +518,9 @@ namespace siddiqsoft
     public:
         ~HttpRESTClient()
         {
-            #if defined (DEBUG)
-                std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
-            #endif
+#if defined(DEBUG)
+            std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
+#endif
         }
 
         /**

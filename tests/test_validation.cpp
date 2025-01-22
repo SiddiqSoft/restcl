@@ -58,7 +58,9 @@ namespace siddiqsoft
         void SetUp() override
         {
 #if defined(__linux__) || defined(__APPLE__)
+#if defined(DEBUG)
             std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+#endif
             myCurlInstance = LibCurlSingleton::GetInstance();
 #endif
         }
@@ -73,7 +75,7 @@ namespace siddiqsoft
         EXPECT_EQ("12001-ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.", rre.to_string());
     }
 #endif
-    
+
     TEST_F(Validation, test_rest_result_error_posix)
     {
         uint32_t          cc {ECONNRESET};
