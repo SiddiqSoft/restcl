@@ -62,34 +62,36 @@ namespace siddiqsoft
 {
     /// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
     /// Essentially we're a convenience wrapper on the rest_request.
-    class rest_request : public http_frame
+    template <typename CharT = char>
+    class rest_request : public http_frame<CharT>
     {
     public:
         rest_request() = default;
 
-        rest_request(const HttpMethodType& v, const Uri<char, AuthorityHttp<char>> u)
+        rest_request(const HttpMethodType& v, const Uri<CharT, AuthorityHttp<CharT>> u)
         {
-            setMethod(v);
-            setUri(u);
+            this->setMethod(v);
+            this->setUri(u);
         }
 
-        rest_request(const HttpMethodType& v, const Uri<char, AuthorityHttp<char>> u, const nlohmann::json& h)
+        rest_request(const HttpMethodType& v, const Uri<CharT, AuthorityHttp<CharT>> u, const nlohmann::json& h)
         {
-            setHeaders(h);
-            setMethod(v);
-            setUri(u);
+            this->setHeaders(h);
+            this->setMethod(v);
+            this->setUri(u);
         }
 
-        rest_request(const HttpMethodType&                v,
-                     const Uri<char, AuthorityHttp<char>> u,
-                     const nlohmann::json&                h,
-                     const nlohmann::json&                c)
+        rest_request(const HttpMethodType&                  v,
+                     const Uri<CharT, AuthorityHttp<CharT>> u,
+                     const nlohmann::json&                  h,
+                     const nlohmann::json&                  c)
         {
-            setHeaders(h);
-            setMethod(v);
-            setUri(u);
-            setContent(c);
+            this->setHeaders(h);
+            this->setMethod(v);
+            this->setUri(u);
+            this->setContent(c);
         }
+
 
         /// @brief Encode the request to a byte stream ready to transfer to the remote server.
         /// @return String
@@ -97,29 +99,29 @@ namespace siddiqsoft
         {
             std::string rs;
 
-            if (!content->type.empty() && content->body.empty())
+            if (!this->content->type.empty() && this->content->body.empty())
                 throw std::invalid_argument("Missing content body when content type is present!");
 
             // Request Line
-            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", method, uri.urlPart, protocol);
+            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", this->method, this->uri.urlPart, this->protocol);
 
             // Headers..
-            encodeHeaders_to(rs);
+            this->encodeHeaders_to(rs);
 
             // Finally the content..
-            if (!content->body.empty() && !content->type.empty()) {
-                std::format_to(std::back_inserter(rs), "{}", content->body);
+            if (!this->content->body.empty() && !this->content->type.empty()) {
+                std::format_to(std::back_inserter(rs), "{}", this->content->body);
             }
 
             return rs;
         }
 
-        friend std::ostream& operator<<(std::ostream&, const rest_request&);
-        friend void          to_json(nlohmann::json& dest, const rest_request& src);
+        friend std::ostream& operator<<(std::ostream&, const rest_request<>&);
+        friend void          to_json(nlohmann::json& dest, const rest_request<>& src);
     };
 
 
-    inline std::ostream& operator<<(std::ostream& os, const rest_request& src)
+    inline std::ostream& operator<<(std::ostream& os, const rest_request<>& src)
     {
         os << src.encode();
         return os;
@@ -127,81 +129,72 @@ namespace siddiqsoft
 
     namespace restcl_literals
     {
-        [[nodiscard]] static rest_request operator""_GET(const char* url, size_t sz)
+        [[nodiscard]] static rest_request<char> operator""_GET(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_GET);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_GET).setUri(std::string {url, sz});
             return std::move(rr);
         }
 
-        [[nodiscard]] static rest_request operator""_HEAD(const char* url, size_t sz)
+        [[nodiscard]] static rest_request<char> operator""_HEAD(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_HEAD);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_HEAD).setUri(std::string {url, sz});
             return std::move(rr);
         }
 
-        [[nodiscard]] static rest_request operator""_POST(const char* url, size_t sz)
+        [[nodiscard]] static rest_request<char> operator""_POST(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_POST);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_POST).setUri(std::string {url, sz});
             return std::move(rr);
         }
 
-        [[nodiscard]] static rest_request operator""_PUT(const char* url, size_t sz)
+        [[nodiscard]] static rest_request<char> operator""_PUT(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_PUT);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_PUT).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request operator""_DELETE(const char* url, size_t sz)
+        [[nodiscard]] static rest_request<char> operator""_DELETE(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_DELETE);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_DELETE).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request operator""_CONNECT(const char* url, size_t sz)
+        [[nodiscard]] static rest_request<char> operator""_CONNECT(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_CONNECT);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_CONNECT).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request operator""_OPTIONS(const char* url, size_t sz)
+        [[nodiscard]] static auto operator""_OPTIONS(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_OPTIONS);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_OPTIONS).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request operator""_TRACE(const char* url, size_t sz)
+        [[nodiscard]] static rest_request<char> operator""_TRACE(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_TRACE);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_TRACE).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request operator""_PATCH(const char* url, size_t sz)
+        [[nodiscard]] static rest_request<char> operator""_PATCH(const char* url, size_t sz)
         {
-            rest_request rr;
-            rr.setMethod(HttpMethodType::METHOD_PATCH);
-            rr.setUri(std::string {url, sz});
+            rest_request<char> rr;
+            rr.setMethod(HttpMethodType::METHOD_PATCH).setUri(std::string {url, sz});
             return rr;
         }
     } // namespace restcl_literals
 
 
-    inline void to_json(nlohmann::json& dest, const rest_request& src)
+    inline void to_json(nlohmann::json& dest, const rest_request<>& src)
     {
         dest = nlohmann::json {{"request", {{"method", src.method}, {"uri", src.uri}, {"protocol", src.protocol}}},
                                {"headers", src.headers},
@@ -212,10 +205,10 @@ namespace siddiqsoft
 
 
 template <>
-struct std::formatter<siddiqsoft::rest_request> : std::formatter<std::string>
+struct std::formatter<siddiqsoft::rest_request<>> : std::formatter<std::string>
 {
     template <class FC>
-    auto format(const siddiqsoft::rest_request& sv, FC& ctx) const
+    auto format(const siddiqsoft::rest_request<>& sv, FC& ctx) const
     {
         return std::formatter<std::string>::format(sv.encode(), ctx);
     }

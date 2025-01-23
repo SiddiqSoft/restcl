@@ -50,7 +50,8 @@
 namespace siddiqsoft
 {
     /// @brief REST Response object
-    class rest_response : public http_frame
+    template <typename CharT = char>
+    class rest_response : public http_frame<CharT>
     {
         unsigned    _statusCode {0};
         std::string _reasonCode {};
@@ -67,18 +68,18 @@ namespace siddiqsoft
         {
             std::string rs;
 
-            if (!content->type.empty() && content->body.empty())
+            if (!this->content->type.empty() && this->content->body.empty())
                 throw std::invalid_argument("Missing content body when content type is present!");
 
             // Request Line
-            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", protocol, _statusCode, _reasonCode);
+            std::format_to(std::back_inserter(rs), "{} {} {}\r\n", this->protocol, this->_statusCode, this->_reasonCode);
 
             // Headers..
-            encodeHeaders_to(rs);
+            this->encodeHeaders_to(rs);
 
             // Finally the content->.
-            if (!content->body.empty() && !content->type.empty()) {
-                std::format_to(std::back_inserter(rs), "{}", content->body);
+            if (!this->content->body.empty() && !this->content->type.empty()) {
+                std::format_to(std::back_inserter(rs), "{}", this->content->body);
             }
 
             return rs;
@@ -90,12 +91,12 @@ namespace siddiqsoft
         auto status() const { return std::pair<unsigned, std::string> {_statusCode, _reasonCode}; }
 
     public:
-        friend std::ostream& operator<<(std::ostream&, const rest_response&);
+        friend std::ostream& operator<<(std::ostream&, const rest_response<>&);
 
 
         /// @brief Construct a response object based on the given transport error
         /// @param err Specifies the transport error.
-        rest_response& setStatus(const int code, const std::string& message)
+        rest_response<>& setStatus(const int code, const std::string& message)
         {
             _statusCode = code;
             _reasonCode = message;
@@ -104,7 +105,7 @@ namespace siddiqsoft
 
 
     protected:
-        static bool parseStartLine(rest_response&               httpm,
+        static bool parseStartLine(rest_response<CharT>&        httpm,
                                    std::string::iterator&       bufferStart,
                                    const std::string::iterator& bufferEnd) noexcept(false)
         {
@@ -119,10 +120,10 @@ namespace siddiqsoft
             if (found && (matchStartLine.size() >= 3)) {
                 // The regex is very precise and there is no chance we will end up here
                 // with an ill-formed (or unsupported) start-line.
-                if (isHttpVerb(matchStartLine[3]) != HttpMethodType::METHOD_UNKNOWN) {
+                if (http_frame<CharT>::isHttpVerb(matchStartLine[3]) != HttpMethodType::METHOD_UNKNOWN) {
                     httpm.setMethod(matchStartLine[3].str()).setUri(matchStartLine[2].str()).setProtocol(matchStartLine[3].str());
                 }
-                else if (isHttpProtocol(matchStartLine[1]) != HttpProtocolVersionType::UNKNOWN) {
+                else if (http_frame<CharT>::isHttpProtocol(matchStartLine[1]) != HttpProtocolVersionType::UNKNOWN) {
                     httpm.setStatus(std::stoi(matchStartLine[2].str()), matchStartLine[3].str()).setProtocol(matchStartLine[1]);
                 }
 
@@ -138,7 +139,7 @@ namespace siddiqsoft
         }
 
     protected:
-        static bool storeHeaderValue(rest_response& httpm, const std::string& key, const std::string& value)
+        static bool storeHeaderValue(rest_response<>& httpm, const std::string& key, const std::string& value)
         {
             try {
                 if (key.find(HF_CONTENT_LENGTH) == 0) {
@@ -160,7 +161,7 @@ namespace siddiqsoft
         }
 
     protected:
-        static bool parseHeaders(rest_response&               httpm,
+        static bool parseHeaders(rest_response<>&             httpm,
                                  std::string::iterator&       bufferStart,
                                  const std::string::iterator& bufferEnd) noexcept(false)
         {
@@ -247,11 +248,11 @@ namespace siddiqsoft
         }
 
     public:
-        [[nodiscard]] static auto parse(std::string& srcBuffer) -> siddiqsoft::rest_response
+        [[nodiscard]] static auto parse(std::string& srcBuffer) -> siddiqsoft::rest_response<char>
         {
-            siddiqsoft::rest_response resp {};
-            auto                      startIterator = srcBuffer.begin();
-            auto                      lastLine      = __LINE__;
+            siddiqsoft::rest_response<char> resp {};
+            auto                            startIterator = srcBuffer.begin();
+            auto                            lastLine      = __LINE__;
 
             try {
                 lastLine = __LINE__;
@@ -290,10 +291,10 @@ namespace siddiqsoft
             return resp;
         };
 
-        friend void to_json(nlohmann::json&, const rest_response&);
+        friend void to_json(nlohmann::json&, const rest_response<>&);
     };
 
-    inline void to_json(nlohmann::json& dest, const rest_response& src)
+    inline void to_json(nlohmann::json& dest, const rest_response<>& src)
     {
         dest = nlohmann::json {
                 {"response", {{"statusCode", src._statusCode}, {"statusMessage", src._reasonCode}, {"protocol", src.protocol}}},
@@ -303,7 +304,7 @@ namespace siddiqsoft
 
 
     /// @brief Serializer to ostream for RESResponseType
-    inline std::ostream& operator<<(std::ostream& os, const rest_response& src)
+    inline std::ostream& operator<<(std::ostream& os, const rest_response<>& src)
     {
         os << src.encode();
         return os;
@@ -311,9 +312,9 @@ namespace siddiqsoft
 } // namespace siddiqsoft
 
 template <>
-struct std::formatter<siddiqsoft::rest_response> : std::formatter<std::string>
+struct std::formatter<siddiqsoft::rest_response<>> : std::formatter<std::string>
 {
-    auto format(const siddiqsoft::rest_response& sv, std::format_context& ctx) const
+    auto format(const siddiqsoft::rest_response<>& sv, std::format_context& ctx) const
     {
         return std::formatter<std::string>::format(sv.encode(), ctx);
     }

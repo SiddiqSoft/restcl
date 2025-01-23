@@ -24,7 +24,19 @@
 
 namespace siddiqsoft
 {
-    [[nodiscard]] static auto CreateRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+    /**
+     * @brief Obtain a REST client from internal pool (where caching available).
+     *
+     * @param cfg Optional configuraiton for the underlying provider.
+     * @param cb The global callback handler. Note that if you invoke sendAsycn() with a callback then
+     *           this callback is not used for that single request and subsequent sendAsync() with
+     *           empty callback param will use this registered callback.
+     *           If no callback is registered here or provided during call to sendAsync then sendAsync
+     *           throws exception.
+     * @return auto For Linux and UNIX the return is HttpRESTClient which uses libCURL implementation.
+     *              For Windows the return is WinHttpRESTClient based on WinHTTP library.
+     */
+    [[nodiscard]] static auto GetRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
     {
 #if defined(__linux__) || defined(__APPLE__)
         return HttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype&&>(cb));

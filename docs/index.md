@@ -135,7 +135,7 @@ See the [examples](#examples) section.
 ### Signature
 ```cpp
     using basic_callbacktype = std::function<void(const rest_request&  req,
-                                                  const rest_response& resp)>;
+                                                  const rest_response<>& resp)>;
 ```
 
 Callback invoked by the library on error / success. The request and response are valid for the lifespan of the call but may not be modified.
@@ -293,12 +293,12 @@ public:
         std::string message {};
     };
 
-    rest_response(const rest_response&);
-    rest_response(rest_response&&);
+    rest_response(const rest_response<>&);
+    rest_response(rest_response<>&&);
 
-    rest_response& operator=(rest_response&&);
-    rest_response& operator=(const rest_response&);
-    rest_response& setContent(const std::string&);
+    rest_response<>& operator=(rest_response<>&&);
+    rest_response<>& operator=(const rest_response<>&);
+    rest_response<>& setContent(const std::string&);
     const auto&     operator[](const auto&) const;
     auto&           operator[](const auto&);
     std::string     encode() const;
@@ -337,7 +337,7 @@ The internal `response_code` struct represents the IO error code and IO error me
 ##### `rest_response::setContent`
 
 ```cpp
-    rest_response&              setContent(const std::string& content);
+    rest_response<>&              setContent(const std::string& content);
 ```
 - content - Set the content body as read by the server.
 

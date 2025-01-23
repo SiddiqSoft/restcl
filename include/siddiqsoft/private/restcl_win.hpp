@@ -210,7 +210,7 @@ namespace siddiqsoft
 
 
     /// @brief Windows implementation of the basic_restclient
-    class WinHttpRESTClient : public basic_restclient
+    class WinHttpRESTClient : public basic_restclient<char>
     {
     public:
         std::string  UserAgent {"siddiqsoft.restcl/2"};
@@ -235,7 +235,7 @@ namespace siddiqsoft
                                     {"headers", nullptr}};
 
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
-        simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
+        simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
             // method completes the lifetime of the object ends;
@@ -264,7 +264,7 @@ namespace siddiqsoft
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
 
-        basic_restclient& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
+        basic_restclient<char>& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
             if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
             if (cb) _callback = std::move(cb);
@@ -315,13 +315,13 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        basic_restclient& sendAsync(rest_request&& req, basic_callbacktype&& cb = {}) override
+        basic_restclient<char>& sendAsync(rest_request<char>&& req, basic_callbacktype&& cb = {}) override
         {
             if (!_callback && !cb)
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            pool.queue(RestPoolArgsType {std::move(req), cb ? std::move(cb) : _callback});
+            pool.queue(RestPoolArgsType<char> {std::move(req), cb ? std::move(cb) : _callback});
 
             return *this;
         }
@@ -330,9 +330,9 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] std::expected<rest_response, int> send(rest_request& req)
+        [[nodiscard]] std::expected<rest_response<>, int> send(rest_request<char>& req)
         {
-            rest_response resp {};
+            rest_response<char> resp {};
 
             /// @brief Lambda to Parse the first line from the HTTP response into its parts: version, status and the reason
             /// phrase
@@ -557,8 +557,8 @@ namespace siddiqsoft
         }
 
     public:
-        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
-                -> std::shared_ptr<WinHttpRESTClient>
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {},
+                                                 basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
             std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}\n", __FUNCTION__, rcl->id);

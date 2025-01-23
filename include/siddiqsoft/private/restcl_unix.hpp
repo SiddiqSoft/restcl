@@ -191,7 +191,7 @@ namespace siddiqsoft
     protected:
         resource_pool<std::shared_ptr<CURL>> curlHandlePool {};
 
-        LibCurlSingleton() { };
+        LibCurlSingleton() {};
 
     public:
         static auto GetInstance() -> std::shared_ptr<LibCurlSingleton>
@@ -318,7 +318,7 @@ namespace siddiqsoft
 
 
     /// @brief Unix implementation of the basic_restclient
-    class HttpRESTClient : public basic_restclient
+    class HttpRESTClient : public basic_restclient<char>
     {
     private:
         static const uint32_t             READBUFFERSIZE {8192};
@@ -353,7 +353,7 @@ namespace siddiqsoft
                                     {"headers", nullptr}};
 
 
-        inline void dispatchCallback(basic_callbacktype& cb, rest_request& req, std::expected<rest_response, int> resp)
+        inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
         {
             callbackAttempt++;
             if (cb) {
@@ -367,7 +367,7 @@ namespace siddiqsoft
         }
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
-        siddiqsoft::simple_pool<RestPoolArgsType> pool {[&](RestPoolArgsType&& arg) -> void {
+        siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
             // method completes the lifetime of the object ends;
@@ -465,7 +465,7 @@ namespace siddiqsoft
         }
 
 
-        auto& extractHeadersFromLibCurl(CurlContextBundlePtr ctxCurl, http_frame& dest)
+        auto& extractHeadersFromLibCurl(CurlContextBundlePtr ctxCurl, http_frame<>& dest)
         {
             int          headerCount {0};
             curl_header* currentHeader {nullptr};
@@ -543,7 +543,7 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        basic_restclient& sendAsync(rest_request&& req, basic_callbacktype&& callback = {}) override
+        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
@@ -593,12 +593,12 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] std::expected<rest_response, int> send(rest_request& req) override
+        [[nodiscard]] std::expected<rest_response<>, int> send(rest_request<>& req) override
         {
             using namespace nlohmann::literals;
 
-            rest_response resp {};
-            CURLcode      rc {};
+            rest_response<> resp {};
+            CURLcode        rc {};
 
             if (!isInitialized) {
 #if defined(DEBUG)
@@ -683,7 +683,7 @@ namespace siddiqsoft
             return std::unexpected(ENOTRECOVERABLE);
         }
 
-        CURLcode prepareIOHandlers(CurlContextBundlePtr ctxCurl, rest_request& req, std::shared_ptr<ContentType> cntnts)
+        CURLcode prepareIOHandlers(CurlContextBundlePtr ctxCurl, rest_request<>& req, std::shared_ptr<ContentType> cntnts)
         {
             CURLcode rc {CURLE_OK};
 
@@ -749,7 +749,7 @@ namespace siddiqsoft
          * @param req Reference to the request
          * @return CURLcode Error from libCurl
          */
-        CURLcode prepareStartLine(CurlContextBundlePtr ctxCurl, rest_request& req)
+        CURLcode prepareStartLine(CurlContextBundlePtr ctxCurl, rest_request<>& req)
         {
             CURLcode rc {CURLE_OK};
 
@@ -807,7 +807,7 @@ namespace siddiqsoft
             return rc;
         }
 
-        auto prepareCurlHeaders(CurlContextBundlePtr ctxCurl, rest_request& req) -> std::shared_ptr<struct curl_slist>
+        auto prepareCurlHeaders(CurlContextBundlePtr ctxCurl, rest_request<>& req) -> std::shared_ptr<struct curl_slist>
         {
             CURLcode rc = CURLE_NOT_BUILT_IN;
 
@@ -867,7 +867,7 @@ namespace siddiqsoft
         }
 
 
-        void extractContents(std::shared_ptr<ContentType> cntnt, rest_response& resp)
+        void extractContents(std::shared_ptr<ContentType> cntnt, rest_response<>& resp)
         {
             try {
                 // Fixup the content data..type and length
@@ -891,7 +891,7 @@ namespace siddiqsoft
         }
 
 
-        void extractStartLine(CurlContextBundlePtr ctxCurl, rest_response& dest)
+        void extractStartLine(CurlContextBundlePtr ctxCurl, rest_response<>& dest)
         {
             CURLcode rc {CURLE_OK};
             long     sc {0};

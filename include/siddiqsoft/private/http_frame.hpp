@@ -244,6 +244,7 @@ namespace siddiqsoft
 
     /// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
     /// Essentially we're a convenience wrapper on the rest_request.
+    template <typename CharT = char>
     class http_frame
     {
 #if defined(DEBUG) || defined(_DEBUG)
@@ -251,11 +252,11 @@ namespace siddiqsoft
 #else
     protected:
 #endif
-        HttpProtocolVersionType        protocol {HttpProtocolVersionType::Http11};
-        HttpMethodType                 method {};
-        Uri<char, AuthorityHttp<char>> uri {};
-        nlohmann::json                 headers {{"Date", DateUtils::RFC7231()}};
-        std::shared_ptr<ContentType>   content {new ContentType()};
+        HttpProtocolVersionType          protocol {HttpProtocolVersionType::Http11};
+        HttpMethodType                   method {};
+        Uri<CharT, AuthorityHttp<CharT>> uri {};
+        nlohmann::json                   headers {{"Date", DateUtils::RFC7231()}};
+        std::shared_ptr<ContentType>     content {new ContentType()};
 
     protected:
         static auto isHttpProtocol(const std::string& fragment)
@@ -481,11 +482,11 @@ namespace siddiqsoft
             return *this;
         }
 
-        friend void to_json(nlohmann::json&, const http_frame&);
+        friend void to_json(nlohmann::json&, const http_frame<>&);
     };
 
 
-    inline void to_json(nlohmann::json& dest, const http_frame& src)
+    inline void to_json(nlohmann::json& dest, const http_frame<>& src)
     {
         dest = nlohmann::json {{"protocol", src.protocol},
                                {"method", src.method},
