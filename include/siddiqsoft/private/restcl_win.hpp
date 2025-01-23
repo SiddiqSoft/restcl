@@ -330,7 +330,7 @@ namespace siddiqsoft
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
-        [[nodiscard]] std::expected<rest_response, int> send(rest_request& req)
+        [[nodiscard]] std::expected<rest_response<>, int> send(rest_request& req)
         {
             rest_response resp {};
 

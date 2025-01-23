@@ -25,11 +25,12 @@ namespace siddiqsoft
 {
     struct rest_result_error;
 
-    /// @brief The function or lambda must accept const rest_request& and const rest_response&
-    using basic_callbacktype = std::function<void(rest_request&, std::expected<rest_response, int>)>;
+    /// @brief The function or lambda must accept const rest_request& and const rest_response<>&
+    using basic_callbacktype = std::function<void(rest_request<>&, std::expected<rest_response<>, int>)>;
 
 
     /// @brief Base class for the rest client
+    template <typename CharT = char>
     class basic_restclient
     {
     public:
@@ -47,7 +48,7 @@ namespace siddiqsoft
         /// @brief Synchronous implementation of the IO
         /// @param req Request
         /// @return The response
-        [[nodiscard]] virtual std::expected<rest_response, int> send(rest_request&) = 0;
+        [[nodiscard]] virtual std::expected<rest_response<CharT>, int> send(rest_request<>&) = 0;
 
         /// @brief Asynchronous operation. The callback must be provided here or previously via the configure()
         /// @param req Request
@@ -55,29 +56,30 @@ namespace siddiqsoft
         ///                 If not present then the one provided during configuration is used.
         ///                 If no callback has been registered or provided here then an invalid_argument
         ///                 exception should be thrown.
-        virtual basic_restclient& sendAsync(rest_request&&, basic_callbacktype&& = {}) = 0;
+        virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {}) = 0;
     };
 
     /**
      * @brief Container to store the rest_request and the optional callback.
      *
      */
+    template <typename CharT = char>
     struct RestPoolArgsType
     {
-        RestPoolArgsType(rest_request&& r, basic_callbacktype& cb)
+        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype& cb)
             : request(std::move(r)) // own the request
             , callback(cb)          // make a copy
         {
         }
 
-        RestPoolArgsType(rest_request&& r, basic_callbacktype&& cb)
+        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype&& cb)
             : request(std::move(r))   // own the request
             , callback(std::move(cb)) // own the callback
         {
         }
 
-        rest_request       request;
-        basic_callbacktype callback {};
+        rest_request<CharT> request;
+        basic_callbacktype  callback {};
     };
 
 } // namespace siddiqsoft

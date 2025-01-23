@@ -137,10 +137,10 @@ namespace siddiqsoft
     TEST_F(Validation, GET_google_com)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc      = CreateRESTClient();
+        restcl           wrc      = GetRESTClient();
 
         wrc->configure().sendAsync(
-                "https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                "https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
                         // std::print(std::cerr,
@@ -166,10 +166,10 @@ namespace siddiqsoft
     TEST_F(Validation, GET_duckduckgo_com)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc      = CreateRESTClient();
+        restcl           wrc      = GetRESTClient();
 
         wrc->configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
-                .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+                .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
                         // nlohmann::json doc(*resp);
@@ -194,14 +194,14 @@ namespace siddiqsoft
     TEST_F(Validation, POST_httpbin)
     {
         std::atomic_int passTest    = 0;
-        restcl          wrc         = CreateRESTClient({{"trace", false},
+        restcl          wrc         = GetRESTClient({{"trace", false},
                                                         {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
                                                         {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
         auto            postRequest = "https://httpbin.org/post"_POST;
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
-        wrc->sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response, int> resp) {
+        wrc->sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
             if (resp.has_value() && resp->success()) {
                 passTest = 1;
                 // nlohmann::json doc(*resp);
@@ -236,7 +236,7 @@ namespace siddiqsoft
         std::atomic_uint passTest   = 0;
 
         try {
-            siddiqsoft::restcl wrc = CreateRESTClient();
+            siddiqsoft::restcl wrc = GetRESTClient();
             nlohmann::json     myStats {{"Test", "drift-check"}};
 
             auto req = "https://time.akamai.com/?iso"_GET;
@@ -281,7 +281,7 @@ namespace siddiqsoft
 
         // std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
-            clients.push_back(CreateRESTClient({{"trace", false},
+            clients.push_back(GetRESTClient({{"trace", false},
                                                 {"freshConnect", true},
                                                 {"userAgent",
                                                  std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
@@ -299,7 +299,7 @@ namespace siddiqsoft
                        __FUNCTION__,
                        clientIndex,
                        CLIENT_COUNT);*/
-            wrc->sendAsync("https://reqbin.com/"_GET, [&](const auto& req, std::expected<rest_response, int> resp) {
+            wrc->sendAsync("https://reqbin.com/"_GET, [&](const auto& req, std::expected<rest_response<>, int> resp) {
                 if (resp.has_value() && resp->success()) {
                     // We sometimes get a 403 and 200
                     passTest += (resp->statusCode() == 200) || (resp->statusCode() == 403);
