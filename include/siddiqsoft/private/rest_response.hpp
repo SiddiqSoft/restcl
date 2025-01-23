@@ -105,7 +105,7 @@ namespace siddiqsoft
 
 
     protected:
-        static bool parseStartLine(rest_response<CharT>&               httpm,
+        static bool parseStartLine(rest_response<CharT>&        httpm,
                                    std::string::iterator&       bufferStart,
                                    const std::string::iterator& bufferEnd) noexcept(false)
         {
@@ -161,7 +161,7 @@ namespace siddiqsoft
         }
 
     protected:
-        static bool parseHeaders(rest_response<>&               httpm,
+        static bool parseHeaders(rest_response<>&             httpm,
                                  std::string::iterator&       bufferStart,
                                  const std::string::iterator& bufferEnd) noexcept(false)
         {

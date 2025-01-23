@@ -191,7 +191,7 @@ namespace siddiqsoft
     protected:
         resource_pool<std::shared_ptr<CURL>> curlHandlePool {};
 
-        LibCurlSingleton() { };
+        LibCurlSingleton() {};
 
     public:
         static auto GetInstance() -> std::shared_ptr<LibCurlSingleton>

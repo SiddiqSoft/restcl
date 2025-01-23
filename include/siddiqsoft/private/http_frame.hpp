@@ -252,11 +252,11 @@ namespace siddiqsoft
 #else
     protected:
 #endif
-        HttpProtocolVersionType        protocol {HttpProtocolVersionType::Http11};
-        HttpMethodType                 method {};
+        HttpProtocolVersionType          protocol {HttpProtocolVersionType::Http11};
+        HttpMethodType                   method {};
         Uri<CharT, AuthorityHttp<CharT>> uri {};
-        nlohmann::json                 headers {{"Date", DateUtils::RFC7231()}};
-        std::shared_ptr<ContentType>   content {new ContentType()};
+        nlohmann::json                   headers {{"Date", DateUtils::RFC7231()}};
+        std::shared_ptr<ContentType>     content {new ContentType()};
 
     protected:
         static auto isHttpProtocol(const std::string& fragment)
