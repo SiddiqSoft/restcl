@@ -191,7 +191,7 @@ namespace siddiqsoft
     protected:
         resource_pool<std::shared_ptr<CURL>> curlHandlePool {};
 
-        LibCurlSingleton() {};
+        LibCurlSingleton() { };
 
     public:
         static auto GetInstance() -> std::shared_ptr<LibCurlSingleton>
@@ -349,6 +349,7 @@ namespace siddiqsoft
                                     {"freshConnect", false},
                                     {"connectTimeout", 0L},
                                     {"timeout", 0L},
+                                    {"verifyPeer", 1L},
                                     {"downloadDirectory", nullptr},
                                     {"headers", nullptr}};
 
@@ -573,6 +574,12 @@ namespace siddiqsoft
 
             if (long v = _config.value("timeout", 0); v > 0) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
+                    std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
+            }
+
+            // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
+            if (long v = _config.value("verifyPeer", 1); v == 0) {
+                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
