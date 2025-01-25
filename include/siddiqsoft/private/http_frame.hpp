@@ -348,7 +348,7 @@ namespace siddiqsoft
             return *this;
         }
 
-        auto& getHeader(const std::string& key) noexcept(false) { return headers.at(key); }
+        auto& getHeader(const std::string& key) const noexcept(false) { return headers.at(key); }
 
         nlohmann::json& getHeaders() { return headers; }
 
