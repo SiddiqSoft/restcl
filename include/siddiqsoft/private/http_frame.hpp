@@ -441,11 +441,11 @@ namespace siddiqsoft
         }
 
 
-        auto& getContent() { return content; }
+        auto& getContent() const { return content; }
 
-        auto& getContentBody() { return content->body; }
+        auto& getContentBody() const { return content->body; }
 
-        [[nodiscard]] nlohmann::json getContentBodyJSON()
+        [[nodiscard]] auto getContentBodyJSON() const -> nlohmann::json
         {
             try {
                 if (content->type.find("json") != std::string::npos) {
