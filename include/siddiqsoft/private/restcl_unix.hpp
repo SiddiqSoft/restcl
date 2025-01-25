@@ -1001,9 +1001,23 @@ struct std::formatter<siddiqsoft::rest_result_error> : std::formatter<std::strin
     }
 };
 
+template <>
+struct std::formatter<std::expected<siddiqsoft::rest_response<char>, int>> : std::formatter<std::string>
+{
+    auto format(const std::expected<siddiqsoft::rest_response<char>, int>& resp, auto& ctx) const
+    {
+        if (resp.has_value()) {
+            return std::format_to(ctx.out(), "{}", nlohmann::json(*resp).dump(3));
+        }
+        else {
+            return std::format_to(ctx.out(), "IO error: {}", resp.error());
+        }
+    }
+};
+
 #else
 #pragma message("Windows required")
 #endif
 
 
-#endif // !RESTCLWINHTTP_HPP
+#endif

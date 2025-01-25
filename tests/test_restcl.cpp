@@ -55,24 +55,25 @@ namespace siddiqsoft
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
                         {"trace", false}})
-                .sendAsync("https://www.siddiqsoft.com/"_GET, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
-                    nlohmann::json doc(req);
+                .sendAsync("https://www.siddiqsoft.com/"_GET,
+                           [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
+                               nlohmann::json doc(req);
 
-                    std::print(std::cerr, "From callback Serialized req: {}\n", doc.dump(2));
-                    if (resp && resp->success()) {
-                        passTest = true;
-                        // std::cerr << "Response\n" << *resp << std::endl;
-                    }
-                    else if (resp) {
-                        auto [ec, emsg] = resp->status();
-                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
-                        std::print(std::cerr, " test1a - Got error: {} - {}\n", ec, emsg);
-                    }
-                    else {
-                        std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
-                    }
-                    passTest.notify_all();
-                });
+                               std::print(std::cerr, "From callback Serialized req: {}\n", doc.dump(2));
+                               if (resp && resp->success()) {
+                                   passTest = true;
+                                   // std::cerr << "Response\n" << *resp << std::endl;
+                               }
+                               else if (resp) {
+                                   auto [ec, emsg] = resp->status();
+                                   passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
+                                   std::print(std::cerr, " test1a - Got error: {} - {}\n", ec, emsg);
+                               }
+                               else {
+                                   std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
+                               }
+                               passTest.notify_all();
+                           });
 
         passTest.wait(false);
         EXPECT_TRUE(passTest.load());
@@ -335,10 +336,10 @@ namespace siddiqsoft
                                {"connectTimeout", 3000}, // timeout for the connect phase
                                {"timeout", 5000}         // timeout for the overall IO phase
                        })
-                .sendAsync("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
+                .sendAsync("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response<char>, int> resp) {
                     // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (resp.has_value() && resp->success()) {
-                        std::cerr << "Response\n" << *resp << std::endl;
+                        std::println(std::cerr, "{} - Response\n{}", __func__, resp);
                     }
                     else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
@@ -349,7 +350,7 @@ namespace siddiqsoft
                                    "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}\n",
                                    ec,
                                    emsg,
-                                   nlohmann::json(*resp).dump(3));
+                                   resp);
                     }
                     else {
                         // We MUST get a connection failure; the site does not exist!
