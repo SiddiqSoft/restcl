@@ -86,7 +86,7 @@ namespace siddiqsoft
         auto createResource(const nlohmann::json& d) -> nlohmann::json
         {
             // https://designer.mocky.io/design
-            auto wrc = GetRESTClient({{"trace", false}, {"freshConnect", true}});
+            auto wrc = GetRESTClient({{"trace", true}, {"freshConnect", true}});
 
             rest_request req {HttpMethodType::METHOD_POST,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),

@@ -129,7 +129,7 @@ namespace siddiqsoft
             : _pool {pool}
             , _hndl {std::move(item)}
         {
-#if defined(DEBUG)
+#if defined(DEBUG0)
             _owningTid = std::this_thread::get_id();
             std::print(std::cerr, "{} - 0/0 New BUNDLE id:{}..\n", __func__, _id);
 #endif
@@ -158,14 +158,14 @@ namespace siddiqsoft
 
         ~CurlContextBundle()
         {
-#if defined(DEBUG)
+#if defined(DEBUG0)
             std::print(std::cerr, "{} - 1/2 Clearing contents..\n", __func__);
 #endif
 
             if (_contents) _contents.reset();
             if (_hndl) {
                 _pool.checkin(std::move(_hndl));
-#if defined(DEBUG)
+#if defined(DEBUG0)
                 std::print(std::cerr,
                            "{} - 2/2 Returning BUNDLE  id:{}:{}  Capacity:{}..\n",
                            __func__,
@@ -284,12 +284,22 @@ namespace siddiqsoft
 
             // ..return a new handle..
             auto curlHandle = curl_easy_init();
-#if defined(DEBUG0)
+#if defined(DEBUG)
             std::print(std::cerr, "{} - Invoking curl_easy_init...{}\n", __func__, (void*)curlHandle);
 #endif
+
+            if (auto rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGFUNCTION, LibCurlSingleton::debugCallback); rc == CURLE_OK) {
+#if defined(DEBUG)
+                std::println(std::cerr, "{} - Setting the debug Callback..", __func__);
+#endif
+            }
+            else {
+                std::println(std::cerr, "{} - Setting the debug Callback..FAILED: {}", __func__, curl_easy_strerror(rc));
+            }
+
             auto ctxbndlnew = std::shared_ptr<CurlContextBundle>(new CurlContextBundle {
                     curlHandlePool, std::shared_ptr<CURL> {curlHandle, [](CURL* cc) {
-#if defined(DEBUG)
+#if defined(DEBUG0)
                                                                std::print(std::cerr,
                                                                           "Invoking curl_easy_cleanup...{}\n",
                                                                           reinterpret_cast<void*>(cc));
@@ -306,6 +316,13 @@ namespace siddiqsoft
 #endif
             return ctxbndlnew;
         };
+
+
+        static int debugCallback(CURL*, curl_infotype type, char* data, size_t sz, void*)
+        {
+            std::println(std::cerr, "{} - {}", std::to_underlying<>(type), std::string(data, sz));
+            return 0;
+        }
 
 #if defined(DEBUG) || defined(_DEBUG)
     public:
@@ -394,7 +411,7 @@ namespace siddiqsoft
         }};
 
         /**
-         * @brief
+         * @brief Called by libCurl when we're receiving data from the remote server.
          *
          * @param contents
          * @param size
@@ -410,7 +427,7 @@ namespace siddiqsoft
             {
                 content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
 
-#if defined(DEBUG)
+#if defined(DEBUG0)
                 std::print(std::cerr,
                            "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
                            __func__,
@@ -427,6 +444,16 @@ namespace siddiqsoft
 
         static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
+#if defined(DEBUG)
+            std::println(std::cerr,
+                         "{} - Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
+                         __func__,
+                         libCurlBuffer,
+                         size,
+                         nmemb,
+                         contentPtr);
+#endif
+
             if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
                 (libCurlBuffer != nullptr) && (contentPtr != nullptr) && (size > 0))
             {
@@ -520,7 +547,7 @@ namespace siddiqsoft
     public:
         ~HttpRESTClient()
         {
-#if defined(DEBUG)
+#if defined(DEBUG0)
             std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
 #endif
         }
@@ -609,16 +636,18 @@ namespace siddiqsoft
 
             if (!isInitialized) {
 #if defined(DEBUG)
-                std::print(std::cerr, "{} - Not INITIALIZED for `{}` Uri: {}\n", __func__, req.getMethod(), req.getUri());
+                std::println(std::cerr, "{} - Not INITIALIZED for `{}` Uri: {}\n", __func__, req.getMethod(), req.getUri());
 #endif
                 return std::unexpected(EBUSY);
             }
 
             auto destinationHost = req.getHost();
 
+#if defined(DEBUG0)
             if (_config.value("trace", false)) {
-                std::print(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
+                std::println(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
             }
+#endif
 
             if (auto ctxCurl = singletonInstance->getEasyHandle();
                 ((CURL*)ctxCurl->curlHandle() != nullptr) && !destinationHost.empty())
@@ -670,33 +699,45 @@ namespace siddiqsoft
                 // Abandon so we we dot re-use a failed resource!
                 ctxCurl->abandon();
                 if (_config.value("trace", false)) {
-                    std::print(std::cerr,
-                               "{} - some failure `{}`; abandon context !!\n{}\n",
-                               __func__,
-                               curl_easy_strerror(rc),
-                               nlohmann::json(req).dump(2));
+                    std::println(std::cerr,
+                                 "{} - some failure `{}`; abandon context !!\n{}\n",
+                                 __func__,
+                                 curl_easy_strerror(rc),
+                                 nlohmann::json(req).dump(2));
                 }
                 return std::unexpected(rc);
             }
             else {
                 ioAttemptFailed++;
 #if defined(DEBUG)
-                std::print(std::cerr, "{} - getting context failed!\n{}\n", __func__, nlohmann::json(req).dump(2));
+                std::println(std::cerr, "{} - getting context failed!\n{}\n", __func__, nlohmann::json(req).dump(2));
 #endif
                 return std::unexpected(ENETUNREACH);
             }
 
-            std::print(std::cerr, "{} - Fall-through failure!\n", __func__);
+            std::println(std::cerr, "{} - Fall-through failure!\n", __func__);
             return std::unexpected(ENOTRECOVERABLE);
         }
+
 
         CURLcode prepareIOHandlers(CurlContextBundlePtr ctxCurl, rest_request<>& req, std::shared_ptr<ContentType> cntnts)
         {
             CURLcode rc {CURLE_OK};
 
             // Setup the CURL library for callback for the *response* from the remote!
-            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK) return rc;
-            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) return rc;
+            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK) {
+                std::println(std::cerr, "{} - Failed setting writefunction! rc:{}", __func__, curl_easy_strerror(rc));
+                return rc;
+            }
+            else {
+#if defined(DEBUG)
+                std::println(std::cerr, "{} - Setting writefunction data..............................", __func__);
+#endif
+                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) {
+                    std::println(std::cerr, "{} - Failed setting writefunction data! rc:{}", __func__, curl_easy_strerror(rc));
+                    return rc;
+                }
+            }
 
             // Special cases for each verb..
             if ((req.getMethod() == HttpMethodType::METHOD_PUT) || (req.getMethod() == HttpMethodType::METHOD_PATCH) ||
@@ -717,7 +758,7 @@ namespace siddiqsoft
                         // back to the requested verb such as PUT or PATCH!
                         prepareStartLine(ctxCurl, req);
 
-#if defined(DEBUG)
+#if defined(DEBUG0)
                         std::println(std::cerr,
                                      "{} - Method:{}  POSTFIELDS: -- {}:{}",
                                      __func__,
@@ -729,22 +770,30 @@ namespace siddiqsoft
                 }
             }
 
-            // else
-            {
-                if (req.getContent() && (req.getContent()->length > 0)) {
+            if (auto& reqContent = req.getContent(); (reqContent->length > 0)) {
 #if defined(DEBUG)
-                    std::println(std::cerr,
-                                 "{} - Method:{}  Registering data sender for {} bytes.",
-                                 __func__,
-                                 req.getMethod(),
-                                 req.getContent()->length);
+                std::println(std::cerr,
+                             "{} - Method:{}  Registering data sender for {} bytes.",
+                             __func__,
+                             req.getMethod(),
+                             reqContent->length);
 #endif
-                    //  Set the output/send callback which will process the req's content
-                    if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK)
+                //  Set the output/send callback which will process the req's content
+                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK) {
+                    std::println(std::cerr, "{} - Failed setting readfunction! rc:{}", __func__, curl_easy_strerror(rc));
+                    return rc;
+                }
+                else {
+#if defined(DEBUG)
+                    std::println(std::cerr, "{} - Setting readfunction data.................", __func__);
+#endif
+                    if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, reqContent.get()); rc != CURLE_OK) {
+                        std::println(std::cerr, "{} - Failed setting readfunction data!! rc:{}", __func__, curl_easy_strerror(rc));
                         return rc;
-                    if (req.getContent()) rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, req.getContent().get());
+                    }
                 }
             }
+
 
             return rc;
         }
@@ -776,41 +825,43 @@ namespace siddiqsoft
             }
 
             // Set the URL..
-            curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_URL, req.getUri().string().c_str());
+            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_URL, req.getUri().string().c_str()); rc != CURLE_OK) {
+                std::println(std::cerr,
+                             "{} - url set failed Uri: {}  Failed: {}",
+                             __func__,
+                             req.getUri().string(),
+                             curl_easy_strerror(rc));
+            }
+
             // Setup the method..
             switch (req.getMethod()) {
                 case HttpMethodType::METHOD_PUT:
-                    // req.setHeader("Transfer-Encoding", "chunked");
-                    // curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_PUT, 1L);
                     curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PUT");
-                    // curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_UPLOAD, 1L);
                     req.setHeader("Transfer-Encoding", {});
                     req.setHeader("Expect", {});
                     break;
-                case HttpMethodType::METHOD_PATCH:
-                    // req.setHeader("Transfer-Encoding", "chunked");
-                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PATCH");
-                    break;
+                case HttpMethodType::METHOD_PATCH: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PATCH"); break;
                 case HttpMethodType::METHOD_DELETE: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "DELETE"); break;
                 case HttpMethodType::METHOD_OPTIONS:
                     curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "OPTIONS");
                     break;
-                case HttpMethodType::METHOD_POST:
-                    // req.setHeader("Transfer-Encoding", "chunked");
-                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L);
-                    // curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_UPLOAD, 0L);
-                    break;
+                case HttpMethodType::METHOD_POST: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L); break;
                 case HttpMethodType::METHOD_HEAD: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_NOBODY, 1L); break;
                 case HttpMethodType::METHOD_GET:
                     curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTPGET, 1L);
                     curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 0L);
                     break;
-                default: std::print(std::cerr, "{} - {} to {} UNSUPPORTED verb!", __func__, req.getMethod(), req.getHost()); break;
+                default:
+                    std::println(std::cerr, "{} - {} to {} UNSUPPORTED verb!", __func__, req.getMethod(), req.getHost());
+                    break;
             }
 
+#if defined(DEBUG)
             if (_config.value("trace", false)) {
-                std::print(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
+                std::println(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
             }
+#endif
+
             return rc;
         }
 
@@ -822,9 +873,12 @@ namespace siddiqsoft
             if (auto curlHeaders = curl_slist_append(NULL, "X-restcl-v2:"); curlHeaders != NULL) {
                 try {
                     for (auto& [k, v] : req.getHeaders().items()) {
+#if defined(DEBUG0)
                         if (_config.value("trace", false)) {
                             std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
                         }
+#endif
+
                         if (v.is_string()) {
                             if (auto val = v.get<std::string>(); !val.empty() && (val.length() > 0)) {
                                 // Only add non-empty string contents..otherwise will treat it as a remove header
@@ -864,7 +918,6 @@ namespace siddiqsoft
                     // Immediately save so we ensure proper cleanup
                     std::shared_ptr<struct curl_slist> retHeaders {curlHeaders, curl_slist_free_all};
                     if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTPHEADER, curlHeaders); rc == CURLE_OK) {
-                        // std::print(std::cerr, "{} - Completed.", __func__);
                         return retHeaders;
                     }
                 }
@@ -892,7 +945,7 @@ namespace siddiqsoft
                 std::print(std::cerr, "{} - Error:{}\n", __func__, ex.what());
             }
 
-#if defined(DEBUG)
+#if defined(DEBUG0)
             std::print(std::cerr, "{} - Completed.", __func__);
 #endif
         }
@@ -923,6 +976,7 @@ namespace siddiqsoft
                     }
                 }
             }
+
 #if defined(DEBUG)
             if (rc != CURLE_OK) {
                 std::print(std::cerr,
@@ -932,8 +986,6 @@ namespace siddiqsoft
                            sc,
                            dest.getContent()->length);
             }
-
-            std::print(std::cerr, "{} - Completed.", __func__);
 #endif
         }
 
@@ -979,6 +1031,13 @@ namespace siddiqsoft
     using restcl = std::shared_ptr<HttpRESTClient>;
 
 } // namespace siddiqsoft
+
+template <>
+struct std::formatter<CURLcode> : std::formatter<std::string>
+{
+    auto format(const CURLcode& rc, auto& ctx) const { return format_to(ctx.out(), "{}", curl_easy_strerror(rc)); }
+};
+
 
 template <>
 struct std::formatter<siddiqsoft::HttpRESTClient> : std::formatter<std::string>
