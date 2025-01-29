@@ -738,7 +738,7 @@ namespace siddiqsoft
                 return rc;
             }
             else {
-#if defined(DEBUG)
+#if defined(DEBUG0)
                 std::println(std::cerr, "{} - Setting writefunction data..............................", __func__);
 #endif
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) {
@@ -792,7 +792,7 @@ namespace siddiqsoft
                     return rc;
                 }
                 else {
-#if defined(DEBUG)
+#if defined(DEBUG0)
                     std::println(std::cerr, "{} - Setting readfunction data.................", __func__);
 #endif
                     if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, reqContent.get()); rc != CURLE_OK) {
