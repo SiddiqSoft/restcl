@@ -251,7 +251,7 @@ namespace siddiqsoft
          * Auto-clears the CURL* when this object goes out of scope.
          * @return std::shared_ptr<CURL>
          */
-        [[nodiscard("Auto-clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> CurlContextBundlePtr
+        [[nodiscard("Clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> CurlContextBundlePtr
         {
             try {
                 // It is critical for us to check if we are non-empty otherwise
@@ -291,6 +291,14 @@ namespace siddiqsoft
             if (auto rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGFUNCTION, LibCurlSingleton::debugCallback); rc == CURLE_OK) {
 #if defined(DEBUG)
                 std::println(std::cerr, "{} - Setting the debug Callback..", __func__);
+#endif
+                static const int DebugTraceData = 1;
+                rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGDATA, &DebugTraceData);
+                if (rc != CURLE_OK) {
+                    std::println(std::cerr, "{} - Setting the debug Callback data..FAILED: {}", __func__, curl_easy_strerror(rc));
+                }
+#if defined(DEBUG)
+                curl_easy_setopt(curlHandle, CURLOPT_VERBOSE, 1L);
 #endif
             }
             else {
