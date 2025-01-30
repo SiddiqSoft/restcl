@@ -779,7 +779,7 @@ namespace siddiqsoft
             }
 
             if (auto& reqContent = req.getContent(); (reqContent->length > 0)) {
-#if defined(DEBUG)
+#if defined(DEBUG0)
                 std::println(std::cerr,
                              "{} - Method:{}  Registering data sender for {} bytes.",
                              __func__,
