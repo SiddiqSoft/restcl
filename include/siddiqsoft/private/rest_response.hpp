@@ -312,9 +312,9 @@ namespace siddiqsoft
 } // namespace siddiqsoft
 
 template <>
-struct std::formatter<siddiqsoft::rest_response<>> : std::formatter<std::string>
+struct std::formatter<siddiqsoft::rest_response<char>> : std::formatter<std::string>
 {
-    auto format(const siddiqsoft::rest_response<>& sv, std::format_context& ctx) const
+    auto format(const siddiqsoft::rest_response<char>& sv, std::format_context& ctx) const
     {
         return std::formatter<std::string>::format(sv.encode(), ctx);
     }

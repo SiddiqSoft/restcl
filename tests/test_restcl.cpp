@@ -339,7 +339,7 @@ namespace siddiqsoft
                 .sendAsync("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response<char>, int> resp) {
                     // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
                     if (resp.has_value() && resp->success()) {
-                        std::println(std::cerr, "{} - Response\n{}", __func__, resp);
+                        std::println(std::cerr, "{} - Response\n{}", __func__, *resp);
                     }
                     else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
@@ -350,7 +350,7 @@ namespace siddiqsoft
                                    "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}\n",
                                    ec,
                                    emsg,
-                                   resp);
+                                   *resp);
                     }
                     else {
                         // We MUST get a connection failure; the site does not exist!
