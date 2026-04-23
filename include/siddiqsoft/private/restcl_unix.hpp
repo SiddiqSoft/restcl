@@ -468,32 +468,34 @@ namespace siddiqsoft
                 auto sizeToSendToLibCurlBuffer = size * nmemb;
 
                 if (content->remainingSize) {
+                    // Clamp to the smaller of remaining data or available buffer
                     auto dataSizeToCopyToLibCurl = content->remainingSize;
                     if (dataSizeToCopyToLibCurl > sizeToSendToLibCurlBuffer) {
                         dataSizeToCopyToLibCurl = sizeToSendToLibCurlBuffer;
-                        memcpy(libCurlBuffer, content->body.data() + content->offset, dataSizeToCopyToLibCurl);
-                        content->offset += dataSizeToCopyToLibCurl;
-                        // If we reached the size of the content buffer then we have no more to send
-                        if (content->offset >= content->length)
-                            content->remainingSize = 0;
-                        else {
-                            content->remainingSize -= dataSizeToCopyToLibCurl;
-                        }
+                    }
+
+                    memcpy(libCurlBuffer, content->body.data() + content->offset, dataSizeToCopyToLibCurl);
+                    content->offset += dataSizeToCopyToLibCurl;
+                    // If we reached the size of the content buffer then we have no more to send
+                    if (content->offset >= content->length)
+                        content->remainingSize = 0;
+                    else {
+                        content->remainingSize -= dataSizeToCopyToLibCurl;
+                    }
 #if defined(DEBUG)
-                        std::print(std::cerr,
-                                   "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
-                                   "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
-                                   __func__,
-                                   size,
-                                   nmemb,
-                                   sizeToSendToLibCurlBuffer,
-                                   content->remainingSize,
-                                   content->offset,
-                                   dataSizeToCopyToLibCurl);
+                    std::print(std::cerr,
+                               "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
+                               "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
+                               __func__,
+                               size,
+                               nmemb,
+                               sizeToSendToLibCurlBuffer,
+                               content->remainingSize,
+                               content->offset,
+                               dataSizeToCopyToLibCurl);
 #endif
 
-                        return dataSizeToCopyToLibCurl;
-                    }
+                    return dataSizeToCopyToLibCurl;
                 }
             }
 
