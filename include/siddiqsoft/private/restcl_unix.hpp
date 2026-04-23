@@ -407,7 +407,7 @@ namespace siddiqsoft
                            "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
                            callbackAttempt.load(),
                            se.what());
-                dispatchCallback(arg.callback, arg.request, std::unexpected<int>(reinterpret_cast<int>(se.code().value())));
+                dispatchCallback(arg.callback, arg.request, std::unexpected<int>(se.code().value()));
             }
             catch (std::exception& ex) {
                 callbackFailed++;
