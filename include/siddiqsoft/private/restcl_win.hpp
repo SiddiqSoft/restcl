@@ -398,10 +398,13 @@ namespace siddiqsoft
 
                         dwError                     = ERROR_SUCCESS;
                         // Send the request
+                        // Note: use getContentBody() which returns a reference to avoid
+                        // dangling pointer from encodeContent() which returns a temporary copy.
+                        auto& contentBody = req.getContentBody();
                         nError = WinHttpSendRequest(hRequest,
                                                     WINHTTP_NO_ADDITIONAL_HEADERS,
                                                     0,
-                                                    contentLength > 0 ? LPVOID(req.encodeContent().c_str()) : NULL,
+                                                    contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
                                                     contentLength,
                                                     contentLength,
                                                     NULL);
@@ -413,7 +416,7 @@ namespace siddiqsoft
                                 nError = WinHttpSendRequest(hRequest,
                                                             WINHTTP_NO_ADDITIONAL_HEADERS,
                                                             0,
-                                                            contentLength > 0 ? LPVOID(req.encodeContent().c_str()) : NULL,
+                                                            contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
                                                             contentLength,
                                                             contentLength,
                                                             NULL);
