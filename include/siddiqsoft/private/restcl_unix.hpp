@@ -199,7 +199,7 @@ namespace siddiqsoft
             static std::shared_ptr<LibCurlSingleton> _singleton;
             static std::once_flag                    _libCurlOnceFlag;
 
-            if (_singleton == nullptr) {
+            std::call_once(_libCurlOnceFlag, []() {
                 if (_singleton = std::shared_ptr<LibCurlSingleton>(new LibCurlSingleton()); _singleton) {
 #if defined(DEBUG0)
                     std::print(std::cerr, "{} - Onetime initialization!\n", __func__);
@@ -221,7 +221,7 @@ namespace siddiqsoft
                 else {
                     std::print(std::cerr, "{} - Initialize instance failed!\n", __func__);
                 }
-            }
+            });
 
             return _singleton;
         }
