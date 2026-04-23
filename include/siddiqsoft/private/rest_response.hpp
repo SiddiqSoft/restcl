@@ -209,7 +209,7 @@ namespace siddiqsoft
                             // Next, check if this is a folded element
                             if ((headerEnd != (hend + lineEndSize + 1)) &&
                                 ((*(hend + lineEndSize + 1) == ' ') ||
-                                 ((*hend + lineEndSize + 1) == '\t'))) // peek ahead to see if we have.. folded indicator
+                                 ((*(hend + lineEndSize + 1)) == '\t'))) // peek ahead to see if we have.. folded indicator
                             {
                                 // Yes, we have a folded item.
                                 // build up the value..
