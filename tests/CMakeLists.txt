@@ -32,7 +32,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     endif()
 
     # Dependencies
-    CPMAddPackage("gh:google/googletest#v1.16.0")
+    CPMAddPackage("gh:google/googletest#v1.17.0")
     target_sources( ${TESTPROJ}
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/tests/test_serializers.cpp
