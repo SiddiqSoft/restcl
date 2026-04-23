@@ -259,7 +259,6 @@ namespace siddiqsoft
 
 
     public:
-        WinHttpRESTClient()                                    = default;
         WinHttpRESTClient(const WinHttpRESTClient&)            = delete;
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
