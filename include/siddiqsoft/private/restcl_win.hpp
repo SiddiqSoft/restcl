@@ -408,7 +408,7 @@ namespace siddiqsoft
                                                     contentLength,
                                                     NULL);
 
-                        if (nError == FALSE, dwError = GetLastError(); dwError == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED) {
+                        if (nError == FALSE && (dwError = GetLastError()) == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED) {
                             nError = WinHttpSetOption(
                                     hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, WINHTTP_NO_CLIENT_CERT_CONTEXT, 0);
                             if (nError == TRUE) {

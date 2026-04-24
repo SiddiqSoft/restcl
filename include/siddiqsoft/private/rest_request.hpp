@@ -133,21 +133,21 @@ namespace siddiqsoft
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_GET).setUri(std::string {url, sz});
-            return std::move(rr);
+            return rr;
         }
 
         [[nodiscard]] static rest_request<char> operator""_HEAD(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_HEAD).setUri(std::string {url, sz});
-            return std::move(rr);
+            return rr;
         }
 
         [[nodiscard]] static rest_request<char> operator""_POST(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_POST).setUri(std::string {url, sz});
-            return std::move(rr);
+            return rr;
         }
 
         [[nodiscard]] static rest_request<char> operator""_PUT(const char* url, size_t sz)

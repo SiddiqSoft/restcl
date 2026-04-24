@@ -15,7 +15,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         # 1.2.3-branch-name-5.9+99
         # where the `99` at the end indicates the commit count on this branch.
         set(VERSION_LAST "")
-        string(REGEX MATCH "[\+]\+([0-9]+)$" VERSION_END_MATCH ${CI_BUILDID})
+        string(REGEX MATCH "\\+([0-9]+)$" VERSION_END_MATCH ${CI_BUILDID})
         #message(STATUS "Match count: ${CMAKE_MATCH_COUNT}")
         if(CMAKE_MATCH_COUNT EQUAL 1)
             set(VERSION_LAST         "${CMAKE_MATCH_1}")

@@ -62,7 +62,7 @@ namespace siddiqsoft
 {
     static const std::regex  HTTP_RESPONSE_REGEX {"(HTTP.*)\\s(\\d+)\\s([^\\r\\n]*)\\r\\n"};
     static const std::string HTTP_NEWLINE {"\r\n"};
-    static const std::string ELEM_NEWLINE_LF {"\r"};
+    static const std::string ELEM_NEWLINE_LF {"\n"};
     static const std::string ELEM_SEPERATOR {": "};
     static const std::string HTTP_EMPTY_STRING {};
     static const std::string HTTP_END_OF_HEADERS {"\r\n\r\n"};

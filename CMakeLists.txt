@@ -19,7 +19,7 @@ include(pack/CMakeCommonHelpers.cmake)
 project(restcl
         VERSION         "${CURRENT_PROJECT_VERSION}"
         LANGUAGES       CXX
-        HOMEPAGE_URL    "%%myurl%%"
+        HOMEPAGE_URL    "https://github.com/SiddiqSoft/restcl"
         DESCRIPTION     "Focused REST client for modern C++")
 
 
@@ -55,7 +55,9 @@ if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg])
     # Linux/Unix specific
     # Make sure you install libcurl-devel on Linux
     find_package(CURL 8.7 REQUIRED)
-    include_directories(${CURL_INCLUDE_DIRS})
+    # Note: Do not use include_directories(${CURL_INCLUDE_DIRS}) here.
+    # The CURL::libcurl imported target already provides include paths as SYSTEM includes,
+    # which avoids conflicts between Homebrew LLVM's C++ headers and the macOS SDK C headers.
     target_link_libraries(${PROJECT_NAME} INTERFACE CURL::libcurl)
 elseif((CMAKE_CXX_COMPILER_ID MATCHES [Mm][Ss][Vv][Cc]))
     # Windows specific work
@@ -73,7 +75,7 @@ CPMAddPackage("gh:SiddiqSoft/string2map#2.5.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#2.0.0")
+CPMAddPackage("gh:SiddiqSoft/asynchrony#2.1.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
 
