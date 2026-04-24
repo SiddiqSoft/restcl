@@ -11,15 +11,15 @@ restcl : A focused REST Client for Modern C++
 # Motivation
 
 Design a library where JSON is a first-class API metaphor for interacting with RESTful servers.
-- Focused on REST interactions with JSON. Limiting allows us to simplify the usage and make it feel very C++ instead of the C-like API of Win32 or OpenSSL.
-- Modern C++ features: C++20 is required!
+- Focused on REST interactions with JSON. Limiting allows us to simplify the usage and make it feel very C++ instead of the C-like API of Win32 or LibCURL.
+- Modern C++ features: C++23 is required!
     - Visual Studio 2022
     - Windows version uses WinHTTP library and HTTP/2
 - Header only
 - Use native implementations for the actual IO: Windows support uses WinHttp library.
   - Initial implementation is for Windows using WinHTTP.
-  - Alternate implementation using OpenSSL tbd.
-- Support for literals to allow `_GET`, `_DELETE`, etc. Using the `siddiqsoft::httpqrequest::literals` namespace.
+  - Alternate implementation using LibCURL.
+- Support for literals to allow `_GET`, `_DELETE`, etc. Using the `siddiqsoft::restcl_literals` namespace.
 - Support for std::format and concepts.
 - Be instructional and use as little code as necessary.
 - The focus is on the interface to the end user.
@@ -28,5 +28,5 @@ Design a library where JSON is a first-class API metaphor for interacting with R
 
 # Roadmap
 
-- Switch to CMake build
-- Do a UNIX version, of course!
+- Optimize
+- Add more tests

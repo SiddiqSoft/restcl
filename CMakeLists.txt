@@ -6,7 +6,7 @@
 #   BUILD_TESTS ON
 #   CI_BUILDID must be set to the gitversion
 # 
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.29)
 
 # _________________
 # Version detection; must preceed the declaration of the actual project()
@@ -19,7 +19,7 @@ include(pack/CMakeCommonHelpers.cmake)
 project(restcl
         VERSION         "${CURRENT_PROJECT_VERSION}"
         LANGUAGES       CXX
-        HOMEPAGE_URL    "%%myurl%%"
+        HOMEPAGE_URL    "https://github.com/SiddiqSoft/restcl"
         DESCRIPTION     "Focused REST client for modern C++")
 
 
@@ -36,29 +36,48 @@ target_include_directories(${PROJECT_NAME}
                             INTERFACE
                             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
                             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_23)
 
 # For std::stop_token and std::jthread on Clang 18 and Clang 19 we need to enable
 # the experimental-library flag.
-message(STATUS "Compiler for ${PROJECT_NAME} `${CMAKE_CXX_COMPILER_ID}`")
 target_compile_options( ${PROJECT_NAME}
                         INTERFACE
                         $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
 
+set( CMAKE_CXX_STANDARD 23)
+set( CMAKE_CXX_STANDARD_REQUIRED On)
+set( CMAKE_CXX_EXTENSIONS Off)
+                        
 # ____________________________________
 # Dependencies
-CPMAddPackage("gh:nlohmann/json#v3.11.3")
+if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
+        OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu])))
+    # Linux/Unix specific
+    # Make sure you install libcurl-devel on Linux
+    find_package(CURL 8.7 REQUIRED)
+    # Note: Do not use include_directories(${CURL_INCLUDE_DIRS}) here.
+    # The CURL::libcurl imported target already provides include paths as SYSTEM includes,
+    # which avoids conflicts between Homebrew LLVM's C++ headers and the macOS SDK C headers.
+    target_link_libraries(${PROJECT_NAME} INTERFACE CURL::libcurl)
+elseif((CMAKE_CXX_COMPILER_ID MATCHES [Mm][Ss][Vv][Cc]))
+    # Windows specific work
+    CPMAddPackage("gh:SiddiqSoft/acw32h#2.7.4")
+    target_link_libraries(${PROJECT_NAME} INTERFACE acw32h::acw32h)
+endif()
+
+CPMAddPackage("gh:nlohmann/json#v3.12.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
-CPMAddPackage("gh:SiddiqSoft/SplitUri#2.1.0")
+CPMAddPackage("gh:SiddiqSoft/SplitUri#3.0.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
-CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#2.0.1")
+CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.1.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
-CPMAddPackage("gh:SiddiqSoft/acw32h#2.7.4")
-target_link_libraries(${PROJECT_NAME} INTERFACE acw32h::acw32h)
-CPMAddPackage("gh:SiddiqSoft/string2map#2.4.2")
+CPMAddPackage("gh:SiddiqSoft/string2map#2.5.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#1.8.0")
+CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.0")
+target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
+CPMAddPackage("gh:SiddiqSoft/asynchrony#2.1.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
+
 
 # ____________________________________
 # Testing
