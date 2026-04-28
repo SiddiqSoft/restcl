@@ -193,11 +193,11 @@ namespace siddiqsoft
 
     TEST_F(Validation, POST_httpbin)
     {
-        std::atomic_int passTest    = 0;
-        restcl          wrc         = GetRESTClient({{"trace", false},
-                                                        {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
-                                                        {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
-        auto            postRequest = "https://httpbin.org/post"_POST;
+        std::atomic_int passTest = 0;
+        restcl wrc = GetRESTClient({{"trace", false},
+                                    {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
+                                    {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
+        auto   postRequest = "https://httpbin.org/post"_POST;
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
@@ -282,12 +282,12 @@ namespace siddiqsoft
         // std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
             clients.push_back(GetRESTClient({{"trace", false},
-                                                {"freshConnect", true},
-                                                {"userAgent",
-                                                 std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
-                                                             "Validation, MoveConstructor",
-                                                             i,
-                                                             CLIENT_COUNT)}}));
+                                             {"freshConnect", true},
+                                             {"userAgent",
+                                              std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",
+                                                          "Validation, MoveConstructor",
+                                                          i,
+                                                          CLIENT_COUNT)}}));
         }
 
         EXPECT_EQ(CLIENT_COUNT, clients.size());

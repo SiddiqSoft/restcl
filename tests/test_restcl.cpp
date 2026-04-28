@@ -336,30 +336,27 @@ namespace siddiqsoft
                                {"connectTimeout", 3000}, // timeout for the connect phase
                                {"timeout", 5000}         // timeout for the overall IO phase
                        })
-                .sendAsync("https://google.com/"_OPTIONS, [&passTest](const auto& req, std::expected<rest_response<char>, int> resp) {
-                    // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
-                    if (resp.has_value() && resp->success()) {
-                        std::println(std::cerr, "{} - Response\n{}", __func__, *resp);
-                    }
-                    else if (resp.has_value()) {
-                        auto [ec, emsg] = resp->status();
-                        passTest        = ec == 405 || ec == 403;
-                        // This is a work-around for google which sometimes refuses to send the Reason Phrase!
-                        if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
-                        std::print(std::cerr,
-                                   "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}\n",
-                                   ec,
-                                   emsg,
-                                   *resp);
-                    }
-                    else {
-                        // We MUST get a connection failure; the site does not exist!
-                        passTest = true;
-                        // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                        //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
-                    }
-                    passTest.notify_all();
-                });
+                .sendAsync("https://google.com/"_OPTIONS,
+                           [&passTest](const auto& req, std::expected<rest_response<char>, int> resp) {
+                               // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+                               if (resp.has_value() && resp->success()) {
+                                   std::println(std::cerr, "{} - Response\n{}", __func__, *resp);
+                               }
+                               else if (resp.has_value()) {
+                                   auto [ec, emsg] = resp->status();
+                                   passTest        = ec == 405 || ec == 403;
+                                   // This is a work-around for google which sometimes refuses to send the Reason Phrase!
+                                   if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
+                                   std::print(std::cerr, "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}\n", ec, emsg, *resp);
+                               }
+                               else {
+                                   // We MUST get a connection failure; the site does not exist!
+                                   passTest = true;
+                                   // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
+                                   //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                               }
+                               passTest.notify_all();
+                           });
 
         passTest.wait(false);
         EXPECT_TRUE(passTest.load());

@@ -45,36 +45,41 @@ stages:
           MSBuildConfiguration: Release
     steps:
     - checkout: self
-      fetchDepth: 0
       name: step1
-    - task: gitversion/setup@3
+    
+    - task: gitversion-setup@4
       displayName: 'Install GitVersion..'
       inputs:
-        versionSpec: '6.0'
+        versionSpec: '6.x'
         preferLatestVersion: true
-    - task: gitversion/execute@3
+    
+    - task: gitversion-execute@4
       displayName: 'Determine Version..'
       name: version_step
       inputs:
         useConfigFile: true
         configFilePath: 'GitVersion.yml'
+    
     - task: CMake@1
       displayName: 'CMake Configure $(cmake.preset)'
       inputs:
-        cmakeArgs: '--preset $(cmake.preset) -DCI_BUILDID=$(GitVersion.MajorMinorPatch)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
+        cmakeArgs: '--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
+    
     - task: CMake@1
       displayName: 'CMake Build $(cmake.preset)'
       inputs:
-        cmakeArgs: '--build --preset $(cmake.preset) -DCI_BUILDID=$(GitVersion.MajorMinorPatch)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
+        cmakeArgs: '--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
       condition: succeeded()
+    
     - task: CMake@1
       displayName: 'CMake Tests $(cmake.preset)'
       inputs:
         cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure'
       continueOnError: true
       condition: succeeded()
+    
     - task: PublishTestResults@2
       displayName: 'Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml'
       inputs:
@@ -84,20 +89,23 @@ stages:
           buildConfiguration: '$(BuildType)'
       continueOnError: true
       condition: succeeded()
+    
     - task: NuGetToolInstaller@1
       displayName: 'Install Nuget on Windows'
       inputs:
         versionSpec: '>=6.0.0-0'
         checkLatest: true
       condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
+    
     - task: NuGetCommand@2
-      displayName: 'NuGet pack v$(GitVersion.MajorMinorPatch)'
+      displayName: 'NuGet pack v$(GITVERSION_MAJORMINORPATCH)'
       inputs:
         command: 'pack'
         packagesToPack: 'pack/*.nuspec'
         versioningScheme: 'off'
-        buildProperties: 'VERSION=$(GitVersion.MajorMinorPatch)'
+        buildProperties: 'VERSION=$(GITVERSION_MAJORMINORPATCH)'
       condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
+    
     - task: NuGetCommand@2
       displayName: 'NuGet push (Windows only)'
       inputs:
@@ -106,6 +114,7 @@ stages:
         nuGetFeedType: 'external'
         publishFeedCredentials: 'sqs-nuget'
       condition: and(succeeded(), eq(variables['BuildType'], 'Release'), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')), startsWith(variables['Agent.OS'], 'Windows'))
+    
     - task: GitHubRelease@1
       displayName: 'Release to GitHub'
       inputs:
@@ -114,8 +123,8 @@ stages:
         action: 'create'
         target: '$(Build.SourceVersion)'
         tagSource: 'userSpecifiedTag'
-        tag: '$(GitVersion.MajorMinorPatch)'
-        title: 'v$(GitVersion.MajorMinorPatch)'
+        tag: '$(GITVERSION_MAJORMINORPATCH)'
+        title: 'v$(GITVERSION_MAJORMINORPATCH)'
         releaseNotesSource: 'inline'
         releaseNotesInline: 'Documentation https://github.com/$(Build.Repository.Name)'
         isPreRelease: true
@@ -124,6 +133,7 @@ stages:
         addChangeLog: false
         assetUploadMode: 'replace'
       condition: and(succeeded(), eq(variables['BuildType'], 'Release'), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')), startsWith(variables['Agent.OS'], 'Windows'))
+
 #   ##################################################################################################### #### ## #
 #   #### Job buildLinux ################################################################################# #### ## #
 #   ##################################################################################################### #### ## #
@@ -160,30 +170,34 @@ stages:
           MSBuildConfiguration: Release
     steps:
     - checkout: self
-      fetchDepth: 0
       name: step1
-    - task: gitversion/setup@3
+    
+    - task: gitversion-setup@4
       displayName: 'Install GitVersion..'
       inputs:
-        versionSpec: '6.0'
+        versionSpec: '6.x'
         preferLatestVersion: true
-    - task: gitversion/execute@3
+    
+    - task: gitversion-execute@4
       displayName: 'Determine Version..'
       name: version_step
       inputs:
         useConfigFile: true
         configFilePath: 'GitVersion.yml'
+    
     - task: CMake@1
       displayName: 'CMake Configure $(cmake.preset)'
       inputs:
-        cmakeArgs: '--preset $(cmake.preset) -DCI_BUILDID=$(GitVersion.MajorMinorPatch)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
+        cmakeArgs: '--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
+    
     - task: CMake@1
       displayName: 'CMake Build $(cmake.preset)'
       inputs:
-        cmakeArgs: '--build --preset $(cmake.preset) -DCI_BUILDID=$(GitVersion.MajorMinorPatch)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
+        cmakeArgs: '--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
         workingDirectory: '$(System.DefaultWorkingDirectory)'
       condition: succeeded()
+    
     - task: CMake@1
       displayName: 'CMake Tests $(cmake.preset)'
       env:

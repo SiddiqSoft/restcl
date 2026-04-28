@@ -293,7 +293,7 @@ namespace siddiqsoft
                 std::println(std::cerr, "{} - Setting the debug Callback..", __func__);
 #endif
                 static const int DebugTraceData = 1;
-                rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGDATA, &DebugTraceData);
+                rc                              = curl_easy_setopt(curlHandle, CURLOPT_DEBUGDATA, &DebugTraceData);
                 if (rc != CURLE_OK) {
                     std::println(std::cerr, "{} - Setting the debug Callback data..FAILED: {}", __func__, curl_easy_strerror(rc));
                 }
@@ -430,7 +430,7 @@ namespace siddiqsoft
          */
         static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
-            if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
+            if (ContentType* content {reinterpret_cast<ContentType*>(contentPtr)};
                 contents && (contentPtr != nullptr) && (size > 0))
             {
                 content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
@@ -462,7 +462,7 @@ namespace siddiqsoft
                          contentPtr);
 #endif
 
-            if (ContentType * content {reinterpret_cast<ContentType*>(contentPtr)};
+            if (ContentType* content {reinterpret_cast<ContentType*>(contentPtr)};
                 (libCurlBuffer != nullptr) && (contentPtr != nullptr) && (size > 0))
             {
                 auto sizeToSendToLibCurlBuffer = size * nmemb;
