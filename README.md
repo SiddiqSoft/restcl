@@ -8,6 +8,21 @@ restcl : A focused REST Client for Modern C++
 <!--![](https://img.shields.io/azure-devops/coverage/siddiqsoft/siddiqsoft/13)-->
 <!-- end badges -->
 
+## Overview
+
+**restcl** is a header-only REST client library for modern C++23 that provides a clean, JSON-first API for interacting with RESTful servers. It abstracts platform-specific HTTP implementations (WinHTTP on Windows, libcurl on Unix/Linux/macOS) behind a unified, modern C++ interface. The library prioritizes simplicity and clarity over performance, making it ideal for applications that need straightforward REST communication without the complexity of lower-level HTTP libraries.
+
+### Key Features
+
+- **JSON-First API**: JSON is a first-class citizen in the API design
+- **Modern C++23**: Leverages C++23 features including `std::expected`, `std::format`, and user-defined literals
+- **Header-Only**: Easy integration with no compilation overhead
+- **Cross-Platform**: Native implementations for Windows (WinHTTP) and Unix/Linux/macOS (libcurl)
+- **User-Defined Literals**: Convenient syntax like `"https://api.example.com"_GET`
+- **Async Support**: Non-blocking async operations with callback-based responses
+- **Error Handling**: Uses `std::expected<T, E>` for robust error handling without exceptions
+- **Comprehensive Testing**: Extensive test suite with unit, integration, and stress tests
+
 # Motivation
 
 Design a library where JSON is a first-class API metaphor for interacting with RESTful servers.
@@ -25,6 +40,10 @@ Design a library where JSON is a first-class API metaphor for interacting with R
 - The focus is on the interface to the end user.
 - Performance is not the objective.
 - Simplicity (hide the underlying implementation)
+
+# Documentation
+
+For comprehensive guidance on code style, testing strategies, common patterns, and best practices when working with or extending this library, see [best_practices.md](best_practices.md).
 
 # Roadmap
 
