@@ -214,7 +214,7 @@ client->configure({...}, [](const auto& req, std::expected<rest_response<>, int>
 
 - **nlohmann/json** (v3.12.0): JSON parsing and serialization
 - **SplitUri** (v3.0.0): URI parsing and manipulation
-- **AzureCppUtils** (v3.1.0): Azure-specific utilities
+- **AzureCppUtils** (v3.2.5): Azure-specific utilities
 - **string2map** (v2.5.0): String-to-map conversion utilities
 - **RunOnEnd** (v1.4.2): RAII-based cleanup utilities
 - **asynchrony** (v2.1.1): Asynchronous operation helpers
