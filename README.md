@@ -237,6 +237,10 @@ if (response && response->statusCode() == 200) {
 }
 ```
 
+## API Reference
+
+For comprehensive API documentation, see [API.md](API.md).
+
 ## Architecture
 
 ### Project Structure
