@@ -61,18 +61,32 @@
 
 namespace siddiqsoft
 {
+    /// @brief Encapsulates libcurl error codes from various libcurl APIs
+    /// @details Provides unified error handling for different libcurl error types:
+    ///          - CURLcode: Easy interface errors
+    ///          - CURLMcode: Multi interface errors
+    ///          - CURLHcode: Header API errors
+    ///          - CURLSHcode: Share interface errors
+    ///          - CURLUcode: URL API errors
+    ///          - uint32_t: POSIX error codes
     struct rest_result_error
     {
+        /// @brief Variant holding one of the supported error code types
         std::variant<CURLcode, CURLMcode, CURLHcode, CURLSHcode, CURLUcode, uint32_t> error {};
 
-
+        /// @brief Constructor from error variant
+        /// @param ve Error variant containing one of the supported error types
         rest_result_error(const std::variant<CURLcode, CURLMcode, CURLHcode, CURLSHcode, CURLUcode, uint32_t>& ve)
             : error(ve)
         {
         }
 
+        /// @brief Convert error to string representation
+        /// @return Human-readable error message
         operator std::string() const { return to_string(); }
 
+        /// @brief Get string representation of the error
+        /// @return Human-readable error message describing the error
         std::string to_string() const
         {
             return std::visit(

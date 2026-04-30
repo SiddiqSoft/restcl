@@ -9,6 +9,7 @@ Complete documentation of all public API calls in the restcl library.
 - [REST Request API](#rest-request-api)
 - [REST Response API](#rest-response-api)
 - [HTTP Frame Base Class](#http-frame-base-class)
+- [Platform-Specific Implementation](#platform-specific-implementation)
 - [Error Handling](#error-handling)
 
 ## Factory Function
@@ -704,6 +705,136 @@ The `http_frame<CharT>` class provides common functionality for both requests an
 - `setContent()` / `getContent()` / `getContentBody()`: Content management
 - `encodeHeaders()`: Encode headers to HTTP format
 - `getHost()`: Get the Host header value
+
+---
+
+## Platform-Specific Implementation
+
+### Unix/Linux/macOS Implementation
+
+**Source:** [`include/siddiqsoft/private/restcl_unix.hpp`](include/siddiqsoft/private/restcl_unix.hpp)
+
+#### `HttpRESTClient` Class
+
+The Unix/Linux/macOS implementation uses libcurl for HTTP operations.
+
+**Public Methods:**
+
+- `configure(const nlohmann::json& cfg = {}, basic_callbacktype&& func = {}) -> basic_restclient&`
+  - Configures the client with timeout, SSL verification, and other options
+  - Registers global callback for async operations
+
+- `send(rest_request<>& req) -> std::expected<rest_response<>, int>`
+  - Performs synchronous HTTP request using libcurl
+  - Returns response or POSIX error code
+
+- `sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}) -> basic_restclient&`
+  - Performs asynchronous HTTP request
+  - Invokes callback when response is received
+
+- `static CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) -> std::shared_ptr<HttpRESTClient>`
+  - Factory method to create new client instance
+
+**Configuration Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `userAgent` | string | "siddiqsoft.restcl/2" | User-Agent header |
+| `trace` | boolean | false | Enable verbose libcurl output |
+| `connectTimeout` | integer | 0 | Connection timeout (ms) |
+| `timeout` | integer | 0 | Overall timeout (ms) |
+| `verifyPeer` | integer | 1 | SSL peer verification (1=on, 0=off) |
+| `freshConnect` | boolean | false | Force new connections |
+
+**Example:**
+
+```cpp
+auto client = siddiqsoft::HttpRESTClient::CreateInstance({
+    {"userAgent", "MyApp/1.0"},
+    {"connectTimeout", 3000},
+    {"timeout", 5000},
+    {"verifyPeer", 1}
+});
+
+auto request = "https://api.example.com/users"_GET;
+auto response = client->send(request);
+```
+
+#### `LibCurlSingleton` Class
+
+Manages global libcurl initialization and connection pooling.
+
+**Public Methods:**
+
+- `static GetInstance() -> std::shared_ptr<LibCurlSingleton>`
+  - Returns singleton instance
+  - Initializes libcurl on first call (thread-safe)
+  - Throws `std::runtime_error` if initialization fails
+
+- `getEasyHandle() -> CurlContextBundlePtr`
+  - Returns a pooled or new libcurl handle
+  - Automatically configures debug callbacks
+  - Handle is returned to pool on destruction
+
+#### `CurlContextBundle` Class
+
+Manages a libcurl handle with automatic resource cleanup.
+
+**Public Methods:**
+
+- `curlHandle() -> CURL*`
+  - Returns the underlying libcurl handle
+
+- `contents() -> std::shared_ptr<ContentType>`
+  - Returns the content object for request/response data
+
+- `abandon()`
+  - Releases the handle without returning to pool
+  - Used for failed operations to prevent reuse
+
+#### `rest_result_error` Struct
+
+Encapsulates libcurl error codes from various APIs.
+
+**Supported Error Types:**
+- `CURLcode`: Easy interface errors
+- `CURLMcode`: Multi interface errors
+- `CURLHcode`: Header API errors
+- `CURLSHcode`: Share interface errors
+- `CURLUcode`: URL API errors
+- `uint32_t`: POSIX error codes
+
+**Public Methods:**
+
+- `to_string() -> std::string`
+  - Returns human-readable error message
+
+- `operator std::string()`
+  - Implicit conversion to string
+
+**Example:**
+
+```cpp
+rest_result_error err(CURLE_COULDNT_RESOLVE_HOST);
+std::string msg = err.to_string();  // "Couldn't resolve host name"
+```
+
+#### Atomic Counters
+
+The client tracks various operations for monitoring:
+
+- `ioAttempt`: Total I/O attempts
+- `ioAttemptFailed`: Failed I/O attempts
+- `ioConnect`: Successful connections
+- `ioConnectFailed`: Failed connections
+- `ioSend`: Successful sends
+- `ioSendFailed`: Failed sends
+- `ioReadAttempt`: Read attempts
+- `ioRead`: Successful reads
+- `ioReadFailed`: Failed reads
+- `callbackAttempt`: Callback invocations
+- `callbackFailed`: Failed callbacks
+- `callbackCompleted`: Completed callbacks
 
 ---
 
