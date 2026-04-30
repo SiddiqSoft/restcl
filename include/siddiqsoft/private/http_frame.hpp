@@ -435,7 +435,9 @@ namespace siddiqsoft
                 content.swap(src);
             }
             catch (std::exception& e) {
+#if defined(DEBUG)
                 std::print(std::cerr, "{} - Exception: {}\n", __func__, e.what());
+#endif
             }
             return *this;
         }

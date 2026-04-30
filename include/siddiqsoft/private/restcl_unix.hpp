@@ -219,7 +219,9 @@ namespace siddiqsoft
                     }
                 }
                 else {
+#if defined(DEBUG)
                     std::print(std::cerr, "{} - Initialize instance failed!\n", __func__);
+#endif
                 }
             });
 
@@ -328,7 +330,9 @@ namespace siddiqsoft
 
         static int debugCallback(CURL*, curl_infotype type, char* data, size_t sz, void*)
         {
+#if defined(DEBUG)
             std::println(std::cerr, "{} - {}", std::to_underlying(type), std::string(data, sz));
+#endif
             return 0;
         }
 

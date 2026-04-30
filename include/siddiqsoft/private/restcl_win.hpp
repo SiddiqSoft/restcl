@@ -563,7 +563,9 @@ namespace siddiqsoft
                                                  basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
+#if defined(DEBUG) || defined(_DEBUG)
             std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}\n", __FUNCTION__, rcl->id);
+#endif
             return rcl;
         }
     };

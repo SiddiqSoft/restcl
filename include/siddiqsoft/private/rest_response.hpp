@@ -153,7 +153,9 @@ namespace siddiqsoft
                 }
             }
             catch (std::exception& ex) {
+#if defined(DEBUG)
                 std::print(std::cerr, "{} - {} : {}..ex:{}...........\n", __func__, key, value, ex.what());
+#endif
                 throw;
             }
 
