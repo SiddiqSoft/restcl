@@ -1,8 +1,8 @@
 /**
  * @file basic_restclient.hpp
- * @author your name (you@domain.com)
- * @brief
- * @version 0.1
+ * @author Siddiq Software
+ * @brief Abstract base class defining the REST client interface for synchronous and asynchronous HTTP operations.
+ * @version 1.0
  * @date 2024-12-24
  *
  * @copyright Copyright (c) 2024 Siddiq Software

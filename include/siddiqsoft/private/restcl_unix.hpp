@@ -1,12 +1,19 @@
 /**
  * @file restcl_unix.hpp
- * @author Abdulkareem Siddiq (github@siddiqsoft.com)
- * @brief LibCURL based implementation of the basic_restclient
- * @version
+ * @author Siddiq Software
+ * @brief Unix/Linux/macOS REST client implementation using libcurl.
+ * @version 1.0
  * @date 2024-12-24
  *
  * @copyright Copyright (c) 2024 Siddiq Software
  *
+ * Provides HttpRESTClient class for Unix/Linux/macOS platforms using libcurl.
+ * Features include:
+ * - Connection pooling with resource management
+ * - Synchronous and asynchronous HTTP operations
+ * - Support for all HTTP methods and protocols (HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3)
+ * - Automatic header and content handling
+ * - Thread-safe operations with atomic counters
  */
 
 #pragma once
