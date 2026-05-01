@@ -21,6 +21,12 @@
 #include <limits>
 
 #include "nlohmann/json.hpp"
+
+// Define NOMINMAX before including restcl.hpp to prevent Windows macro conflicts
+#if (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
+#define NOMINMAX
+#endif
+
 #include "../include/siddiqsoft/restcl.hpp"
 
 namespace siddiqsoft
