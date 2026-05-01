@@ -307,12 +307,12 @@ namespace siddiqsoft
 
             // ..return a new handle..
             auto curlHandle = curl_easy_init();
-#if defined(DEBUG)
+#if defined(DEBUG0)
             std::print(std::cerr, "{} - Invoking curl_easy_init...{}\n", __func__, (void*)curlHandle);
 #endif
 
             if (auto rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGFUNCTION, LibCurlSingleton::debugCallback); rc == CURLE_OK) {
-#if defined(DEBUG)
+#if defined(DEBUG0)
                 std::println(std::cerr, "{} - Setting the debug Callback..", __func__);
 #endif
                 static const int DebugTraceData = 1;
@@ -320,7 +320,7 @@ namespace siddiqsoft
                 if (rc != CURLE_OK) {
                     std::println(std::cerr, "{} - Setting the debug Callback data..FAILED: {}", __func__, curl_easy_strerror(rc));
                 }
-#if defined(DEBUG)
+#if defined(DEBUG0)
                 curl_easy_setopt(curlHandle, CURLOPT_VERBOSE, 1L);
 #endif
             }
@@ -351,7 +351,7 @@ namespace siddiqsoft
 
         static int debugCallback(CURL*, curl_infotype type, char* data, size_t sz, void*)
         {
-#if defined(DEBUG)
+#if defined(DEBUG0)
             std::println(std::cerr, "{} - {}", std::to_underlying(type), std::string(data, sz));
 #endif
             return 0;
@@ -477,7 +477,7 @@ namespace siddiqsoft
 
         static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
-#if defined(DEBUG)
+#if defined(DEBUG0)
             std::println(std::cerr,
                          "{} - Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
                          __func__,
@@ -507,7 +507,7 @@ namespace siddiqsoft
                     else {
                         content->remainingSize -= dataSizeToCopyToLibCurl;
                     }
-#if defined(DEBUG)
+#if defined(DEBUG0)
                     std::print(std::cerr,
                                "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
                                "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
@@ -548,7 +548,6 @@ namespace siddiqsoft
     public:
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
-        // HttpRESTClient()                                 = default;
 
         /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
         /// @param src Source object is "cleared"
