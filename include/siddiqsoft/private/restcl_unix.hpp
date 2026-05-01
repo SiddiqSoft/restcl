@@ -1,12 +1,19 @@
 /**
  * @file restcl_unix.hpp
- * @author Abdulkareem Siddiq (github@siddiqsoft.com)
- * @brief LibCURL based implementation of the basic_restclient
- * @version
+ * @author Siddiq Software
+ * @brief Unix/Linux/macOS REST client implementation using libcurl.
+ * @version 1.0
  * @date 2024-12-24
  *
  * @copyright Copyright (c) 2024 Siddiq Software
  *
+ * Provides HttpRESTClient class for Unix/Linux/macOS platforms using libcurl.
+ * Features include:
+ * - Connection pooling with resource management
+ * - Synchronous and asynchronous HTTP operations
+ * - Support for all HTTP methods and protocols (HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3)
+ * - Automatic header and content handling
+ * - Thread-safe operations with atomic counters
  */
 
 #pragma once
@@ -54,18 +61,32 @@
 
 namespace siddiqsoft
 {
+    /// @brief Encapsulates libcurl error codes from various libcurl APIs
+    /// @details Provides unified error handling for different libcurl error types:
+    ///          - CURLcode: Easy interface errors
+    ///          - CURLMcode: Multi interface errors
+    ///          - CURLHcode: Header API errors
+    ///          - CURLSHcode: Share interface errors
+    ///          - CURLUcode: URL API errors
+    ///          - uint32_t: POSIX error codes
     struct rest_result_error
     {
+        /// @brief Variant holding one of the supported error code types
         std::variant<CURLcode, CURLMcode, CURLHcode, CURLSHcode, CURLUcode, uint32_t> error {};
 
-
+        /// @brief Constructor from error variant
+        /// @param ve Error variant containing one of the supported error types
         rest_result_error(const std::variant<CURLcode, CURLMcode, CURLHcode, CURLSHcode, CURLUcode, uint32_t>& ve)
             : error(ve)
         {
         }
 
+        /// @brief Convert error to string representation
+        /// @return Human-readable error message
         operator std::string() const { return to_string(); }
 
+        /// @brief Get string representation of the error
+        /// @return Human-readable error message describing the error
         std::string to_string() const
         {
             return std::visit(
@@ -219,7 +240,9 @@ namespace siddiqsoft
                     }
                 }
                 else {
+#if defined(DEBUG)
                     std::print(std::cerr, "{} - Initialize instance failed!\n", __func__);
+#endif
                 }
             });
 
@@ -328,7 +351,9 @@ namespace siddiqsoft
 
         static int debugCallback(CURL*, curl_infotype type, char* data, size_t sz, void*)
         {
+#if defined(DEBUG)
             std::println(std::cerr, "{} - {}", std::to_underlying(type), std::string(data, sz));
+#endif
             return 0;
         }
 
