@@ -232,6 +232,7 @@ namespace siddiqsoft
     protected:
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
+        uint32_t                  id = __COUNTER__;
 
         basic_callbacktype _callback {};
 
@@ -244,7 +245,6 @@ namespace siddiqsoft
                                     {"headers", nullptr}};
 
 
-        private:
     protected:
         inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
         {
@@ -258,7 +258,7 @@ namespace siddiqsoft
                 callbackCompleted++;
             }
         }
-        
+
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item

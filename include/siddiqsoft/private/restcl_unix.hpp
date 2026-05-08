@@ -385,6 +385,7 @@ namespace siddiqsoft
     {
     private:
         std::shared_ptr<LibCurlSingleton> singletonInstance {};
+        uint32_t                  id = __COUNTER__;
 
         basic_callbacktype _callback {};
 

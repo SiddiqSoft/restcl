@@ -154,7 +154,6 @@ namespace siddiqsoft
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
         bool                      isInitialized {false};
-        uint32_t                  id = __COUNTER__;
         /// @brief Maximum number of retry attempts for failed deliveries
         static const auto RETRY_LIMIT {11};
 
