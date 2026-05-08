@@ -666,7 +666,7 @@ namespace siddiqsoft
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            poolRetry.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
 
             return *this;
         }
