@@ -41,7 +41,8 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
                     ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_edge_cases.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/test_mock_and_coverage.cpp)
+                    ${PROJECT_SOURCE_DIR}/tests/test_mock_and_coverage.cpp
+                    ${PROJECT_SOURCE_DIR}/tests/test_auto_retry_scenarios.cpp)
     # Link dependencies..
     target_link_libraries(${TESTPROJ} PRIVATE
             GTest::gtest_main
