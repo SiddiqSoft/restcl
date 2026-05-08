@@ -387,18 +387,16 @@ namespace siddiqsoft
         std::shared_ptr<LibCurlSingleton> singletonInstance {};
 
     protected:
-        std::atomic_uint64_t ioAttempt {0};
-        std::atomic_uint64_t ioAttemptFailed {0};
-        std::atomic_uint64_t ioConnect {0};
-        std::atomic_uint64_t ioConnectFailed {0};
-        std::atomic_uint64_t ioSend {0};
-        std::atomic_uint64_t ioSendFailed {0};
-        std::atomic_uint64_t ioReadAttempt {0};
-        std::atomic_uint64_t ioRead {0};
-        std::atomic_uint64_t ioReadFailed {0};
-        std::atomic_uint64_t callbackAttempt {0};
-        std::atomic_uint64_t callbackFailed {0};
-        std::atomic_uint64_t callbackCompleted {0};
+        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
+                                    {"trace", false},
+                                    {"id", id},
+                                    {"freshConnect", false},
+                                    {"connectTimeout", 0L},
+                                    {"timeout", 0L},
+                                    {"verifyPeer", 1L},
+                                    {"downloadDirectory", nullptr},
+                                    {"headers", nullptr}};
+
 
     private:
         /// @brief Adds asynchrony to the library via the simple_pool utility

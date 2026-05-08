@@ -165,7 +165,8 @@ namespace siddiqsoft
 
     protected:
         static const uint32_t     READBUFFERSIZE {8192};
-        static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+        static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+        static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
         bool                      isInitialized {false};
         uint32_t                  id = __COUNTER__;
         /// @brief Maximum number of retry attempts for failed deliveries
@@ -185,15 +186,6 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackCompleted {0};
 
         basic_callbacktype _callback {};
-        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                    {"trace", false},
-                                    {"id", id},
-                                    {"freshConnect", false},
-                                    {"connectTimeout", 0L},
-                                    {"timeout", 0L},
-                                    {"verifyPeer", 1L},
-                                    {"downloadDirectory", nullptr},
-                                    {"headers", nullptr}};
     };
 
     /**

@@ -230,18 +230,9 @@ namespace siddiqsoft
         std::wstring UserAgentW {L"siddiqsoft.restcl/2"};
 
     private:
-        static const DWORD           READBUFFERSIZE {8192};
-        static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
-        static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-        /// @brief Maximum number of retry attempts for failed deliveries
-        static const auto RETRY_LIMIT {11};
-
-
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
 
-        basic_callbacktype _callback {};
-        uint32_t           id = __COUNTER__;
         nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
                                     {"trace", false},
                                     {"id", id},
