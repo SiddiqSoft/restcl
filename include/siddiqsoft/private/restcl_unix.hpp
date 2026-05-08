@@ -368,7 +368,7 @@ namespace siddiqsoft
 
 
     /// @brief Unix/Linux/macOS implementation of the basic_restclient using libcurl.
-    /// 
+    ///
     /// @details Provides HTTP client functionality for Unix-like systems using libcurl.
     ///          Features include:
     ///          - Connection pooling with automatic resource management
@@ -377,7 +377,7 @@ namespace siddiqsoft
     ///          - Thread-safe operations with atomic counters for statistics
     ///          - Synchronous and asynchronous request execution
     ///          - Comprehensive error handling with libcurl error codes
-    /// 
+    ///
     /// @note This class is only compiled on Unix/Linux/macOS platforms
     /// @note Uses libcurl v8.7+ for HTTP operations
     /// @note Thread-safe for concurrent async operations via simple_pool
@@ -389,6 +389,9 @@ namespace siddiqsoft
         std::shared_ptr<LibCurlSingleton> singletonInstance {};
         bool                              isInitialized {false};
         uint32_t                          id = __COUNTER__;
+        /// @brief Maximum number of retry attempts for failed deliveries
+        static const auto RETRY_LIMIT {11};
+
 
     protected:
         std::atomic_uint64_t ioAttempt {0};
@@ -454,6 +457,58 @@ namespace siddiqsoft
                            callbackAttempt.load(),
                            ex.what());
             }
+        }};
+
+        /// @brief Implements a threadpool that supports invoking a REST call until success
+        siddiqsoft::simple_pool<RestPoolArgsType<char>> poolRetry {[&](RestPoolArgsType<char>&& arg) -> void {
+            thread_local uint64_t retryCounter {0};
+            // This function is invoked any time we have an item
+            // The arg is moved here and belongs to use. Once this
+            // method completes the lifetime of the object ends;
+            // typically this is *after* we invoke the callback.
+            // The logic here is to invoke the REST request until we get a
+            // success response.
+
+            bool logSuccess {false};
+
+            for (auto retryCount = 0; retryCount < RETRY_LIMIT; retryCount++) {
+                if (auto resp = send(arg.request); resp && resp->success()) {
+                    logSuccess = true;
+                    resp->setHeader("X-restcl-Retry", retryCount);
+
+                    try {
+                        callbackAttempt++;
+                        if (arg.callback) {
+                            // Use the per invocation callback
+                            arg.callback(arg.request, resp);
+                            callbackCompleted++;
+                        }
+                        else if (_callback) {
+                            // Use the generic callback..
+                            _callback(arg.request, resp);
+                            callbackCompleted++;
+                        }
+                    }
+                    catch (std::system_error& se) {
+                        // Failed; dispatch anyways and let the client figure out the issue.
+                        std::print(std::cerr,
+                                   "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
+                                   callbackAttempt.load(),
+                                   se.what());
+                        dispatchCallback(arg.callback, arg.request, std::unexpected<int>(se.code().value()));
+                    }
+                    catch (std::exception& ex) {
+                        callbackFailed++;
+                        std::print(std::cerr,
+                                   "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
+                                   callbackAttempt.load(),
+                                   ex.what());
+                    }
+
+                    // We're done with this.. break out..
+                    break;
+                } // send competed.
+            } // for loop
         }};
 
         /**
@@ -619,6 +674,23 @@ namespace siddiqsoft
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
         basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}) override
+        {
+            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
+
+            if (!_callback && !callback)
+                throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
+                                            "configure() or provide callback at point of invocation.");
+
+            pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+
+            return *this;
+        }
+
+
+        /// @brief Implements an asynchronous invocation of the send() method
+        /// @param req Request object
+        /// @param callback The method will be async and there will not be a response object returned
+        basic_restclient& sendAsyncWithRetry(rest_request<>&& req, basic_callbacktype&& callback = {}) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 

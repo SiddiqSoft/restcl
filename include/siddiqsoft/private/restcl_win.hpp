@@ -204,13 +204,13 @@ namespace siddiqsoft
             : error(ec)
         {
         }
-        operator std::string() { return messageFromWininetCode(error); }
+             operator std::string() { return messageFromWininetCode(error); }
         auto to_string() const { return messageFromWininetCode(error); }
     };
 
 
     /// @brief Windows implementation of the basic_restclient using WinHTTP.
-    /// 
+    ///
     /// @details Provides HTTP client functionality for Windows platforms using WinHTTP.
     ///          Features include:
     ///          - Native Windows HTTP API integration
@@ -219,7 +219,7 @@ namespace siddiqsoft
     ///          - Thread-safe operations via simple_pool
     ///          - Synchronous and asynchronous request execution
     ///          - Comprehensive error handling with WinHTTP error codes
-    /// 
+    ///
     /// @note This class is only compiled on Windows platforms
     /// @note Uses WinHTTP API for HTTP operations
     /// @note Thread-safe for concurrent async operations via simple_pool
@@ -233,6 +233,9 @@ namespace siddiqsoft
         static const DWORD           READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
+        /// @brief Maximum number of retry attempts for failed deliveries
+        static const auto RETRY_LIMIT {11};
+
 
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
@@ -259,6 +262,58 @@ namespace siddiqsoft
             }
             catch (const std::exception&) {
             }
+        }};
+
+        /// @brief Implements a threadpool that supports invoking a REST call until success
+        siddiqsoft::simple_pool<RestPoolArgsType<char>> poolRetry {[&](RestPoolArgsType<char>&& arg) -> void {
+            thread_local uint64_t retryCounter {0};
+            // This function is invoked any time we have an item
+            // The arg is moved here and belongs to use. Once this
+            // method completes the lifetime of the object ends;
+            // typically this is *after* we invoke the callback.
+            // The logic here is to invoke the REST request until we get a
+            // success response.
+
+            bool logSuccess {false};
+
+            for (auto retryCount = 0; retryCount < RETRY_LIMIT; retryCount++) {
+                if (auto resp = send(arg.request); resp && resp->success()) {
+                    logSuccess = true;
+                    resp->setHeader("X-restcl-Retry", retryCount);
+
+                    try {
+                        callbackAttempt++;
+                        if (arg.callback) {
+                            // Use the per invocation callback
+                            arg.callback(arg.request, resp);
+                            callbackCompleted++;
+                        }
+                        else if (_callback) {
+                            // Use the generic callback..
+                            _callback(arg.request, resp);
+                            callbackCompleted++;
+                        }
+                    }
+                    catch (std::system_error& se) {
+                        // Failed; dispatch anyways and let the client figure out the issue.
+                        std::print(std::cerr,
+                                   "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
+                                   callbackAttempt.load(),
+                                   se.what());
+                        dispatchCallback(arg.callback, arg.request, std::unexpected<int>(se.code().value()));
+                    }
+                    catch (std::exception& ex) {
+                        callbackFailed++;
+                        std::print(std::cerr,
+                                   "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
+                                   callbackAttempt.load(),
+                                   ex.what());
+                    }
+
+                    // We're done with this.. break out..
+                    break;
+                } // send competed.
+            } // for loop
         }};
 
     protected:
@@ -404,22 +459,22 @@ namespace siddiqsoft
                         auto         contentLength  = req.getHeaders().value("Content-Length", 0);
                         std::wstring requestHeaders = ConversionUtils::convert_to<char, wchar_t>(req.encodeHeaders());
                         nError                      = WinHttpAddRequestHeaders(hRequest,
-                                                          requestHeaders.c_str(),
-                                                          static_cast<DWORD>(requestHeaders.length()),
-                                                          WINHTTP_ADDREQ_FLAG_ADD);
+                                                                               requestHeaders.c_str(),
+                                                                               static_cast<DWORD>(requestHeaders.length()),
+                                                                               WINHTTP_ADDREQ_FLAG_ADD);
 
                         dwError                     = ERROR_SUCCESS;
                         // Send the request
                         // Note: use getContentBody() which returns a reference to avoid
                         // dangling pointer from encodeContent() which returns a temporary copy.
                         auto& contentBody = req.getContentBody();
-                        nError = WinHttpSendRequest(hRequest,
-                                                    WINHTTP_NO_ADDITIONAL_HEADERS,
-                                                    0,
-                                                    contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
-                                                    contentLength,
-                                                    contentLength,
-                                                    NULL);
+                        nError            = WinHttpSendRequest(hRequest,
+                                                               WINHTTP_NO_ADDITIONAL_HEADERS,
+                                                               0,
+                                                               contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
+                                                               contentLength,
+                                                               contentLength,
+                                                               NULL);
 
                         if (nError == FALSE && (dwError = GetLastError()) == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED) {
                             nError = WinHttpSetOption(
@@ -572,8 +627,8 @@ namespace siddiqsoft
         }
 
     public:
-        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {},
-                                                 basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+                -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
 #if defined(DEBUG) || defined(_DEBUG)

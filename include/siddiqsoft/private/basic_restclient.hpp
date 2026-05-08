@@ -145,6 +145,8 @@ namespace siddiqsoft
          * @endcode
          */
         virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {}) = 0;
+
+        virtual basic_restclient& sendAsyncWithRetry(rest_request<>&&, basic_callbacktype&& = {}) = 0;
     };
 
     /**

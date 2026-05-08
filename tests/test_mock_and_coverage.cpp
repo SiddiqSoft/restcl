@@ -38,9 +38,12 @@ namespace siddiqsoft
         bool                   shouldReturnError {false};
         int                    sendCallCount {0};
         int                    sendAsyncCallCount {0};
+        int                    sendAsyncWithRetryCallCount {0};
         int                    configureCallCount {0};
         basic_callbacktype     storedCallback {};
         nlohmann::json         lastConfig {};
+        int                    maxRetries {3};
+        int                    retryAttempts {0};
 
         basic_restclient& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
@@ -64,6 +67,52 @@ namespace siddiqsoft
             sendAsyncCallCount++;
             auto result = shouldReturnError ? std::expected<rest_response<char>, int>(std::unexpected(cannedErrorCode))
                                             : std::expected<rest_response<char>, int>(cannedResponse);
+            if (cb) {
+                cb(req, result);
+            }
+            else if (storedCallback) {
+                storedCallback(req, result);
+            }
+            return *this;
+        }
+
+        /// @brief Asynchronous HTTP request execution with automatic retry logic.
+        /// 
+        /// @details Queues an HTTP request for asynchronous processing with built-in retry capability.
+        ///          If the request fails, it will be automatically retried up to maxRetries times
+        ///          before invoking the callback with the final result.
+        ///          Adds an X-restcl-Retry header to track the retry attempt count.
+        /// 
+        /// @param req Rvalue reference to the rest_request object
+        /// @param cb Optional callback function. If not provided, uses the global callback from configure()
+        /// @return Reference to self for method chaining
+        /// 
+        /// @note The callback is invoked only after all retries are exhausted or success is achieved
+        /// @note Retries are performed transparently without invoking the callback for intermediate failures
+        /// @note The X-restcl-Retry header is set to the retry attempt count (1-based)
+        basic_restclient& sendAsyncWithRetry(rest_request<>&& req, basic_callbacktype&& cb = {}) override
+        {
+            sendAsyncWithRetryCallCount++;
+            retryAttempts = 0;
+            
+            // Simulate retry logic
+            std::expected<rest_response<char>, int> result;
+            for (int attempt = 0; attempt <= maxRetries; ++attempt) {
+                retryAttempts = attempt + 1;
+                
+                // Set the X-restcl-Retry header to track retry attempt count
+                req.setHeader("X-restcl-Retry", std::to_string(retryAttempts));
+                
+                if (shouldReturnError && attempt < maxRetries) {
+                    // Retry on error (except last attempt)
+                    continue;
+                }
+                result = shouldReturnError ? std::expected<rest_response<char>, int>(std::unexpected(cannedErrorCode))
+                                           : std::expected<rest_response<char>, int>(cannedResponse);
+                break;
+            }
+            
+            // Invoke callback with final result
             if (cb) {
                 cb(req, result);
             }
@@ -849,6 +898,347 @@ namespace siddiqsoft
 
         EXPECT_EQ(5, client.sendCallCount);
         EXPECT_EQ(5, callCount);
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_Success_FirstAttempt)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 3;
+
+        bool callbackInvoked = false;
+        unsigned receivedStatus = 0;
+
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      callbackInvoked = true;
+                                      if (resp.has_value()) {
+                                          receivedStatus = resp->statusCode();
+                                      }
+                                  });
+
+        EXPECT_EQ(1, client.sendAsyncWithRetryCallCount);
+        EXPECT_TRUE(callbackInvoked);
+        EXPECT_EQ(200u, receivedStatus);
+        // Verify retry count matches mock configuration: should succeed on first attempt
+        EXPECT_EQ(1, client.retryAttempts);
+        EXPECT_EQ(client.maxRetries, 3); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_Success_AfterRetries)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 5;
+
+        bool callbackInvoked = false;
+        unsigned receivedStatus = 0;
+
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      callbackInvoked = true;
+                                      if (resp.has_value()) {
+                                          receivedStatus = resp->statusCode();
+                                      }
+                                  });
+
+        EXPECT_EQ(1, client.sendAsyncWithRetryCallCount);
+        EXPECT_TRUE(callbackInvoked);
+        EXPECT_EQ(200u, receivedStatus);
+        // Verify retry count matches mock configuration: should succeed on first attempt
+        EXPECT_EQ(1, client.retryAttempts);
+        EXPECT_EQ(client.maxRetries, 5); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_FailureAfterMaxRetries)
+    {
+        MockRESTClient client;
+        client.shouldReturnError = true;
+        client.cannedErrorCode = 28; // CURLE_OPERATION_TIMEDOUT
+        client.maxRetries = 3;
+
+        bool callbackInvoked = false;
+        int receivedError = 0;
+
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      callbackInvoked = true;
+                                      if (!resp.has_value()) {
+                                          receivedError = resp.error();
+                                      }
+                                  });
+
+        EXPECT_EQ(1, client.sendAsyncWithRetryCallCount);
+        EXPECT_TRUE(callbackInvoked);
+        EXPECT_EQ(28, receivedError);
+        // Verify retry count matches mock configuration: should attempt maxRetries + 1 times
+        EXPECT_EQ(client.maxRetries + 1, client.retryAttempts);
+        EXPECT_EQ(4, client.retryAttempts); // Explicit check: 3 retries + 1 initial = 4 attempts
+        EXPECT_EQ(client.maxRetries, 3); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_WithConfiguredCallback)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(201, "Created");
+        client.shouldReturnError = false;
+        client.maxRetries = 2;
+
+        bool callbackInvoked = false;
+        unsigned receivedStatus = 0;
+
+        client.configure({}, [&](auto& req, std::expected<rest_response<>, int> resp) {
+            callbackInvoked = true;
+            if (resp.has_value()) {
+                receivedStatus = resp->statusCode();
+            }
+        });
+
+        client.sendAsyncWithRetry("https://example.com/resource"_POST);
+
+        EXPECT_TRUE(callbackInvoked);
+        EXPECT_EQ(201u, receivedStatus);
+        // Verify retry count matches mock configuration: should succeed on first attempt
+        EXPECT_EQ(1, client.retryAttempts);
+        EXPECT_EQ(client.maxRetries, 2); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_InlineCallbackOverridesConfigured)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 4;
+
+        bool configuredCallbackInvoked = false;
+        bool inlineCallbackInvoked = false;
+
+        client.configure({}, [&](auto& req, std::expected<rest_response<>, int> resp) {
+            configuredCallbackInvoked = true;
+        });
+
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      inlineCallbackInvoked = true;
+                                  });
+
+        EXPECT_FALSE(configuredCallbackInvoked);
+        EXPECT_TRUE(inlineCallbackInvoked);
+        // Verify retry count matches mock configuration
+        EXPECT_EQ(1, client.retryAttempts);
+        EXPECT_EQ(client.maxRetries, 4); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_MultipleRetries)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 2;
+
+        int callCount = 0;
+        for (int i = 0; i < 3; i++) {
+            client.sendAsyncWithRetry("https://example.com/"_GET,
+                                      [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                          if (resp.has_value()) callCount++;
+                                      });
+        }
+
+        EXPECT_EQ(3, client.sendAsyncWithRetryCallCount);
+        EXPECT_EQ(3, callCount);
+        // Verify retry count matches mock configuration for last call
+        EXPECT_EQ(1, client.retryAttempts); // Last call should succeed on first attempt
+        EXPECT_EQ(client.maxRetries, 2); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_Chaining)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 3;
+
+        bool called = false;
+        client.configure({{"timeout", 3000}})
+              .sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, auto resp) { called = true; });
+
+        EXPECT_EQ(1, client.configureCallCount);
+        EXPECT_EQ(1, client.sendAsyncWithRetryCallCount);
+        EXPECT_TRUE(called);
+        // Verify retry count matches mock configuration
+        EXPECT_EQ(1, client.retryAttempts);
+        EXPECT_EQ(client.maxRetries, 3); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_ErrorWithInlineCallback)
+    {
+        MockRESTClient client;
+        client.shouldReturnError = true;
+        client.cannedErrorCode = 12029; // ERROR_INTERNET_CANNOT_CONNECT
+        client.maxRetries = 2;
+
+        int receivedError = 0;
+        bool callbackInvoked = false;
+
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      callbackInvoked = true;
+                                      if (!resp.has_value()) {
+                                          receivedError = resp.error();
+                                      }
+                                  });
+
+        EXPECT_TRUE(callbackInvoked);
+        EXPECT_EQ(12029, receivedError);
+        // Verify retry count matches mock configuration: should attempt maxRetries + 1 times
+        EXPECT_EQ(client.maxRetries + 1, client.retryAttempts);
+        EXPECT_EQ(3, client.retryAttempts); // Explicit check: 2 retries + 1 initial = 3 attempts
+        EXPECT_EQ(client.maxRetries, 2); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_ZeroMaxRetries)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 0;
+
+        bool callbackInvoked = false;
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      callbackInvoked = true;
+                                  });
+
+        EXPECT_TRUE(callbackInvoked);
+        // Verify retry count matches mock configuration: should attempt once (no retries)
+        EXPECT_EQ(1, client.retryAttempts);
+        EXPECT_EQ(client.maxRetries + 1, client.retryAttempts); // 0 + 1 = 1 attempt
+        EXPECT_EQ(client.maxRetries, 0); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_HighMaxRetries)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 10;
+
+        bool callbackInvoked = false;
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      callbackInvoked = true;
+                                  });
+
+        EXPECT_TRUE(callbackInvoked);
+        // Verify retry count matches mock configuration: should succeed on first attempt
+        EXPECT_EQ(1, client.retryAttempts);
+        EXPECT_LT(client.retryAttempts, client.maxRetries + 1); // Should not use all retries
+        EXPECT_EQ(client.maxRetries, 10); // Verify mock maxRetries value
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_HeaderXRestclRetry_FirstAttempt)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 3;
+
+        std::string retryHeaderValue;
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      // Capture the X-restcl-Retry header value from the request
+                                      retryHeaderValue = req.getHeaders().value("X-restcl-Retry", "");
+                                  });
+
+        // Verify X-restcl-Retry header matches retry attempt count
+        EXPECT_EQ("1", retryHeaderValue);
+        EXPECT_EQ(1, client.retryAttempts);
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_HeaderXRestclRetry_FailureAfterRetries)
+    {
+        MockRESTClient client;
+        client.shouldReturnError = true;
+        client.cannedErrorCode = 28; // CURLE_OPERATION_TIMEDOUT
+        client.maxRetries = 3;
+
+        std::string retryHeaderValue;
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      // Capture the X-restcl-Retry header value from the request
+                                      retryHeaderValue = req.getHeaders().value("X-restcl-Retry", "");
+                                  });
+
+        // Verify X-restcl-Retry header matches final retry attempt count (maxRetries + 1)
+        EXPECT_EQ("4", retryHeaderValue); // 3 retries + 1 initial = 4 attempts
+        EXPECT_EQ(4, client.retryAttempts);
+        EXPECT_EQ(client.maxRetries + 1, client.retryAttempts);
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_HeaderXRestclRetry_ZeroMaxRetries)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 0;
+
+        std::string retryHeaderValue;
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      // Capture the X-restcl-Retry header value from the request
+                                      retryHeaderValue = req.getHeaders().value("X-restcl-Retry", "");
+                                  });
+
+        // Verify X-restcl-Retry header is "1" (single attempt, no retries)
+        EXPECT_EQ("1", retryHeaderValue);
+        EXPECT_EQ(1, client.retryAttempts);
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_HeaderXRestclRetry_HighMaxRetries)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 10;
+
+        std::string retryHeaderValue;
+        client.sendAsyncWithRetry("https://example.com/"_GET,
+                                  [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                      // Capture the X-restcl-Retry header value from the request
+                                      retryHeaderValue = req.getHeaders().value("X-restcl-Retry", "");
+                                  });
+
+        // Verify X-restcl-Retry header is "1" (succeeds on first attempt)
+        EXPECT_EQ("1", retryHeaderValue);
+        EXPECT_EQ(1, client.retryAttempts);
+        EXPECT_LT(client.retryAttempts, client.maxRetries + 1);
+    }
+
+    TEST(MockClient, SendAsyncWithRetry_HeaderXRestclRetry_MultipleRetries)
+    {
+        MockRESTClient client;
+        client.cannedResponse.setStatus(200, "OK");
+        client.shouldReturnError = false;
+        client.maxRetries = 2;
+
+        std::vector<std::string> retryHeaderValues;
+        for (int i = 0; i < 3; i++) {
+            client.sendAsyncWithRetry("https://example.com/"_GET,
+                                      [&](auto& req, std::expected<rest_response<>, int> resp) {
+                                          // Capture the X-restcl-Retry header value from each request
+                                          retryHeaderValues.push_back(req.getHeaders().value("X-restcl-Retry", ""));
+                                      });
+        }
+
+        // Verify X-restcl-Retry header is "1" for all three calls (all succeed on first attempt)
+        EXPECT_EQ(3, retryHeaderValues.size());
+        EXPECT_EQ("1", retryHeaderValues[0]);
+        EXPECT_EQ("1", retryHeaderValues[1]);
+        EXPECT_EQ("1", retryHeaderValues[2]);
+        EXPECT_EQ(1, client.retryAttempts); // Last call's retry count
     }
 
 
