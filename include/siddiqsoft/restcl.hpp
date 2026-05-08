@@ -73,9 +73,10 @@ namespace siddiqsoft
 #else
 #error "Platform not supported"
 #endif
-
-        using RESTClient = std::shared_lock<basic_restclient<>>;
     }
+
+    /// @brief Alias the RESTClient as a generic basic_restclient
+    using RESTClient = std::shared_ptr<basic_restclient<char>>;
 } // namespace siddiqsoft
 
 #endif // !RESTCL_HPP
