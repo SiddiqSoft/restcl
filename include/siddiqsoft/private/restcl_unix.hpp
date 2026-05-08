@@ -401,6 +401,20 @@ namespace siddiqsoft
 
 
     private:
+    protected:
+        inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
+        {
+            callbackAttempt++;
+            if (cb) {
+                cb(req, resp);
+                callbackCompleted++;
+            }
+            else if (_callback) {
+                _callback(req, resp);
+                callbackCompleted++;
+            }
+        }
+
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item

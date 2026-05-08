@@ -229,7 +229,7 @@ namespace siddiqsoft
         std::string  UserAgent {"siddiqsoft.restcl/2"};
         std::wstring UserAgentW {L"siddiqsoft.restcl/2"};
 
-    private:
+    protected:
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
 
@@ -244,6 +244,20 @@ namespace siddiqsoft
                                     {"headers", nullptr}};
 
 
+        private:
+    protected:
+        inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
+        {
+            callbackAttempt++;
+            if (cb) {
+                cb(req, resp);
+                callbackCompleted++;
+            }
+            else if (_callback) {
+                _callback(req, resp);
+                callbackCompleted++;
+            }
+        }
         
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {

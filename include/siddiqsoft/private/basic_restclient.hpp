@@ -150,20 +150,6 @@ namespace siddiqsoft
         virtual basic_restclient& sendAsyncWithRetry(rest_request<>&&, basic_callbacktype&& = {}) = 0;
 
     protected:
-        inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
-        {
-            callbackAttempt++;
-            if (cb) {
-                cb(req, resp);
-                callbackCompleted++;
-            }
-            else if (_callback) {
-                _callback(req, resp);
-                callbackCompleted++;
-            }
-        }
-
-    protected:
         static const uint32_t     READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
