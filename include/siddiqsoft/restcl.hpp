@@ -20,6 +20,7 @@
  * @endcode
  */
 #pragma once
+#include <shared_mutex>
 #ifndef RESTCL_HPP
 #define RESTCL_HPP
 
@@ -72,6 +73,8 @@ namespace siddiqsoft
 #else
 #error "Platform not supported"
 #endif
+
+        using RESTClient = std::shared_lock<basic_restclient<>>;
     }
 } // namespace siddiqsoft
 

@@ -276,7 +276,7 @@ namespace siddiqsoft
     {
         int                             CLIENT_COUNT = 3;
         std::atomic_uint                passTest {0};
-        std::vector<siddiqsoft::restcl> clients;
+        std::vector<siddiqsoft::RESTClient> clients;
         int                             clientIndex {0};
 
         // std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);

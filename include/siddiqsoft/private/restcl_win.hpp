@@ -395,6 +395,21 @@ namespace siddiqsoft
             return *this;
         }
 
+        /// @brief Implements an asynchronous invocation of the send() method
+        /// @param req Request object
+        /// @param callback The method will be async and there will not be a response object returned
+        basic_restclient& sendAsyncWithRetry(rest_request<>&& req, basic_callbacktype&& callback = {}) override
+        {
+            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
+
+            if (!_callback && !callback)
+                throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
+                                            "configure() or provide callback at point of invocation.");
+
+            poolRetry.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+
+            return *this;
+        }        
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
