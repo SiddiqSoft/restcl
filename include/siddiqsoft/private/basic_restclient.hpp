@@ -10,6 +10,7 @@
  */
 #pragma once
 #include <optional>
+#include <sys/types.h>
 #ifndef BASIC_RESTCLIENT_HPP
 #define BASIC_RESTCLIENT_HPP
 
@@ -121,6 +122,7 @@ namespace siddiqsoft
          *                 void(rest_request<>&, std::expected<rest_response<>, int>)
          *                 If not provided, the global callback registered via configure() is used.
          *                 If neither is available, std::invalid_argument is thrown.
+         * @param retryCount When this value is provided (greater than 1) it uses the retry send dispatch/queue.
          * @return Reference to self to allow method chaining
          *
          * @throws std::invalid_argument if no callback is provided and none was registered via configure()
@@ -145,17 +147,15 @@ namespace siddiqsoft
          * });
          * @endcode
          */
-        virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {})          = 0;
-
-        virtual basic_restclient& sendAsyncWithRetry(rest_request<>&&, basic_callbacktype&& = {}) = 0;
+        virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {}, uint retryCount = 1) = 0;
 
     protected:
-        static const uint32_t     READBUFFERSIZE {8192};
+        static const uint32_t        READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-        bool                      isInitialized {false};
+        bool                         isInitialized {false};
         /// @brief Maximum number of retry attempts for failed deliveries
-        static const auto RETRY_LIMIT {11};
+        static const auto MAX_AUTO_RETRY_SEND_LIMIT {999};
 
         std::atomic_uint64_t ioAttempt {0};
         std::atomic_uint64_t ioAttemptFailed {0};

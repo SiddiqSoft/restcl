@@ -232,17 +232,17 @@ namespace siddiqsoft
     protected:
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
-        uint32_t                  id = __COUNTER__;
+        uint32_t       id = __COUNTER__;
 
         basic_callbacktype _callback {};
 
-        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                    {"trace", false},
-                                    {"id", id},
-                                    {"connectTimeout", 0L},
-                                    {"timeout", 0L},
-                                    {"downloadDirectory", nullptr},
-                                    {"headers", nullptr}};
+        nlohmann::json _config {{"userAgent", "siddiqsoft.restcl/2"},
+                                {"trace", false},
+                                {"id", id},
+                                {"connectTimeout", 0L},
+                                {"timeout", 0L},
+                                {"downloadDirectory", nullptr},
+                                {"headers", nullptr}};
 
 
     protected:
@@ -285,7 +285,7 @@ namespace siddiqsoft
 
             bool logSuccess {false};
 
-            for (auto retryCount = 0; retryCount < RETRY_LIMIT; retryCount++) {
+            for (auto retryCount = 0; retryCount < MAX_AUTO_RETRY_SEND_LIMIT; retryCount++) {
                 if (auto resp = send(arg.request); resp && resp->success()) {
                     logSuccess = true;
                     resp->setHeader("X-restcl-Retry", retryCount);
@@ -387,25 +387,12 @@ namespace siddiqsoft
         {
         }
 
-
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        basic_restclient<char>& sendAsync(rest_request<char>&& req, basic_callbacktype&& cb = {}) override
-        {
-            if (!_callback && !cb)
-                throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
-                                            "configure() or provide callback at point of invocation.");
-
-            pool.queue(RestPoolArgsType<char> {std::move(req), cb ? std::move(cb) : _callback});
-
-            return *this;
-        }
-
-        /// @brief Implements an asynchronous invocation of the send() method
-        /// @param req Request object
-        /// @param callback The method will be async and there will not be a response object returned
-        basic_restclient& sendAsyncWithRetry(rest_request<>&& req, basic_callbacktype&& callback = {}) override
+        /// @param retryCount When more than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT it will retry the request until success code
+        /// is received. Be careful with this option!
+        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint retryCount = 1) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
@@ -413,10 +400,16 @@ namespace siddiqsoft
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            poolRetry.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            // If the user provides a value of greater than 1 the we retry as many times as asked
+            retryCount = (retryCount >= MAX_AUTO_RETRY_SEND_LIMIT) ? MAX_AUTO_RETRY_SEND_LIMIT : retryCount;
+
+            if (retryCount > 1)
+                poolRetry.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            else
+                pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
 
             return *this;
-        }        
+        }
 
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object

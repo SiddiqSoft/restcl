@@ -385,20 +385,20 @@ namespace siddiqsoft
     {
     private:
         std::shared_ptr<LibCurlSingleton> singletonInstance {};
-        uint32_t                  id = __COUNTER__;
+        uint32_t                          id = __COUNTER__;
 
         basic_callbacktype _callback {};
 
     protected:
-        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                    {"trace", false},
-                                    {"id", id},
-                                    {"freshConnect", false},
-                                    {"connectTimeout", 0L},
-                                    {"timeout", 0L},
-                                    {"verifyPeer", 1L},
-                                    {"downloadDirectory", nullptr},
-                                    {"headers", nullptr}};
+        nlohmann::json _config {{"userAgent", "siddiqsoft.restcl/2"},
+                                {"trace", false},
+                                {"id", id},
+                                {"freshConnect", false},
+                                {"connectTimeout", 0L},
+                                {"timeout", 0L},
+                                {"verifyPeer", 1L},
+                                {"downloadDirectory", nullptr},
+                                {"headers", nullptr}};
 
 
     private:
@@ -454,7 +454,7 @@ namespace siddiqsoft
 
             bool logSuccess {false};
 
-            for (auto retryCount = 0; retryCount < RETRY_LIMIT; retryCount++) {
+            for (auto retryCount = 0; retryCount < MAX_AUTO_RETRY_SEND_LIMIT; retryCount++) {
                 if (auto resp = send(arg.request); resp && resp->success()) {
                     logSuccess = true;
                     resp->setHeader("X-restcl-Retry", retryCount);
@@ -656,7 +656,9 @@ namespace siddiqsoft
         /// @brief Implements an asynchronous invocation of the send() method
         /// @param req Request object
         /// @param callback The method will be async and there will not be a response object returned
-        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}) override
+        /// @param retryCount When more than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT it will retry the request until success code
+        /// is received. Be careful with this option!
+        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint retryCount = 1) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
@@ -664,24 +666,13 @@ namespace siddiqsoft
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            // If the user provides a value of greater than 1 the we retry as many times as asked
+            retryCount = (retryCount >= MAX_AUTO_RETRY_SEND_LIMIT) ? MAX_AUTO_RETRY_SEND_LIMIT : retryCount;
 
-            return *this;
-        }
-
-
-        /// @brief Implements an asynchronous invocation of the send() method
-        /// @param req Request object
-        /// @param callback The method will be async and there will not be a response object returned
-        basic_restclient& sendAsyncWithRetry(rest_request<>&& req, basic_callbacktype&& callback = {}) override
-        {
-            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
-
-            if (!_callback && !callback)
-                throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
-                                            "configure() or provide callback at point of invocation.");
-
-            poolRetry.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            if (retryCount > 1)
+                poolRetry.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            else
+                pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
 
             return *this;
         }
