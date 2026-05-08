@@ -101,7 +101,7 @@ namespace siddiqsoft
                 retryAttempts = attempt + 1;
                 
                 // Set the X-restcl-Retry header to track retry attempt count
-                req.setHeader("X-restcl-Retry", std::to_string(retryAttempts));
+                req.setHeader("X-restcl-Retry", retryAttempts);
                 
                 if (shouldReturnError && attempt < maxRetries) {
                     // Retry on error (except last attempt)
