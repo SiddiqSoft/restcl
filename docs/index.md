@@ -99,7 +99,6 @@ This directory contains comprehensive documentation for the **restcl** library -
 - [configure()](API.md#configure)
 - [send()](API.md#send)
 - [sendAsync()](API.md#sendasync)
-- [sendAsyncWithRetry()](API.md#sendasyncwithretry)
 
 **Testing**
 - [Test Architecture](TESTING.md#test-architecture)

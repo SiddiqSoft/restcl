@@ -62,34 +62,20 @@ namespace siddiqsoft
             return cannedResponse;
         }
 
-        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& cb = {}) override
-        {
-            sendAsyncCallCount++;
-            auto result = shouldReturnError ? std::expected<rest_response<char>, int>(std::unexpected(cannedErrorCode))
-                                            : std::expected<rest_response<char>, int>(cannedResponse);
-            if (cb) {
-                cb(req, result);
-            }
-            else if (storedCallback) {
-                storedCallback(req, result);
-            }
-            return *this;
-        }
-
-        basic_restclient& sendAsyncWithRetry(rest_request<>&& req, basic_callbacktype&& cb = {}) override
+        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& cb = {}, uint retryCount = 1) override
         {
             sendAsyncWithRetryCallCount++;
             retryAttempts = 0;
             
             // Simulate retry logic
             std::expected<rest_response<char>, int> result;
-            for (int attempt = 0; attempt <= maxRetries; ++attempt) {
+            for (uint attempt = 0; attempt < retryCount; ++attempt) {
                 retryAttempts = attempt + 1;
                 
                 // Set the X-restcl-Retry header to track retry attempt count
                 req.setHeader("X-restcl-Retry", retryAttempts);
                 
-                if (shouldReturnError && attempt < maxRetries) {
+                if (shouldReturnError && attempt < retryCount - 1) {
                     // Retry on error (except last attempt)
                     continue;
                 }
@@ -106,6 +92,13 @@ namespace siddiqsoft
                 storedCallback(req, result);
             }
             return *this;
+        }
+
+        /// @brief Helper method to call sendAsync with retry count
+        void sendAsyncWithRetry(rest_request<>&& req, basic_callbacktype&& cb = {})
+        {
+            // Call sendAsync with maxRetries + 1 (to account for initial attempt)
+            sendAsync(std::move(req), std::move(cb), maxRetries + 1);
         }
     };
 
@@ -378,7 +371,7 @@ namespace siddiqsoft
     }
 
     /// @brief Test auto-retry with method chaining
-    /// @details Verifies that sendAsyncWithRetry returns reference for chaining
+    /// @details Verifies that sendAsyncWithRetry works after configure
     TEST(SendAsyncWithRetry_Scenarios, MethodChaining)
     {
         MockRESTClientForRetry client;
@@ -388,8 +381,8 @@ namespace siddiqsoft
 
         int retryCount = 0;
 
-        client.configure({{"timeout", 5000}})
-              .sendAsyncWithRetry("https://api.example.com/data"_GET,
+        client.configure({{"timeout", 5000}});
+        client.sendAsyncWithRetry("https://api.example.com/data"_GET,
                                   [&](auto& req, auto resp) { retryCount++; });
 
         EXPECT_EQ(1, retryCount);

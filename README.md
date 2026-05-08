@@ -18,7 +18,7 @@
 - **Header-Only**: Easy integration with no compilation overhead
 - **Cross-Platform**: Native implementations for Windows (WinHTTP) and Unix/Linux/macOS (libcurl)
 - **User-Defined Literals**: Convenient syntax like `"https://api.example.com"_GET`
-- **Async Support**: Non-blocking async operations with callback-based responses
+- **Async Support**: Non-blocking async operations with optional automatic retry and callback-based responses
 - **Error Handling**: Uses `std::expected<T, E>` for robust error handling without exceptions for IO operations
 - **Comprehensive Testing**: Extensive test suite with unit, integration, and stress tests
 - **Type-Safe**: Template-based design with support for custom character types

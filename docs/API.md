@@ -241,27 +241,36 @@ client->sendAsync(std::move(req), [](auto& req, auto resp) {
 
 **Returns:** Reference to self for method chaining
 
-#### sendAsyncWithRetry()
+#### sendAsync()
 
-Asynchronous HTTP request execution with automatic retry logic.
+Asynchronous HTTP request execution with optional automatic retry logic.
 
 ```cpp
-client->sendAsyncWithRetry(std::move(req), [](auto& req, auto resp) {
-    // Handle response after retries
+// Simple async without retry
+client->sendAsync(std::move(req), [](auto& req, auto resp) {
+    // Handle response
 });
+
+// Async with retry (retryCount > 1)
+client->sendAsync(std::move(req), [](auto& req, auto resp) {
+    // Handle response after retries
+}, 4);  // 3 retries + 1 initial attempt
 ```
 
 **Parameters:**
 - `req` - Rvalue reference to rest_request object
 - `cb` - Optional callback function
+- `retryCount` - Number of total attempts (default: 1, no retry)
 
 **Returns:** Reference to self for method chaining
 
 **Features:**
-- Automatic retry on failure
-- Configurable max retries
-- X-restcl-Retry header tracking
+- Non-blocking async operations
+- Optional automatic retry on failure
+- Configurable retry attempts via retryCount parameter
+- X-restcl-Retry header tracking (when retryCount > 1)
 - Transparent retry without intermediate callbacks
+- Request/response preservation across retries
 
 ### rest_request Methods
 
