@@ -30,32 +30,120 @@ namespace siddiqsoft
 
 
     /// @brief Base class for the rest client
+    /// @details Abstract interface defining the contract for REST client implementations.
+    ///          Provides both synchronous and asynchronous HTTP operations with
+    ///          platform-specific implementations (Unix/Linux via libcurl, Windows via WinHTTP).
     template <typename CharT = char>
     class basic_restclient
     {
     public:
         /**
-         * @brief Configuration entry point. This function maybe used for initializing ssl objects
-         *        and/or other platform-specific shared resources.
+         * @brief Configuration entry point for initializing platform-specific resources.
+         * 
+         * @details This method is used for one-time initialization of SSL objects, connection pools,
+         *          and other platform-specific shared resources. It should be called before any
+         *          send() or sendAsync() operations.
          *
-         * @param us The User-Agent string
-         * @param ... Variable number of arguments depending on the platform.
-         *            One of the variable arguments would be the callback for sendAsync operations.
-         * @return basic_restclient& Returns reference to self to allow chaining
+         * @param cfg JSON configuration object with optional settings:
+         *            - "userAgent": User-Agent header string (default: "siddiqsoft.restcl/2")
+         *            - "connectTimeout": Connection timeout in milliseconds (default: 0 = no timeout)
+         *            - "timeout": Overall request timeout in milliseconds (default: 0 = no timeout)
+         *            - "trace": Enable verbose tracing (default: false)
+         *            - "freshConnect": Force new connections instead of reusing (default: false)
+         *            - "verifyPeer": Verify SSL peer certificates (default: 1 = enabled)
+         * @param cb Optional global callback function for async operations.
+         *           If provided, this callback will be used for all sendAsync() calls
+         *           that don't provide their own callback.
+         * @return Reference to self to allow method chaining
+         * 
+         * @note This is a pure virtual method that must be implemented by derived classes.
+         * @note Configuration can be called multiple times to update settings.
+         * 
+         * @example
+         * @code
+         * auto client = GetRESTClient();
+         * client->configure({
+         *     {"userAgent", "MyApp/1.0"},
+         *     {"timeout", 5000},
+         *     {"trace", false}
+         * }, [](const auto& req, std::expected<rest_response<>, int> resp) {
+         *     // Handle response
+         * });
+         * @endcode
          */
         virtual basic_restclient& configure(const nlohmann::json& = {}, basic_callbacktype&& = {}) = 0;
 
-        /// @brief Synchronous implementation of the IO
-        /// @param req Request
-        /// @return The response
+        /**
+         * @brief Synchronous HTTP request execution.
+         * 
+         * @details Sends an HTTP request to the remote server and waits for the response.
+         *          This is a blocking operation that will not return until the response is received
+         *          or an error occurs.
+         *
+         * @param req Reference to the rest_request object containing the HTTP request details
+         *            (method, URI, headers, content, etc.)
+         * @return std::expected<rest_response<CharT>, int> containing either:
+         *         - A rest_response object with status code, headers, and content on success
+         *         - An error code (platform-specific) on failure:
+         *           * Windows: WinHTTP error codes (12001, 12002, 12029, etc.)
+         *           * Unix/Linux: POSIX error codes (ECONNRESET, ENETUNREACH, etc.)
+         * 
+         * @note The response object is only valid if has_value() returns true.
+         * @note This method must be implemented by derived classes.
+         * @note [[nodiscard]] attribute indicates the return value should not be ignored.
+         * 
+         * @example
+         * @code
+         * rest_request<> req = "https://api.example.com/users"_GET;
+         * auto result = client->send(req);
+         * if (result.has_value()) {
+         *     auto& resp = result.value();
+         *     std::cout << "Status: " << resp.statusCode() << std::endl;
+         * } else {
+         *     std::cerr << "Error: " << result.error() << std::endl;
+         * }
+         * @endcode
+         */
         [[nodiscard]] virtual std::expected<rest_response<CharT>, int> send(rest_request<>&) = 0;
 
-        /// @brief Asynchronous operation. The callback must be provided here or previously via the configure()
-        /// @param req Request
-        /// @param callback Optional callback function.
-        ///                 If not present then the one provided during configuration is used.
-        ///                 If no callback has been registered or provided here then an invalid_argument
-        ///                 exception should be thrown.
+        /**
+         * @brief Asynchronous HTTP request execution.
+         * 
+         * @details Queues an HTTP request for asynchronous processing. The request is executed
+         *          in a background thread pool, and the provided callback is invoked when the
+         *          response is received or an error occurs. This method returns immediately
+         *          without waiting for the response.
+         *
+         * @param req Rvalue reference to the rest_request object. The request is moved into
+         *            the async queue and ownership is transferred to the thread pool.
+         * @param callback Optional callback function with signature:
+         *                 void(rest_request<>&, std::expected<rest_response<>, int>)
+         *                 If not provided, the global callback registered via configure() is used.
+         *                 If neither is available, std::invalid_argument is thrown.
+         * @return Reference to self to allow method chaining
+         * 
+         * @throws std::invalid_argument if no callback is provided and none was registered via configure()
+         * @throws std::runtime_error if the client is not properly initialized
+         * 
+         * @note This method must be implemented by derived classes.
+         * @note The callback is invoked from a worker thread; ensure thread-safe operations.
+         * @note The request object is moved and should not be used after this call.
+         * @note Multiple async requests can be queued and will be processed concurrently.
+         * 
+         * @example
+         * @code
+         * rest_request<> req = "https://api.example.com/users"_POST;
+         * req.setContent({{"name", "John"}});
+         * 
+         * client->sendAsync(std::move(req), [](const auto& req, auto resp) {
+         *     if (resp.has_value()) {
+         *         std::cout << "Success: " << resp.value().statusCode() << std::endl;
+         *     } else {
+         *         std::cerr << "Error: " << resp.error() << std::endl;
+         *     }
+         * });
+         * @endcode
+         */
         virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {}) = 0;
     };
 

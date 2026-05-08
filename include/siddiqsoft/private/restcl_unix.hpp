@@ -367,7 +367,20 @@ namespace siddiqsoft
     };
 
 
-    /// @brief Unix implementation of the basic_restclient
+    /// @brief Unix/Linux/macOS implementation of the basic_restclient using libcurl.
+    /// 
+    /// @details Provides HTTP client functionality for Unix-like systems using libcurl.
+    ///          Features include:
+    ///          - Connection pooling with automatic resource management
+    ///          - Support for all HTTP methods and protocols (HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3)
+    ///          - Automatic header and content handling
+    ///          - Thread-safe operations with atomic counters for statistics
+    ///          - Synchronous and asynchronous request execution
+    ///          - Comprehensive error handling with libcurl error codes
+    /// 
+    /// @note This class is only compiled on Unix/Linux/macOS platforms
+    /// @note Uses libcurl v8.7+ for HTTP operations
+    /// @note Thread-safe for concurrent async operations via simple_pool
     class HttpRESTClient : public basic_restclient<char>
     {
     private:

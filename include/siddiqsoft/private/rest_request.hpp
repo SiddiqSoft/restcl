@@ -42,20 +42,51 @@
 
 namespace siddiqsoft
 {
-    /// @brief A REST request utility class. Models the request a JSON document with `request`, `headers` and `content` elements.
-    /// Essentially we're a convenience wrapper on the rest_request.
+    /// @brief A REST request utility class for building HTTP requests.
+    /// 
+    /// @details Models an HTTP request with method, URI, headers, and content elements.
+    ///          Extends http_frame to provide request-specific functionality including
+    ///          encoding to HTTP wire format and user-defined literal support.
+    ///          Supports all standard HTTP methods (GET, POST, PUT, DELETE, PATCH, etc.)
+    ///          and automatic JSON serialization.
+    /// 
+    /// @tparam CharT Character type (default: char)
+    /// 
+    /// @example
+    /// @code
+    /// // Using user-defined literals
+    /// using namespace siddiqsoft::restcl_literals;
+    /// auto req = "https://api.example.com/users"_POST;
+    /// req.setHeader("Authorization", "Bearer token")
+    ///    .setContent({{"name", "John"}, {"email", "john@example.com"}});
+    /// 
+    /// // Or using constructors
+    /// rest_request<> req(HttpMethodType::METHOD_GET, 
+    ///                    Uri::parse("https://api.example.com/users"));
+    /// @endcode
     template <typename CharT = char>
     class rest_request : public http_frame<CharT>
     {
     public:
+        /// @brief Default constructor
+        /// @details Creates an empty request with HTTP/1.1 protocol and Date header
         rest_request() = default;
 
+        /// @brief Constructor with method and URI
+        /// @param v HTTP method (GET, POST, PUT, DELETE, etc.)
+        /// @param u Parsed URI object
+        /// @details Initializes request with specified method and URI, automatically sets Host header
         rest_request(const HttpMethodType& v, const Uri<CharT, AuthorityHttp<CharT>> u)
         {
             this->setMethod(v);
             this->setUri(u);
         }
 
+        /// @brief Constructor with method, URI, and headers
+        /// @param v HTTP method
+        /// @param u Parsed URI object
+        /// @param h JSON object containing header key-value pairs
+        /// @details Initializes request with method, URI, and custom headers
         rest_request(const HttpMethodType& v, const Uri<CharT, AuthorityHttp<CharT>> u, const nlohmann::json& h)
         {
             this->setHeaders(h);
@@ -63,6 +94,13 @@ namespace siddiqsoft
             this->setUri(u);
         }
 
+        /// @brief Constructor with method, URI, headers, and content
+        /// @param v HTTP method
+        /// @param u Parsed URI object
+        /// @param h JSON object containing header key-value pairs
+        /// @param c JSON object to be serialized as request body
+        /// @details Initializes complete request with all components.
+        ///          Automatically sets Content-Type to "application/json" and Content-Length header.
         rest_request(const HttpMethodType&                  v,
                      const Uri<CharT, AuthorityHttp<CharT>> u,
                      const nlohmann::json&                  h,
@@ -75,8 +113,27 @@ namespace siddiqsoft
         }
 
 
-        /// @brief Encode the request to a byte stream ready to transfer to the remote server.
-        /// @return String
+        /// @brief Encode the request to HTTP wire format.
+        /// 
+        /// @details Converts the request object into a complete HTTP message ready for transmission.
+        ///          Format: REQUEST_LINE\r\nHEADERS\r\n\r\nBODY
+        ///          Example: GET /users HTTP/1.1\r\nHost: api.example.com\r\n\r\n
+        /// 
+        /// @return String containing the complete HTTP request in wire format
+        /// 
+        /// @throws std::invalid_argument if Content-Type is set but body is empty
+        /// 
+        /// @note The request line format is: METHOD URI PROTOCOL\r\n
+        /// @note Headers are formatted as: KEY: VALUE\r\n
+        /// @note Body is appended after the blank line separator (\r\n\r\n)
+        /// 
+        /// @example
+        /// @code
+        /// rest_request<> req = "https://api.example.com/users"_POST;
+        /// req.setContent({{"name", "John"}});
+        /// std::string encoded = req.encode();
+        /// // Result: "POST /users HTTP/1.1\r\nHost: api.example.com\r\n...\r\n\r\n{\"name\":\"John\"}"
+        /// @endcode
         std::string encode() const override
         {
             std::string rs;

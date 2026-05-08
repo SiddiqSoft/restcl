@@ -31,7 +31,26 @@
 
 namespace siddiqsoft
 {
-    /// @brief REST Response object
+    /// @brief REST Response object for handling HTTP responses.
+    /// 
+    /// @details Models an HTTP response with status code, reason phrase, headers, and content.
+    ///          Extends http_frame to provide response-specific functionality including
+    ///          parsing from HTTP wire format, automatic JSON detection, and status validation.
+    ///          Supports all HTTP status codes and automatic header folding.
+    /// 
+    /// @tparam CharT Character type (default: char)
+    /// 
+    /// @example
+    /// @code
+    /// // Parse response from wire format
+    /// std::string rawResponse = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"id\":1}";
+    /// auto resp = rest_response<>::parse(rawResponse);
+    /// 
+    /// if (resp.success()) {
+    ///     std::cout << "Status: " << resp.statusCode() << std::endl;
+    ///     auto json = resp.getContentBodyJSON();
+    /// }
+    /// @endcode
     template <typename CharT = char>
     class rest_response : public http_frame<CharT>
     {
@@ -39,13 +58,50 @@ namespace siddiqsoft
         std::string _reasonCode {};
 
     public:
-        /// @brief Check if the response was successful
-        /// @return True iff there is no IOError and the StatusCode (99,400)
+        /// @brief Check if the response indicates success.
+        /// 
+        /// @details Determines if the HTTP response represents a successful operation.
+        ///          Success is defined as status code in the range [100, 400).
+        ///          This includes 1xx (informational), 2xx (success), and 3xx (redirection).
+        /// 
+        /// @return true if status code is between 100 and 399 (inclusive), false otherwise
+        /// 
+        /// @note Status codes 4xx (client error) and 5xx (server error) return false
+        /// @note Status code 0 (no response) returns false
+        /// 
+        /// @example
+        /// @code
+        /// if (resp.success()) {
+        ///     // Handle successful response
+        /// } else {
+        ///     // Handle error response
+        /// }
+        /// @endcode
         bool success() const { return (_statusCode > 99) && (_statusCode < 400); }
 
 
-        /// @brief Encode the request to a byte stream ready to transfer to the remote server.
-        /// @return String
+        /// @brief Encode the response to HTTP wire format.
+        /// 
+        /// @details Converts the response object into a complete HTTP message ready for transmission.
+        ///          Format: STATUS_LINE\r\nHEADERS\r\n\r\nBODY
+        ///          Example: HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{...}
+        /// 
+        /// @return String containing the complete HTTP response in wire format
+        /// 
+        /// @throws std::invalid_argument if Content-Type is set but body is empty
+        /// 
+        /// @note The status line format is: PROTOCOL STATUS_CODE REASON_PHRASE\r\n
+        /// @note Headers are formatted as: KEY: VALUE\r\n
+        /// @note Body is appended after the blank line separator (\r\n\r\n)
+        /// 
+        /// @example
+        /// @code
+        /// rest_response<> resp;
+        /// resp.setStatus(200, "OK");
+        /// resp.setContent({{"id", 1}, {"name", "John"}});
+        /// std::string encoded = resp.encode();
+        /// // Result: "HTTP/1.1 200 OK\r\n...\r\n\r\n{\"id\":1,\"name\":\"John\"}"
+        /// @endcode
         std::string encode() const override
         {
             std::string rs;
@@ -67,17 +123,50 @@ namespace siddiqsoft
             return rs;
         }
 
+        /// @brief Get the HTTP status code.
+        /// @return Unsigned integer representing the HTTP status code (e.g., 200, 404, 500)
         auto statusCode() const { return _statusCode; }
+
+        /// @brief Get the HTTP reason phrase.
+        /// @return String containing the reason phrase (e.g., "OK", "Not Found", "Internal Server Error")
         auto reasonCode() const { return _reasonCode; }
 
+        /// @brief Get both status code and reason phrase.
+        /// @return Pair containing (status_code, reason_phrase)
         auto status() const { return std::pair<unsigned, std::string> {_statusCode, _reasonCode}; }
 
     public:
         friend std::ostream& operator<<(std::ostream&, const rest_response<>&);
 
 
-        /// @brief Construct a response object based on the given transport error
-        /// @param err Specifies the transport error.
+        /// @brief Set the HTTP status code and reason phrase.
+        /// 
+        /// @details Updates the response status information. This is typically called
+        ///          during response parsing or when constructing a response object.
+        /// 
+        /// @param code HTTP status code (e.g., 200, 404, 500)
+        /// @param message Reason phrase (e.g., "OK", "Not Found", "Internal Server Error")
+        /// @return Reference to self for method chaining
+        /// 
+        /// @note Common status codes:
+        ///       - 200: OK (success)
+        ///       - 201: Created (resource created)
+        ///       - 204: No Content (success, no body)
+        ///       - 301/302: Redirect
+        ///       - 400: Bad Request (client error)
+        ///       - 401: Unauthorized (authentication required)
+        ///       - 403: Forbidden (access denied)
+        ///       - 404: Not Found (resource not found)
+        ///       - 500: Internal Server Error
+        ///       - 503: Service Unavailable
+        /// 
+        /// @example
+        /// @code
+        /// rest_response<> resp;
+        /// resp.setStatus(200, "OK")
+        ///     .setHeader("Content-Type", "application/json")
+        ///     .setContent({{"success", true}});
+        /// @endcode
         rest_response<>& setStatus(const int code, const std::string& message)
         {
             _statusCode = code;

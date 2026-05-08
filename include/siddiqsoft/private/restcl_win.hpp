@@ -209,7 +209,20 @@ namespace siddiqsoft
     };
 
 
-    /// @brief Windows implementation of the basic_restclient
+    /// @brief Windows implementation of the basic_restclient using WinHTTP.
+    /// 
+    /// @details Provides HTTP client functionality for Windows platforms using WinHTTP.
+    ///          Features include:
+    ///          - Native Windows HTTP API integration
+    ///          - Support for all HTTP methods and protocols (HTTP/1.0, HTTP/1.1, HTTP/2)
+    ///          - Automatic header and content handling
+    ///          - Thread-safe operations via simple_pool
+    ///          - Synchronous and asynchronous request execution
+    ///          - Comprehensive error handling with WinHTTP error codes
+    /// 
+    /// @note This class is only compiled on Windows platforms
+    /// @note Uses WinHTTP API for HTTP operations
+    /// @note Thread-safe for concurrent async operations via simple_pool
     class WinHttpRESTClient : public basic_restclient<char>
     {
     public:
