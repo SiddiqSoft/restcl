@@ -386,6 +386,8 @@ namespace siddiqsoft
     private:
         std::shared_ptr<LibCurlSingleton> singletonInstance {};
 
+        basic_callbacktype _callback {};
+
     protected:
         nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
                                     {"trace", false},

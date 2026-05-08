@@ -184,8 +184,6 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackAttempt {0};
         std::atomic_uint64_t callbackFailed {0};
         std::atomic_uint64_t callbackCompleted {0};
-
-        basic_callbacktype _callback {};
     };
 
     /**

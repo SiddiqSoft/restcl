@@ -233,6 +233,8 @@ namespace siddiqsoft
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
 
+        basic_callbacktype _callback {};
+
         nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
                                     {"trace", false},
                                     {"id", id},
