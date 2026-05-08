@@ -250,6 +250,8 @@ namespace siddiqsoft
                                     {"downloadDirectory", nullptr},
                                     {"headers", nullptr}};
 
+
+        
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item

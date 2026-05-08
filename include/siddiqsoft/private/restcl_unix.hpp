@@ -384,14 +384,7 @@ namespace siddiqsoft
     class HttpRESTClient : public basic_restclient<char>
     {
     private:
-        static const uint32_t             READBUFFERSIZE {8192};
-        static inline const char*         RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         std::shared_ptr<LibCurlSingleton> singletonInstance {};
-        bool                              isInitialized {false};
-        uint32_t                          id = __COUNTER__;
-        /// @brief Maximum number of retry attempts for failed deliveries
-        static const auto RETRY_LIMIT {11};
-
 
     protected:
         std::atomic_uint64_t ioAttempt {0};
@@ -408,31 +401,6 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackCompleted {0};
 
     private:
-        basic_callbacktype _callback {};
-        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                    {"trace", false},
-                                    {"id", id},
-                                    {"freshConnect", false},
-                                    {"connectTimeout", 0L},
-                                    {"timeout", 0L},
-                                    {"verifyPeer", 1L},
-                                    {"downloadDirectory", nullptr},
-                                    {"headers", nullptr}};
-
-
-        inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
-        {
-            callbackAttempt++;
-            if (cb) {
-                cb(req, resp);
-                callbackCompleted++;
-            }
-            else if (_callback) {
-                _callback(req, resp);
-                callbackCompleted++;
-            }
-        }
-
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item

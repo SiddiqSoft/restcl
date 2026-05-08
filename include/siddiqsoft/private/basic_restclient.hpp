@@ -16,6 +16,7 @@
 #include <tuple>
 #include <functional>
 #include <expected>
+#include <atomic>
 
 #include "http_frame.hpp"
 #include "rest_request.hpp"
@@ -39,7 +40,7 @@ namespace siddiqsoft
     public:
         /**
          * @brief Configuration entry point for initializing platform-specific resources.
-         * 
+         *
          * @details This method is used for one-time initialization of SSL objects, connection pools,
          *          and other platform-specific shared resources. It should be called before any
          *          send() or sendAsync() operations.
@@ -55,10 +56,10 @@ namespace siddiqsoft
          *           If provided, this callback will be used for all sendAsync() calls
          *           that don't provide their own callback.
          * @return Reference to self to allow method chaining
-         * 
+         *
          * @note This is a pure virtual method that must be implemented by derived classes.
          * @note Configuration can be called multiple times to update settings.
-         * 
+         *
          * @example
          * @code
          * auto client = GetRESTClient();
@@ -75,7 +76,7 @@ namespace siddiqsoft
 
         /**
          * @brief Synchronous HTTP request execution.
-         * 
+         *
          * @details Sends an HTTP request to the remote server and waits for the response.
          *          This is a blocking operation that will not return until the response is received
          *          or an error occurs.
@@ -87,11 +88,11 @@ namespace siddiqsoft
          *         - An error code (platform-specific) on failure:
          *           * Windows: WinHTTP error codes (12001, 12002, 12029, etc.)
          *           * Unix/Linux: POSIX error codes (ECONNRESET, ENETUNREACH, etc.)
-         * 
+         *
          * @note The response object is only valid if has_value() returns true.
          * @note This method must be implemented by derived classes.
          * @note [[nodiscard]] attribute indicates the return value should not be ignored.
-         * 
+         *
          * @example
          * @code
          * rest_request<> req = "https://api.example.com/users"_GET;
@@ -108,7 +109,7 @@ namespace siddiqsoft
 
         /**
          * @brief Asynchronous HTTP request execution.
-         * 
+         *
          * @details Queues an HTTP request for asynchronous processing. The request is executed
          *          in a background thread pool, and the provided callback is invoked when the
          *          response is received or an error occurs. This method returns immediately
@@ -121,20 +122,20 @@ namespace siddiqsoft
          *                 If not provided, the global callback registered via configure() is used.
          *                 If neither is available, std::invalid_argument is thrown.
          * @return Reference to self to allow method chaining
-         * 
+         *
          * @throws std::invalid_argument if no callback is provided and none was registered via configure()
          * @throws std::runtime_error if the client is not properly initialized
-         * 
+         *
          * @note This method must be implemented by derived classes.
          * @note The callback is invoked from a worker thread; ensure thread-safe operations.
          * @note The request object is moved and should not be used after this call.
          * @note Multiple async requests can be queued and will be processed concurrently.
-         * 
+         *
          * @example
          * @code
          * rest_request<> req = "https://api.example.com/users"_POST;
          * req.setContent({{"name", "John"}});
-         * 
+         *
          * client->sendAsync(std::move(req), [](const auto& req, auto resp) {
          *     if (resp.has_value()) {
          *         std::cout << "Success: " << resp.value().statusCode() << std::endl;
@@ -144,9 +145,55 @@ namespace siddiqsoft
          * });
          * @endcode
          */
-        virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {}) = 0;
+        virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {})          = 0;
 
         virtual basic_restclient& sendAsyncWithRetry(rest_request<>&&, basic_callbacktype&& = {}) = 0;
+
+    protected:
+        inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
+        {
+            callbackAttempt++;
+            if (cb) {
+                cb(req, resp);
+                callbackCompleted++;
+            }
+            else if (_callback) {
+                _callback(req, resp);
+                callbackCompleted++;
+            }
+        }
+
+    protected:
+        static const uint32_t     READBUFFERSIZE {8192};
+        static inline const char* RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+        bool                      isInitialized {false};
+        uint32_t                  id = __COUNTER__;
+        /// @brief Maximum number of retry attempts for failed deliveries
+        static const auto RETRY_LIMIT {11};
+
+        std::atomic_uint64_t ioAttempt {0};
+        std::atomic_uint64_t ioAttemptFailed {0};
+        std::atomic_uint64_t ioConnect {0};
+        std::atomic_uint64_t ioConnectFailed {0};
+        std::atomic_uint64_t ioSend {0};
+        std::atomic_uint64_t ioSendFailed {0};
+        std::atomic_uint64_t ioReadAttempt {0};
+        std::atomic_uint64_t ioRead {0};
+        std::atomic_uint64_t ioReadFailed {0};
+        std::atomic_uint64_t callbackAttempt {0};
+        std::atomic_uint64_t callbackFailed {0};
+        std::atomic_uint64_t callbackCompleted {0};
+
+        basic_callbacktype _callback {};
+        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
+                                    {"trace", false},
+                                    {"id", id},
+                                    {"freshConnect", false},
+                                    {"connectTimeout", 0L},
+                                    {"timeout", 0L},
+                                    {"verifyPeer", 1L},
+                                    {"downloadDirectory", nullptr},
+                                    {"headers", nullptr}};
     };
 
     /**
