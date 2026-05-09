@@ -488,6 +488,7 @@ namespace siddiqsoft
                     auto debugLine = std::format("failed#:{}, retry:{}/{}", failCount, arg.retryCounter, MAX_AUTO_RETRY_SEND_LIMIT);
                     resp->setHeader("X-restcl-pool-debug", debugLine);
                     resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
+                    std::print(std::cerr, "{}\n", debugLine);
 #endif
                 }
             } // for loop

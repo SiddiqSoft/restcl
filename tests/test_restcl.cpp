@@ -91,7 +91,7 @@ namespace siddiqsoft
 
         wrc->sendAsync(std::move(optionsRequest), [&passTest](auto& req, std::expected<rest_response<>, int> resp) {
             // Checks the implementation of the encode() implementation
-            // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+            std::print(std::cerr, "From callback Wire serialize              : {}\n", req.encode());
             if (passTest = resp ? resp->success() : false; passTest.load()) {
                 std::cerr << "Response\n" << *resp << std::endl;
             }
