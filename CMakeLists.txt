@@ -78,6 +78,8 @@ target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.1.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
+CPMAddPackage("gh:SiddiqSoft/TimeThis#2.4.0")
+target_link_libraries(${PROJECT_NAME} INTERFACE timethis::timethis)
 
 # ____________________________________
 # Testing

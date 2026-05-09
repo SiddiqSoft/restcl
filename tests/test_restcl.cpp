@@ -62,7 +62,8 @@ namespace siddiqsoft
                                std::print(std::cerr, "From callback Serialized req: {}\n", doc.dump(2));
                                if (resp && resp->success()) {
                                    passTest = true;
-                                   // std::cerr << "Response\n" << *resp << std::endl;
+                                   std::print(std::cerr, "From callback Serialized resp-headers: {}\n", resp->getHeaders().dump(2));
+                                   std::cerr << "Response\n" << *resp << std::endl;
                                }
                                else if (resp) {
                                    auto [ec, emsg] = resp->status();

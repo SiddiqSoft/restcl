@@ -16,8 +16,9 @@
 
 #include <functional>
 #include <atomic>
-
+#include <expected>
 #include "rest_request.hpp"
+#include "rest_response.hpp"
 
 namespace siddiqsoft
 {
@@ -165,7 +166,8 @@ namespace siddiqsoft
 
     protected:
         static const uint32_t READBUFFERSIZE {8192};
-        bool                  isInitialized {false};
+
+        std::atomic_bool      isInitialized {false};
 
         std::atomic_uint64_t ioAttempt {0};
         std::atomic_uint64_t ioAttemptFailed {0};
@@ -179,7 +181,7 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackAttempt {0};
         std::atomic_uint64_t callbackFailed {0};
         std::atomic_uint64_t callbackCompleted {0};
-    };
+    }; // basic_restclient
 
     /**
      * @brief Container to store the rest_request and the optional callback.
@@ -188,14 +190,14 @@ namespace siddiqsoft
     template <typename CharT = char>
     struct RestPoolArgsType
     {
-        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype& cb, uint rc = 1)
+        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype& cb, uint rc = 0)
             : request(std::move(r)) // own the request
             , callback(cb)          // make a copy
             , retryCounter(rc)
         {
         }
 
-        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype&& cb, uint rc = 1)
+        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype&& cb, uint rc = 0)
             : request(std::move(r))   // own the request
             , callback(std::move(cb)) // own the callback
             , retryCounter(rc)
@@ -204,7 +206,7 @@ namespace siddiqsoft
 
         rest_request<CharT> request;
         basic_callbacktype  callback {};
-        uint                retryCounter = 1; // default we do not retry..
+        uint                retryCounter = 0; // default we do not retry..
     };
 
 } // namespace siddiqsoft

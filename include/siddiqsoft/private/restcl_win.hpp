@@ -260,21 +260,34 @@ namespace siddiqsoft
 
         /// @brief Implements a threadpool that supports invoking a REST call until success
         siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
-            thread_local uint64_t retryCounter {0};
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
             // method completes the lifetime of the object ends;
             // typically this is *after* we invoke the callback.
             // The logic here is to invoke the REST request until we get a
             // success response.
+            uint retryCount = 0;
+            uint failCount= 0;
 
-            bool logSuccess {false};
+            if (arg.retryCounter == 0) {
+                arg.retryCounter = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];
+                if (arg.retryCounter > MAX_AUTO_RETRY_SEND_LIMIT) arg.retryCounter = MAX_AUTO_RETRY_SEND_LIMIT;
+            }
 
-            for (auto retryCount = 0; retryCount < MAX_AUTO_RETRY_SEND_LIMIT; retryCount++) {
+            while (arg.retryCounter--) {
+#if defined(DEBUG)
+                std::print(std::cerr, "pool io callback - Sending.. retryCount:{}  arg.retryCount:{} \n", retryCount, arg.retryCounter);
+#endif
+                timethis ttx {};
+                
                 if (auto resp = send(arg.request); resp && resp->success()) {
-                    logSuccess = true;
-                    resp->setHeader("X-restcl-Retry", retryCount);
-
+                    // Only add the header if we "Retry".. we should not add for the first attempt if it succeeds.
+                    if (retryCount++ > 0) resp->setHeader("X-restcl-Retry", retryCount);
+                    if (failCount > 0) resp->setHeader("X-restcl-FailCount", failCount);
+#if defined(DEBUG)
+                    resp->setHeader("X-restcl-timetaken", ttx.lap<std::chrono::milliseconds>());
+#endif
+                    
                     try {
                         callbackAttempt++;
                         if (arg.callback) {
@@ -307,6 +320,9 @@ namespace siddiqsoft
                     // We're done with this.. break out..
                     break;
                 } // send competed.
+                else {
+                    failCount++;
+                }
             } // for loop
         }};
 

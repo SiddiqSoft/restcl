@@ -42,6 +42,7 @@
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
 
+#include "siddiqsoft/timethis.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/conversion-utils.hpp"
@@ -419,8 +420,8 @@ namespace siddiqsoft
             // typically this is *after* we invoke the callback.
             // The logic here is to invoke the REST request until we get a
             // success response.
-
             uint retryCount = 0;
+            uint failCount  = 0;
 
             if (arg.retryCounter == 0) {
                 arg.retryCounter = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];
@@ -428,9 +429,27 @@ namespace siddiqsoft
             }
 
             while (arg.retryCounter--) {
+#if defined(DEBUG)
+                std::print(std::cerr,
+                           "pool io callback - Sending.. retryCount:{}  arg.retryCount:{} \n",
+                           retryCount,
+                           arg.retryCounter);
+#endif
+                timethis ttx {};
+
                 if (auto resp = send(arg.request); resp && resp->success()) {
                     // Only add the header if we "Retry".. we should not add for the first attempt if it succeeds.
                     if (retryCount++ > 0) resp->setHeader("X-restcl-Retry", retryCount);
+                    if (failCount > 0) resp->setHeader("X-restcl-FailCount", failCount);
+#if defined(DEBUG)
+                    auto debugLine = std::format("callback#:{}/{}, retry:{}/{}",
+                                                 callbackAttempt.load(),
+                                                 callbackCompleted.load(),
+                                                 arg.retryCounter,
+                                                 MAX_AUTO_RETRY_SEND_LIMIT);
+                    resp->setHeader("X-restcl-pool-debug", debugLine);
+                    resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
+#endif
 
                     try {
                         callbackAttempt++;
@@ -464,6 +483,17 @@ namespace siddiqsoft
                     // We're done with this.. break out..
                     break;
                 } // send competed.
+                else {
+                    failCount++;
+#if defined(DEBUG)
+                    auto debugLine = std::format("failed#:{}, retry:{}/{}",
+                                                 failCount,
+                                                 arg.retryCounter,
+                                                 MAX_AUTO_RETRY_SEND_LIMIT);
+                    resp->setHeader("X-restcl-pool-debug", debugLine);
+                    resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
+#endif
+                }
             } // for loop
         }};
 
@@ -580,19 +610,19 @@ namespace siddiqsoft
             , _config(src._config)
             , id(src.id)
         {
-            isInitialized     = src.isInitialized;
-            ioAttempt         = src.ioAttempt.load();
-            ioAttemptFailed   = src.ioAttemptFailed.load();
-            ioConnect         = src.ioConnect.load();
-            ioConnectFailed   = src.ioConnectFailed.load();
-            ioSend            = src.ioSend.load();
-            ioSendFailed      = src.ioSendFailed.load();
-            ioReadAttempt     = src.ioReadAttempt.load();
-            ioRead            = src.ioRead.load();
-            ioReadFailed      = src.ioReadFailed.load();
-            callbackAttempt   = src.callbackAttempt.load();
-            callbackFailed    = src.callbackFailed.load();
-            callbackCompleted = src.callbackCompleted.load();
+            this->isInitialized     = src.isInitialized.load();
+            this->ioAttempt         = src.ioAttempt.load();
+            this->ioAttemptFailed   = src.ioAttemptFailed.load();
+            this->ioConnect         = src.ioConnect.load();
+            this->ioConnectFailed   = src.ioConnectFailed.load();
+            this->ioSend            = src.ioSend.load();
+            this->ioSendFailed      = src.ioSendFailed.load();
+            this->ioReadAttempt     = src.ioReadAttempt.load();
+            this->ioRead            = src.ioRead.load();
+            this->ioReadFailed      = src.ioReadFailed.load();
+            this->callbackAttempt   = src.callbackAttempt.load();
+            this->callbackFailed    = src.callbackFailed.load();
+            this->callbackCompleted = src.callbackCompleted.load();
         }
 
     protected:
