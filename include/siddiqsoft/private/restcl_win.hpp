@@ -47,6 +47,7 @@
 #include "rest_request.hpp"
 #include "rest_response.hpp"
 
+#include "siddiqsoft/timethis.hpp"
 #include "siddiqsoft/string2map.hpp"
 #include "siddiqsoft/acw32h.hpp"
 #include "siddiqsoft/conversion-utils.hpp"
