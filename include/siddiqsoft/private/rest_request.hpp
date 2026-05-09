@@ -19,19 +19,9 @@
 #ifndef REST_REQUEST_HPP
 #define REST_REQUEST_HPP
 
-#include <cstdint>
 #include <stdexcept>
-#include <type_traits>
-#include <utility>
-#include <variant>
 #include <iostream>
-#include <chrono>
 #include <string>
-#include <functional>
-#include <memory>
-#include <format>
-#include <iterator>
-#include <expected>
 
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"

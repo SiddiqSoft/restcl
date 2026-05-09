@@ -190,7 +190,6 @@ namespace siddiqsoft
         }
     }
 
-
     TEST_F(PostBin, verb_GET_All)
     {
         // https://designer.mocky.io/design
@@ -357,28 +356,30 @@ namespace siddiqsoft
         EXPECT_NO_THROW({
             restcl wrc = GetRESTClient();
 
-            wrc->configure({{"freshConnect", true},
-                            {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
-                           [&](const auto& req, std::expected<rest_response<>, int> resp) {
-                               callbackCounter++;
+            wrc->configure(
+                    {{RESTCL_CONFIG_FRESH_CONNECT, true},
+                     {RESTCL_CONFIG_TRACE, true},
+                     {RESTCL_CONFIG_USER_AGENT, std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
+                    [&](const auto& req, std::expected<rest_response<>, int> resp) {
+                        callbackCounter++;
 
-                               if (resp->success()) {
-                                   passTest += resp->statusCode() >= 200;
-                                   passTest.notify_all();
-                               }
-                               else if (resp.has_value()) {
-                                   passTest += resp->statusCode() != 0;
-                                   /*std::print(std::cerr,
-                                              "{} Threads::test_1 - Got error: {} for {} -- {}\n",
-                                              __func__,
-                                              resp->statusCode(),
-                                              req.getUri().authority.host,
-                                              resp->reasonCode());*/
-                               }
-                               else {
-                                   std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);
-                               }
-                           });
+                        if (resp->success()) {
+                            passTest += resp->statusCode() >= 200;
+                            passTest.notify_all();
+                        }
+                        else if (resp.has_value()) {
+                            passTest += resp->statusCode() != 0;
+                            /*std::print(std::cerr,
+                                       "{} Threads::test_1 - Got error: {} for {} -- {}\n",
+                                       __func__,
+                                       resp->statusCode(),
+                                       req.getUri().authority.host,
+                                       resp->reasonCode());*/
+                        }
+                        else {
+                            std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);
+                        }
+                    });
 
             for (auto i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {

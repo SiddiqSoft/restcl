@@ -24,7 +24,6 @@
 #ifndef RESTCL_UNIX_HPP
 #define RESTCL_UNIX_HPP
 
-#include <atomic>
 #include <cerrno>
 #include <cstdint>
 #include <stdexcept>
@@ -32,18 +31,14 @@
 #include <string>
 #include <memory>
 #include <mutex>
-#include <expected>
 #include <stdio.h>
 #include <exception>
-#include <functional>
-#include <optional>
 #include <utility>
 #include <variant>
 
 #include "nlohmann/json.hpp"
 
 #include "http_frame.hpp"
-#include "rest_response.hpp"
 #include "basic_restclient.hpp"
 #include "rest_request.hpp"
 
@@ -366,7 +361,6 @@ namespace siddiqsoft
 #endif
     };
 
-
     /// @brief Unix/Linux/macOS implementation of the basic_restclient using libcurl.
     ///
     /// @details Provides HTTP client functionality for Unix-like systems using libcurl.
@@ -390,15 +384,16 @@ namespace siddiqsoft
         basic_callbacktype _callback {};
 
     protected:
-        nlohmann::json _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                {"trace", false},
-                                {"id", id},
-                                {"freshConnect", false},
-                                {"connectTimeout", 0L},
-                                {"timeout", 0L},
-                                {"verifyPeer", 1L},
-                                {"downloadDirectory", nullptr},
-                                {"headers", nullptr}};
+        nlohmann::json _config {{RESTCL_CONFIG_USER_AGENT, "siddiqsoft.restcl/2"},
+                                {RESTCL_CONFIG_TRACE, false},
+                                {RESTCL_CONFIG_ID, id},
+                                {RESTCL_CONFIG_FRESH_CONNECT, false},
+                                {RESTCL_CONFIG_CONNECT_TIMEOUT, 0L},
+                                {RESTCL_CONFIG_TIMEOUT, 0L},
+                                {RESTCL_CONFIG_VERIFY_PEER, 1L},
+                                {RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER, 1}, // controls the retry count
+                                {RESTCL_CONFIG_DOWNLOAD_DIRECTORY, nullptr},
+                                {RESTCL_CONFIG_COMMON_HEADERS, nullptr}};
 
 
     private:
@@ -416,35 +411,8 @@ namespace siddiqsoft
             }
         }
 
-        /// @brief Adds asynchrony to the library via the simple_pool utility
-        siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
-            // This function is invoked any time we have an item
-            // The arg is moved here and belongs to use. Once this
-            // method completes the lifetime of the object ends;
-            // typically this is *after* we invoke the callback.
-            try {
-                dispatchCallback(arg.callback, arg.request, send(arg.request));
-            }
-            catch (std::system_error& se) {
-                // Failed; dispatch anyways and let the client figure out the issue.
-                std::print(std::cerr,
-                           "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
-                           callbackAttempt.load(),
-                           se.what());
-                dispatchCallback(arg.callback, arg.request, std::unexpected<int>(se.code().value()));
-            }
-            catch (std::exception& ex) {
-                callbackFailed++;
-                std::print(std::cerr,
-                           "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
-                           callbackAttempt.load(),
-                           ex.what());
-            }
-        }};
-
         /// @brief Implements a threadpool that supports invoking a REST call until success
-        siddiqsoft::simple_pool<RestPoolArgsType<char>> poolRetry {[&](RestPoolArgsType<char>&& arg) -> void {
-            thread_local uint64_t retryCounter {0};
+        siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
             // method completes the lifetime of the object ends;
@@ -452,12 +420,17 @@ namespace siddiqsoft
             // The logic here is to invoke the REST request until we get a
             // success response.
 
-            bool logSuccess {false};
+            uint retryCount = 0;
 
-            for (auto retryCount = 0; retryCount < MAX_AUTO_RETRY_SEND_LIMIT; retryCount++) {
+            if (arg.retryCounter == 0) {
+                arg.retryCounter = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];
+                if (arg.retryCounter > MAX_AUTO_RETRY_SEND_LIMIT) arg.retryCounter = MAX_AUTO_RETRY_SEND_LIMIT;
+            }
+
+            while (arg.retryCounter--) {
                 if (auto resp = send(arg.request); resp && resp->success()) {
-                    logSuccess = true;
-                    resp->setHeader("X-restcl-Retry", retryCount);
+                    // Only add the header if we "Retry".. we should not add for the first attempt if it succeeds.
+                    if (retryCount++ > 0) resp->setHeader("X-restcl-Retry", retryCount);
 
                     try {
                         callbackAttempt++;
@@ -658,7 +631,7 @@ namespace siddiqsoft
         /// @param callback The method will be async and there will not be a response object returned
         /// @param retryCount When more than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT it will retry the request until success code
         /// is received. Be careful with this option!
-        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint retryCount = 1) override
+        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint retryCount = 0) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
@@ -666,13 +639,14 @@ namespace siddiqsoft
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
+            if (retryCount == 0) retryCount = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];
             // If the user provides a value of greater than 1 the we retry as many times as asked
             retryCount = (retryCount >= MAX_AUTO_RETRY_SEND_LIMIT) ? MAX_AUTO_RETRY_SEND_LIMIT : retryCount;
 
-            if (retryCount > 1)
-                poolRetry.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
-            else
-                pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            req.setHeader("X-restcl-maxAutoRetryCount", MAX_AUTO_RETRY_SEND_LIMIT);
+
+            // Queue the request.. the queue worker will handle the retry based on our
+            pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback, retryCount});
 
             return *this;
         }

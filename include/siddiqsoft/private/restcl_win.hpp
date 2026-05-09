@@ -208,7 +208,6 @@ namespace siddiqsoft
         auto to_string() const { return messageFromWininetCode(error); }
     };
 
-
     /// @brief Windows implementation of the basic_restclient using WinHTTP.
     ///
     /// @details Provides HTTP client functionality for Windows platforms using WinHTTP.
@@ -259,22 +258,8 @@ namespace siddiqsoft
             }
         }
 
-        /// @brief Adds asynchrony to the library via the roundrobin_pool utility
-        simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
-            // This function is invoked any time we have an item
-            // The arg is moved here and belongs to use. Once this
-            // method completes the lifetime of the object ends;
-            // typically this is *after* we invoke the callback.
-            try {
-                auto resp = send(arg.request);
-                arg.callback(arg.request, resp);
-            }
-            catch (const std::exception&) {
-            }
-        }};
-
         /// @brief Implements a threadpool that supports invoking a REST call until success
-        siddiqsoft::simple_pool<RestPoolArgsType<char>> poolRetry {[&](RestPoolArgsType<char>&& arg) -> void {
+        siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             thread_local uint64_t retryCounter {0};
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this

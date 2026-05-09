@@ -9,19 +9,15 @@
  *
  */
 #pragma once
-#include <optional>
 #include <sys/types.h>
+
 #ifndef BASIC_RESTCLIENT_HPP
 #define BASIC_RESTCLIENT_HPP
 
-#include <tuple>
 #include <functional>
-#include <expected>
 #include <atomic>
 
-#include "http_frame.hpp"
 #include "rest_request.hpp"
-#include "rest_response.hpp"
 
 namespace siddiqsoft
 {
@@ -30,6 +26,24 @@ namespace siddiqsoft
     /// @brief The function or lambda must accept const rest_request& and const rest_response<>&
     using basic_callbacktype = std::function<void(rest_request<>&, std::expected<rest_response<>, int>)>;
 
+    /// @brief Configuration
+    static const std::string RESTCL_CONFIG_USER_AGENT {"userAgent"};
+    static const std::string RESTCL_CONFIG_TRACE {"trace"};
+    static const std::string RESTCL_CONFIG_ID {"id"};
+    static const std::string RESTCL_CONFIG_FRESH_CONNECT {"freshConnect"};
+    static const std::string RESTCL_CONFIG_CONNECT_TIMEOUT {"connectTimeout"};
+    static const std::string RESTCL_CONFIG_TIMEOUT {"timeout"};
+    static const std::string RESTCL_CONFIG_VERIFY_PEER {"verifyPeer"};
+    static const std::string RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER {"autoRESTRetryCounter"}; // controls the retry count
+    static const std::string RESTCL_CONFIG_DOWNLOAD_DIRECTORY {"downloadDirectory"};
+    static const std::string RESTCL_CONFIG_COMMON_HEADERS {"headers"};
+
+    /// @brief Maximum number of retry attempts for failed deliveries
+    static const auto MAX_AUTO_RETRY_SEND_LIMIT {999};
+
+    /// @brief The Accept types
+    static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
+    static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
 
     /// @brief Base class for the rest client
     /// @details Abstract interface defining the contract for REST client implementations.
@@ -150,12 +164,8 @@ namespace siddiqsoft
         virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {}, uint retryCount = 1) = 0;
 
     protected:
-        static const uint32_t        READBUFFERSIZE {8192};
-        static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
-        static inline const wchar_t* RESTCL_ACCEPT_TYPES_W[4] {L"application/json", L"text/json", L"*/*", NULL};
-        bool                         isInitialized {false};
-        /// @brief Maximum number of retry attempts for failed deliveries
-        static const auto MAX_AUTO_RETRY_SEND_LIMIT {999};
+        static const uint32_t READBUFFERSIZE {8192};
+        bool                  isInitialized {false};
 
         std::atomic_uint64_t ioAttempt {0};
         std::atomic_uint64_t ioAttemptFailed {0};
@@ -178,20 +188,23 @@ namespace siddiqsoft
     template <typename CharT = char>
     struct RestPoolArgsType
     {
-        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype& cb)
+        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype& cb, uint rc = 1)
             : request(std::move(r)) // own the request
             , callback(cb)          // make a copy
+            , retryCounter(rc)
         {
         }
 
-        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype&& cb)
+        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype&& cb, uint rc = 1)
             : request(std::move(r))   // own the request
             , callback(std::move(cb)) // own the callback
+            , retryCounter(rc)
         {
         }
 
         rest_request<CharT> request;
         basic_callbacktype  callback {};
+        uint                retryCounter = 1; // default we do not retry..
     };
 
 } // namespace siddiqsoft
