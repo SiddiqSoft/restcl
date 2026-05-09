@@ -408,7 +408,7 @@ namespace siddiqsoft
         /// @param callback The method will be async and there will not be a response object returned
         /// @param retryCount When more than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT it will retry the request until success code
         /// is received. Be careful with this option!
-        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint16_t retryCount = 1) override
+        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint16_t retryCount = 0) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
@@ -416,17 +416,19 @@ namespace siddiqsoft
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
+            if (retryCount == 0) retryCount = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];
             // If the user provides a value of greater than 1 the we retry as many times as asked
             retryCount = (retryCount >= MAX_AUTO_RETRY_SEND_LIMIT) ? MAX_AUTO_RETRY_SEND_LIMIT : retryCount;
 
-            if (retryCount > 1)
-                poolRetry.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
-            else
-                pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            req.setHeader("X-restcl-maxAutoRetryCount", MAX_AUTO_RETRY_SEND_LIMIT);
+
+            // Queue the request.. the queue worker will handle the retry based on our
+            pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback, retryCount});
 
             return *this;
         }
 
+        
         /// @brief Implements a synchronous send of the request.
         /// @param req Request object
         /// @return Response object only if the callback is not provided to emulate synchronous invocation
