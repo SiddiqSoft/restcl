@@ -267,7 +267,7 @@ namespace siddiqsoft
             // The logic here is to invoke the REST request until we get a
             // success response.
             uint retryCount = 0;
-            uint failCount= 0;
+            uint failCount  = 0;
 
             if (arg.retryCounter == 0) {
                 arg.retryCounter = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];
@@ -276,18 +276,27 @@ namespace siddiqsoft
 
             while (arg.retryCounter--) {
 #if defined(DEBUG)
-                std::print(std::cerr, "pool io callback - Sending.. retryCount:{}  arg.retryCount:{} \n", retryCount, arg.retryCounter);
+                std::print(std::cerr,
+                           "pool io callback - Sending.. retryCount:{}  arg.retryCount:{} \n",
+                           retryCount,
+                           arg.retryCounter);
 #endif
                 timethis ttx {};
-                
+
                 if (auto resp = send(arg.request); resp && resp->success()) {
                     // Only add the header if we "Retry".. we should not add for the first attempt if it succeeds.
                     if (retryCount++ > 0) resp->setHeader("X-restcl-Retry", retryCount);
                     if (failCount > 0) resp->setHeader("X-restcl-FailCount", failCount);
 #if defined(DEBUG)
-                    resp->setHeader("X-restcl-timetaken", ttx.lap<std::chrono::milliseconds>());
+                    auto debugLine = std::format("callback#:{}/{}, retry:{}/{}",
+                                                 callbackAttempt.load(),
+                                                 callbackCompleted.load(),
+                                                 arg.retryCounter,
+                                                 MAX_AUTO_RETRY_SEND_LIMIT);
+                    resp->setHeader("X-restcl-pool-debug", debugLine);
+                    resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
 #endif
-                    
+
                     try {
                         callbackAttempt++;
                         if (arg.callback) {
@@ -322,6 +331,14 @@ namespace siddiqsoft
                 } // send competed.
                 else {
                     failCount++;
+#if defined(DEBUG)
+                    auto debugLine = std::format("failed#:{}, retry:{}/{}",
+                                                 failCount,
+                                                 arg.retryCounter,
+                                                 MAX_AUTO_RETRY_SEND_LIMIT);
+                    resp->setHeader("X-restcl-pool-debug", debugLine);
+                    resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
+#endif
                 }
             } // for loop
         }};

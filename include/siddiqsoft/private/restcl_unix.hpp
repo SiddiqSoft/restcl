@@ -397,8 +397,8 @@ namespace siddiqsoft
                                 {RESTCL_CONFIG_COMMON_HEADERS, nullptr}};
 
 
-    private:
     protected:
+        /*
         inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
         {
             callbackAttempt++;
@@ -411,7 +411,8 @@ namespace siddiqsoft
                 callbackCompleted++;
             }
         }
-
+        */
+        
         /// @brief Implements a threadpool that supports invoking a REST call until success
         siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item
