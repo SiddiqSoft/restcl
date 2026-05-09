@@ -491,6 +491,10 @@ namespace siddiqsoft
 #endif
                 }
             } // for loop
+
+#if defined(DEBUG)
+            std::print(std::cerr, "COMPLETED callback#:{}/{},", callbackAttempt.load(), callbackCompleted.load());
+#endif
         }};
 
         /**
@@ -659,11 +663,11 @@ namespace siddiqsoft
         /// is received. Be careful with this option!
         basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint16_t retryCount = 0) override
         {
-            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
-
             if (!_callback && !callback)
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
+
+            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
             if (retryCount == 0) retryCount = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];
             // If the user provides a value of greater than 1 the we retry as many times as asked
