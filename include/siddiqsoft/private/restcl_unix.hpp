@@ -398,7 +398,6 @@ namespace siddiqsoft
 
 
     protected:
-        /*
         inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
         {
             callbackAttempt++;
@@ -411,8 +410,7 @@ namespace siddiqsoft
                 callbackCompleted++;
             }
         }
-        */
-        
+
         /// @brief Implements a threadpool that supports invoking a REST call until success
         siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item
@@ -421,8 +419,8 @@ namespace siddiqsoft
             // typically this is *after* we invoke the callback.
             // The logic here is to invoke the REST request until we get a
             // success response.
-            uint retryCount = 0;
-            uint failCount  = 0;
+            uint16_t retryCount = 0;
+            uint16_t failCount  = 0;
 
             if (arg.retryCounter == 0) {
                 arg.retryCounter = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];
@@ -487,10 +485,7 @@ namespace siddiqsoft
                 else {
                     failCount++;
 #if defined(DEBUG)
-                    auto debugLine = std::format("failed#:{}, retry:{}/{}",
-                                                 failCount,
-                                                 arg.retryCounter,
-                                                 MAX_AUTO_RETRY_SEND_LIMIT);
+                    auto debugLine = std::format("failed#:{}, retry:{}/{}", failCount, arg.retryCounter, MAX_AUTO_RETRY_SEND_LIMIT);
                     resp->setHeader("X-restcl-pool-debug", debugLine);
                     resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
 #endif
@@ -662,7 +657,7 @@ namespace siddiqsoft
         /// @param callback The method will be async and there will not be a response object returned
         /// @param retryCount When more than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT it will retry the request until success code
         /// is received. Be careful with this option!
-        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint retryCount = 0) override
+        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint16_t retryCount = 0) override
         {
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 

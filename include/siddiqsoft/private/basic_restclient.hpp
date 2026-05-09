@@ -162,12 +162,12 @@ namespace siddiqsoft
          * });
          * @endcode
          */
-        virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {}, uint retryCount = 1) = 0;
+        virtual basic_restclient& sendAsync(rest_request<>&&, basic_callbacktype&& = {}, uint16_t retryCount = 1) = 0;
 
     protected:
         static const uint32_t READBUFFERSIZE {8192};
 
-        std::atomic_bool      isInitialized {false};
+        std::atomic_bool isInitialized {false};
 
         std::atomic_uint64_t ioAttempt {0};
         std::atomic_uint64_t ioAttemptFailed {0};
@@ -190,14 +190,14 @@ namespace siddiqsoft
     template <typename CharT = char>
     struct RestPoolArgsType
     {
-        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype& cb, uint rc = 0)
+        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype& cb, uint16_t rc = 0)
             : request(std::move(r)) // own the request
             , callback(cb)          // make a copy
             , retryCounter(rc)
         {
         }
 
-        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype&& cb, uint rc = 0)
+        RestPoolArgsType(rest_request<CharT>&& r, basic_callbacktype&& cb, uint16_t rc = 0)
             : request(std::move(r))   // own the request
             , callback(std::move(cb)) // own the callback
             , retryCounter(rc)
@@ -206,7 +206,7 @@ namespace siddiqsoft
 
         rest_request<CharT> request;
         basic_callbacktype  callback {};
-        uint                retryCounter = 0; // default we do not retry..
+        uint16_t            retryCounter = 0; // default we do not retry..
     };
 
 } // namespace siddiqsoft

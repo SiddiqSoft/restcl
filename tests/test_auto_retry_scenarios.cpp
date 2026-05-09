@@ -62,14 +62,14 @@ namespace siddiqsoft
             return cannedResponse;
         }
 
-        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& cb = {}, uint retryCount = 1) override
+        basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& cb = {}, uint16_t retryCount = 1) override
         {
             sendAsyncWithRetryCallCount++;
             retryAttempts = 0;
             
             // Simulate retry logic
             std::expected<rest_response<char>, int> result;
-            for (uint attempt = 0; attempt < retryCount; ++attempt) {
+            for (uint16_t attempt = 0; attempt < retryCount; ++attempt) {
                 retryAttempts = attempt + 1;
                 
                 // Set the X-restcl-Retry header to track retry attempt count
