@@ -123,25 +123,46 @@ namespace siddiqsoft
         }
     };
 
-    /**
-     * @brief Groups together the pooled CURL* and the ContentType object
-     *        with the ability to on destruction return the CURL shared_ptr
-     *        back to the resource_pool container.
-     *
-     */
+    /// @brief Encapsulates a libcurl handle with its associated response content buffer.
+    ///
+    /// @details This class manages the lifecycle of a checked-out CURL handle from the resource pool.
+    ///          It pairs the handle with a ContentType object for storing response data and ensures
+    ///          the handle is properly returned to the pool when the bundle is destroyed (RAII pattern).
+    ///          This enables efficient connection pooling and resource management.
+    ///
+    /// @note This class is non-copyable and uses move semantics for resource transfer
+    /// @note The destructor automatically returns the handle to the pool unless abandon() is called
+    /// @note Thread-safe for checkout/checkin operations via the resource_pool
     class CurlContextBundle
     {
     public:
 #if defined(DEBUG)
+        /// @brief Thread ID that owns this bundle (DEBUG builds only)
         std::thread::id _owningTid {};
 #endif
-        std::shared_ptr<CURL>                 _hndl;                         // The checkout'd curl handle
-        resource_pool<std::shared_ptr<CURL>>& _pool;                         // Reference to where we should checkin
-        std::shared_ptr<ContentType>          _contents {new ContentType()}; // Always a new instance
+        /// @brief The checked-out CURL handle from the resource pool
+        std::shared_ptr<CURL>                 _hndl;
+        /// @brief Reference to the resource pool for returning the handle on destruction
+        resource_pool<std::shared_ptr<CURL>>& _pool;
+        /// @brief Content buffer for storing response data from libcurl callbacks
+        std::shared_ptr<ContentType>          _contents {new ContentType()};
+        /// @brief Unique identifier for this bundle instance (for debugging)
         uint32_t                              _id = __COUNTER__;
 
     public:
+        /// @brief Deleted default constructor - bundles must be created with a pool and handle
         CurlContextBundle() = delete;
+
+        /// @brief Constructor that takes ownership of a checked-out CURL handle.
+        ///
+        /// @details Creates a new bundle with the provided CURL handle and content buffer.
+        ///          The bundle maintains a reference to the pool for later return of the handle.
+        ///
+        /// @param pool Reference to the resource_pool from which this handle was checked out
+        /// @param item The CURL handle (as shared_ptr) to manage
+        ///
+        /// @note The handle ownership is transferred to this bundle
+        /// @note The pool reference must remain valid for the lifetime of this bundle
         CurlContextBundle(resource_pool<std::shared_ptr<CURL>>& pool, std::shared_ptr<CURL> item)
             : _pool {pool}
             , _hndl {std::move(item)}
@@ -152,15 +173,25 @@ namespace siddiqsoft
 #endif
         }
 
+        /// @brief Gets the raw CURL handle pointer.
+        /// @return Raw pointer to the CURL handle
+        /// @note The returned pointer is valid only while this bundle exists
         CURL*                        curlHandle() { return _hndl.get(); };
+
+        /// @brief Gets the shared pointer to the content buffer.
+        /// @return Shared pointer to the ContentType object for response data
         std::shared_ptr<ContentType> contents() { return _contents; }
 
-        /**
-         * @brief Abandon the CurlContextBundle so we do not return it to the pool!
-         *        The shared_ptr is released and will be freed when ref count zero
-         *        clearing the underlying CURL resource.
-         *
-         */
+        /// @brief Abandons the CURL handle so it is NOT returned to the pool.
+        ///
+        /// @details Releases ownership of the CURL handle without returning it to the pool.
+        ///          This is used when a handle becomes corrupted or unusable and should not
+        ///          be reused. The handle will be cleaned up when the shared_ptr reference
+        ///          count reaches zero.
+        ///
+        /// @note After calling abandon(), the destructor will not attempt to return the handle
+        /// @note This should only be called when the handle is in an invalid state
+        /// @note Typically called after a failed request to prevent reuse of a bad handle
         void abandon()
         {
 #if defined(DEBUG0)
@@ -173,6 +204,15 @@ namespace siddiqsoft
             _hndl.reset();
         }
 
+        /// @brief Destructor that returns the CURL handle to the pool (unless abandoned).
+        ///
+        /// @details Implements RAII pattern by:
+        ///          1. Cleaning up the content buffer
+        ///          2. Returning the CURL handle to the pool (if not abandoned)
+        ///          3. Releasing all resources
+        ///
+        /// @note If abandon() was called, the handle is NOT returned to the pool
+        /// @note This destructor is exception-safe
         ~CurlContextBundle()
         {
 #if defined(DEBUG0)
@@ -397,7 +437,29 @@ namespace siddiqsoft
                                 {RESTCL_CONFIG_COMMON_HEADERS, nullptr}};
 
 
-    protected:
+    /// @brief Dispatches the callback with the request and response result.
+        ///
+        /// @details Invokes either the provided callback or the globally configured callback
+        ///          with the request and response. Increments statistics counters for tracking
+        ///          callback attempts and completions.
+        ///
+        /// @param cb Reference to the callback function to invoke. If this callback is valid
+        ///           (non-null), it will be used; otherwise the global _callback is used.
+        /// @param req Reference to the original request object that was sent
+        /// @param resp The response result containing either a successful rest_response or an error code
+        ///
+        /// @details Behavior:
+        ///          1. Increments callbackAttempt counter
+        ///          2. If cb is valid, invokes cb(req, resp) and increments callbackCompleted
+        ///          3. Otherwise if _callback is valid, invokes _callback(req, resp) and increments callbackCompleted
+        ///          4. If neither callback is valid, no action is taken (silent no-op)
+        ///
+        /// @note This method is called from the thread pool worker, so the callback
+        ///       is executed in a background thread context
+        /// @note The callback should be thread-safe as it may be invoked concurrently
+        ///       with other callbacks from different pool workers
+        /// @note Exceptions thrown by the callback are NOT caught here; they should be
+        ///       handled by the caller (typically the pool worker)
         inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
         {
             callbackAttempt++;
@@ -766,6 +828,23 @@ namespace siddiqsoft
         }
 
 
+        /// @brief Prepares a libcurl context with configured options.
+        ///
+        /// @details Resets the curl handle and applies all configuration options from _config
+        ///          including timeouts, SSL verification, connection freshness, and tracing.
+        ///          This method is called before each request to ensure consistent configuration.
+        ///
+        /// @param ctxCurl The curl context bundle containing the handle to configure
+        ///
+        /// @details Configuration applied:
+        ///          - CURLOPT_CONNECTTIMEOUT_MS: Connection timeout from RESTCL_CONFIG_CONNECT_TIMEOUT
+        ///          - CURLOPT_TIMEOUT_MS: Overall timeout from RESTCL_CONFIG_TIMEOUT
+        ///          - CURLOPT_SSL_VERIFYPEER: SSL peer verification from RESTCL_CONFIG_VERIFY_PEER
+        ///          - CURLOPT_FRESH_CONNECT: Force new connection from RESTCL_CONFIG_FRESH_CONNECT
+        ///          - CURLOPT_VERBOSE: Verbose tracing from RESTCL_CONFIG_TRACE
+        ///
+        /// @note Errors during option setting are logged to stderr but do not throw exceptions
+        /// @note The curl handle is reset before applying options to clear any previous state
         void prepareContext(CurlContextBundlePtr ctxCurl)
         {
             CURLcode rc = CURLcode::CURLE_NOT_BUILT_IN;
@@ -901,6 +980,27 @@ namespace siddiqsoft
         }
 
 
+        /// @brief Configures libcurl I/O handlers for request/response processing.
+        ///
+        /// @details Sets up the write callback for receiving response data and the read callback
+        ///          for sending request body data. Also configures POST/PUT/PATCH specific options.
+        ///
+        /// @param ctxCurl The curl context bundle containing the handle to configure
+        /// @param req Reference to the request object containing method and content information
+        /// @param cntnts Shared pointer to the ContentType object for storing response data
+        /// @return CURLcode indicating success (CURLE_OK) or error
+        ///
+        /// @details Configuration applied:
+        ///          - CURLOPT_WRITEFUNCTION: Callback for receiving response data
+        ///          - CURLOPT_WRITEDATA: Pointer to ContentType for response storage
+        ///          - CURLOPT_POSTFIELDS: Request body for POST/PUT/PATCH methods
+        ///          - CURLOPT_POSTFIELDSIZE: Size of request body
+        ///          - CURLOPT_READFUNCTION: Callback for sending request body
+        ///          - CURLOPT_READDATA: Pointer to ContentType for request body
+        ///
+        /// @note For POST/PUT/PATCH, prepareStartLine() is called again after POSTFIELDS
+        ///       because libcurl resets the method to POST when POSTFIELDS is set
+        /// @note Returns early on any error to prevent partial configuration
         CURLcode prepareIOHandlers(CurlContextBundlePtr ctxCurl, rest_request<>& req, std::shared_ptr<ContentType> cntnts)
         {
             CURLcode rc {CURLE_OK};

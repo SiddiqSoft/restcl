@@ -29,6 +29,12 @@ namespace siddiqsoft
     // =========================================================================
 
     /// @brief A mock implementation of basic_restclient for testing without network IO.
+    /// @details This mock simulates the actual retry behavior of the real implementation:
+    ///          - Retries only occur on failure (when send() returns error or !success())
+    ///          - The callback is invoked only ONCE with the final result
+    ///          - retryCounter represents total attempts (initial + retries)
+    ///          - X-restcl-Retry header tracks the attempt number
+    ///          - Includes dispatchCallback() method matching the real implementation
     class MockRESTClientForRetry : public basic_restclient<char>
     {
     public:
@@ -44,6 +50,9 @@ namespace siddiqsoft
         nlohmann::json         lastConfig {};
         int                    maxRetries {3};
         int                    retryAttempts {0};
+        int                    callbackInvokeCount {0};
+        int                    callbackAttemptCount {0};
+        int                    callbackCompletedCount {0};
 
         basic_restclient& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
@@ -62,42 +71,86 @@ namespace siddiqsoft
             return cannedResponse;
         }
 
+        /// @brief Dispatches the callback with the request and response result.
+        ///
+        /// @details Invokes either the provided callback or the globally configured callback
+        ///          with the request and response. Increments statistics counters for tracking
+        ///          callback attempts and completions.
+        ///
+        /// @param cb Reference to the callback function to invoke. If this callback is valid
+        ///           (non-null), it will be used; otherwise the global storedCallback is used.
+        /// @param req Reference to the original request object that was sent
+        /// @param resp The response result containing either a successful rest_response or an error code
+        ///
+        /// @details Behavior:
+        ///          1. Increments callbackAttemptCount counter
+        ///          2. If cb is valid, invokes cb(req, resp) and increments callbackCompletedCount
+        ///          3. Otherwise if storedCallback is valid, invokes storedCallback(req, resp) and increments callbackCompletedCount
+        ///          4. If neither callback is valid, no action is taken (silent no-op)
+        ///
+        /// @note This method mirrors the real implementation's dispatchCallback()
+        inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
+        {
+            callbackAttemptCount++;
+            if (cb) {
+                cb(req, resp);
+                callbackCompletedCount++;
+            }
+            else if (storedCallback) {
+                storedCallback(req, resp);
+                callbackCompletedCount++;
+            }
+        }
+
+        /// @brief Simulates the actual retry logic from the pool implementation.
+        /// @details The real implementation:
+        ///          1. Loops while retryCounter-- (decrement in condition)
+        ///          2. Calls send() and checks if response is valid AND success()
+        ///          3. On success: invokes callback once and breaks
+        ///          4. On failure: increments retry counter and continues loop
+        ///          5. Callback is invoked exactly once with final result via dispatchCallback()
         basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& cb = {}, uint16_t retryCount = 1) override
         {
             sendAsyncWithRetryCallCount++;
             retryAttempts = 0;
+            callbackInvokeCount = 0;
             
-            // Simulate retry logic
+            // Simulate the actual pool retry logic
             std::expected<rest_response<char>, int> result;
-            for (uint16_t attempt = 0; attempt < retryCount; ++attempt) {
-                retryAttempts = attempt + 1;
+            uint16_t attempt = 0;
+            
+            // This mirrors: while (arg.retryCounter--)
+            while (retryCount--) {
+                attempt++;
+                retryAttempts = attempt;
                 
-                // Set the X-restcl-Retry header to track retry attempt count
-                req.setHeader("X-restcl-Retry", retryAttempts);
+                // Set the X-restcl-Retry header to track attempt number
+                req.setHeader("X-restcl-Retry", attempt);
                 
-                if (shouldReturnError && attempt < retryCount - 1) {
-                    // Retry on error (except last attempt)
-                    continue;
+                // Call send() - mirrors the real implementation
+                if (auto resp = send(req); resp && resp->success()) {
+                    // Success! Set result and break
+                    result = resp;
+                    break;
                 }
-                result = shouldReturnError ? std::expected<rest_response<char>, int>(std::unexpected(cannedErrorCode))
-                                           : std::expected<rest_response<char>, int>(cannedResponse);
-                break;
+                else {
+                    // Failure - will retry if retryCount > 0
+                    result = resp;
+                    // Loop continues if retryCount > 0
+                }
             }
             
-            // Invoke callback with final result
-            if (cb) {
-                cb(req, result);
-            }
-            else if (storedCallback) {
-                storedCallback(req, result);
-            }
+            // Invoke callback exactly once with final result using dispatchCallback()
+            callbackInvokeCount++;
+            dispatchCallback(cb, req, result);
             return *this;
         }
 
         /// @brief Helper method to call sendAsync with retry count
+        /// @details Calls sendAsync with retryCount = maxRetries + 1 (initial + retries)
         void sendAsyncWithRetry(rest_request<>&& req, basic_callbacktype&& cb = {})
         {
-            // Call sendAsync with maxRetries + 1 (to account for initial attempt)
+            // Call sendAsync with maxRetries + 1 to account for initial attempt + retries
             sendAsync(std::move(req), std::move(cb), maxRetries + 1);
         }
     };
