@@ -194,7 +194,7 @@ namespace siddiqsoft
     TEST_F(Validation, POST_httpbin)
     {
         std::atomic_int passTest = 0;
-        restcl wrc = GetRESTClient({{"trace", false},
+        restcl wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, false},
                                     {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
                                     {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
         auto   postRequest = "https://httpbin.org/post"_POST;
@@ -281,7 +281,7 @@ namespace siddiqsoft
 
         // std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
-            clients.push_back(GetRESTClient({{"trace", false},
+            clients.push_back(GetRESTClient({{RESTCL_CONFIG_TRACE, false},
                                              {"freshConnect", true},
                                              {"userAgent",
                                               std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; {1}:{2}; s:{0})",

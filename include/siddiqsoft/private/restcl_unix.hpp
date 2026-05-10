@@ -333,7 +333,7 @@ namespace siddiqsoft
 #endif
                                                                if (cc != NULL) curl_easy_cleanup(cc);
                                                            }}});
-#if defined(DEBUG0)
+#if defined(DEBUG)
             std::print(std::cerr,
                        "{} - NEW BUNDLE id:{}:{}; Capacity:{}\n",
                        __func__,
@@ -347,7 +347,7 @@ namespace siddiqsoft
 
         static int debugCallback(CURL*, curl_infotype type, char* data, size_t sz, void*)
         {
-#if defined(DEBUG0)
+#if defined(DEBUG)
             std::println(std::cerr, "{} - {}", std::to_underlying(type), std::string(data, sz));
 #endif
             return 0;
@@ -433,12 +433,14 @@ namespace siddiqsoft
                            "pool io callback - Sending.. retryCount:{}  arg.retryCount:{} \n",
                            retryCount,
                            arg.retryCounter);
+                if (retryCount > 0) arg.request.setHeader("X-restcl-Retry", retryCount);
+                if (failCount > 0) arg.request.setHeader("X-restcl-FailCount", failCount);
 #endif
                 timethis ttx {};
 
                 if (auto resp = send(arg.request); resp && resp->success()) {
                     // Only add the header if we "Retry".. we should not add for the first attempt if it succeeds.
-                    if (retryCount++ > 0) resp->setHeader("X-restcl-Retry", retryCount);
+                    if (retryCount > 0) resp->setHeader("X-restcl-Retry", retryCount);
                     if (failCount > 0) resp->setHeader("X-restcl-FailCount", failCount);
 #if defined(DEBUG)
                     auto debugLine = std::format("callback#:{}/{}, retry:{}/{}",
@@ -451,17 +453,7 @@ namespace siddiqsoft
 #endif
 
                     try {
-                        callbackAttempt++;
-                        if (arg.callback) {
-                            // Use the per invocation callback
-                            arg.callback(arg.request, resp);
-                            callbackCompleted++;
-                        }
-                        else if (_callback) {
-                            // Use the generic callback..
-                            _callback(arg.request, resp);
-                            callbackCompleted++;
-                        }
+                        dispatchCallback(arg.callback, arg.request, resp);
                     }
                     catch (std::system_error& se) {
                         // Failed; dispatch anyways and let the client figure out the issue.
@@ -485,16 +477,32 @@ namespace siddiqsoft
                 else {
                     failCount++;
 #if defined(DEBUG)
-                    auto debugLine = std::format("failed#:{}, retry:{}/{}", failCount, arg.retryCounter, MAX_AUTO_RETRY_SEND_LIMIT);
-                    resp->setHeader("X-restcl-pool-debug", debugLine);
-                    resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
-                    std::print(std::cerr, "{}\n", debugLine);
+                    auto debugLine = std::format("simple_pool - IO Failed#:{}, retry:{}/{} ! ! ! ! ! !",
+                                                 failCount,
+                                                 arg.retryCounter,
+                                                 MAX_AUTO_RETRY_SEND_LIMIT);
+                    std::println(std::cerr, "{}\n{}", debugLine, resp ? nlohmann::json(*resp).dump(2) : "N/A");
+                    if (resp) {
+                        resp->setHeader("X-restcl-pool-debug", debugLine);
+                        resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
+                    }
 #endif
+                    // Inform the client of the failure by invoking the registred callback..
+                    dispatchCallback(arg.callback, arg.request, std::unexpected<int>(0));
                 }
-            } // for loop
+
+                // Increment the retry here
+                ++retryCount;
+
+            } // while
 
 #if defined(DEBUG)
-            std::print(std::cerr, "COMPLETED callback#:{}/{},", callbackAttempt.load(), callbackCompleted.load());
+            std::print(std::cerr,
+                       "simple_pool - COMPLETED IO with callback#:{}/{}, retry:{}/{}",
+                       callbackAttempt.load(),
+                       callbackCompleted.load(),
+                       arg.retryCounter,
+                       MAX_AUTO_RETRY_SEND_LIMIT);
 #endif
         }};
 
@@ -641,13 +649,46 @@ namespace siddiqsoft
 #endif
         }
 
-        /**
-         * @brief Performs ONETIME configuration of the underlying provider (LibCURL)
-         *
-         * @param ua The UserAgent string
-         * @param func Optional callback the client-level. You can also provider per-call callbacks for each REST send() operation
-         * @return basic_restclient& Returns self reference for chaining.
-         */
+        /// @brief Configures the libcurl-based HTTP client with platform-specific settings.
+        ///
+        /// @details Performs one-time initialization of the underlying libcurl provider and applies
+        ///          configuration options such as timeouts, SSL verification, connection pooling,
+        ///          and user agent settings. This method should be called once before any send()
+        ///          or sendAsync() operations.
+        ///
+        /// @param cfg JSON configuration object with optional settings:
+        ///            - "userAgent": User-Agent header string (default: "siddiqsoft.restcl/2")
+        ///            - RESTCL_CONFIG_CONNECT_TIMEOUT: Connection timeout in milliseconds (default: 0 = no timeout)
+        ///            - RESTCL_CONFIG_TIMEOUT: Overall request timeout in milliseconds (default: 0 = no timeout)
+        ///            - RESTCL_CONFIG_TRACE: Enable verbose tracing (default: false)
+        ///            - RESTCL_CONFIG_FRESH_CONNECT: Force new connections instead of reusing (default: false)
+        ///            - RESTCL_CONFIG_VERIFY_PEER: Verify SSL peer certificates (default: 1 = enabled)
+        ///            - RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER: Default retry count for async operations (default: 1)
+        /// @param func Optional global callback function for async operations.
+        ///             If provided, this callback will be used for all sendAsync() calls
+        ///             that don't provide their own callback.
+        /// @return Reference to self to allow method chaining
+        ///
+        /// @details The method performs the following initialization steps:
+        ///          1. Updates internal configuration with provided settings
+        ///          2. Sets the global callback if provided
+        ///          3. Marks the client as initialized and ready for use
+        ///
+        /// @note Configuration can be called multiple times to update settings.
+        /// @note The LibCurlSingleton is automatically initialized on first use.
+        /// @note Connection pooling is managed automatically by the singleton instance.
+        ///
+        /// @example
+        /// @code
+        /// auto client = HttpRESTClient::CreateInstance();
+        /// client->configure({
+        ///     {"userAgent", "MyApp/1.0"},
+        ///     {RESTCL_CONFIG_TIMEOUT, 5000},
+        ///     {RESTCL_CONFIG_TRACE, false}
+        /// }, [](const auto& req, std::expected<rest_response<>, int> resp) {
+        ///     // Handle response
+        /// });
+        /// @endcode
         basic_restclient& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& func = {}) override
         {
             if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
@@ -657,11 +698,53 @@ namespace siddiqsoft
             return *this;
         }
 
-        /// @brief Implements an asynchronous invocation of the send() method
-        /// @param req Request object
-        /// @param callback The method will be async and there will not be a response object returned
-        /// @param retryCount When more than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT it will retry the request until success code
-        /// is received. Be careful with this option!
+        /// @brief Implements an asynchronous invocation of the send() method.
+        ///
+        /// @details Queues an HTTP request for asynchronous processing using the internal thread pool.
+        ///          The request is executed in a background worker thread, and the provided callback
+        ///          is invoked when the response is received or an error occurs. This method returns
+        ///          immediately without waiting for the response.
+        ///
+        /// @param req Rvalue reference to the rest_request object. The request is moved into
+        ///            the async queue and ownership is transferred to the thread pool.
+        /// @param callback Optional callback function with signature:
+        ///                 void(rest_request<>&, std::expected<rest_response<>, int>)
+        ///                 If not provided, the global callback registered via configure() is used.
+        ///                 If neither is available, std::invalid_argument is thrown.
+        /// @param retryCount When this value is greater than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT,
+        ///                   the request will be automatically retried until a success response is received.
+        ///                   Default is 0, which uses the configured auto-retry counter.
+        /// @return Reference to self to allow method chaining
+        ///
+        /// @throws std::invalid_argument if no callback is provided and none was registered via configure()
+        /// @throws std::runtime_error if the client is not properly initialized
+        ///
+        /// @details The method performs the following operations:
+        ///          1. Validates that a callback is available (either provided or configured)
+        ///          2. Checks that the client is properly initialized
+        ///          3. Normalizes the retry count to not exceed MAX_AUTO_RETRY_SEND_LIMIT
+        ///          4. Queues the request to the internal thread pool for processing
+        ///          5. Returns immediately to the caller
+        ///
+        /// @note The callback is invoked from a worker thread; ensure thread-safe operations.
+        /// @note The request object is moved and should not be used after this call.
+        /// @note Multiple async requests can be queued and will be processed concurrently by the pool.
+        /// @note Retry logic will automatically retry failed requests up to the specified count.
+        /// @note Each retry attempt includes X-restcl-Retry and X-restcl-FailCount headers for tracking.
+        ///
+        /// @example
+        /// @code
+        /// rest_request<> req = "https://api.example.com/users"_POST;
+        /// req.setContent({{"name", "John"}});
+        ///
+        /// client->sendAsync(std::move(req), [](const auto& req, auto resp) {
+        ///     if (resp.has_value()) {
+        ///         std::cout << "Success: " << resp.value().statusCode() << std::endl;
+        ///     } else {
+        ///         std::cerr << "Error: " << resp.error() << std::endl;
+        ///     }
+        /// }, 3); // Retry up to 3 times on failure
+        /// @endcode
         basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint16_t retryCount = 0) override
         {
             if (!_callback && !callback)
@@ -692,28 +775,28 @@ namespace siddiqsoft
             if (ctxCurl && ((CURL*)ctxCurl->curlHandle()) != NULL) curl_easy_reset((CURL*)ctxCurl->curlHandle());
 
             // std::print(std::cerr, "{} - Configuring options...\n", __func__);
-            if (long v = _config.value("connectTimeout", 0); v > 0) {
+            if (long v = _config.value(RESTCL_CONFIG_CONNECT_TIMEOUT, 0); v > 0) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CONNECTTIMEOUT_MS, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
-            if (long v = _config.value("timeout", 0); v > 0) {
+            if (long v = _config.value(RESTCL_CONFIG_TIMEOUT, 0); v > 0) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
-            if (long v = _config.value("verifyPeer", 1); v == 0) {
+            if (long v = _config.value(RESTCL_CONFIG_VERIFY_PEER, 1); v == 0) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
-            if (_config.value("freshConnect", false)) {
+            if (_config.value(RESTCL_CONFIG_FRESH_CONNECT, false)) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_FRESH_CONNECT, 1L); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
-            if (_config.value("trace", false)) {
+            if (_config.value(RESTCL_CONFIG_TRACE, false)) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_VERBOSE, 1L); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
@@ -741,8 +824,8 @@ namespace siddiqsoft
 
             auto destinationHost = req.getHost();
 
-#if defined(DEBUG0)
-            if (_config.value("trace", false)) {
+#if defined(DEBUG)
+            if (_config.value(RESTCL_CONFIG_TRACE, false)) {
                 std::println(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
             }
 #endif
@@ -780,7 +863,7 @@ namespace siddiqsoft
                                 }
                                 else {
                                     ioSendFailed++;
-                                    if (_config.value("trace", false)) {
+                                    if (_config.value(RESTCL_CONFIG_TRACE, false)) {
                                         std::print(std::cerr,
                                                    "{} - curl_easy_perform() failed: `{}`\n{}\n",
                                                    __func__,
@@ -794,9 +877,9 @@ namespace siddiqsoft
                 }
 
                 // To reach here is failure!
-                // Abandon so we we dot re-use a failed resource!
+                // Abandon so we do not re-use a failed resource!
                 ctxCurl->abandon();
-                if (_config.value("trace", false)) {
+                if (_config.value(RESTCL_CONFIG_TRACE, false)) {
                     std::println(std::cerr,
                                  "{} - some failure `{}`; abandon context !!\n{}\n",
                                  __func__,
@@ -813,7 +896,7 @@ namespace siddiqsoft
                 return std::unexpected(ENETUNREACH);
             }
 
-            std::println(std::cerr, "{} - Fall-through failure!\n", __func__);
+            std::println(std::cerr, "{} - Fall-through failure! NOT-RECOVERABLE!\n", __func__);
             return std::unexpected(ENOTRECOVERABLE);
         }
 
@@ -955,7 +1038,7 @@ namespace siddiqsoft
             }
 
 #if defined(DEBUG)
-            if (_config.value("trace", false)) {
+            if (_config.value(RESTCL_CONFIG_TRACE, false)) {
                 std::println(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
             }
 #endif
@@ -972,7 +1055,7 @@ namespace siddiqsoft
                 try {
                     for (auto& [k, v] : req.getHeaders().items()) {
 #if defined(DEBUG0)
-                        if (_config.value("trace", false)) {
+                        if (_config.value(RESTCL_CONFIG_TRACE, false)) {
                             std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
                         }
 #endif

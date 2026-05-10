@@ -45,7 +45,7 @@ namespace siddiqsoft
      *
      * @param cfg Optional JSON configuration object with keys:
      *            - "userAgent": User-Agent header string (default: "siddiqsoft.restcl/2")
-     *            - "trace": Enable verbose logging (default: false)
+     *            - RESTCL_CONFIG_TRACE: Enable verbose logging (default: false)
      *            - "connectTimeout": Connection timeout in milliseconds (default: 0)
      *            - "timeout": Overall request timeout in milliseconds (default: 0)
      *            - "verifyPeer": SSL peer verification (default: 1)

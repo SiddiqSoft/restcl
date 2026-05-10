@@ -237,7 +237,7 @@ namespace siddiqsoft
         basic_callbacktype _callback {};
 
         nlohmann::json _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                {"trace", false},
+                                {RESTCL_CONFIG_TRACE, false},
                                 {"id", id},
                                 {"connectTimeout", 0L},
                                 {"timeout", 0L},
@@ -281,12 +281,14 @@ namespace siddiqsoft
                            "pool io callback - Sending.. retryCount:{}  arg.retryCount:{} \n",
                            retryCount,
                            arg.retryCounter);
+                if (retryCount > 0) arg.request.setHeader("X-restcl-Retry", retryCount);
+                if (failCount > 0) arg.request.setHeader("X-restcl-FailCount", failCount);
 #endif
                 timethis ttx {};
 
                 if (auto resp = send(arg.request); resp && resp->success()) {
                     // Only add the header if we "Retry".. we should not add for the first attempt if it succeeds.
-                    if (retryCount++ > 0) resp->setHeader("X-restcl-Retry", retryCount);
+                    if (retryCount > 0) resp->setHeader("X-restcl-Retry", retryCount);
                     if (failCount > 0) resp->setHeader("X-restcl-FailCount", failCount);
 #if defined(DEBUG)
                     auto debugLine = std::format("callback#:{}/{}, retry:{}/{}",
@@ -299,17 +301,7 @@ namespace siddiqsoft
 #endif
 
                     try {
-                        callbackAttempt++;
-                        if (arg.callback) {
-                            // Use the per invocation callback
-                            arg.callback(arg.request, resp);
-                            callbackCompleted++;
-                        }
-                        else if (_callback) {
-                            // Use the generic callback..
-                            _callback(arg.request, resp);
-                            callbackCompleted++;
-                        }
+                        dispatchCallback(arg.callback, arg.request, resp);
                     }
                     catch (std::system_error& se) {
                         // Failed; dispatch anyways and let the client figure out the issue.
@@ -333,19 +325,36 @@ namespace siddiqsoft
                 else {
                     failCount++;
 #if defined(DEBUG)
-                    auto debugLine = std::format("failed#:{}, retry:{}/{}", failCount, arg.retryCounter, MAX_AUTO_RETRY_SEND_LIMIT);
-                    resp->setHeader("X-restcl-pool-debug", debugLine);
-                    resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
+                    auto debugLine = std::format("simple_pool - IO Failed#:{}, retry:{}/{} ! ! ! ! ! !",
+                                                 failCount,
+                                                 arg.retryCounter,
+                                                 MAX_AUTO_RETRY_SEND_LIMIT);
+                    std::println(std::cerr, "{}\n{}", debugLine, resp ? nlohmann::json(*resp).dump(2) : "N/A");
+                    if (resp) {
+                        resp->setHeader("X-restcl-pool-debug", debugLine);
+                        resp->setHeader("X-restcl-io-ttx", ttx.lap<std::chrono::milliseconds>());
+                    }
 #endif
+                    // Inform the client of the failure by invoking the registred callback..
+                    dispatchCallback(arg.callback, arg.request, std::unexpected<int>(0));
                 }
-            } // for loop
+
+                // Increment the retry here
+                ++retryCount;
+
+            } // while
 
 #if defined(DEBUG)
-            std::print(std::cerr, "COMPLETED callback#:{}/{},", callbackAttempt.load(), callbackCompleted.load());
+            std::print(std::cerr,
+                       "simple_pool - COMPLETED IO with callback#:{}/{}, retry:{}/{}",
+                       callbackAttempt.load(),
+                       callbackCompleted.load(),
+                       arg.retryCounter,
+                       MAX_AUTO_RETRY_SEND_LIMIT);
 #endif
         }};
 
-        
+
     protected:
         WinHttpRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
         {
@@ -361,6 +370,46 @@ namespace siddiqsoft
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
 
 
+        /// @brief Configures the WinHTTP client with platform-specific settings.
+        ///
+        /// @details Initializes the WinHTTP session handle and applies configuration options such as
+        ///          HTTP/2 protocol support, automatic decompression, and user agent settings.
+        ///          This method should be called once before any send() or sendAsync() operations.
+        ///
+        /// @param cfg JSON configuration object with optional settings:
+        ///            - "userAgent": User-Agent header string (default: "siddiqsoft.restcl/2")
+        ///            - "connectTimeout": Connection timeout in milliseconds (default: 0 = no timeout)
+        ///            - "timeout": Overall request timeout in milliseconds (default: 0 = no timeout)
+        ///            - RESTCL_CONFIG_TRACE: Enable verbose tracing (default: false)
+        ///            - "headers": Additional headers to include in requests
+        /// @param cb Optional global callback function for async operations.
+        ///           If provided, this callback will be used for all sendAsync() calls
+        ///           that don't provide their own callback.
+        /// @return Reference to self to allow method chaining
+        ///
+        /// @details The method performs the following initialization steps:
+        ///          1. Updates internal configuration with provided settings
+        ///          2. Sets the global callback if provided
+        ///          3. Extracts and converts the User-Agent string to wide character format
+        ///          4. Creates a WinHTTP session handle if not already created
+        ///          5. Enables HTTP/2 protocol support on the session
+        ///          6. Enables automatic decompression for response bodies
+        ///
+        /// @note WinHTTP session handles are reused across multiple requests for efficiency.
+        /// @note HTTP/2 and decompression are enabled by default if supported by the system.
+        /// @note Configuration can be called multiple times to update settings.
+        ///
+        /// @example
+        /// @code
+        /// auto client = WinHttpRESTClient::CreateInstance();
+        /// client->configure({
+        ///     {"userAgent", "MyApp/1.0"},
+        ///     {"timeout", 5000},
+        ///     {RESTCL_CONFIG_TRACE, false}
+        /// }, [](const auto& req, std::expected<rest_response<>, int> resp) {
+        ///     // Handle response
+        /// });
+        /// @endcode
         basic_restclient<char>& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
             if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
@@ -408,17 +457,59 @@ namespace siddiqsoft
         {
         }
 
-        /// @brief Implements an asynchronous invocation of the send() method
-        /// @param req Request object
-        /// @param callback The method will be async and there will not be a response object returned
-        /// @param retryCount When more than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT it will retry the request until success code
-        /// is received. Be careful with this option!
+        /// @brief Implements an asynchronous invocation of the send() method.
+        ///
+        /// @details Queues an HTTP request for asynchronous processing using the internal thread pool.
+        ///          The request is executed in a background worker thread, and the provided callback
+        ///          is invoked when the response is received or an error occurs. This method returns
+        ///          immediately without waiting for the response.
+        ///
+        /// @param req Rvalue reference to the rest_request object. The request is moved into
+        ///            the async queue and ownership is transferred to the thread pool.
+        /// @param callback Optional callback function with signature:
+        ///                 void(rest_request<>&, std::expected<rest_response<>, int>)
+        ///                 If not provided, the global callback registered via configure() is used.
+        ///                 If neither is available, std::invalid_argument is thrown.
+        /// @param retryCount When this value is greater than 1 and limited to MAX_AUTO_RETRY_SEND_LIMIT,
+        ///                   the request will be automatically retried until a success response is received.
+        ///                   Default is 0, which uses the configured auto-retry counter.
+        /// @return Reference to self to allow method chaining
+        ///
+        /// @throws std::invalid_argument if no callback is provided and none was registered via configure()
+        /// @throws std::runtime_error if the client is not properly initialized
+        ///
+        /// @details The method performs the following operations:
+        ///          1. Validates that a callback is available (either provided or configured)
+        ///          2. Checks that the client is properly initialized
+        ///          3. Normalizes the retry count to not exceed MAX_AUTO_RETRY_SEND_LIMIT
+        ///          4. Queues the request to the internal thread pool for processing
+        ///          5. Returns immediately to the caller
+        ///
+        /// @note The callback is invoked from a worker thread; ensure thread-safe operations.
+        /// @note The request object is moved and should not be used after this call.
+        /// @note Multiple async requests can be queued and will be processed concurrently by the pool.
+        /// @note Retry logic will automatically retry failed requests up to the specified count.
+        /// @note Each retry attempt includes X-restcl-Retry and X-restcl-FailCount headers for tracking.
+        ///
+        /// @example
+        /// @code
+        /// rest_request<> req = "https://api.example.com/users"_POST;
+        /// req.setContent({{"name", "John"}});
+        ///
+        /// client->sendAsync(std::move(req), [](const auto& req, auto resp) {
+        ///     if (resp.has_value()) {
+        ///         std::cout << "Success: " << resp.value().statusCode() << std::endl;
+        ///     } else {
+        ///         std::cerr << "Error: " << resp.error() << std::endl;
+        ///     }
+        /// }, 3); // Retry up to 3 times on failure
+        /// @endcode
         basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}, uint16_t retryCount = 0) override
         {
             if (!_callback && !callback)
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
-            
+
             if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
 
             if (retryCount == 0) retryCount = _config[RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER];

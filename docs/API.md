@@ -198,7 +198,7 @@ client->configure(
         {"connectTimeout", 3000},
         {"timeout", 5000},
         {"userAgent", "MyApp/1.0"},
-        {"trace", false}
+        {RESTCL_CONFIG_TRACE, false}
     },
     [](auto& req, std::expected<rest_response<>, int> resp) {
         // Global callback
@@ -529,7 +529,7 @@ client->configure({
     {"connectTimeout", 3000},      // Connection timeout in ms
     {"timeout", 5000},             // Overall timeout in ms
     {"userAgent", "MyApp/1.0"},    // User-Agent header
-    {"trace", false},              // Enable trace logging
+    {RESTCL_CONFIG_TRACE, false},              // Enable trace logging
     {"freshConnect", false},       // Force new connection
     {"maxRetries", 3}              // Max retry attempts
 });

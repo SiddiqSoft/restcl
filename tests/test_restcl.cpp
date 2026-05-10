@@ -54,7 +54,7 @@ namespace siddiqsoft
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
-                        {"trace", false}})
+                        {RESTCL_CONFIG_TRACE, false}})
                 .sendAsync("https://www.siddiqsoft.com/"_GET,
                            [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
                                nlohmann::json doc(req);
@@ -84,7 +84,7 @@ namespace siddiqsoft
     TEST_F(TestSends, test2a_OPTIONS)
     {
         std::atomic_bool passTest = false;
-        restcl           wrc      = GetRESTClient();
+        restcl           wrc      = GetRESTClient({{RESTCL_CONFIG_TRACE, true}, {RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER, 3}});
 
         auto optionsRequest       = "https://reqbin.com/echo/post/json"_OPTIONS;
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
@@ -232,7 +232,7 @@ namespace siddiqsoft
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
-                        {"trace", true}})
+                        {RESTCL_CONFIG_TRACE, true}})
                 .sendAsync("https://www.siddiqsoft.com:65535/"_GET,
                            [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
                                if (resp.has_value() && resp->success()) {

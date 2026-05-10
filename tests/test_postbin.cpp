@@ -68,7 +68,7 @@ namespace siddiqsoft
         auto listResources() -> nlohmann::json
         {
             // https://designer.mocky.io/design
-            auto wrc = GetRESTClient({{"trace", false}, {"freshConnect", true}});
+            auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, false}, {"freshConnect", true}});
 
             rest_request req {HttpMethodType::METHOD_GET,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
@@ -86,7 +86,7 @@ namespace siddiqsoft
         auto createResource(const nlohmann::json& d) -> nlohmann::json
         {
             // https://designer.mocky.io/design
-            auto wrc = GetRESTClient({{"trace", true}, {"freshConnect", true}});
+            auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, true}, {"freshConnect", true}});
 
             rest_request req {HttpMethodType::METHOD_POST,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
@@ -104,7 +104,7 @@ namespace siddiqsoft
         auto updateResource(const std::string id, const nlohmann::json& d) -> nlohmann::json
         {
             // https://designer.mocky.io/design
-            auto wrc = GetRESTClient({{"trace", true}, {"freshConnect", true}});
+            auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, true}, {"freshConnect", true}});
 
             rest_request req {HttpMethodType::METHOD_PUT,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
@@ -123,7 +123,7 @@ namespace siddiqsoft
         auto patchResource(const std::string id, const nlohmann::json& d) -> nlohmann::json
         {
             // https://designer.mocky.io/design
-            auto wrc = GetRESTClient({{"trace", false}, {"freshConnect", true}});
+            auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, false}, {"freshConnect", true}});
 
             rest_request req {HttpMethodType::METHOD_PATCH,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
@@ -141,7 +141,7 @@ namespace siddiqsoft
         auto deleteResource(const std::string id) -> nlohmann::json
         {
             // https://designer.mocky.io/design
-            auto wrc = GetRESTClient({{"trace", false}, {"freshConnect", true}});
+            auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, false}, {"freshConnect", true}});
 
             rest_request req {HttpMethodType::METHOD_DELETE,
                               siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", id)),
@@ -159,7 +159,7 @@ namespace siddiqsoft
 
     static std::string CreateBinId()
     {
-        auto wrc = GetRESTClient({{"trace", false}, {"freshConnect", true}});
+        auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, false}, {"freshConnect", true}});
 
         rest_request req {HttpMethodType::METHOD_POST,
                           siddiqsoft::Uri(std::format("https://www.postb.in/api/bin")),
@@ -175,7 +175,7 @@ namespace siddiqsoft
     TEST_F(PostBin, verb_GET_1)
     {
         // https://designer.mocky.io/design
-        auto wrc = GetRESTClient({{"trace", false}, {"freshConnect", true}});
+        auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, false}, {"freshConnect", true}});
 
         rest_request req {HttpMethodType::METHOD_GET,
                           siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/1")),
@@ -193,7 +193,7 @@ namespace siddiqsoft
     TEST_F(PostBin, verb_GET_All)
     {
         // https://designer.mocky.io/design
-        auto wrc = GetRESTClient({{"trace", false}, {"freshConnect", true}});
+        auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, false}, {"freshConnect", true}});
 
         rest_request req {HttpMethodType::METHOD_GET,
                           siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts")),
@@ -258,7 +258,7 @@ namespace siddiqsoft
         EXPECT_EQ(__func__, doc.at("source"));
 
         // https://designer.mocky.io/design
-        auto wrc = GetRESTClient({{"trace", false}, {"freshConnect", true}});
+        auto wrc = GetRESTClient({{RESTCL_CONFIG_TRACE, false}, {"freshConnect", true}});
 
         rest_request req {HttpMethodType::METHOD_DELETE,
                           siddiqsoft::Uri(std::format("https://jsonplaceholder.typicode.com/posts/{}", doc.at("id").dump())),

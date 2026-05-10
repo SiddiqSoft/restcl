@@ -120,7 +120,7 @@ client->configure({
     {"connectTimeout", 3000},    // Connection timeout in ms
     {"timeout", 5000},           // Overall timeout in ms
     {"userAgent", "MyApp/1.0"},  // User-Agent header
-    {"trace", false}             // Enable trace logging
+    {RESTCL_CONFIG_TRACE, false}             // Enable trace logging
 });
 ```
 

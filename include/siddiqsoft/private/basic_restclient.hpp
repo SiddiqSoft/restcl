@@ -65,7 +65,7 @@ namespace siddiqsoft
          *            - "userAgent": User-Agent header string (default: "siddiqsoft.restcl/2")
          *            - "connectTimeout": Connection timeout in milliseconds (default: 0 = no timeout)
          *            - "timeout": Overall request timeout in milliseconds (default: 0 = no timeout)
-         *            - "trace": Enable verbose tracing (default: false)
+         *            - RESTCL_CONFIG_TRACE: Enable verbose tracing (default: false)
          *            - "freshConnect": Force new connections instead of reusing (default: false)
          *            - "verifyPeer": Verify SSL peer certificates (default: 1 = enabled)
          * @param cb Optional global callback function for async operations.
@@ -82,7 +82,7 @@ namespace siddiqsoft
          * client->configure({
          *     {"userAgent", "MyApp/1.0"},
          *     {"timeout", 5000},
-         *     {"trace", false}
+         *     {RESTCL_CONFIG_TRACE, false}
          * }, [](const auto& req, std::expected<rest_response<>, int> resp) {
          *     // Handle response
          * });
