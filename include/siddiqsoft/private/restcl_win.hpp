@@ -29,6 +29,7 @@
 #include <stop_token>
 #include <print>
 
+#include "siddiqsoft/GenProcessInfo.hpp"
 
 #include <windows.h>
 
@@ -290,6 +291,7 @@ namespace siddiqsoft
                     // Only add the header if we "Retry".. we should not add for the first attempt if it succeeds.
                     if (retryCount > 0) resp->setHeader("X-restcl-Retry", retryCount);
                     if (failCount > 0) resp->setHeader("X-restcl-FailCount", failCount);
+
 #if defined(DEBUG)
                     auto debugLine = std::format("callback#:{}/{}, retry:{}/{}",
                                                  callbackAttempt.load(),
@@ -321,7 +323,7 @@ namespace siddiqsoft
 
                     // We're done with this.. break out..
                     break;
-                } // send competed.
+                } // if send competed.
                 else {
                     failCount++;
 #if defined(DEBUG)
@@ -364,11 +366,9 @@ namespace siddiqsoft
     public:
         ~WinHttpRESTClient() { }
 
-
     public:
         WinHttpRESTClient(const WinHttpRESTClient&)            = delete;
         WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
-
 
         /// @brief Configures the WinHTTP client with platform-specific settings.
         ///
@@ -419,16 +419,25 @@ namespace siddiqsoft
             UserAgentW = ConversionUtils::convert_to<char, wchar_t>(UserAgent);
 
             if (hSession == NULL) {
+#if defined(DEBUG)
+                std::print(std::cerr, "{} Calling WinHttpOpen....tid:{}\n", __func__, ::GetCurrentThreadId());
+#endif
                 hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
                 if (hSession) {
                     const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
                     const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
+                    // We're initialized; the rest is optional.
+                    isInitialized = true;
+
+#if defined(DEBUG)
+                    std::print(std::cerr, "{} Successful WinHttpOpen....\n", __func__);
+#endif
                     // Enable HTTP/2 protocol
                     if (!WinHttpSetOption(
                                 hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
                     {
-#ifdef _DEBUG
+#if defined(DEBUG)
                         std::print(std::cerr, "{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
 #endif
                     }
@@ -442,6 +451,9 @@ namespace siddiqsoft
                 }
             }
 
+#if defined(DEBUG)
+            std::print(std::cerr, "{} Completed threadid:{}\n", __func__, siddiqsoft::GenProcessInfo::GetThreadId());
+#endif
             return *this;
         }
 

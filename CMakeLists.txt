@@ -77,7 +77,8 @@ CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.1.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
-
+CPMAddPackage("gh:SiddiqSoft/GenProcessInfo#2.5.4")
+target_link_libraries(${PROJECT_NAME} INTERFACE GenProcessInfo::GenProcessInfo)
 CPMAddPackage("gh:SiddiqSoft/TimeThis#2.4.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE timethis::timethis)
 

@@ -28,6 +28,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     endif()
 
     if( CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
+        message(STATUS "Enable DEBUG pre-processor macros.. cmake_build_type:${CMAKE_BUILD_TYPE}")
         target_compile_definitions(${TESTPROJ} PRIVATE DEBUG=1 _DEBUG=1)
     endif()
 
@@ -54,6 +55,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
             string2map::string2map
             asynchrony::asynchrony
             timethis::timethis
+            GenProcessInfo::GenProcessInfo
             AzureCppUtils::AzureCppUtils
             StringHelpers::StringHelpers)
 
