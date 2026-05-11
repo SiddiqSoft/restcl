@@ -42,6 +42,7 @@
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
+#include "siddiqsoft/GenProcessInfo.hpp"
 
 #include "gtest/gtest.h"
 
