@@ -167,9 +167,27 @@
             }
         },
         {
-            "name": "Windows-x64-Debug",
+            "name": "Windows-Debug",
             "displayName": "Windows Debug",
-            "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
+            "description": "Target Windows with the Visual Studio development environment. (Debug) - Platform agnostic",
+            "inherits": "Windows-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "Windows-Release",
+            "displayName": "Windows Release",
+            "description": "Target Windows with the Visual Studio development environment. (Release) - Platform agnostic",
+            "inherits": "Windows-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "Windows-AMD64-Debug",
+            "displayName": "Windows AMD64 Debug",
+            "description": "Target Windows (64-bit x64) with the Visual Studio development environment. (Debug)",
             "inherits": "Windows-base",
             "architecture": {
                 "value": "x64",
@@ -184,9 +202,9 @@
             }
         },
         {
-            "name": "Windows-x64-Release",
-            "displayName": "Windows Release",
-            "description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
+            "name": "Windows-AMD64-Release",
+            "displayName": "Windows AMD64 Release",
+            "description": "Target Windows (64-bit x64) with the Visual Studio development environment. (Release)",
             "inherits": "Windows-base",
             "architecture": {
                 "value": "x64",
@@ -201,7 +219,7 @@
             }
         },
         {
-            "name": "Windows-arm64-Debug",
+            "name": "Windows-ARM64-Debug",
             "displayName": "Windows ARM64 Debug",
             "description": "Target Windows ARM64 with the Visual Studio development environment. (Debug)",
             "inherits": "Windows-base",
@@ -218,7 +236,7 @@
             }
         },
         {
-            "name": "Windows-arm64-Release",
+            "name": "Windows-ARM64-Release",
             "displayName": "Windows ARM64 Release",
             "description": "Target Windows ARM64 with the Visual Studio development environment. (Release)",
             "inherits": "Windows-base",
@@ -261,20 +279,28 @@
             "configurePreset": "Linux-Clang-Release"
         },
         {
-            "name": "Windows-X64-Debug",
-            "configurePreset": "Windows-X64-Debug"
+            "name": "Windows-Debug",
+            "configurePreset": "Windows-Debug"
         },
         {
-            "name": "Windows-X64-Release",
-            "configurePreset": "Windows-X64-Release"
+            "name": "Windows-Release",
+            "configurePreset": "Windows-Release"
         },
         {
-            "name": "Windows-arm64-Debug",
-            "configurePreset": "Windows-arm64-Debug"
+            "name": "Windows-AMD64-Debug",
+            "configurePreset": "Windows-AMD64-Debug"
         },
         {
-            "name": "Windows-arm64-Release",
-            "configurePreset": "Windows-arm64-Release"
+            "name": "Windows-AMD64-Release",
+            "configurePreset": "Windows-AMD64-Release"
+        },
+        {
+            "name": "Windows-ARM64-Debug",
+            "configurePreset": "Windows-ARM64-Debug"
+        },
+        {
+            "name": "Windows-ARM64-Release",
+            "configurePreset": "Windows-ARM64-Release"
         }
     ],
     "testPresets": [
@@ -345,8 +371,8 @@
             }
         },
         {
-            "name": "Windows-X64-Debug",
-            "configurePreset": "Windows-X64-Debug",
+            "name": "Windows-Debug",
+            "configurePreset": "Windows-Debug",
             "output": {
                 "outputOnFailure": true
             },
@@ -356,8 +382,8 @@
             }
         },
         {
-            "name": "Windows-X64-Release",
-            "configurePreset": "Windows-X64-Release",
+            "name": "Windows-Release",
+            "configurePreset": "Windows-Release",
             "output": {
                 "outputOnFailure": true
             },
@@ -367,8 +393,8 @@
             }
         },
         {
-            "name": "Windows-arm64-Debug",
-            "configurePreset": "Windows-arm64-Debug",
+            "name": "Windows-AMD64-Debug",
+            "configurePreset": "Windows-AMD64-Debug",
             "output": {
                 "outputOnFailure": true
             },
@@ -378,8 +404,30 @@
             }
         },
         {
-            "name": "Windows-arm64-Release",
-            "configurePreset": "Windows-arm64-Release",
+            "name": "Windows-AMD64-Release",
+            "configurePreset": "Windows-AMD64-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Windows-ARM64-Debug",
+            "configurePreset": "Windows-ARM64-Debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Windows-ARM64-Release",
+            "configurePreset": "Windows-ARM64-Release",
             "output": {
                 "outputOnFailure": true
             },

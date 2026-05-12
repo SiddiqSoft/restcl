@@ -35,25 +35,13 @@ stages:
             - Agent.OS -equals Windows_NT
         strategy:
           matrix:
-            X64-Debug:
+            Win64-Debug:
               BuildType: Debug
-              Platform: x64
-              cmake.preset: "Windows-$(Platform)-$(BuildType)"
+              cmake.preset: "Windows-$(BuildType)"
               MSBuildConfiguration: Debug
-            X64-Release:
+            Win64-Release:
               BuildType: Release
-              Platform: x64
-              cmake.preset: "Windows-$(Platform)-$(BuildType)"
-              MSBuildConfiguration: Release
-            ARM64-Debug:
-              BuildType: Debug
-              Platform: arm64
-              cmake.preset: "Windows-$(Platform)-$(BuildType)"
-              MSBuildConfiguration: Debug
-            ARM64-Release:
-              BuildType: Release
-              Platform: arm64
-              cmake.preset: "Windows-$(Platform)-$(BuildType)"
+              cmake.preset: "Windows-$(BuildType)"
               MSBuildConfiguration: Release
         steps:
           - checkout: self
