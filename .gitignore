@@ -18,6 +18,7 @@ CMakeCache.txt
 **/*.cmake
 **/*.vcxproj
 **/*.sln
+**/*.slnx
 **/Makefile
 *.cmake
 Makefile
@@ -369,12 +370,7 @@ MigrationBackup/
 /src/version.h
 out/**
 build/**
-/src/version.h
-/test/validation_tests/validation_tests.tlog
-/test/validation_tests/vc.nativecodeanalysis.all.xml
 *.recipe
 *.sarif
 *.tlog
-/test/validation_tests/CodeAnalysisResultManifest.txt
-/test/validation_tests/test.nativecodeanalysis.xml
 *.filters
