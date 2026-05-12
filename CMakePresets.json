@@ -167,7 +167,7 @@
             }
         },
         {
-            "name": "Windows-X64-Debug",
+            "name": "Windows-x64-Debug",
             "displayName": "Windows Debug",
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
             "inherits": "Windows-base",
@@ -184,7 +184,7 @@
             }
         },
         {
-            "name": "Windows-X64-Release",
+            "name": "Windows-x64-Release",
             "displayName": "Windows Release",
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
             "inherits": "Windows-base",
