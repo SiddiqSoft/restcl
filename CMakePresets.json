@@ -157,9 +157,9 @@
             "installDir": "${sourceDir}/install/${presetName}",
             "generator": "Ninja Multi-Config",
             "cacheVariables": {
+                "CMAKE_MAKE_PROGRAM": "ninja",
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
-                "CMAKE_BUILD_TYPE": "Debug",
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
                 "restcl_BUILD_TESTS": "ON"
             },
@@ -181,9 +181,9 @@
             "installDir": "${sourceDir}/install/${presetName}",
             "generator": "Ninja Multi-Config",
             "cacheVariables": {
+                "CMAKE_MAKE_PROGRAM": "ninja",
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
-                "CMAKE_BUILD_TYPE": "Release",
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
                 "restcl_BUILD_TESTS": "ON"
             },
