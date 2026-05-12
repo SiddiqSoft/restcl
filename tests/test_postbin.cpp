@@ -283,7 +283,7 @@ namespace siddiqsoft
 
     TEST_F(PostBin, multiple_simultaneously_1)
     {
-        std::println("{} - new run tid:{}", __func__, GenProcessInfo::GetThreadId());
+        std::println(std::cerr, "{} - new run tid:{}", __func__, GenProcessInfo::GetThreadId());
         const unsigned   ITER_COUNT = 1;
         std::atomic_uint passTest   = 0;
         std::atomic_uint callbackCounter {0};
@@ -291,12 +291,12 @@ namespace siddiqsoft
         // First we should get and store the session id..
         SessionBinId = CreateBinId();
         EXPECT_FALSE(SessionBinId.empty());
-        std::println("{} - new bin id: {}", __func__, SessionBinId);
+        std::println(std::cerr, "{} - new bin id: {}", __func__, SessionBinId);
         
         EXPECT_NO_THROW({
-            std::println("{} - About to invoke GetRESTClient() threadid:{}", __func__, siddiqsoft::GenProcessInfo::GetThreadId());
+            std::println(std::cerr, "{} - About to invoke GetRESTClient() threadid:{}", __func__, siddiqsoft::GenProcessInfo::GetThreadId());
             restcl wrc = GetRESTClient();
-            std::println("{} - Completed GetRESTClient() threadid:{}", __func__, siddiqsoft::GenProcessInfo::GetThreadId());
+            std::println(std::cerr, "{} - Completed GetRESTClient() threadid:{}", __func__, siddiqsoft::GenProcessInfo::GetThreadId());
 
             wrc->configure({{RESTCL_CONFIG_FRESH_CONNECT, true},
                             {RESTCL_CONFIG_USER_AGENT, std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
@@ -327,7 +327,7 @@ namespace siddiqsoft
                SessionBinId))); wrc->sendAsync(std::move(req));
             */
 
-            std::println("{} - About to invoke sendAsync() threadid:{}", __func__, siddiqsoft::GenProcessInfo::GetThreadId());
+            std::println(std::cerr, "{} - About to invoke sendAsync() threadid:{}", __func__, siddiqsoft::GenProcessInfo::GetThreadId());
             
             wrc->sendAsync(
                     rest_request {HttpMethodType::METHOD_GET,
