@@ -9,6 +9,7 @@
             "name": "Project-Base",
             "hidden": true,
             "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "environment": {
                 "CTEST_PARALLEL_LEVEL": "0",
                 "CMAKE_COLOR_DIAGNOSTICS": "1"
@@ -59,7 +60,7 @@
         {
             "name": "Linux-Clang-Debug",
             "displayName": "Linux Clang Debug",
-            "description": "Target Linux Clang(Debug)",
+            "description": "Target Linux Clang (Debug)",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
             "inherits": "Project-Base",
@@ -82,7 +83,7 @@
         {
             "name": "Linux-Clang-Release",
             "displayName": "Linux Clang Release",
-            "description": "Target Linux Clang(Release)",
+            "description": "Target Linux Clang (Release)",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
             "inherits": "Project-Base",
@@ -105,7 +106,7 @@
         {
             "name": "Linux-GCC-Debug",
             "displayName": "Linux GCC Debug",
-            "description": "Target Linux GCC(Debug)",
+            "description": "Target Linux GCC (Debug)",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
             "inherits": "Project-Base",
@@ -149,16 +150,22 @@
             }
         },
         {
-            "name": "Windows-base",
-            "description": "Target Windows with the Visual Studio development environment.",
-            "hidden": true,
-            "inherits": "Project-Base",
-            "generator": "Ninja",
+            "name": "Windows-Debug",
+            "displayName": "Windows Debug",
+            "description": "Target Windows with the Visual Studio development environment (Debug) - Platform agnostic",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
+            "generator": "Ninja",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
-                "CMAKE_CXX_COMPILER": "cl.exe"
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
+                "restcl_BUILD_TESTS": "ON"
+            },
+            "environment": {
+                "CTEST_PARALLEL_LEVEL": "0",
+                "CMAKE_COLOR_DIAGNOSTICS": "1"
             },
             "condition": {
                 "type": "equals",
@@ -167,89 +174,27 @@
             }
         },
         {
-            "name": "Windows-Debug",
-            "displayName": "Windows Debug",
-            "description": "Target Windows with the Visual Studio development environment. (Debug) - Platform agnostic",
-            "inherits": "Windows-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
             "name": "Windows-Release",
             "displayName": "Windows Release",
-            "description": "Target Windows with the Visual Studio development environment. (Release) - Platform agnostic",
-            "inherits": "Windows-base",
+            "description": "Target Windows with the Visual Studio development environment (Release) - Platform agnostic",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}",
+            "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
-        },
-        {
-            "name": "Windows-AMD64-Debug",
-            "displayName": "Windows AMD64 Debug",
-            "description": "Target Windows (64-bit x64) with the Visual Studio development environment. (Debug)",
-            "inherits": "Windows-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
+                "CMAKE_C_COMPILER": "cl.exe",
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
+                "restcl_BUILD_TESTS": "ON"
             },
-            "toolset": {
-                "value": "host=x64",
-                "strategy": "external"
+            "environment": {
+                "CTEST_PARALLEL_LEVEL": "0",
+                "CMAKE_COLOR_DIAGNOSTICS": "1"
             },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "Windows-AMD64-Release",
-            "displayName": "Windows AMD64 Release",
-            "description": "Target Windows (64-bit x64) with the Visual Studio development environment. (Release)",
-            "inherits": "Windows-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "toolset": {
-                "value": "host=x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
-        },
-        {
-            "name": "Windows-ARM64-Debug",
-            "displayName": "Windows ARM64 Debug",
-            "description": "Target Windows ARM64 with the Visual Studio development environment. (Debug)",
-            "inherits": "Windows-base",
-            "architecture": {
-                "value": "arm64",
-                "strategy": "external"
-            },
-            "toolset": {
-                "value": "host=x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "Windows-ARM64-Release",
-            "displayName": "Windows ARM64 Release",
-            "description": "Target Windows ARM64 with the Visual Studio development environment. (Release)",
-            "inherits": "Windows-base",
-            "architecture": {
-                "value": "arm64",
-                "strategy": "external"
-            },
-            "toolset": {
-                "value": "host=x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
             }
         }
     ],
@@ -285,22 +230,6 @@
         {
             "name": "Windows-Release",
             "configurePreset": "Windows-Release"
-        },
-        {
-            "name": "Windows-AMD64-Debug",
-            "configurePreset": "Windows-AMD64-Debug"
-        },
-        {
-            "name": "Windows-AMD64-Release",
-            "configurePreset": "Windows-AMD64-Release"
-        },
-        {
-            "name": "Windows-ARM64-Debug",
-            "configurePreset": "Windows-ARM64-Debug"
-        },
-        {
-            "name": "Windows-ARM64-Release",
-            "configurePreset": "Windows-ARM64-Release"
         }
     ],
     "testPresets": [
@@ -384,50 +313,6 @@
         {
             "name": "Windows-Release",
             "configurePreset": "Windows-Release",
-            "output": {
-                "outputOnFailure": true
-            },
-            "execution": {
-                "noTestsAction": "error",
-                "stopOnFailure": true
-            }
-        },
-        {
-            "name": "Windows-AMD64-Debug",
-            "configurePreset": "Windows-AMD64-Debug",
-            "output": {
-                "outputOnFailure": true
-            },
-            "execution": {
-                "noTestsAction": "error",
-                "stopOnFailure": true
-            }
-        },
-        {
-            "name": "Windows-AMD64-Release",
-            "configurePreset": "Windows-AMD64-Release",
-            "output": {
-                "outputOnFailure": true
-            },
-            "execution": {
-                "noTestsAction": "error",
-                "stopOnFailure": true
-            }
-        },
-        {
-            "name": "Windows-ARM64-Debug",
-            "configurePreset": "Windows-ARM64-Debug",
-            "output": {
-                "outputOnFailure": true
-            },
-            "execution": {
-                "noTestsAction": "error",
-                "stopOnFailure": true
-            }
-        },
-        {
-            "name": "Windows-ARM64-Release",
-            "configurePreset": "Windows-ARM64-Release",
             "output": {
                 "outputOnFailure": true
             },
