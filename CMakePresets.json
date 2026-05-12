@@ -167,7 +167,7 @@
             }
         },
         {
-            "name": "Windows-AMD64-Debug",
+            "name": "Windows-X64-Debug",
             "displayName": "Windows Debug",
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
             "inherits": "Windows-base",
@@ -184,7 +184,7 @@
             }
         },
         {
-            "name": "Windows-AMD64-Release",
+            "name": "Windows-X64-Release",
             "displayName": "Windows Release",
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
             "inherits": "Windows-base",
@@ -261,12 +261,12 @@
             "configurePreset": "Linux-Clang-Release"
         },
         {
-            "name": "Windows-AMD64-Debug",
-            "configurePreset": "Windows-AMD64-Debug"
+            "name": "Windows-X64-Debug",
+            "configurePreset": "Windows-X64-Debug"
         },
         {
-            "name": "Windows-AMD64-Release",
-            "configurePreset": "Windows-AMD64-Release"
+            "name": "Windows-X64-Release",
+            "configurePreset": "Windows-X64-Release"
         },
         {
             "name": "Windows-arm64-Debug",
@@ -345,8 +345,8 @@
             }
         },
         {
-            "name": "Windows-AMD64-Debug",
-            "configurePreset": "Windows-AMD64-Debug",
+            "name": "Windows-X64-Debug",
+            "configurePreset": "Windows-X64-Debug",
             "output": {
                 "outputOnFailure": true
             },
@@ -356,8 +356,8 @@
             }
         },
         {
-            "name": "Windows-AMD64-Release",
-            "configurePreset": "Windows-AMD64-Release",
+            "name": "Windows-X64-Release",
+            "configurePreset": "Windows-X64-Release",
             "output": {
                 "outputOnFailure": true
             },
