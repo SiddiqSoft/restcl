@@ -149,19 +149,69 @@
             }
         },
         {
-            "name": "Windows-Debug",
+            "name": "Windows-AMD64-Debug",
             "displayName": "Windows Debug",
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
             "inherits": "Windows-base",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=x64",
+                "strategy": "external"
+            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "Windows-Release",
+            "name": "Windows-AMD64-Release",
             "displayName": "Windows Release",
             "description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
             "inherits": "Windows-base",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "Windows-arm64-Debug",
+            "displayName": "Windows Debug",
+            "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
+            "inherits": "Windows-base",
+            "architecture": {
+                "value": "arm64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=arm64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "Windows-arm64-Release",
+            "displayName": "Windows Release",
+            "description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
+            "inherits": "Windows-base",
+            "architecture": {
+                "value": "arm64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=arm64",
+                "strategy": "external"
+            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
@@ -184,14 +234,6 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "installDir": "${sourceDir}/out/install/${presetName}",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "toolset": {
-                "value": "host=x64",
-                "strategy": "external"
-            },
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe"
