@@ -206,7 +206,8 @@ namespace siddiqsoft
             : error(ec)
         {
         }
-             operator std::string() { return messageFromWininetCode(error); }
+
+        operator std::string() { return messageFromWininetCode(error); }
         auto to_string() const { return messageFromWininetCode(error); }
     };
 
@@ -237,13 +238,15 @@ namespace siddiqsoft
 
         basic_callbacktype _callback {};
 
-        nlohmann::json _config {{"userAgent", "siddiqsoft.restcl/2"},
+        nlohmann::json _config {{RESTCL_CONFIG_USER_AGENT, "siddiqsoft.restcl/2"},
                                 {RESTCL_CONFIG_TRACE, false},
-                                {"id", id},
-                                {"connectTimeout", 0L},
-                                {"timeout", 0L},
-                                {"downloadDirectory", nullptr},
-                                {"headers", nullptr}};
+                                {RESTCL_CONFIG_ID, id},
+                                {RESTCL_CONFIG_CONNECT_TIMEOUT, 0L},
+                                {RESTCL_CONFIG_TIMEOUT, 0L},
+                                {RESTCL_CONFIG_VERIFY_PEER, 1L},
+                                {RESTCL_CONFIG_AUTO_REST_RETRY_COUNTER, 1},
+                                {RESTCL_CONFIG_DOWNLOAD_DIRECTORY, nullptr},
+                                {RESTCL_CONFIG_COMMON_HEADERS, nullptr}};
 
 
     protected:
