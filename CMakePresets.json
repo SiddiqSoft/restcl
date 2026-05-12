@@ -152,10 +152,10 @@
         {
             "name": "Windows-Debug",
             "displayName": "Windows Debug",
-            "description": "Target Windows with the Visual Studio development environment (Debug) - Platform agnostic",
+            "description": "Target Windows with Ninja and MSVC (Debug) - Auto-detects Visual Studio version",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "generator": "Ninja",
+            "generator": "Ninja Multi-Config",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
@@ -176,10 +176,10 @@
         {
             "name": "Windows-Release",
             "displayName": "Windows Release",
-            "description": "Target Windows with the Visual Studio development environment (Release) - Platform agnostic",
+            "description": "Target Windows with Ninja and MSVC (Release) - Auto-detects Visual Studio version",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "generator": "Ninja",
+            "generator": "Ninja Multi-Config",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
