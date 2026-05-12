@@ -259,6 +259,12 @@ namespace siddiqsoft
                 throw std::invalid_argument {std::format("{}:Cannot find header section delimiter.", __func__).c_str()};
 
             while (!done) {
+                // If we're already at the header end, we're done
+                if (bufferStart >= headerEnd) {
+                    done = true;
+                    break;
+                }
+
                 // Scan for the first `:`
                 auto hsep = std::search(bufferStart, headerEnd, ELEM_SEPERATOR.begin(), ELEM_SEPERATOR.end());
                 if (hsep != headerEnd) {
@@ -272,7 +278,7 @@ namespace siddiqsoft
                         bufferStart = hsep += ELEM_SEPERATOR.size();
 
                         // Skip over the leading "space" if found.
-                        if (*bufferStart == ' ') bufferStart = ++hsep;
+                        if (bufferStart < headerEnd && *bufferStart == ' ') bufferStart = ++hsep;
 
                     label_recummulate_to_unfold_buffer:
                         auto hend = useCRLF ? search(hsep, headerEnd, HTTP_NEWLINE.begin(), HTTP_NEWLINE.end())
@@ -280,15 +286,16 @@ namespace siddiqsoft
                         if (hend != headerEnd) {
                             // We found the `\r\n`;
                             // Next, check if this is a folded element
-                            if ((headerEnd != (hend + lineEndSize + 1)) &&
-                                ((*(hend + lineEndSize + 1) == ' ') ||
-                                 ((*(hend + lineEndSize + 1)) == '\t'))) // peek ahead to see if we have.. folded indicator
+                            auto peekPos = hend + lineEndSize;
+                            if ((peekPos + 1 <= headerEnd) &&
+                                ((*(peekPos + 1) == ' ') ||
+                                 ((*(peekPos + 1)) == '\t'))) // peek ahead to see if we have.. folded indicator
                             {
                                 // Yes, we have a folded item.
                                 // build up the value..
                                 value.append(hsep, hend);
                                 // Advance to past the fold portion
-                                hsep = hend + lineEndSize + 1;
+                                hsep = peekPos + 1;
                                 // Go back to find the next section..
                                 goto label_recummulate_to_unfold_buffer;
                             }
