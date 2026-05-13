@@ -156,7 +156,7 @@
             "installDir": "${sourceDir}/install/${presetName}",
             "generator": "Ninja Multi-Config",
             "cacheVariables": {
-                "CMAKE_MAKE_PROGRAM": "ninja",
+                "CMAKE_MAKE_PROGRAM": "ninja.exe",
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
@@ -164,7 +164,8 @@
             },
             "environment": {
                 "CTEST_PARALLEL_LEVEL": "0",
-                "CMAKE_COLOR_DIAGNOSTICS": "1"
+                "CMAKE_COLOR_DIAGNOSTICS": "1",
+                "PATH": "$env{PATH};C:/Program Files/Ninja;C:/tools/ninja;C:/ProgramData/chocolatey/bin"
             },
             "condition": {
                 "type": "equals",
