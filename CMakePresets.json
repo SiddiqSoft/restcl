@@ -166,8 +166,7 @@
             },
             "environment": {
                 "CTEST_PARALLEL_LEVEL": "0",
-                "CMAKE_COLOR_DIAGNOSTICS": "1",
-                "MSBUILD_PLATFORM": "x64"
+                "CMAKE_COLOR_DIAGNOSTICS": "1"
             },
             "condition": {
                 "type": "equals",
@@ -184,7 +183,7 @@
                 "strategy": "external"
             },
             "toolset": {
-                "value": "x64",
+                "value": "host=x64",
                 "strategy": "external"
             },
             "inherits": "Windows-Base",
@@ -201,7 +200,7 @@
                 "strategy": "external"
             },
             "toolset": {
-                "value": "x64",
+                "value": "host=x64",
                 "strategy": "external"
             },
             "inherits": "Windows-Base",
@@ -218,7 +217,7 @@
                 "strategy": "external"
             },
             "toolset": {
-                "value": "arm64",
+                "value": "host=arm64",
                 "strategy": "external"
             },
             "inherits": "Windows-Base",
@@ -235,7 +234,7 @@
                 "strategy": "external"
             },
             "toolset": {
-                "value": "arm64",
+                "value": "host=arm64",
                 "strategy": "external"
             },
             "inherits": "Windows-Base",
