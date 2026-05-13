@@ -35,6 +35,14 @@ jobs:
           useConfigFile: true
           configFilePath: "GitVersion.yml"
 
+      - task: CmdLine@2
+        displayName: "Install Ninja via Chocolatey"
+        inputs:
+          script: |
+            choco install ninja -y
+            ninja --version
+            where ninja
+
       - task: CMake@1
         displayName: "CMake Configure $(cmake.preset)"
         inputs:
