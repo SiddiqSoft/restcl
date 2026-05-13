@@ -38,25 +38,25 @@ stages:
             Windows-x64-Debug:
               BuildType: Debug
               Platform: x64
-              demands: x64
+              demands: $[ eq(variables['Agent.OSArchitecture'],'X64')]
               cmake.preset: "Windows-x64-Debug"
               MSBuildConfiguration: Debug
             Windows-x64-Release:
               BuildType: Release
               Platform: x64
-              demands: x64
+              demands: $[ eq(variables['Agent.OSArchitecture'],'X64')]
               cmake.preset: "Windows-x64-Release"
               MSBuildConfiguration: Release
             Windows-arm64-Debug:
               BuildType: Debug
               Platform: arm64
-              demands: arm64
+              demands: $[ eq(variables['Agent.OSArchitecture'],'ARM64')]
               cmake.preset: "Windows-arm64-Debug"
               MSBuildConfiguration: Debug
             Windows-arm64-Release:
               BuildType: Release
               Platform: arm64
-              demands: arm64
+              demands: $[ eq(variables['Agent.OSArchitecture'],'ARM64')]
               cmake.preset: "Windows-arm64-Release"
               MSBuildConfiguration: Release
         steps:
