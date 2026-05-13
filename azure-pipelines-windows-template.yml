@@ -22,6 +22,13 @@ jobs:
       - checkout: self
         name: step1
 
+      - task: CmdLine@2
+        displayName: "Install Ninja on Windows"
+        inputs:
+          script: |
+            winget install ninja-build.ninja
+            ninja --version
+
       - task: gitversion-setup@4
         displayName: "Install GitVersion.."
         inputs:
