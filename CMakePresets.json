@@ -164,8 +164,7 @@
             },
             "environment": {
                 "CTEST_PARALLEL_LEVEL": "0",
-                "CMAKE_COLOR_DIAGNOSTICS": "1",
-                "PATH": "$env{PATH};C:/Program Files/Ninja;C:/tools/ninja;C:/ProgramData/chocolatey/bin"
+                "CMAKE_COLOR_DIAGNOSTICS": "1"
             },
             "condition": {
                 "type": "equals",
