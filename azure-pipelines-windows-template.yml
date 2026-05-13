@@ -50,7 +50,9 @@ jobs:
               echo Warning: Could not find Visual Studio, attempting to use system MSVC
             )
             cl.exe /?
-            echo MSVC environment initialized
+            msbuild.exe /?
+            echo MSVC and MSBuild environment initialized
+            echo Architecture: ${{ parameters.architecture }}
 
       - task: gitversion-setup@4
         displayName: "Install GitVersion.."

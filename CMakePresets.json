@@ -159,12 +159,15 @@
                 "CMAKE_MAKE_PROGRAM": "ninja.exe",
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_C_COMPILER_LAUNCHER": "msbuild.exe",
+                "CMAKE_CXX_COMPILER_LAUNCHER": "msbuild.exe",
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
                 "restcl_BUILD_TESTS": "ON"
             },
             "environment": {
                 "CTEST_PARALLEL_LEVEL": "0",
-                "CMAKE_COLOR_DIAGNOSTICS": "1"
+                "CMAKE_COLOR_DIAGNOSTICS": "1",
+                "MSBUILD_PLATFORM": "x64"
             },
             "condition": {
                 "type": "equals",
