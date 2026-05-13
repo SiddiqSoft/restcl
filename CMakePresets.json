@@ -168,7 +168,7 @@
             },
             "condition": {
                 "type": "equals",
-                "lhs": "${hostSystemName",
+                "lhs": "${hostSystemName}",
                 "rhs": "Windows"
             }
         },
