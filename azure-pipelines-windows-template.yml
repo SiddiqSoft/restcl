@@ -30,45 +30,17 @@ jobs:
             ninja --version
         continueOnError: true
           
-      - task: CmdLine@2
-        displayName: "Setup MSVC Environment for Ninja"
+      - task: BatchScript@1
+        displayName: "Detect the paths of Visual Studio and MSBuild.."
         inputs:
-          script: |
-            @echo off
-            setlocal
-
-            rem Path to vswhere.exe (usually installed with VS)
-            set "vswhere=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-
-            rem Find the installation path of the latest Visual Studio version
-            for /f "usebackq tokens=*" %%i in (`"%vswhere%" -latest -property installationPath`) do (
-                set "VS_PATH=%%i"
-            )
-
-            if not defined VS_PATH (
-                echo Visual Studio installation not found.
-                exit /b 1
-            )
-
-            rem vcvarsall.bat location for VS 2017+
-            set "VCVARS_PATH=%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat"
-
-            if exist "%VCVARS_PATH%" (
-                echo Found: "%VCVARS_PATH%"
-                call "%VCVARS_PATH%" %PROCESSOR_ARCHITECTURE%
-            ) else (
-                echo Could not find vcvarsall.bat at %VCVARS_PATH%
-            )
-
-            echo MSVC environment setup complete
-            endlocal
-
-      - task: CmdLine@2
+          filename: pipeline_detect_vs_path.bat
+          modifyEnvironment: true
+      
+      - task: BatchScript@1
+        displayName: "Detect the path of CMake.."
         inputs:
-          script: |
-            set 
-        displayName: 'List all environment variables'
-        continueOnError: true
+          filename: pipeline_call_vs_path.bat
+          modifyEnvironment: true
         
       - task: gitversion-setup@4
         displayName: "Install GitVersion.."
