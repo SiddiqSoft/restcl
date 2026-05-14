@@ -25,7 +25,7 @@ parameters:
     default: true
   - name: RunLinux
     type: boolean
-    default: false
+    default: true
   - name: Architecture
     type: string
     default: x64
