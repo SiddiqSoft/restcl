@@ -1,163 +1,32 @@
-###############################################
-# SiddiqSoft Azure DevOps Pipelines Template  #
-# For C++ Projects                            #
-# Version 2.0                                 #
-###############################################
-trigger:
-  batch: "true"
-  branches:
-    include:
-      - master
-      - main
-      - bugfix/*
-      - release/*
-      - hotfix/*
-      - feature/*
-  paths:
-    exclude:
-      - README.md
-      - best_practices.md
-
 stages:
-  ################################## STAGE ####################################
-  # STAGE: BuildTest                                                          #
-  #############################################################################
-  - stage: BuildTest
-    displayName: "Building, Testing and Package"
+  - stage: Windows
+    displayName: Windows ${{ parameters.Architecture }}
+    condition: eq(${{ parameters.RunWindows }}, true)
     jobs:
       - template: azure-pipelines-windows-template.yml
         parameters:
-          displayName: "Build and Test Windows x64"
-          architecture: "X64"
+          displayName: Windows
+          architecture: ${{ parameters.Architecture }}
           matrixConfigs:
-            Windows-x64-Debug:
-              BuildType: Debug
-              Platform: x64
-              cmake.preset: "Windows-x64-Debug"
-              MSBuildConfiguration: Debug
-            Windows-x64-Release:
+            Windows_Release:
               BuildType: Release
-              Platform: x64
-              cmake.preset: "Windows-x64-Release"
-              MSBuildConfiguration: Release
+              cmake.preset: windows-${{ parameters.Architecture }}-release
+            Windows_Debug:
+              BuildType: Debug
+              cmake.preset: windows-${{ parameters.Architecture }}-debug
 
-      - template: azure-pipelines-windows-template.yml
+  - stage: Linux
+    displayName: Linux ${{ parameters.Architecture }}
+    condition: eq(${{ parameters.RunLinux }}, true)
+    jobs:
+      - template: azure-pipelines-linux-template.yml
         parameters:
-          displayName: "Build and Test Windows ARM64"
-          architecture: "ARM64"
+          displayName: Linux
+          architecture: ${{ parameters.Architecture }}
           matrixConfigs:
-            Windows-arm64-Debug:
-              BuildType: Debug
-              Platform: arm64
-              cmake.preset: "Windows-arm64-Debug"
-              MSBuildConfiguration: Debug
-            Windows-arm64-Release:
+            Linux_Release:
               BuildType: Release
-              Platform: arm64
-              cmake.preset: "Windows-arm64-Release"
-              MSBuildConfiguration: Release
-
-      #   ##################################################################################################### #### ## #
-      #   #### Job buildLinux ################################################################################# #### ## #
-      #   ##################################################################################################### #### ## #
-      - job: buildLinux
-        displayName: "Build and Test Linux"
-        workspace:
-          clean: all
-        pool:
-          name: Default
-          demands:
-            - Agent.OS -equals Linux
-        strategy:
-          matrix:
-            GCC-Debug:
+              cmake.preset: linux-${{ parameters.Architecture }}-release
+            Linux_Debug:
               BuildType: Debug
-              cmake.preset: "Linux-GCC-$(BuildType)"
-              MSBuildConfiguration: Debug
-              cmakeExtraArgs:
-            GCC-Release:
-              BuildType: Release
-              cmake.preset: "Linux-GCC-$(BuildType)"
-              cmakeExtraArgs:
-              MSBuildConfiguration: Release
-            Clang-Debug:
-              BuildType: Debug
-              cmake.preset: "Linux-Clang-$(BuildType)"
-              MSBuildConfiguration: Debug
-              cmakeExtraArgs:
-            Clang-Release:
-              BuildType: Release
-              cmake.preset: "Linux-Clang-$(BuildType)"
-              cmakeExtraArgs:
-              MSBuildConfiguration: Release
-        steps:
-          - checkout: self
-            name: step1
-
-          - task: gitversion-setup@4
-            displayName: "Install GitVersion.."
-            inputs:
-              versionSpec: "6.x"
-              preferLatestVersion: true
-
-          - task: gitversion-execute@4
-            displayName: "Determine Version.."
-            name: version_step
-            inputs:
-              configFilePath: "GitVersion.yml"
-
-          - task: CMake@1
-            displayName: "CMake Configure $(cmake.preset)"
-            inputs:
-              cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
-              workingDirectory: "$(System.DefaultWorkingDirectory)"
-
-          - task: CMake@1
-            displayName: "CMake Build $(cmake.preset)"
-            inputs:
-              cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
-              workingDirectory: "$(System.DefaultWorkingDirectory)"
-            condition: succeeded()
-
-          - task: CMake@1
-            displayName: "CMake Tests $(cmake.preset)"
-            env:
-              "CTEST_OUTPUT_ON_FAILURE": "TRUE"
-            inputs:
-              cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure --verbose"
-            condition: succeeded()
-            continueOnError: true
-          
-          - task: CMake@1
-            displayName: "CTest Coverage $(cmake.preset) (Linux only)"
-            env:
-              "CTEST_OUTPUT_ON_FAILURE": "TRUE"
-            inputs:
-              cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset) ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset) --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure --verbose -T Test -T Coverage"
-            condition: and(succeeded(), eq(variables['BuildType'], 'Debug'), startsWith(variables['Agent.OS'], 'Linux'), startsWith(variables['Agent.OSArchitecture'], 'X64'))
-            continueOnError: true
-          
-          - task: CmdLine@2
-            displayName: "Coverage collection (Linux builds Only)"
-            inputs:
-              script: |
-                echo "gcovr --delete --root ../../ --print-summary --xml-pretty --xml coverage.xml .  --filter='$(System.DefaultWorkingDirectory)/include/siddiqsoft/*' --filter='$(System.DefaultWorkingDirectory)/tests/*' --gcov-executable 'llvm-cov gcov'"
-                gcovr --delete --root $(System.DefaultWorkingDirectory)/ --print-summary --xml-pretty --xml $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/coverage.xml $(System.DefaultWorkingDirectory)/build/$(cmake.preset)  --filter='$(System.DefaultWorkingDirectory)/include/*' --filter='$(System.DefaultWorkingDirectory)/tests/*' --gcov-executable 'llvm-cov gcov'
-              workingDirectory: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-            condition: and(succeeded(), eq(variables['BuildType'], 'Debug'), startsWith(variables['Agent.OS'], 'Linux'), startsWith(variables['Agent.OSArchitecture'], 'X64'))
-          
-          - task: PublishTestResults@2
-            displayName: "Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml"
-            inputs:
-              testResultsFormat: "JUnit"
-              testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
-              mergeTestResults: false
-              buildConfiguration: "$(BuildType)"
-            continueOnError: false
-            condition: succeeded()
-          
-          - task: PublishCodeCoverageResults@2
-            displayName: "Publish Coverage Results (Linux builds)"
-            inputs:
-              summaryFileLocation: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/coverage.*"
-            condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Linux'), startsWith(variables['Agent.OSArchitecture'], 'X64'), eq(variables['BuildType'], 'Debug'))
+              cmake.preset: linux-${{ parameters.Architecture }}-debug

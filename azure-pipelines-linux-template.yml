@@ -1,0 +1,77 @@
+parameters:
+  - name: displayName
+    type: string
+  - name: architecture
+    type: string
+  - name: matrixConfigs
+    type: object
+
+jobs:
+  - job: ${{ parameters.architecture }}
+    displayName: ${{ parameters.displayName }}
+    workspace:
+      clean: all
+    pool:
+      name: Default
+      demands:
+        - Agent.OS -equals Linux
+        - Agent.OSArchitecture -equals ${{ parameters.architecture }}
+    strategy:
+      matrix: ${{ parameters.matrixConfigs }}
+    steps:
+      - checkout: self
+        name: step1
+
+      - task: Bash@3
+        displayName: "Install Ninja on Linux"
+        inputs:
+          targetType: inline
+          script: |
+            if ! command -v ninja >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y ninja-build
+            fi
+            ninja --version
+
+      - task: gitversion-setup@4
+        displayName: "Install GitVersion"
+        inputs:
+          versionSpec: "6.x"
+          preferLatestVersion: true
+
+      - task: gitversion-execute@4
+        displayName: "Determine Version"
+        name: version_step
+        inputs:
+          useConfigFile: true
+          configFilePath: "GitVersion.yml"
+
+      - task: CMake@1
+        displayName: "CMake Configure $(cmake.preset)"
+        inputs:
+          cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+          workingDirectory: "$(System.DefaultWorkingDirectory)"
+
+      - task: CMake@1
+        displayName: "CMake Build $(cmake.preset)"
+        inputs:
+          cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+          workingDirectory: "$(System.DefaultWorkingDirectory)"
+        condition: succeeded()
+
+      - task: CMake@1
+        displayName: "CMake Tests $(cmake.preset)"
+        inputs:
+          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+        continueOnError: true
+        condition: succeeded()
+
+      - task: PublishTestResults@2
+        displayName: "Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml"
+        inputs:
+          testResultsFormat: "JUnit"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+          mergeTestResults: false
+          buildConfiguration: "$(BuildType)"
+        continueOnError: true
+        condition: succeeded()
