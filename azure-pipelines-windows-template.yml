@@ -46,7 +46,7 @@ jobs:
         displayName: "Install paths.. $(VCVARS_PATH) $(AGENT_OSARCHITECTURE)"
         inputs:
           filename: '$(VCVARS_PATH)'
-          parameters: '$(AGENT_OSARCHITECTURE)'
+          arguments: '$(AGENT_OSARCHITECTURE)'
           modifyEnvironment: true
       
       - task: CmdLine@2
