@@ -62,7 +62,10 @@ jobs:
 
             echo MSVC environment setup complete
             endlocal
-        
+
+      - powershell: Get-ChildItem -Path Env: | Sort-Object Name
+        displayName: 'List all environment variables'
+  
       - task: gitversion-setup@4
         displayName: "Install GitVersion.."
         inputs:
