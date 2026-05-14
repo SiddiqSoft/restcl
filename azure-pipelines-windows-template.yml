@@ -63,16 +63,37 @@ jobs:
           configFilePath: "GitVersion.yml"
 
       - script: |
-          # Detect Visual Studio version on self-hosted agent
-          if exist "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
-            set VS_VERSION=2022
-          ) else if exist "C:\Program Files\Microsoft Visual Studio\2026\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
-            set VS_VERSION=2026
-          ) else (
-            echo "Visual Studio 2022 or 2026 not found on agent"
-            exit 1
+          REM Detect Visual Studio version and edition on ARM64 or x64
+          set VS_VERSION=
+          set VS_PATH=
+          
+          REM Check for VS 2026 (Enterprise, Professional, Community)
+          for %%E in (Enterprise Professional Community) do (
+            if exist "C:\Program Files\Microsoft Visual Studio\2026\%%E\VC\Auxiliary\Build\vcvarsall.bat" (
+              set VS_VERSION=2026
+              set VS_PATH=C:\Program Files\Microsoft Visual Studio\2026\%%E
+              goto vs_found
+            )
           )
+          
+          REM Check for VS 2022 (Enterprise, Professional, Community)
+          for %%E in (Enterprise Professional Community) do (
+            if exist "C:\Program Files\Microsoft Visual Studio\2022\%%E\VC\Auxiliary\Build\vcvarsall.bat" (
+              set VS_VERSION=2022
+              set VS_PATH=C:\Program Files\Microsoft Visual Studio\2022\%%E
+              goto vs_found
+            )
+          )
+          
+          :vs_found
+          if not defined VS_VERSION (
+            echo "Visual Studio 2022 or 2026 not found on agent"
+            exit /b 1
+          )
+          
+          echo Visual Studio %VS_VERSION% found at %VS_PATH%
           echo ##vso[task.setvariable variable=VS_VERSION]%VS_VERSION%
+          echo ##vso[task.setvariable variable=VS_PATH]%VS_PATH%
         displayName: 'Detect Visual Studio Version'
 
       - task: CMake@1
