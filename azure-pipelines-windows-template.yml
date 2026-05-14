@@ -43,9 +43,10 @@ jobs:
           modifyEnvironment: true
       
       - task: BatchScript@1
-        displayName: "Install paths.. %VCVARS_PATH%"
+        displayName: "Install paths.. $(VCVARS_PATH) $(AGENT_OSARCHITECTURE)"
         inputs:
           filename: '$(VCVARS_PATH)'
+          parameters: '$(AGENT_OSARCHITECTURE)'
           modifyEnvironment: true
       
       - task: CmdLine@2
