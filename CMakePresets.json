@@ -159,8 +159,6 @@
                 "CMAKE_MAKE_PROGRAM": "ninja.exe",
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
-                "CMAKE_C_COMPILER_LAUNCHER": "msbuild.exe",
-                "CMAKE_CXX_COMPILER_LAUNCHER": "msbuild.exe",
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
                 "restcl_BUILD_TESTS": "ON"
             },

@@ -28,9 +28,29 @@ jobs:
           script: |
             winget install ninja-build.ninja
             ninja --version
-            echo $VisualStudio
-            dir "$VisualStudio"
-            dir "$VisualStudio\Common7\Tools\"
+
+      - task: CmdLine@2
+        displayName: "Setup MSVC Environment for Ninja"
+        inputs:
+          script: |
+            @echo off
+            setlocal enabledelayedexpansion
+            
+            REM Find Visual Studio installation
+            for /f "tokens=*" %%i in ('where /R "C:\Program Files\Microsoft Visual Studio" vcvars64.bat 2^>nul ^| findstr /R ".*vcvars64.bat$" ^| head -1') do set "VCVARS=%%i"
+            
+            if not defined VCVARS (
+              for /f "tokens=*" %%i in ('where /R "C:\Program Files (x86)\Microsoft Visual Studio" vcvars64.bat 2^>nul ^| findstr /R ".*vcvars64.bat$" ^| head -1') do set "VCVARS=%%i"
+            )
+            
+            if defined VCVARS (
+              echo Found vcvars at: !VCVARS!
+              call "!VCVARS!"
+            ) else (
+              echo Warning: Could not find vcvars batch file
+            )
+            
+            echo MSVC environment setup complete
 
       - task: gitversion-setup@4
         displayName: "Install GitVersion.."
