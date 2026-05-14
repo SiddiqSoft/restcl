@@ -104,7 +104,6 @@ stages:
             displayName: "Determine Version.."
             name: version_step
             inputs:
-              useConfigFile: true
               configFilePath: "GitVersion.yml"
 
           - task: CMake@1
@@ -128,6 +127,7 @@ stages:
               cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure --verbose"
             condition: succeeded()
             continueOnError: true
+          
           - task: CMake@1
             displayName: "CTest Coverage $(cmake.preset) (Linux only)"
             env:
@@ -136,6 +136,7 @@ stages:
               cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset) ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset) --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure --verbose -T Test -T Coverage"
             condition: and(succeeded(), eq(variables['BuildType'], 'Debug'), startsWith(variables['Agent.OS'], 'Linux'), startsWith(variables['Agent.OSArchitecture'], 'X64'))
             continueOnError: true
+          
           - task: CmdLine@2
             displayName: "Coverage collection (Linux builds Only)"
             inputs:
@@ -144,6 +145,7 @@ stages:
                 gcovr --delete --root $(System.DefaultWorkingDirectory)/ --print-summary --xml-pretty --xml $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/coverage.xml $(System.DefaultWorkingDirectory)/build/$(cmake.preset)  --filter='$(System.DefaultWorkingDirectory)/include/*' --filter='$(System.DefaultWorkingDirectory)/tests/*' --gcov-executable 'llvm-cov gcov'
               workingDirectory: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
             condition: and(succeeded(), eq(variables['BuildType'], 'Debug'), startsWith(variables['Agent.OS'], 'Linux'), startsWith(variables['Agent.OSArchitecture'], 'X64'))
+          
           - task: PublishTestResults@2
             displayName: "Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml"
             inputs:
@@ -153,6 +155,7 @@ stages:
               buildConfiguration: "$(BuildType)"
             continueOnError: false
             condition: succeeded()
+          
           - task: PublishCodeCoverageResults@2
             displayName: "Publish Coverage Results (Linux builds)"
             inputs:

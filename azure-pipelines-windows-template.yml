@@ -41,7 +41,14 @@ jobs:
         inputs:
           filename: pipeline_call_vs_path.bat
           modifyEnvironment: true
-        
+      
+      - task: CmdLine@2
+        displayName: "Detect the path of CMake.."
+        inputs:
+          script: |
+            set
+        continueOnError: true
+      
       - task: gitversion-setup@4
         displayName: "Install GitVersion.."
         inputs:
