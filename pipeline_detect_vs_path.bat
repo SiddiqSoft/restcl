@@ -17,7 +17,7 @@ if not defined VS_PATH (
 
 rem vcvarsall.bat location for VS 2017+
 set "VCVARS_PATH=%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat"
-echo "Found Visual Studio at: %VS_PATH%"
-echo "Found vcvarsall.bat at: %VCVARS_PATH%"
-
+echo "Found Visual Studio at: `%VS_PATH%`"
+echo "Found vcvarsall.bat at: `%VCVARS_PATH%`"
+echo ##vso[task.setvariable variable=VCVARS_PATH]%VCVARS_PATH%
 endlocal

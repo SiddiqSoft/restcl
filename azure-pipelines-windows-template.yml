@@ -37,13 +37,19 @@ jobs:
           modifyEnvironment: true
       
       - task: BatchScript@1
-        displayName: "Detect the path of CMake.."
+        displayName: "Invoke the vcvarsall.bat to set up the environment for Visual Studio.."
         inputs:
           filename: pipeline_call_vs_path.bat
           modifyEnvironment: true
       
+      - task: BatchScript@1
+        displayName: "Install paths.. %VCVARS_PATH%"
+        inputs:
+          filename: '%VCVARS_PATH%'
+          modifyEnvironment: true
+      
       - task: CmdLine@2
-        displayName: "Detect the path of CMake.."
+        displayName: "Review all environment variables."
         inputs:
           script: |
             set
@@ -99,7 +105,7 @@ jobs:
       - task: CMake@1
         displayName: "CMake Configure $(cmake.preset)"
         inputs:
-          cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCMAKE_GENERATOR_TOOLSET=v$(VS_VERSION) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+          cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
           workingDirectory: "$(System.DefaultWorkingDirectory)"
 
       - task: CMake@1
