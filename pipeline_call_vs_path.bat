@@ -1,5 +1,5 @@
-rem detect the location of Visual Studio vcvars and set the path
 @echo off
+rem detect the location of Visual Studio vcvars and set the path
 setlocal
 
 if exist "%VCVARS_PATH%" (

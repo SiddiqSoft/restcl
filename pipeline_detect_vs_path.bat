@@ -1,5 +1,5 @@
-rem detect the location of Visual Studio vcvars and set the path
 @echo off
+rem detect the location of Visual Studio vcvars and set the path
 setlocal
 
 rem Path to vswhere.exe (usually installed with VS)
@@ -17,5 +17,7 @@ if not defined VS_PATH (
 
 rem vcvarsall.bat location for VS 2017+
 set "VCVARS_PATH=%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat"
+echo "Found Visual Studio at: %VS_PATH%"
+echo "Found vcvarsall.bat at: %VCVARS_PATH%"
 
 endlocal
