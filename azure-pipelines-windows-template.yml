@@ -45,7 +45,7 @@ jobs:
       - task: BatchScript@1
         displayName: "Install paths.. %VCVARS_PATH%"
         inputs:
-          filename: '%VCVARS_PATH%'
+          filename: '$(VCVARS_PATH)'
           modifyEnvironment: true
       
       - task: CmdLine@2
