@@ -45,10 +45,10 @@ stages:
           matrixConfigs:
             Windows_Release:
               BuildType: Release
-              cmake.preset: ${{Stage}}-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: ${{ parameters.stageName }}-${{ parameters.Architecture }}-$(BuildType)
             Windows_Debug:
               BuildType: Debug
-              cmake.preset: ${{Stage}}-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: ${{ parameters.stageName }}-${{ parameters.Architecture }}-$(BuildType)
 
   - stage: Linux
     displayName: Linux ${{ parameters.Architecture }}
@@ -61,7 +61,7 @@ stages:
           matrixConfigs:
             Linux_Release:
               BuildType: Release
-              cmake.preset: ${{Stage}}-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: ${{ parameters.stageName }}-${{ parameters.Architecture }}-$(BuildType)
             Linux_Debug:
               BuildType: Debug
-              cmake.preset: ${{Stage}}-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: ${{ parameters.stageName }}-${{ parameters.Architecture }}-$(BuildType)
