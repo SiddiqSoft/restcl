@@ -44,13 +44,6 @@ jobs:
           arguments: '$(AGENT_OSARCHITECTURE)'
           modifyEnvironment: true
       
-      - task: CmdLine@2
-        displayName: "Review all environment variables."
-        inputs:
-          script: |
-            set
-        continueOnError: true
-      
       - task: gitversion-setup@4
         displayName: "Install GitVersion.."
         inputs:
