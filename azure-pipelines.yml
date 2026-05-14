@@ -34,7 +34,7 @@ parameters:
       - arm64
 
 stages:
-  - stage: Windows
+  - stage: BuildWindows
     displayName: Windows ${{ parameters.Architecture }}
     dependsOn: []
     condition: eq(${{ parameters.RunWindows }}, true)
@@ -50,8 +50,11 @@ stages:
             Windows_Debug:
               BuildType: Debug
               cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
+          runTests: false
+          publishNuGet: false
+          publishGitHub: false
 
-  - stage: Linux
+  - stage: BuildLinux
     displayName: Linux ${{ parameters.Architecture }}
     dependsOn: []
     condition: eq(${{ parameters.RunLinux }}, true)
@@ -67,3 +70,42 @@ stages:
             Linux_Debug:
               BuildType: Debug
               cmake.preset: Linux-${{ parameters.Architecture }}-$(BuildType)
+          runTests: false
+
+  - stage: Test
+    displayName: Test
+    dependsOn:
+      - BuildWindows
+      - BuildLinux
+    jobs:
+      - template: azure-pipelines-test-template.yml
+        parameters:
+          architecture: ${{ parameters.Architecture }}
+          matrixConfigs:
+            Windows_Release:
+              BuildType: Release
+              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
+            Windows_Debug:
+              BuildType: Debug
+              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
+            Linux_Release:
+              BuildType: Release
+              cmake.preset: Linux-${{ parameters.Architecture }}-$(BuildType)
+            Linux_Debug:
+              BuildType: Debug
+              cmake.preset: Linux-${{ parameters.Architecture }}-$(BuildType)
+
+  - stage: NuGetPublish
+    displayName: NuGet Publish
+    dependsOn: Test
+    jobs:
+      - template: azure-pipelines-nuget-publish-template.yml
+
+  - stage: GitHubRelease
+    displayName: GitHub Release
+    dependsOn:
+      - BuildWindows
+      - BuildLinux
+      - Test
+    jobs:
+      - template: azure-pipelines-github-release-template.yml

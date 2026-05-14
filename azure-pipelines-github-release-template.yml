@@ -1,0 +1,35 @@
+jobs:
+  - job: GitHubRelease
+    displayName: GitHub Release
+    pool:
+      name: Default
+      demands:
+        - Agent.OS -equals Windows_NT
+    steps:
+      - checkout: none
+      - task: DownloadBuildArtifacts@0
+        displayName: "Download release assets"
+        inputs:
+          downloadType: "single"
+          artifactName: "release-assets"
+          downloadPath: "$(Build.ArtifactStagingDirectory)"
+
+      - task: GitHubRelease@1
+        displayName: "Release to GitHub"
+        inputs:
+          gitHubConnection: "github-packages-sqs"
+          repositoryName: "$(Build.Repository.Name)"
+          action: "create"
+          target: "$(Build.SourceVersion)"
+          tagSource: "userSpecifiedTag"
+          tag: "$(GITVERSION_MAJORMINORPATCH)"
+          title: "v$(GITVERSION_MAJORMINORPATCH)"
+          releaseNotesSource: "inline"
+          releaseNotesInline: "Documentation https://github.com/$(Build.Repository.Name)"
+          isPreRelease: true
+          changeLogCompareToRelease: "lastFullRelease"
+          changeLogType: "commitBased"
+          addChangeLog: false
+          assetUploadMode: "replace"
+          assets: "$(Build.ArtifactStagingDirectory)/**/*"
+        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))

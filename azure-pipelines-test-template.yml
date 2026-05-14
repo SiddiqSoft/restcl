@@ -1,0 +1,34 @@
+parameters:
+  - name: architecture
+    type: string
+  - name: matrixConfigs
+    type: object
+
+jobs:
+  - job: Test_${{ parameters.architecture }}
+    displayName: Test ${{ parameters.architecture }}
+    strategy:
+      matrix: ${{ parameters.matrixConfigs }}
+    steps:
+      - checkout: none  # Assuming artifacts from build stages are available or re-checkout if needed
+      - task: DownloadBuildArtifacts@0
+        displayName: "Download build artifacts"
+        inputs:
+          downloadType: "single"
+          artifactName: "build-$(cmake.preset)"
+          downloadPath: "$(System.DefaultWorkingDirectory)"
+
+      - task: CMake@1
+        displayName: "CMake Tests $(cmake.preset)"
+        inputs:
+          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+        continueOnError: true
+
+      - task: PublishTestResults@2
+        displayName: "Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml"
+        inputs:
+          testResultsFormat: "JUnit"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+          mergeTestResults: false
+          buildConfiguration: "$(BuildType)"
+        continueOnError: true
