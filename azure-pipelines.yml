@@ -1,3 +1,38 @@
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - development
+      - develop
+      - release/*
+
+pr:
+  branches:
+    include:
+      - main
+      - release/*
+
+resources:
+  repositories:
+    - repository: self
+      type: git
+      name: SiddiqSoft/restcl
+
+parameters:
+  - name: RunWindows
+    type: boolean
+    default: true
+  - name: RunLinux
+    type: boolean
+    default: false
+  - name: Architecture
+    type: string
+    default: x64
+    values:
+      - x64
+      - arm64
+
 stages:
   - stage: Windows
     displayName: Windows ${{ parameters.Architecture }}
