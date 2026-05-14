@@ -28,7 +28,7 @@ parameters:
     default: true
   - name: Architecture
     type: string
-    default: x64
+    default: arm64
     values:
       - x64
       - arm64
@@ -78,7 +78,7 @@ stages:
       - BuildWindows
       - BuildLinux
     jobs:
-      - template: azure-pipelines-test-template.yml
+      - template: .ci/azure-pipelines-test-template.yml
         parameters:
           architecture: ${{ parameters.Architecture }}
           matrixConfigs:
@@ -99,7 +99,7 @@ stages:
     displayName: NuGet Publish
     dependsOn: Test
     jobs:
-      - template: azure-pipelines-nuget-publish-template.yml
+      - template: .ci/azure-pipelines-nuget-publish-template.yml
 
   - stage: GitHubRelease
     displayName: GitHub Release
@@ -108,4 +108,4 @@ stages:
       - BuildLinux
       - Test
     jobs:
-      - template: azure-pipelines-github-release-template.yml
+      - template: .ci/azure-pipelines-github-release-template.yml

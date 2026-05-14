@@ -42,7 +42,7 @@ jobs:
       - task: BatchScript@1
         displayName: "Detect the paths of Visual Studio and MSBuild.."
         inputs:
-          filename: pipeline_detect_vs_path.bat
+          filename: .ci/pipeline_detect_vs_path.bat
           modifyEnvironment: true
 
         # Use this task to allow the environment variables set by the batch script to be available in subsequent tasks.
