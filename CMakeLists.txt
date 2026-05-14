@@ -9,13 +9,6 @@
 cmake_minimum_required(VERSION 3.29)
 
 # _________________
-# Ensure Ninja is available on Windows for multi-config builds
-if(WIN32)
-    find_program(NINJA_EXECUTABLE ninja REQUIRED)
-    message(STATUS "Found Ninja: ${NINJA_EXECUTABLE}")
-endif()
-
-# _________________
 # Version detection; must preceed the declaration of the actual project()
 # Figures out the value ${CURRENT_PROJECT_VERSION} and therefore the ${PROJECT_VERSION}
 # Brings in the CPM module into pack/CPM.make
