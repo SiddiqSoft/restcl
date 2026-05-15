@@ -79,6 +79,7 @@ jobs:
           packagesToPack: "pack/*.nuspec"
           versioningScheme: "off"
           buildProperties: "VERSION=$(GITVERSION_MAJORMINORPATCH)"
+          distOutputDir: "$(System.DefaultWorkingDirectory)/pack"
         condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
 
       - task: PublishPipelineArtifact@1
