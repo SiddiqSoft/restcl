@@ -32,18 +32,21 @@ parameters:
     values:
       - x64
       - arm64
-  - name: LinuxCompiler
-    type: string
-    default: GCC
-    values:
-      - GCC
-      - Clang
   - name: PublishNuGet
     type: boolean
     default: false
   - name: PublishGitHub
     type: boolean
     default: false
+
+variables:
+  # Set the publish if we're building on main/master
+  ${{ if and(eq(parameters.PublishNuGet, false), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))) }}:
+    PublishNuGet: true
+    PublishGitHub: true
+  ${{ else }}:
+    PublishNuGet: ${{ parameters.PublishNuGet }}
+    PublishGitHub: ${{ parameters.PublishGitHub }}
 
 stages:
   - stage: BuildWindows
@@ -66,21 +69,30 @@ stages:
           publishNuGet: ${{ parameters.PublishNuGet }}
 
   - stage: BuildLinux
-    displayName: Linux ${{ parameters.LinuxCompiler }}
+    displayName: Linux
     dependsOn: []
     condition: eq(${{ parameters.RunLinux }}, true)
     jobs:
       - template: .ci/azure-pipelines-linux-template.yml
         parameters:
-          displayName: Linux ${{ parameters.LinuxCompiler }}
-          linuxCompiler: ${{ parameters.LinuxCompiler }}
+          displayName: Linux
           matrixConfigs:
-            Linux_Release:
+            Linux_GCC_Release:
               BuildType: Release
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
-            Linux_Debug:
+              LinuxCompiler: GCC
+              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+            Linux_GCC_Debug:
               BuildType: Debug
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
+              LinuxCompiler: GCC
+              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+            Linux_Clang_Release:
+              BuildType: Release
+              LinuxCompiler: Clang
+              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+            Linux_Clang_Debug:
+              BuildType: Debug
+              LinuxCompiler: Clang
+              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
           runTests: true
 
   - stage: Publication
@@ -88,6 +100,6 @@ stages:
     dependsOn:
       - BuildWindows
       - BuildLinux
-    condition: and(succeeded(), eq(${{ parameters.PublishGitHub }}, true))
+    condition: and(succeeded(), eq(variables['PublishGitHub'], true))
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml
