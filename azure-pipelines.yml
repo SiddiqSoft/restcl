@@ -97,6 +97,7 @@ stages:
     displayName: Test Linux ${{ parameters.LinuxCompiler }}
     dependsOn:
       - BuildLinux
+      - TestWindows # we're not dependent on the build but for avoiding parallelism limit on Azure!
     jobs:
       - template: .ci/azure-pipelines-test-template.yml
         parameters:
