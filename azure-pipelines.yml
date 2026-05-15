@@ -32,6 +32,12 @@ parameters:
     values:
       - x64
       - arm64
+  - name: LinuxCompiler
+    type: string
+    default: GCC
+    values:
+      - GCC
+      - Clang
 
 stages:
   - stage: BuildWindows
@@ -55,21 +61,21 @@ stages:
           publishGitHub: false
 
   - stage: BuildLinux
-    displayName: Linux ${{ parameters.Architecture }}
+    displayName: Linux ${{ parameters.LinuxCompiler }}
     dependsOn: []
     condition: eq(${{ parameters.RunLinux }}, true)
     jobs:
       - template: .ci/azure-pipelines-linux-template.yml
         parameters:
-          displayName: Linux
-          architecture: ${{ parameters.Architecture }}
+          displayName: Linux ${{ parameters.LinuxCompiler }}
+          linuxCompiler: ${{ parameters.LinuxCompiler }}
           matrixConfigs:
             Linux_Release:
               BuildType: Release
-              cmake.preset: Linux-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-Release
             Linux_Debug:
               BuildType: Debug
-              cmake.preset: Linux-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-Debug
           runTests: false
 
   - stage: Test
@@ -80,20 +86,20 @@ stages:
     jobs:
       - template: .ci/azure-pipelines-test-template.yml
         parameters:
-          architecture: ${{ parameters.Architecture }}
+          linuxCompiler: ${{ parameters.LinuxCompiler }}
           matrixConfigs:
-            Windows_Release:
-              BuildType: Release
-              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
-            Windows_Debug:
-              BuildType: Debug
-              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
             Linux_Release:
               BuildType: Release
-              cmake.preset: Linux-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-Release
             Linux_Debug:
               BuildType: Debug
-              cmake.preset: Linux-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-Debug
+            Windows_Release:
+              BuildType: Release
+              cmake.preset: Windows-${{ parameters.Architecture }}-Release
+            Windows_Debug:
+              BuildType: Debug
+              cmake.preset: Windows-${{ parameters.Architecture }}-Debug
 
   - stage: NuGetPublish
     displayName: NuGet Publish
