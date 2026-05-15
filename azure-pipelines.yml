@@ -56,9 +56,8 @@ stages:
   - stage: BuildWindows
     displayName: Windows
     dependsOn: []
-    condition: eq(${{ parameters.RunWindows }}, true)
+    condition: and(eq(${{ parameters.RunWindows }}, true), eq(parameters.BuildX64, true))
     jobs:
-      ${{ if eq(parameters.BuildX64, true) }}:
         - template: .ci/azure-pipelines-windows-template.yml
           parameters:
             displayName: Windows x64
