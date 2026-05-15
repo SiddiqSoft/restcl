@@ -117,11 +117,11 @@ jobs:
           publishLocation: "Container"
         condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true), eq(variables['BuildType'], 'Release'))
 
-      - task: NuGetCommand@2
-        displayName: "NuGet push"
-        inputs:
-          command: "push"
-          packagesToPush: "$(Build.ArtifactStagingDirectory)/**/*.nupkg"
-          nuGetFeedType: "external"
-          publishFeedCredentials: "sqs-nuget"
-        condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true), eq(variables['BuildType'], 'Release'), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+      #- task: NuGetCommand@2
+      #  displayName: "NuGet push"
+      #  inputs:
+      #    command: "push"
+      #    packagesToPush: "$(Build.ArtifactStagingDirectory)/**/*.nupkg"
+      #    nuGetFeedType: "external"
+      #    publishFeedCredentials: "sqs-nuget"
+      #  condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true), eq(variables['BuildType'], 'Release'), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
