@@ -8,9 +8,6 @@ parameters:
   - name: runTests
     type: boolean
     default: true
-  - name: publishNuGet
-    type: boolean
-    default: false
 
 jobs:
   - job: ${{ parameters.architecture }}
