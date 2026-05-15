@@ -72,10 +72,10 @@ stages:
           matrixConfigs:
             Linux_Release:
               BuildType: Release
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}--$(BuildType)
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
             Linux_Debug:
               BuildType: Debug
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}--$(BuildType)
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
           runTests: false
 
   - stage: TestWindows
@@ -89,10 +89,10 @@ stages:
           matrixConfigs:
             Windows_Release:
               BuildType: Release
-              cmake.preset: Windows-${{ parameters.Architecture }}--$(BuildType)
+              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
             Windows_Debug:
               BuildType: Debug
-              cmake.preset: Windows-${{ parameters.Architecture }}--$(BuildType)
+              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
 
   - stage: TestLinux
     displayName: Test Linux ${{ parameters.LinuxCompiler }}
@@ -105,10 +105,10 @@ stages:
           matrixConfigs:
             Linux_Release:
               BuildType: Release
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}--$(BuildType)
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
             Linux_Debug:
               BuildType: Debug
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}--$(BuildType)
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
 
   - stage: NuGetPublish
     displayName: NuGet Publish
@@ -120,10 +120,9 @@ stages:
   - stage: GitHubRelease
     displayName: GitHub Release
     dependsOn:
-      - BuildWindows
-      - BuildLinux
       - TestLinux
       - TestWindows
+      - NuGetPublish
     condition: succeeded()
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml
