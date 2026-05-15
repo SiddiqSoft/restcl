@@ -99,7 +99,7 @@ jobs:
         inputs:
           versionSpec: ">=6.0.0-0"
           checkLatest: true
-        condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true))
+        condition: and(succeeded())
 
       - task: NuGetCommand@2
         displayName: "NuGet pack v$(GITVERSION_MAJORMINORPATCH)"
@@ -108,15 +108,15 @@ jobs:
           packagesToPack: "pack/*.nuspec"
           versioningScheme: "off"
           buildProperties: "VERSION=$(GITVERSION_MAJORMINORPATCH)"
-        condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true))
+        condition: and(succeeded())
 
       - task: PublishBuildArtifacts@1
-        displayName: "Publish NuGet packages"
+        displayName: "Publish NuGet Artifacts"
         inputs:
           PathtoPublish: "$(Build.ArtifactStagingDirectory)"
           ArtifactName: "nuget-packages"
           publishLocation: "Container"
-        condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true))
+        condition: and(succeeded())
 
       #- task: NuGetCommand@2
       #  displayName: "NuGet push"
