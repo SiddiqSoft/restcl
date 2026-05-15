@@ -8,6 +8,8 @@ jobs:
   - job: Test_${{ parameters.architecture }}
     pool:
       name: Default
+      demands:
+        - Agent.OSArchitecture -equals ${{ parameters.architecture }}
     displayName: Test ${{ parameters.architecture }}
     strategy:
       matrix: ${{ parameters.matrixConfigs }}
