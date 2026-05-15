@@ -31,15 +31,6 @@ jobs:
       - checkout: self
         name: step1
 
-      - task: CmdLine@2
-        enabled: false
-        displayName: "Install Ninja on Windows"
-        inputs:
-          script: |
-            winget install ninja-build.ninja
-            ninja --version
-        continueOnError: true
-          
       - task: BatchScript@1
         displayName: "Detect the paths of Visual Studio and MSBuild.."
         inputs:
@@ -86,4 +77,12 @@ jobs:
           PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
           ArtifactName: "build-$(cmake.preset)"
           publishLocation: "Container"
+        condition: succeeded()
+      
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish Windows pipeline artifact $(cmake.preset)"
+        inputs:
+          targetPath: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+          artifact: "build-$(cmake.preset)"
+          publishLocation: "pipeline"
         condition: succeeded()

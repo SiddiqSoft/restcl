@@ -23,32 +23,26 @@ jobs:
     steps:
       - checkout: self
         name: step1
-      - task: Bash@3
-        displayName: "Install Ninja on Linux"
-        inputs:
-          targetType: inline
-          script: |
-            if ! command -v ninja >/dev/null 2>&1; then
-              sudo apt-get update
-              sudo apt-get install -y ninja-build
-            fi
-            ninja --version
+
       - task: gitversion-setup@4
         displayName: "Install GitVersion"
         inputs:
           versionSpec: "6.x"
           preferLatestVersion: true
+
       - task: gitversion-execute@4
         displayName: "Determine Version"
         name: version_step
         inputs:
           useConfigFile: true
           configFilePath: "GitVersion.yml"
+
       - task: CMake@1
         displayName: "CMake Configure $(cmake.preset)"
         inputs:
           cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
           workingDirectory: "$(System.DefaultWorkingDirectory)"
+          
       - task: CMake@1
         displayName: "CMake Build $(cmake.preset)"
         inputs:
