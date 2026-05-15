@@ -50,10 +50,14 @@ jobs:
           script: |
             Write-Host "Contents of System.DefaultWorkingDirectory:"
             Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "*.xml" -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { Write-Host $_.FullName }
-            Write-Host "---"
+            Write-Host "---$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/"
             Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/" -ErrorAction SilentlyContinue
-            Write-Host "---"
+            Write-Host "---$(System.DefaultWorkingDirectory)/---"
             Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/" -ErrorAction SilentlyContinue
+            Write-Host "---$(System.DefaultWorkingDirectory)/pack---"
+            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/pack" -ErrorAction SilentlyContinue
+            Write-Host "---$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests---"
+            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests" -ErrorAction SilentlyContinue
         condition: eq(variables['Agent.OS'], 'Windows_NT')
 
       - task: CMake@1
