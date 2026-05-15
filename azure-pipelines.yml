@@ -56,41 +56,41 @@ stages:
   - stage: BuildWindows
     displayName: Windows
     dependsOn: []
-    condition: and(eq(${{ parameters.RunWindows }}, true), eq(parameters.BuildX64, true))
+    condition: and(eq(${{ parameters.RunWindows }}, true), eq(${{ parameters.BuildX64 }}, true))
     jobs:
-        - template: .ci/azure-pipelines-windows-template.yml
-          parameters:
-            displayName: Windows x64
-            architecture: x64
-            matrixConfigs:
-              Windows_x64_Release:
-                BuildType: Release
-                BuildArchitecture: x64
-                cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-              ${{ if eq(parameters.BuildDebug, true) }}:
-                Windows_x64_Debug:
-                  BuildType: Debug
-                  BuildArchitecture: x64
-                  cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-            runTests: true
-            publishNuGet: ${{ parameters.PublishNuGet }}
+    - template: .ci/azure-pipelines-windows-template.yml
+      parameters:
+        displayName: Windows x64
+        architecture: x64
+        matrixConfigs:
+          Windows_x64_Release:
+            BuildType: Release
+            BuildArchitecture: x64
+            cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
+          ${{ if eq(parameters.BuildDebug, true) }}:
+            Windows_x64_Debug:
+              BuildType: Debug
+              BuildArchitecture: x64
+              cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
+        runTests: true
+        publishNuGet: ${{ parameters.PublishNuGet }}
 
-      - template: .ci/azure-pipelines-windows-template.yml
-        parameters:
-          displayName: Windows arm64
-          architecture: arm64
-          matrixConfigs:
-            Windows_arm64_Release:
-              BuildType: Release
+    - template: .ci/azure-pipelines-windows-template.yml
+      parameters:
+        displayName: Windows arm64
+        architecture: arm64
+        matrixConfigs:
+          Windows_arm64_Release:
+            BuildType: Release
+            BuildArchitecture: arm64
+            cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
+          ${{ if eq(parameters.BuildDebug, true) }}:
+            Windows_arm64_Debug:
+              BuildType: Debug
               BuildArchitecture: arm64
               cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-            ${{ if eq(parameters.BuildDebug, true) }}:
-              Windows_arm64_Debug:
-                BuildType: Debug
-                BuildArchitecture: arm64
-                cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-          runTests: true
-          publishNuGet: ${{ parameters.PublishNuGet }}
+        runTests: true
+        publishNuGet: ${{ parameters.PublishNuGet }}
 
   - stage: BuildLinux
     displayName: Linux
