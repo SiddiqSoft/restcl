@@ -23,7 +23,7 @@ jobs:
         condition: and(succeeded(), eq(variables['BuildType'], 'Release'))
 
       - task: NuGetCommand@2
-        displayName: "NuGet push"
+        displayName: "NuGet push v$(GITVERSION_MAJORMINORPATCH)"
         inputs:
           command: "push"
           packagesToPush: "$(Build.ArtifactStagingDirectory)/**/*.nupkg"
@@ -32,7 +32,7 @@ jobs:
         condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
 
       - task: GitHubRelease@1
-        displayName: "Release to GitHub"
+        displayName: "Release to GitHub v$(GITVERSION_MAJORMINORPATCH)"
         inputs:
           gitHubConnection: "github-packages-sqs"
           repositoryName: "$(Build.Repository.Name)"
