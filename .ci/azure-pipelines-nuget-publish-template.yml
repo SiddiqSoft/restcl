@@ -14,6 +14,11 @@ jobs:
           artifactName: "nuget-packages"
           downloadPath: "$(Build.ArtifactStagingDirectory)"
 
+      - task: DownloadPipelineArtifact@2
+        displayName: "Download Linux build artifacts"
+        inputs:
+          artifact: "build-Linux-gcc"
+        
       - task: NuGetCommand@2
         displayName: "NuGet push"
         inputs:

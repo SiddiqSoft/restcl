@@ -26,6 +26,7 @@ jobs:
           buildType: "current"
           artifactName: "build-$(cmake.preset)"
           targetPath: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+          extractOptions: "tar" # this will preserve file permissions, which is important for the test executables
       
       - task: Bash@3
         displayName: "List downloaded artifacts"
@@ -54,7 +55,7 @@ jobs:
         condition: eq(variables['Agent.OS'], 'Windows_NT')
 
       - task: CMake@1
-        displayName: "CMake Tests $(cmake.preset)"
+        displayName: "CMake Tests `$(cmake.preset)`"
         inputs:
           cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
         continueOnError: true

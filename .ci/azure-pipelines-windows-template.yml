@@ -11,9 +11,6 @@ parameters:
   - name: publishNuGet
     type: boolean
     default: false
-  - name: publishGitHub
-    type: boolean
-    default: false
 
 jobs:
   - job: ${{ parameters.architecture }}
@@ -70,6 +67,22 @@ jobs:
           cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
           workingDirectory: "$(System.DefaultWorkingDirectory)"
         condition: succeeded()
+
+      - task: NuGetToolInstaller@1
+        displayName: "Install Nuget on Windows"
+        inputs:
+          versionSpec: ">=6.0.0-0"
+          checkLatest: true
+        condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
+
+      - task: NuGetCommand@2
+        displayName: "NuGet pack v$(GITVERSION_MAJORMINORPATCH)"
+        inputs:
+          command: "pack"
+          packagesToPack: "pack/*.nuspec"
+          versioningScheme: "off"
+          buildProperties: "VERSION=$(GITVERSION_MAJORMINORPATCH)"
+        condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish Windows pipeline artifact $(cmake.preset)"

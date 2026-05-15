@@ -56,4 +56,5 @@ jobs:
           targetPath: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
           artifact: "build-$(cmake.preset)"
           publishLocation: "pipeline"
+          storeAs: "tar" # this will preserve file permissions, which is important for the test executables
         condition: succeeded()
