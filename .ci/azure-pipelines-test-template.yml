@@ -23,42 +23,42 @@ jobs:
       - task: DownloadPipelineArtifact@2
         displayName: "Download pipeline artifacts for $(cmake.preset)"
         inputs:
-          buildType: "current"
+          buildType: current
           artifactName: "build-$(cmake.preset)"
           targetPath: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-          extractOptions: "tar" # this will preserve file permissions, which is important for the test executables
-      
+
       - task: Bash@3
-        displayName: "List downloaded artifacts"
+        displayName: "Restore permissions for Linux test executables"
+        condition: eq(variables['Agent.OS'], 'Linux')
         inputs:
           targetType: inline
           script: |
-            echo "Contents of System.DefaultWorkingDirectory:"
-            find $(System.DefaultWorkingDirectory) -type f -name "*.xml" 2>/dev/null | head -20
-            echo "---"
-            ls -lFa $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/ 2>/dev/null || echo "Directory not found"
-            echo "---"
-            ls -lFa $(System.DefaultWorkingDirectory)/ 2>/dev/null
-            echo "---"
-            ls -lFa $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests 2>/dev/null || echo "tests Directory not found"
+            artifact_dir="$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+            if [ -d "$artifact_dir/tests" ]; then
+              find "$artifact_dir/tests" -type f -exec chmod +x {} +
+            fi
+            if [ -d "$artifact_dir/bin" ]; then
+              find "$artifact_dir/bin" -type f -exec chmod +x {} +
+            fi
+
+      - task: Bash@3
+        displayName: "List downloaded artifacts"
         condition: eq(variables['Agent.OS'], 'Linux')
+        inputs:
+          targetType: inline
+          script: |
+            echo "Contents of $(System.DefaultWorkingDirectory):"
+            find "$(System.DefaultWorkingDirectory)" -maxdepth 3 -type f | sort | head -100
+            echo "----"
 
       - task: PowerShell@2
         displayName: "List downloaded artifacts"
+        condition: eq(variables['Agent.OS'], 'Windows_NT')
         inputs:
           targetType: inline
           script: |
-            Write-Host "Contents of System.DefaultWorkingDirectory:"
-            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "*.xml" -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { Write-Host $_.FullName }
-            Write-Host "---$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/"
-            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/" -ErrorAction SilentlyContinue
-            Write-Host "---$(System.DefaultWorkingDirectory)/---"
-            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/" -ErrorAction SilentlyContinue
-            Write-Host "---$(System.DefaultWorkingDirectory)/pack---"
-            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/pack" -ErrorAction SilentlyContinue
-            Write-Host "---$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests---"
-            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests" -ErrorAction SilentlyContinue
-        condition: eq(variables['Agent.OS'], 'Windows_NT')
+            Write-Host "Contents of $(System.DefaultWorkingDirectory):"
+            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 100 | ForEach-Object { Write-Host $_.FullName }
 
       - task: CMake@1
         displayName: "CMake Tests `$(cmake.preset)`"
