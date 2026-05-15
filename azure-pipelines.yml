@@ -58,23 +58,23 @@ stages:
     dependsOn: []
     condition: eq(${{ parameters.RunWindows }}, true)
     jobs:
-      - template: .ci/azure-pipelines-windows-template.yml
-        parameters:
-          displayName: Windows x64
-          architecture: x64
-          matrixConfigs:
-            ${{ if eq(parameters.BuildX64, true) }}:
-            Windows_x64_Release:
-              BuildType: Release
-              BuildArchitecture: x64
-              cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-            ${{ if and(eq(parameters.BuildDebug, true), eq(parameters.BuildX64, true)) }}:
-              Windows_x64_Debug:
-                BuildType: Debug
+      ${{ if eq(parameters.BuildX64, true) }}:
+        - template: .ci/azure-pipelines-windows-template.yml
+          parameters:
+            displayName: Windows x64
+            architecture: x64
+            matrixConfigs:
+              Windows_x64_Release:
+                BuildType: Release
                 BuildArchitecture: x64
                 cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-          runTests: true
-          publishNuGet: ${{ parameters.PublishNuGet }}
+              ${{ if eq(parameters.BuildDebug, true) }}:
+                Windows_x64_Debug:
+                  BuildType: Debug
+                  BuildArchitecture: x64
+                  cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
+            runTests: true
+            publishNuGet: ${{ parameters.PublishNuGet }}
 
       - template: .ci/azure-pipelines-windows-template.yml
         parameters:
