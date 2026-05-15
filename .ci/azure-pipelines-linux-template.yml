@@ -68,4 +68,4 @@ jobs:
           mergeTestResults: false
           buildConfiguration: "$(BuildType)"
         continueOnError: true
-        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true), or(eq(variables['BuildType'], 'Release'), failed()))
