@@ -42,6 +42,7 @@ parameters:
 stages:
   - stage: BuildWindows
     displayName: Windows ${{ parameters.Architecture }}
+    dependsOn: []
     condition: eq(${{ parameters.RunWindows }}, true)
     jobs:
       - template: .ci/azure-pipelines-windows-template.yml
@@ -61,6 +62,7 @@ stages:
 
   - stage: BuildLinux
     displayName: Linux ${{ parameters.LinuxCompiler }}
+    dependsOn: []
     condition: eq(${{ parameters.RunLinux }}, true)
     jobs:
       - template: .ci/azure-pipelines-linux-template.yml
