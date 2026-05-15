@@ -17,7 +17,7 @@ resources:
   repositories:
     - repository: self
       type: git
-      name: ${{ parameters.repoToCheckout }}
+      #name: ${{ parameters.repoToCheckout }}
 
 parameters:
   - name: RunWindows
