@@ -35,7 +35,7 @@ jobs:
             echo "Contents of System.DefaultWorkingDirectory:"
             find $(System.DefaultWorkingDirectory) -type f -name "*.xml" 2>/dev/null | head -20
             echo "---"
-            ls -la $(System.DefaultWorkingDirectory)/build-$(cmake.preset)/ 2>/dev/null || echo "Directory not found"
+            ls -la $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/ 2>/dev/null || echo "Directory not found"
             echo "---"
             ls -la $(System.DefaultWorkingDirectory)/ 2>/dev/null
         condition: eq(variables['Agent.OS'], 'Linux')
@@ -48,7 +48,7 @@ jobs:
             Write-Host "Contents of System.DefaultWorkingDirectory:"
             Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "*.xml" -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { Write-Host $_.FullName }
             Write-Host "---"
-            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/build-$(cmake.preset)/" -ErrorAction SilentlyContinue
+            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/" -ErrorAction SilentlyContinue
             Write-Host "---"
             Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/" -ErrorAction SilentlyContinue
         condition: eq(variables['Agent.OS'], 'Windows_NT')
@@ -56,14 +56,14 @@ jobs:
       - task: CMake@1
         displayName: "CMake Tests $(cmake.preset)"
         inputs:
-          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build-$(cmake.preset)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build-$(cmake.preset)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
         continueOnError: true
 
       - task: PublishTestResults@2
         displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
         inputs:
           testResultsFormat: "JUnit"
-          testResultsFiles: "$(System.DefaultWorkingDirectory)/build-$(cmake.preset)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
           mergeTestResults: false
           buildConfiguration: "$(BuildType)"
         continueOnError: true
