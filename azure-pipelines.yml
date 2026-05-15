@@ -26,12 +26,6 @@ parameters:
   - name: RunLinux
     type: boolean
     default: true
-  - name: Architecture
-    type: string
-    default: arm64
-    values:
-      - x64
-      - arm64
   - name: PublishNuGet
     type: boolean
     default: false
@@ -50,21 +44,35 @@ variables:
 
 stages:
   - stage: BuildWindows
-    displayName: Windows ${{ parameters.Architecture }}
+    displayName: Windows
     dependsOn: []
     condition: eq(${{ parameters.RunWindows }}, true)
     jobs:
       - template: .ci/azure-pipelines-windows-template.yml
         parameters:
-          displayName: Windows ${{ parameters.Architecture }}
-          architecture: ${{ parameters.Architecture }}
+          displayName: Windows x64
+          architecture: x64
           matrixConfigs:
-            Windows_Release:
+            Windows_x64_Release:
               BuildType: Release
-              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
-            Windows_Debug:
-              BuildType: Debug
-              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
+              cmake.preset: Windows-$(architecture)-$(BuildType)
+            #Windows_x64_Debug:
+            #  BuildType: Debug
+            #  cmake.preset: Windows-$(architecture)-$(BuildType)
+          runTests: true
+          publishNuGet: ${{ parameters.PublishNuGet }}
+
+      - template: .ci/azure-pipelines-windows-template.yml
+        parameters:
+          displayName: Windows arm64
+          architecture: arm64
+          matrixConfigs:
+            Windows_arm64_Release:
+              BuildType: Release
+              cmake.preset: Windows-$(architecture)-$(BuildType)
+            #Windows_arm64_Debug:
+            #  BuildType: Debug
+            #  cmake.preset: Windows-$(architecture)-$(BuildType)
           runTests: true
           publishNuGet: ${{ parameters.PublishNuGet }}
 
