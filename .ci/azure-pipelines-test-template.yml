@@ -20,14 +20,6 @@ jobs:
     steps:
       - checkout: self
 
-      - task: DownloadBuildArtifacts@0
-        displayName: "Download build artifacts for $(cmake.preset)"
-        inputs:
-          buildType: "current"
-          downloadType: "single"
-          artifactName: "build-$(cmake.preset)"
-          downloadPath: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-
       - task: DownloadPipelineArtifact@2
         displayName: "Download pipeline artifacts for $(cmake.preset)"
         inputs:
