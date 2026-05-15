@@ -20,8 +20,6 @@ jobs:
       name: Default
       demands:
         - Agent.OS -equals Linux
-        - cmake
-        - ninja
     strategy:
       matrix: ${{ parameters.matrixConfigs }}
     steps:
