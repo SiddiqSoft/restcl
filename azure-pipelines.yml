@@ -85,6 +85,7 @@ stages:
     jobs:
       - template: .ci/azure-pipelines-test-template.yml
         parameters:
+          architecture: ${{ parameters.Architecture }}
           matrixConfigs:
             Windows_Release:
               BuildType: Release
@@ -100,7 +101,7 @@ stages:
     jobs:
       - template: .ci/azure-pipelines-test-template.yml
         parameters:
-          linuxCompiler: ${{ parameters.LinuxCompiler }}
+          architecture: ${{ parameters.Architecture }}
           matrixConfigs:
             Linux_Release:
               BuildType: Release
@@ -112,7 +113,7 @@ stages:
   - stage: NuGetPublish
     displayName: NuGet Publish
     dependsOn: TestWindows
-    condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true))
+    condition: succeeded()
     jobs:
       - template: .ci/azure-pipelines-nuget-publish-template.yml
 
@@ -123,6 +124,6 @@ stages:
       - BuildLinux
       - TestLinux
       - TestWindows
-    condition: and(succeeded(), eq(${{ parameters.publishGitHub }}, true))
+    condition: succeeded()
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml
