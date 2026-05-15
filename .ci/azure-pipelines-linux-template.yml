@@ -55,6 +55,15 @@ jobs:
           cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
           workingDirectory: "$(System.DefaultWorkingDirectory)"
         condition: succeeded()
+
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish Linux build artifact $(cmake.preset)"
+        inputs:
+          PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+          ArtifactName: "build-$(cmake.preset)"
+          publishLocation: "Container"
+        condition: succeeded()
+
       - task: CMake@1
         displayName: "CMake Tests $(cmake.preset)"
         inputs:
