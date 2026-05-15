@@ -112,7 +112,9 @@ stages:
 
   - stage: NuGetPublish
     displayName: NuGet Publish
-    dependsOn: TestWindows
+    dependsOn:
+      - TestWindows
+      - TestLinux
     condition: succeeded()
     jobs:
       - template: .ci/azure-pipelines-nuget-publish-template.yml
