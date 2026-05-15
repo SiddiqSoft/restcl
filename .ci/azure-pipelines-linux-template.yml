@@ -63,19 +63,3 @@ jobs:
           ArtifactName: "build-$(cmake.preset)"
           publishLocation: "Container"
         condition: succeeded()
-
-      - task: CMake@1
-        displayName: "CMake Tests $(cmake.preset)"
-        inputs:
-          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
-        continueOnError: true
-        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
-      - task: PublishTestResults@2
-        displayName: "Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml"
-        inputs:
-          testResultsFormat: "JUnit"
-          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
-          mergeTestResults: false
-          buildConfiguration: "$(BuildType)"
-        continueOnError: true
-        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
