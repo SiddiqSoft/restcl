@@ -72,16 +72,30 @@ stages:
           matrixConfigs:
             Linux_Release:
               BuildType: Release
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-Release
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}--$(BuildType)
             Linux_Debug:
               BuildType: Debug
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-Debug
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}--$(BuildType)
           runTests: false
 
-  - stage: Test
-    displayName: Test
+  - stage: TestWindows
+    displayName: Test Windows ${{ parameters.Architecture }}
     dependsOn:
       - BuildWindows
+    jobs:
+      - template: .ci/azure-pipelines-test-template.yml
+        parameters:
+          matrixConfigs:
+            Windows_Release:
+              BuildType: Release
+              cmake.preset: Windows-${{ parameters.Architecture }}--$(BuildType)
+            Windows_Debug:
+              BuildType: Debug
+              cmake.preset: Windows-${{ parameters.Architecture }}--$(BuildType)
+
+  - stage: TestLinux
+    displayName: Test Linux ${{ parameters.LinuxCompiler }}
+    dependsOn:
       - BuildLinux
     jobs:
       - template: .ci/azure-pipelines-test-template.yml
@@ -90,20 +104,15 @@ stages:
           matrixConfigs:
             Linux_Release:
               BuildType: Release
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-Release
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}--$(BuildType)
             Linux_Debug:
               BuildType: Debug
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-Debug
-            Windows_Release:
-              BuildType: Release
-              cmake.preset: Windows-${{ parameters.Architecture }}-Release
-            Windows_Debug:
-              BuildType: Debug
-              cmake.preset: Windows-${{ parameters.Architecture }}-Debug
+              cmake.preset: Linux-${{ parameters.LinuxCompiler }}--$(BuildType)
 
   - stage: NuGetPublish
     displayName: NuGet Publish
-    dependsOn: Test
+    dependsOn: TestWindows
+    condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true))
     jobs:
       - template: .ci/azure-pipelines-nuget-publish-template.yml
 
@@ -112,6 +121,8 @@ stages:
     dependsOn:
       - BuildWindows
       - BuildLinux
-      - Test
+      - TestLinux
+      - TestWindows
+    condition: and(succeeded(), eq(${{ parameters.publishGitHub }}, true))
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml
