@@ -82,6 +82,7 @@ jobs:
         continueOnError: true
         condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
 
+        # Here we publish the results for Release build and for Debug only if those fail.
       - task: PublishTestResults@2
         displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
         inputs:
