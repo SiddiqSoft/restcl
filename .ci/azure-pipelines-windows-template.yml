@@ -1,3 +1,5 @@
+# Requirements:
+# The self-hosted build agents must have CMake and Ninja installed and available in PATH for this pipeline to work.
 parameters:
   - name: displayName
     type: string
@@ -67,13 +69,13 @@ jobs:
           workingDirectory: "$(System.DefaultWorkingDirectory)"
         condition: succeeded()
 
-      - task: PublishBuildArtifacts@1
-        displayName: "Publish Windows build artifact $(cmake.preset)"
-        inputs:
-          PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-          ArtifactName: "build-$(cmake.preset)"
-          publishLocation: "Container"
-        condition: succeeded()
+      #- task: PublishBuildArtifacts@1
+      #  displayName: "Publish Windows build artifact $(cmake.preset)"
+      #  inputs:
+      #    PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+      #    ArtifactName: "build-$(cmake.preset)"
+      #    publishLocation: "Container"
+      #  condition: succeeded()
 
       - task: CMake@1
         displayName: "CMake Tests $(cmake.preset)"

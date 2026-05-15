@@ -17,7 +17,7 @@ resources:
   repositories:
     - repository: self
       type: git
-      name: SiddiqSoft/restcl
+      name: ${{ parameters.repoToCheckout }}
 
 parameters:
   - name: RunWindows
@@ -93,18 +93,18 @@ stages:
               BuildType: Release
               LinuxCompiler: GCC
               cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            Linux_GCC_Debug:
-              BuildType: Debug
-              LinuxCompiler: GCC
-              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+            #Linux_GCC_Debug:
+            #  BuildType: Debug
+            #  LinuxCompiler: GCC
+            #  cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
             Linux_Clang_Release:
               BuildType: Release
               LinuxCompiler: Clang
               cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            Linux_Clang_Debug:
-              BuildType: Debug
-              LinuxCompiler: Clang
-              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+            #Linux_Clang_Debug:
+            #  BuildType: Debug
+            #  LinuxCompiler: Clang
+            #  cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
           runTests: true
 
   - stage: Publication

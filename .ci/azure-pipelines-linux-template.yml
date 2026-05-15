@@ -1,3 +1,7 @@
+# Requirements:
+# The self-hosted build agents must have CMake and Ninja installed and available in PATH for this pipeline to work.
+# clang-21 or better
+# gcc-16 or better
 parameters:
   - name: displayName
     type: string
@@ -16,22 +20,13 @@ jobs:
       name: Default
       demands:
         - Agent.OS -equals Linux
+        - cmake
+        - ninja
     strategy:
       matrix: ${{ parameters.matrixConfigs }}
     steps:
       - checkout: self
         name: step1
-
-      - task: Bash@3
-        displayName: "Install Ninja on Linux"
-        inputs:
-          targetType: inline
-          script: |
-            if ! command -v ninja >/dev/null 2>&1; then
-              sudo apt-get update
-              sudo apt-get install -y ninja-build
-            fi
-            ninja --version
 
       - task: gitversion-setup@4
         displayName: "Install GitVersion"
@@ -59,27 +54,27 @@ jobs:
           workingDirectory: "$(System.DefaultWorkingDirectory)"
         condition: succeeded()
 
-      - task: PublishBuildArtifacts@1
-        displayName: "Publish Linux build artifact $(cmake.preset)"
-        inputs:
-          PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-          ArtifactName: "build-$(cmake.preset)"
-          publishLocation: "Container"
-        condition: succeeded()
+      #- task: PublishBuildArtifacts@1
+      #  displayName: "Publish Linux build artifact $(cmake.preset)"
+      #  inputs:
+      #    PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+      #    ArtifactName: "build-$(cmake.preset)"
+      #    publishLocation: "Container"
+      #  condition: succeeded()
 
-      - task: Bash@3
-        displayName: "Restore permissions for Linux test executables"
-        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
-        inputs:
-          targetType: inline
-          script: |
-            artifact_dir="$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-            if [ -d "$artifact_dir/tests" ]; then
-              find "$artifact_dir/tests" -type f -exec chmod +x {} +
-            fi
-            if [ -d "$artifact_dir/bin" ]; then
-              find "$artifact_dir/bin" -type f -exec chmod +x {} +
-            fi
+      #- task: Bash@3
+      #  displayName: "Restore permissions for Linux test executables"
+      #  condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+      #  inputs:
+      #    targetType: inline
+      #    script: |
+      #      artifact_dir="$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+      #      if [ -d "$artifact_dir/tests" ]; then
+      #        find "$artifact_dir/tests" -type f -exec chmod +x {} +
+      #      fi
+      #      if [ -d "$artifact_dir/bin" ]; then
+      #        find "$artifact_dir/bin" -type f -exec chmod +x {} +
+      #      fi
 
       - task: CMake@1
         displayName: "CMake Tests $(cmake.preset)"
