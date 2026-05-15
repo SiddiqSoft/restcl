@@ -25,7 +25,7 @@ parameters:
     default: true
   - name: RunLinux
     type: boolean
-    default: false
+    default: true
   - name: Architecture
     type: string
     default: arm64
@@ -38,6 +38,12 @@ parameters:
     values:
       - GCC
       - Clang
+  - name: PublishNuGet
+    type: boolean
+    default: false
+  - name: PublishGitHub
+    type: boolean
+    default: false
 
 stages:
   - stage: BuildWindows
@@ -47,7 +53,7 @@ stages:
     jobs:
       - template: .ci/azure-pipelines-windows-template.yml
         parameters:
-          displayName: Windows
+          displayName: Windows ${{ parameters.Architecture }}
           architecture: ${{ parameters.Architecture }}
           matrixConfigs:
             Windows_Release:
@@ -56,7 +62,8 @@ stages:
             Windows_Debug:
               BuildType: Debug
               cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
-          runTests: false
+          runTests: true
+          publishNuGet: ${{ parameters.PublishNuGet }}
 
   - stage: BuildLinux
     displayName: Linux ${{ parameters.LinuxCompiler }}
@@ -74,57 +81,13 @@ stages:
             Linux_Debug:
               BuildType: Debug
               cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
-          runTests: false
-
-  - stage: TestWindows
-    displayName: Test Windows ${{ parameters.Architecture }}
-    dependsOn:
-      - BuildWindows
-      #- BuildLinux # we're not dependent on the build but for avoiding parallelism limit on Azure!
-    jobs:
-      - template: .ci/azure-pipelines-test-template.yml
-        parameters:
-          architecture: ${{ parameters.Architecture }}
-          matrixConfigs:
-            Windows_Release:
-              BuildType: Release
-              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
-            Windows_Debug:
-              BuildType: Debug
-              cmake.preset: Windows-${{ parameters.Architecture }}-$(BuildType)
-
-  - stage: TestLinux
-    displayName: Test Linux ${{ parameters.LinuxCompiler }}
-    dependsOn:
-      - BuildLinux
-      #- TestWindows # we're not dependent on the build but for avoiding parallelism limit on Azure!
-    jobs:
-      - template: .ci/azure-pipelines-test-template.yml
-        parameters:
-          architecture: ${{ parameters.Architecture }}
-          matrixConfigs:
-            Linux_Release:
-              BuildType: Release
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
-            Linux_Debug:
-              BuildType: Debug
-              cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
-
-  - stage: NuGetPublish
-    displayName: NuGet Publish
-    dependsOn:
-      - TestWindows
-      - TestLinux
-    condition: succeeded()
-    jobs:
-      - template: .ci/azure-pipelines-nuget-publish-template.yml
+          runTests: true
 
   - stage: GitHubRelease
     displayName: GitHub Release
     dependsOn:
-      - TestLinux
-      - TestWindows
-      - NuGetPublish
-    condition: succeeded()
+      - BuildWindows
+      - BuildLinux
+    condition: and(succeeded(), eq(${{ parameters.PublishGitHub }}, true))
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml

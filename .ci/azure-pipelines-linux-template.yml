@@ -24,6 +24,17 @@ jobs:
       - checkout: self
         name: step1
 
+      - task: Bash@3
+        displayName: "Install Ninja on Linux"
+        inputs:
+          targetType: inline
+          script: |
+            if ! command -v ninja >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y ninja-build
+            fi
+            ninja --version
+
       - task: gitversion-setup@4
         displayName: "Install GitVersion"
         inputs:
@@ -42,7 +53,7 @@ jobs:
         inputs:
           cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
           workingDirectory: "$(System.DefaultWorkingDirectory)"
-          
+
       - task: CMake@1
         displayName: "CMake Build $(cmake.preset)"
         inputs:
@@ -50,11 +61,21 @@ jobs:
           workingDirectory: "$(System.DefaultWorkingDirectory)"
         condition: succeeded()
 
-      - task: PublishPipelineArtifact@1
-        displayName: "Publish Linux pipeline artifact $(cmake.preset)"
+        # Running tests requires the files to be on the same machine and working folder.
+        # If we try to separate these tests into different stages they will run on different machines and fail to find the files.
+      - task: CMake@1
+        displayName: "CMake Tests $(cmake.preset)"
         inputs:
-          targetPath: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-          artifact: "build-$(cmake.preset)"
-          publishLocation: "pipeline"
-          storeAs: "tar" # this will preserve file permissions, which is important for the test executables
-        condition: succeeded()
+          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+        continueOnError: true
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+
+      - task: PublishTestResults@2
+        displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
+        inputs:
+          testResultsFormat: "JUnit"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+          mergeTestResults: false
+          buildConfiguration: "$(BuildType)"
+        continueOnError: true
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))

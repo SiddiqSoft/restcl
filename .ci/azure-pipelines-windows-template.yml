@@ -8,6 +8,9 @@ parameters:
   - name: runTests
     type: boolean
     default: true
+  - name: publishNuGet
+    type: boolean
+    default: false
 
 jobs:
   - job: ${{ parameters.architecture }}
@@ -25,28 +28,35 @@ jobs:
       - checkout: self
         name: step1
 
-      - task: BatchScript@1
-        displayName: "Detect the paths of Visual Studio and MSBuild.."
+      - task: CmdLine@2
+        displayName: "Install Ninja on Windows"
         inputs:
-          filename: .ci/pipeline_detect_vs_path.bat
+          script: |
+            winget install ninja-build.ninja
+            ninja --version
+        continueOnError: true
+
+      - task: BatchScript@1
+        displayName: "Detect Visual Studio paths"
+        inputs:
+          filename: pipeline_detect_vs_path.bat
           modifyEnvironment: true
 
-        # Use this task to allow the environment variables set by the batch script to be available in subsequent tasks.
       - task: BatchScript@1
-        displayName: "Install paths.. $(VCVARS_PATH) $(AGENT_OSARCHITECTURE)"
+        displayName: "Setup MSVC environment"
         inputs:
           filename: '$(VCVARS_PATH)'
           arguments: '$(AGENT_OSARCHITECTURE)'
           modifyEnvironment: true
-      
+
       - task: gitversion-setup@4
-        displayName: "Install GitVersion.."
+        displayName: "Install GitVersion"
         inputs:
           versionSpec: "6.x"
           preferLatestVersion: true
 
       - task: gitversion-execute@4
-        displayName: "Determine Version.."
+        displayName: "Determine Version"
         name: version_step
         inputs:
           useConfigFile: true
@@ -61,16 +71,41 @@ jobs:
       - task: CMake@1
         displayName: "CMake Build $(cmake.preset)"
         inputs:
-          cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+          cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
           workingDirectory: "$(System.DefaultWorkingDirectory)"
         condition: succeeded()
 
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish Windows build artifact $(cmake.preset)"
+        inputs:
+          PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+          ArtifactName: "build-$(cmake.preset)"
+          publishLocation: "Container"
+        condition: succeeded()
+
+      - task: CMake@1
+        displayName: "CMake Tests $(cmake.preset)"
+        inputs:
+          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+        continueOnError: true
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+
+      - task: PublishTestResults@2
+        displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
+        inputs:
+          testResultsFormat: "JUnit"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+          mergeTestResults: false
+          buildConfiguration: "$(BuildType)"
+        continueOnError: true
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+
       - task: NuGetToolInstaller@1
-        displayName: "Install Nuget on Windows"
+        displayName: "Install NuGet"
         inputs:
           versionSpec: ">=6.0.0-0"
           checkLatest: true
-        condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
+        condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true), eq(variables['BuildType'], 'Release'))
 
       - task: NuGetCommand@2
         displayName: "NuGet pack v$(GITVERSION_MAJORMINORPATCH)"
@@ -79,14 +114,21 @@ jobs:
           packagesToPack: "pack/*.nuspec"
           versioningScheme: "off"
           buildProperties: "VERSION=$(GITVERSION_MAJORMINORPATCH)"
-          distOutputDir: "$(System.DefaultWorkingDirectory)/pack"
-        condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
+        condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true), eq(variables['BuildType'], 'Release'))
 
-      - task: PublishPipelineArtifact@1
-        displayName: "Publish Windows pipeline artifact $(cmake.preset)"
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish NuGet packages"
         inputs:
-          targetPath: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-          artifact: "build-$(cmake.preset)"
-          publishLocation: "pipeline"
-          storeAs: "tar"
-        condition: succeeded()
+          PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+          ArtifactName: "nuget-packages"
+          publishLocation: "Container"
+        condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true), eq(variables['BuildType'], 'Release'))
+
+      - task: NuGetCommand@2
+        displayName: "NuGet push"
+        inputs:
+          command: "push"
+          packagesToPush: "$(Build.ArtifactStagingDirectory)/**/*.nupkg"
+          nuGetFeedType: "external"
+          publishFeedCredentials: "sqs-nuget"
+        condition: and(succeeded(), eq(${{ parameters.publishNuGet }}, true), eq(variables['BuildType'], 'Release'), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
