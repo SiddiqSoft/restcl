@@ -22,16 +22,16 @@ resources:
 parameters:
   - name: RunWindows
     type: boolean
-    default: true
+    default: "true"
   - name: RunLinux
     type: boolean
-    default: true
+    default: "true"
   - name: PublishNuGet
     type: boolean
-    default: false
+    default: "false"
   - name: PublishGitHub
     type: boolean
-    default: false
+    default: "false"
 
 variables:
   # Set the publish if we're building on main/master
