@@ -6,6 +6,8 @@ parameters:
 
 jobs:
   - job: Test_${{ parameters.architecture }}
+    pool:
+      name: Default
     displayName: Test ${{ parameters.architecture }}
     strategy:
       matrix: ${{ parameters.matrixConfigs }}
