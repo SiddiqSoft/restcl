@@ -32,6 +32,7 @@ jobs:
         name: step1
 
       - task: CmdLine@2
+        enabled: false
         displayName: "Install Ninja on Windows"
         inputs:
           script: |
