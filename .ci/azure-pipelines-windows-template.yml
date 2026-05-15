@@ -87,4 +87,5 @@ jobs:
           targetPath: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
           artifact: "build-$(cmake.preset)"
           publishLocation: "pipeline"
+          storeAs: "tar"
         condition: succeeded()
