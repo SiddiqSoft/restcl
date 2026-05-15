@@ -55,10 +55,12 @@ stages:
           matrixConfigs:
             Windows_x64_Release:
               BuildType: Release
-              cmake.preset: Windows-$(architecture)-$(BuildType)
+              BuildArchitecture: x64
+              cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
             #Windows_x64_Debug:
             #  BuildType: Debug
-            #  cmake.preset: Windows-$(architecture)-$(BuildType)
+            #  BuildArchitecture: x64
+            #  cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
           runTests: true
           publishNuGet: ${{ parameters.PublishNuGet }}
 
@@ -69,10 +71,12 @@ stages:
           matrixConfigs:
             Windows_arm64_Release:
               BuildType: Release
-              cmake.preset: Windows-$(architecture)-$(BuildType)
+              BuildArchitecture: arm64
+              cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
             #Windows_arm64_Debug:
             #  BuildType: Debug
-            #  cmake.preset: Windows-$(architecture)-$(BuildType)
+            #  BuildArchitecture: arm64
+            #  cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
           runTests: true
           publishNuGet: ${{ parameters.PublishNuGet }}
 
