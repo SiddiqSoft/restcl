@@ -26,8 +26,12 @@ parameters:
   - name: RunLinux
     type: boolean
     default: "true"
+  - name: BuildX64
+    displayName: "Check to enable the x64 builds"
+    type: boolean
+    default: "true"
   - name: BuildDebug
-    displayName: "Check to for the Debug builds"
+    displayName: "Check to enable the Debug builds"
     type: boolean
     default: "false"
   - name: PublishNuGet
@@ -59,11 +63,12 @@ stages:
           displayName: Windows x64
           architecture: x64
           matrixConfigs:
+            ${{ if eq(parameters.BuildX64, true) }}:
             Windows_x64_Release:
               BuildType: Release
               BuildArchitecture: x64
               cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-            ${{ if eq(parameters.BuildDebug, true) }}:
+            ${{ if and(eq(parameters.BuildDebug, true), eq(parameters.BuildX64, true)) }}:
               Windows_x64_Debug:
                 BuildType: Debug
                 BuildArchitecture: x64
