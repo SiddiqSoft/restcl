@@ -83,8 +83,8 @@ stages:
               cmake.preset: Linux-${{ parameters.LinuxCompiler }}-$(BuildType)
           runTests: true
 
-  - stage: GitHubRelease
-    displayName: GitHub Release
+  - stage: Publication
+    displayName: Nuget Publication and GitHub Release
     dependsOn:
       - BuildWindows
       - BuildLinux

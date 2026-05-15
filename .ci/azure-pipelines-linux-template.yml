@@ -65,7 +65,7 @@ jobs:
           testResultsFormat: "JUnit"
           testRunTitle: "Tests $(cmake.preset)"
           testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
-          mergeTestResults: true
+          mergeTestResults: false
           buildConfiguration: "$(BuildType)"
         continueOnError: true
         condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
