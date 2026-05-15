@@ -5,34 +5,65 @@ parameters:
     type: object
 
 jobs:
-  - job: Test_${{ parameters.architecture }}
+  - job: Test
     pool:
       name: Default
       demands:
-        - Agent.OSArchitecture -equals ${{ parameters.architecture }}
+        - ${{ if contains(variables['cmake.preset'], 'Windows') }}:
+          - Agent.OS -equals Windows_NT
+          - Agent.OSArchitecture -equals ${{ parameters.architecture }}
+        - ${{ if contains(variables['cmake.preset'], 'Linux') }}:
+          - Agent.OS -equals Linux
     displayName: Test ${{ parameters.architecture }}
     strategy:
       matrix: ${{ parameters.matrixConfigs }}
     steps:
-      - checkout: none  # Assuming artifacts from build stages are available or re-checkout if needed
+      - checkout: self
+
       - task: DownloadBuildArtifacts@0
-        displayName: "Download build artifacts"
+        displayName: "Download build artifacts for $(cmake.preset)"
         inputs:
           downloadType: "single"
           artifactName: "build-$(cmake.preset)"
           downloadPath: "$(System.DefaultWorkingDirectory)"
 
+      - task: Bash@3
+        displayName: "List downloaded artifacts"
+        inputs:
+          targetType: inline
+          script: |
+            echo "Contents of System.DefaultWorkingDirectory:"
+            find $(System.DefaultWorkingDirectory) -type f -name "*.xml" 2>/dev/null | head -20
+            echo "---"
+            ls -la $(System.DefaultWorkingDirectory)/build-$(cmake.preset)/ 2>/dev/null || echo "Directory not found"
+            echo "---"
+            ls -la $(System.DefaultWorkingDirectory)/ 2>/dev/null
+        condition: eq(variables['Agent.OS'], 'Linux')
+
+      - task: PowerShell@2
+        displayName: "List downloaded artifacts"
+        inputs:
+          targetType: inline
+          script: |
+            Write-Host "Contents of System.DefaultWorkingDirectory:"
+            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "*.xml" -ErrorAction SilentlyContinue | Select-Object -First 20 | ForEach-Object { Write-Host $_.FullName }
+            Write-Host "---"
+            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/build-$(cmake.preset)/" -ErrorAction SilentlyContinue
+            Write-Host "---"
+            Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/" -ErrorAction SilentlyContinue
+        condition: eq(variables['Agent.OS'], 'Windows_NT')
+
       - task: CMake@1
         displayName: "CMake Tests $(cmake.preset)"
         inputs:
-          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build-$(cmake.preset)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build-$(cmake.preset)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
         continueOnError: true
 
       - task: PublishTestResults@2
-        displayName: "Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml"
+        displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
         inputs:
           testResultsFormat: "JUnit"
-          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/build-$(cmake.preset)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
           mergeTestResults: false
           buildConfiguration: "$(BuildType)"
         continueOnError: true
