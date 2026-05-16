@@ -74,6 +74,8 @@ stages:
                 cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
           runTests: true
           publishNuGet: ${{ parameters.PublishNuGet }}
+          BuildX64: ${{ parameters.BuildX64 }}
+          BuildDebug: ${{ parameters.BuildDebug }}
       - template: .ci/azure-pipelines-windows-template.yml
         parameters:
           displayName: Windows arm64
@@ -90,6 +92,8 @@ stages:
                 cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
           runTests: true
           publishNuGet: ${{ parameters.PublishNuGet }}
+          BuildX64: ${{ parameters.BuildX64 }}
+          BuildDebug: ${{ parameters.BuildDebug }}
 
   - stage: BuildLinux
     displayName: Linux
