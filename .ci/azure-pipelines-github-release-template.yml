@@ -1,3 +1,15 @@
+parameters:
+  - name: displayName
+    type: string
+  - name: PublishNuGet
+    type: boolean
+    default: true
+  - name: PublishGitHub
+    type: boolean
+    default: true
+  - name: TagVersion
+    type: string
+
 jobs:
   - job: GitHubRelease
     displayName: GitHub Release
@@ -20,27 +32,27 @@ jobs:
           downloadType: "single"
           artifactName: "nuget-packages"
           downloadPath: "$(Build.ArtifactStagingDirectory)"
-        condition: and(succeeded(), eq(variables['BuildType'], 'Release'))
+        condition: succeeded()
 
       - task: NuGetCommand@2
-        displayName: "NuGet push v$(GITVERSION_MAJORMINORPATCH)"
+        displayName: "NuGet push v${{ parameters.TagVersion }}"
         inputs:
           command: "push"
           packagesToPush: "$(Build.ArtifactStagingDirectory)/**/*.nupkg"
           nuGetFeedType: "external"
           publishFeedCredentials: "sqs-nuget"
-        condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+        condition: and(succeeded(), eq(variables['PublishNuGet'], true))
 
       - task: GitHubRelease@1
-        displayName: "Release to GitHub v$(GITVERSION_MAJORMINORPATCH)"
+        displayName: "Release to GitHub v${{ parameters.TagVersion }}"
         inputs:
           gitHubConnection: "github-packages-sqs"
           repositoryName: "$(Build.Repository.Name)"
           action: "create"
           target: "$(Build.SourceVersion)"
           tagSource: "userSpecifiedTag"
-          tag: "$(GITVERSION_MAJORMINORPATCH)"
-          title: "v$(GITVERSION_MAJORMINORPATCH)"
+          tag: "${{ parameters.TagVersion }}"
+          title: "v${{ parameters.TagVersion }}"
           releaseNotesSource: "inline"
           releaseNotesInline: "Documentation https://github.com/$(Build.Repository.Name)"
           isPreRelease: true
@@ -49,4 +61,4 @@ jobs:
           addChangeLog: false
           assetUploadMode: "replace"
           assets: "$(Build.ArtifactStagingDirectory)/**/*"
-        condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+        condition: and(succeeded(), eq(variables['PublishGitHub'], true))

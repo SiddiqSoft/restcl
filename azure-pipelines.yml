@@ -29,7 +29,7 @@ parameters:
   - name: BuildX64
     displayName: "Check to enable the x64 builds"
     type: boolean
-    default: "true"
+    default: "false"
   - name: BuildDebug
     displayName: "Check to enable the Debug builds"
     type: boolean
@@ -129,3 +129,8 @@ stages:
     condition: and(succeeded(), eq(variables['PublishGitHub'], true))
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml
+        parameters:
+          displayName: Nuget Publication and GitHub Release
+          PublishNuGet: ${{ variables.PublishNuGet }}
+          PublishGitHub: ${{ variables.PublishGitHub }}
+          TagVersion: $(GITVERSION_MAJORMINORPATCH)
