@@ -28,6 +28,7 @@ jobs:
         inputs:
           script: |
             $stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+            $TagVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
             echo "The version from the previous stage is $(stageVersion)"      
             echo "Another: "
         
@@ -37,7 +38,7 @@ jobs:
           script: |
             echo "PublishNuGet: $(PublishNuGet)"
             echo "PublishGitHub: $(PublishGitHub)"
-            echo "TagVersion: ${{ parameters.TagVersion }}"
+            echo "TagVersion: $(TagVersion)"
             set 
       
       - task: DownloadBuildArtifacts@0
@@ -49,7 +50,7 @@ jobs:
         condition: succeeded()
 
       - task: NuGetCommand@2
-        displayName: "NuGet push v${{ parameters.TagVersion }}"
+        displayName: "NuGet push v$(TagVersion)"
         inputs:
           command: "push"
           packagesToPush: "$(Build.ArtifactStagingDirectory)/**/*.nupkg"
@@ -58,15 +59,15 @@ jobs:
         condition: and(succeeded(), eq(variables['PublishNuGet'], true))
 
       - task: GitHubRelease@1
-        displayName: "Release to GitHub v${{ parameters.TagVersion }}"
+        displayName: "Release to GitHub v$(TagVersion)"
         inputs:
           gitHubConnection: "github-packages-sqs"
           repositoryName: "$(Build.Repository.Name)"
           action: "create"
           target: "$(Build.SourceVersion)"
           tagSource: "userSpecifiedTag"
-          tag: "${{ parameters.TagVersion }}"
-          title: "v${{ parameters.TagVersion }}"
+          tag: "$(TagVersion)"
+          title: "v$(TagVersion)"
           releaseNotesSource: "inline"
           releaseNotesInline: "Documentation https://github.com/$(Build.Repository.Name)"
           isPreRelease: true
