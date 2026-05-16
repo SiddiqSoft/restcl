@@ -8,10 +8,6 @@ parameters:
     type: boolean
     default: true
 
-variables:
-  # Reference the variable from the previous stage's job output
-  stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
-
 jobs:
   - job: GitHubRelease
     displayName: GitHub Release
@@ -31,6 +27,7 @@ jobs:
       - task: CmdLine@2
         inputs:
           script: |
+            $stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
             echo "The version from the previous stage is $(stageVersion)"      
             echo "Another: "
         
