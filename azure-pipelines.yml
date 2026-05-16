@@ -106,27 +106,33 @@ stages:
     jobs:
       - template: .ci/azure-pipelines-linux-template.yml
         parameters:
-          displayName: Linux
+          displayName: Linux Clang
           matrixConfigs:
-            - Linux_GCC_Release:
+            Linux_Clang_Release:
+              BuildType: Release
+              LinuxCompiler: Clang
+              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+            ${{ if eq(parameters.BuildDebug, true) }}:
+              Linux_Clang_Debug:
+                BuildType: Debug
+                LinuxCompiler: Clang
+                cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+          runTests: true
+      - ${{ if eq(parameters.RunLinuxClangOnly, false) }}:
+        - template: .ci/azure-pipelines-linux-template.yml
+          parameters:
+            displayName: Linux GCC
+            matrixConfigs:
+              Linux_GCC_Release:
                 BuildType: Release
                 LinuxCompiler: GCC
                 cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            - ${{ if and(eq(parameters.BuildDebug, true), eq(parameters.RunLinuxClangOnly, false)) }}:
-              - Linux_GCC_Debug:
+              ${{ if eq(parameters.BuildDebug, true) }}:
+                Linux_GCC_Debug:
                   BuildType: Debug
                   LinuxCompiler: GCC
                   cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            - Linux_Clang_Release:
-                BuildType: Release
-                LinuxCompiler: Clang
-                cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            - ${{ if and(eq(parameters.BuildDebug, true), eq(parameters.RunLinuxClangOnly, false)) }}:
-              - Linux_Clang_Debug:
-                  BuildType: Debug
-                  LinuxCompiler: Clang
-                  cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-          runTests: true
+            runTests: true
 
   - stage: Publication
     displayName: Nuget Publication and GitHub Release
