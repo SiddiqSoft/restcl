@@ -21,7 +21,7 @@ parameters:
     default: false
 
 jobs:
-  ${{ if or(ne(parameters.architecture, 'x64'), eq(parameters.BuildX64, true)) }}:
+  - ${{ if or(ne(parameters.architecture, 'x64'), eq(parameters.BuildX64, true)) }}:
     - job: ${{ parameters.architecture }}
       displayName: ${{ parameters.displayName }}
       workspace:
