@@ -25,7 +25,15 @@ jobs:
       #    downloadType: "single"
       #    artifactName: "release-assets"
       #    downloadPath: "$(Build.ArtifactStagingDirectory)"
-
+      - task: CmdLine@2
+        displayName: "Echo variables for debugging"
+        inputs:
+          script: |
+            echo "PublishNuGet: $(PublishNuGet)"
+            echo "PublishGitHub: $(PublishGitHub)"
+            echo "TagVersion: ${{ parameters.TagVersion }}"
+            set 
+      
       - task: DownloadBuildArtifacts@0
         displayName: "Download NuGet packages"
         inputs:
