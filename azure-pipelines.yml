@@ -62,6 +62,7 @@ stages:
     dependsOn: []
     condition: eq(${{ parameters.RunWindows }}, true)
     jobs:
+        # This option is available only for x64 builds for Windows.
       - ${{ if eq(parameters.BuildX64, true) }}:
         - template: .ci/azure-pipelines-windows-template.yml
           parameters:
@@ -72,6 +73,7 @@ stages:
                 BuildType: Release
                 BuildArchitecture: x64
                 cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
+                # This option is available for debug
               ${{ if eq(parameters.BuildDebug, true) }}:
                 Windows_x64_Debug:
                   BuildType: Debug
@@ -90,6 +92,7 @@ stages:
               BuildType: Release
               BuildArchitecture: arm64
               cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
+              # This option is available for debug
             ${{ if eq(parameters.BuildDebug, true) }}:
               Windows_arm64_Debug:
                 BuildType: Debug
@@ -119,6 +122,7 @@ stages:
                 LinuxCompiler: Clang
                 cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
           runTests: true
+        # this job is "activated" when RunLinuxClangOnly is false.
       - ${{ if eq(parameters.RunLinuxClangOnly, false) }}:
         - template: .ci/azure-pipelines-linux-template.yml
           parameters:
@@ -147,4 +151,4 @@ stages:
           displayName: Nuget Publication and GitHub Release
           PublishNuGet: ${{ variables.PublishNuGet }}
           PublishGitHub: ${{ variables.PublishGitHub }}
-          TagVersion: $(GITVERSION_MAJORMINORPATCH)
+          TagVersion: ${{ variables.GITVERSION_MAJORMINORPATCH }}

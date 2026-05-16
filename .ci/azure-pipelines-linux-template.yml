@@ -38,6 +38,7 @@ jobs:
         inputs:
           useConfigFile: true
           configFilePath: "GitVersion.yml"
+          updateBuildNumber: true
 
       - task: CMake@1
         displayName: "CMake Configure $(cmake.preset)"

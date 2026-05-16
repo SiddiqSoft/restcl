@@ -10,6 +10,11 @@ parameters:
   - name: TagVersion
     type: string
 
+variables:
+  GITVERSION_FULLSEMVER: $[ stageDependencies.BuildWindows.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+  # Reference the variable from the previous stage's job output
+  stageVersion: $[ stageDependencies.BuildWindows.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+
 jobs:
   - job: GitHubRelease
     displayName: GitHub Release
@@ -25,7 +30,9 @@ jobs:
       #    downloadType: "single"
       #    artifactName: "release-assets"
       #    downloadPath: "$(Build.ArtifactStagingDirectory)"
-      
+
+      - script: echo "The version from the previous stage is $(stageVersion)"      
+        
       - task: CmdLine@2
         displayName: "Echo variables for debugging"
         inputs:
