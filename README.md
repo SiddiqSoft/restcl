@@ -296,7 +296,7 @@ restcl/
 │   ├── test_postbin.cpp              # Integration tests with external services
 │   ├── test_libcurl_helpers.cpp      # Unix/Linux-specific tests
 │   └── test_mock_and_coverage.cpp    # Mock and coverage tests
-├── docs/                             # Doxygen documentation
+├── docs/                             # Documentation
 ├── pack/                             # NuGet packaging and build helpers
 ├── CMakeLists.txt                    # Main CMake configuration
 ├── CMakePresets.json                 # CMake presets for builds
@@ -347,7 +347,6 @@ Extends `http_frame` with response parsing, status codes, and reason phrases.
 | Clang-Format | Latest | Code formatting |
 | Clang-Tidy | Latest | Static analysis |
 | Google Test | v1.17.0 | Testing framework |
-| Doxygen | Latest | Documentation generation |
 
 ### Compiler Requirements
 
@@ -497,32 +496,3 @@ Design a library where JSON is a first-class API metaphor for interacting with R
 - [ ] Support for additional content types
 - [ ] Enhanced error diagnostics
 
-## Contributing
-
-Contributions are welcome! Please ensure:
-
-1. Code follows the style guidelines in [best_practices.md](best_practices.md)
-2. All tests pass: `ctest --preset default`
-3. New features include appropriate tests
-4. Documentation is updated accordingly
-5. Code is formatted with clang-format: `clang-format -i <file>`
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For issues, questions, or suggestions:
-
-1. Check the [best_practices.md](best_practices.md) for comprehensive guidance
-2. Review existing [GitHub Issues](https://github.com/SiddiqSoft/restcl/issues)
-3. Create a new issue with detailed information
-4. For security concerns, please email privately
-
-## Acknowledgments
-
-- Built with modern C++23 features
-- Uses [nlohmann/json](https://github.com/nlohmann/json) for JSON handling
-- Cross-platform support via WinHTTP and libcurl
-- Comprehensive testing with Google Test framework
