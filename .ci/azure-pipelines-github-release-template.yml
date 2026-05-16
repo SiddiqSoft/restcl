@@ -25,6 +25,7 @@ jobs:
       #    downloadType: "single"
       #    artifactName: "release-assets"
       #    downloadPath: "$(Build.ArtifactStagingDirectory)"
+      
       - task: CmdLine@2
         displayName: "Echo variables for debugging"
         inputs:
