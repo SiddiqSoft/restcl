@@ -155,4 +155,3 @@ stages:
           displayName: Nuget Publication and GitHub Release
           PublishNuGet: ${{ variables.PublishNuGet }}
           PublishGitHub: ${{ variables.PublishGitHub }}
-          TagVersion: $(BUILD_BUILDNUMBER)

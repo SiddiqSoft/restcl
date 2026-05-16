@@ -7,12 +7,10 @@ parameters:
   - name: PublishGitHub
     type: boolean
     default: true
-  - name: TagVersion
-    type: string
 
-#variables:
-#  # Reference the variable from the previous stage's job output
-#  stageVersion: $[ stageDependencies.BuildWindows.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+variables:
+  # Reference the variable from the previous stage's job output
+  stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
 
 jobs:
   - job: GitHubRelease
