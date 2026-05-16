@@ -25,7 +25,7 @@ jobs:
     # build x64 only if the BuildX64 parameter is true and the architecture parameter is x64
     # otherwise build all architectures that are in the matrixConfigs
     #condition: or(not(eq(${{ parameters.BuildX64 }}, true)), and(eq(${ parameters.BuildX64 }}, true), eq(${{ parameters.architecture }}, "x64")))
-    condition: or( not(eq(${{ parameters.architecture }}, x64)), and(eq(${{ parameters.BuildX64 }}, true), eq(${{ parameters.architecture }}, x64)) )
+    condition: or( not(eq("${{ parameters.architecture }}", "x64")), and(eq(${{ parameters.BuildX64 }}, true), eq("${{ parameters.architecture }}", "x64")) )
     displayName: ${{ parameters.displayName }}
     workspace:
       clean: all
