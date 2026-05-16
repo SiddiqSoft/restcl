@@ -22,26 +22,26 @@ resources:
 parameters:
   - name: RunWindows
     type: boolean
-    default: "true"
+    default: true
   - name: RunLinux
     type: boolean
-    default: "true"
+    default: true
   - name: BuildX64
     displayName: "Check to enable the x64 builds"
     type: boolean
-    default: "false"
+    default: false
   - name: BuildDebug
     displayName: "Check to enable the Debug builds"
     type: boolean
-    default: "false"
+    default: false
   - name: PublishNuGet
     displayName: "Defaults to false but its auto set to true when building on main/master"
     type: boolean
-    default: "false"
+    default: false
   - name: PublishGitHub
     displayName: "Defaults to false but its auto set to true when building on main/master"
     type: boolean
-    default: "false"
+    default: false
 
 variables:
   # Set the publish if we're building on main/master
