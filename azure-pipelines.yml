@@ -46,6 +46,10 @@ parameters:
     displayName: "PublishGitHub - Defaults to false; auto set to true when on main/master"
     type: boolean
     default: false
+  - name: RunTests
+    displayName: "RunTests - Check to run tests after building"
+    type: boolean
+    default: true
 
 variables:
   # Set the publish if we're building on main/master
@@ -79,7 +83,7 @@ stages:
                   BuildType: Debug
                   BuildArchitecture: x64
                   cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-            runTests: true
+            runTests: ${{ parameters.RunTests }}
             publishNuGet: ${{ parameters.PublishNuGet }}
             BuildX64: ${{ parameters.BuildX64 }}
             BuildDebug: ${{ parameters.BuildDebug }}
@@ -98,7 +102,7 @@ stages:
                 BuildType: Debug
                 BuildArchitecture: arm64
                 cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-          runTests: true
+          runTests: ${{ parameters.RunTests }}
           publishNuGet: ${{ parameters.PublishNuGet }}
           BuildX64: ${{ parameters.BuildX64 }}
           BuildDebug: ${{ parameters.BuildDebug }}
@@ -121,7 +125,7 @@ stages:
                 BuildType: Debug
                 LinuxCompiler: Clang
                 cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-          runTests: true
+          runTests: ${{ parameters.RunTests }}
         # this job is "activated" when RunLinuxClangOnly is false.
       - ${{ if eq(parameters.RunLinuxClangOnly, false) }}:
         - template: .ci/azure-pipelines-linux-template.yml
@@ -137,7 +141,7 @@ stages:
                   BuildType: Debug
                   LinuxCompiler: GCC
                   cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            runTests: true
+            runTests: ${{ parameters.RunTests }}
 
   - stage: Publication
     displayName: Nuget Publication and GitHub Release
@@ -151,4 +155,4 @@ stages:
           displayName: Nuget Publication and GitHub Release
           PublishNuGet: ${{ variables.PublishNuGet }}
           PublishGitHub: ${{ variables.PublishGitHub }}
-          TagVersion: ${{ variables.GITVERSION_MAJORMINORPATCH }}
+          TagVersion: $[ variables['GITVERSION_MAJORMINORPATCH'] ]
