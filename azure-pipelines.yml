@@ -26,20 +26,24 @@ parameters:
   - name: RunLinux
     type: boolean
     default: true
+  - name: RunLinuxClangOnly
+    displayName: "RunLinuxClangOnly - Check to only run the Linux Clang builds and skip the Linux GCC builds"
+    type: boolean
+    default: true
   - name: BuildX64
-    displayName: "Check to enable the x64 builds"
+    displayName: "BuildX64 - Check to enable the x64 builds"
     type: boolean
     default: false
   - name: BuildDebug
-    displayName: "Check to enable the Debug builds"
+    displayName: "BuildDebug - Check to enable the Debug builds"
     type: boolean
     default: false
   - name: PublishNuGet
-    displayName: "Defaults to false but its auto set to true when building on main/master"
+    displayName: "PublishNuGet - Defaults to false; auto set to true when on main/master"
     type: boolean
     default: false
   - name: PublishGitHub
-    displayName: "Defaults to false but its auto set to true when building on main/master"
+    displayName: "PublishGitHub - Defaults to false; auto set to true when on main/master"
     type: boolean
     default: false
 
@@ -104,24 +108,24 @@ stages:
         parameters:
           displayName: Linux
           matrixConfigs:
-            Linux_GCC_Release:
-              BuildType: Release
-              LinuxCompiler: GCC
-              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            ${{ if eq(parameters.BuildDebug, true) }}:
-              Linux_GCC_Debug:
-                BuildType: Debug
+            - Linux_GCC_Release:
+                BuildType: Release
                 LinuxCompiler: GCC
                 cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            Linux_Clang_Release:
-              BuildType: Release
-              LinuxCompiler: Clang
-              cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            ${{ if eq(parameters.BuildDebug, true) }}:
-              Linux_Clang_Debug:
-                BuildType: Debug
+            - ${{ if and(eq(parameters.BuildDebug, true), eq(parameters.RunLinuxClangOnly, false)) }}:
+              - Linux_GCC_Debug:
+                  BuildType: Debug
+                  LinuxCompiler: GCC
+                  cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+            - Linux_Clang_Release:
+                BuildType: Release
                 LinuxCompiler: Clang
                 cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
+            - ${{ if and(eq(parameters.BuildDebug, true), eq(parameters.RunLinuxClangOnly, false)) }}:
+              - Linux_Clang_Debug:
+                  BuildType: Debug
+                  LinuxCompiler: Clang
+                  cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
           runTests: true
 
   - stage: Publication
