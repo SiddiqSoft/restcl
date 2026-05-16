@@ -13,9 +13,18 @@ parameters:
   - name: publishNuGet
     type: boolean
     default: false
+  - name: BuildX64
+    type: boolean
+    default: false
+  - name: BuildDebug
+    type: boolean
+    default: false
 
 jobs:
   - job: ${{ parameters.architecture }}
+    # build x64 only if the BuildX64 parameter is true and the architecture parameter is x64
+    # otherwise build all architectures that are in the matrixConfigs
+    condition: or(not(eq(${{ parameters.BuildX64 }}, true)), and(eq(${ parameters.BuildX64 }}, true), eq(${{ parameters.architecture }}, "x64")))
     displayName: ${{ parameters.displayName }}
     workspace:
       clean: all
