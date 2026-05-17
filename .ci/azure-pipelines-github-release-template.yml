@@ -27,8 +27,8 @@ jobs:
       - task: CmdLine@2
         inputs:
           script: |
-            $stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
-            $TagVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+            stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+            TagVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
             echo "The version from the previous stage is $(stageVersion)"      
             echo "Another: "
         
