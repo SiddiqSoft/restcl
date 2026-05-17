@@ -158,4 +158,4 @@ stages:
           displayName: Nuget Publication and GitHub Release
           PublishNuGet: ${{ variables.PublishNuGet }}
           PublishGitHub: ${{ variables.PublishGitHub }}
-          ExtraParam: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SaveFutureVersion.THATBUILDVERSION']]
+          ExtraParam: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture..THATBUILDVERSION']]
