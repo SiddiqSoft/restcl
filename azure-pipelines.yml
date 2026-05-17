@@ -61,7 +61,7 @@ variables:
     PublishGitHub: ${{ parameters.PublishGitHub }}
 
 stages:
-  - stage: BuildWindows
+  - stage: StgBldWindows
     displayName: Windows
     dependsOn: []
     condition: eq(${{ parameters.RunWindows }}, true)
@@ -106,7 +106,7 @@ stages:
           BuildX64: ${{ parameters.BuildX64 }}
           BuildDebug: ${{ parameters.BuildDebug }}
 
-  - stage: BuildLinux
+  - stage: StgBldLinux
     displayName: Linux
     dependsOn: []
     condition: eq(${{ parameters.RunLinux }}, true)

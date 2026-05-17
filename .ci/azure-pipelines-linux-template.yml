@@ -12,7 +12,7 @@ parameters:
     default: true
 
 jobs:
-  - job: Linux
+  - job: JobLinuxBuild_${{ parameters.architecture }}
     displayName: ${{ parameters.displayName }}
     workspace:
       clean: all

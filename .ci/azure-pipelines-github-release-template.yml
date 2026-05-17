@@ -19,12 +19,10 @@ jobs:
       demands:
         - Agent.OS -equals Windows_NT
     variables:
-      stageVersion:  $[stageDependencies.BuildWindows.WindowsBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
-      stageVersion2: $[stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion']]
-      stageVersion3: $[stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.BuildVersion']]
-      TagVersion:    $[stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion']]
-      PublishVersion: $[stageDependencies.BuildWindows.WindowsBuild_arm64.outputs['SetVersionForFuture.PUBLISHVERSION']]
-      XBUILDVERSION: $[stageDependencies.BuildWindows.WindowsBuild_arm64.outputs['SetVersionForFuture.BUILDVERSION']]
+      TagVersion: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
+      PublishVersion: $[stageDependencies.StgBldLinux.JobLinuxBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
+      XBUILDVERSION: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.BuildVersion']]
+
     steps:
       - checkout: none
       #- task: DownloadBuildArtifacts@0
@@ -39,16 +37,10 @@ jobs:
         inputs:
           script: |
             echo "-------------------------------- "
-            echo  "The version from the previous stage is $(stageVersion) .. $[variables.stageVersion] "
-            echo "The version from the previous stage is $(stageVersion2) .. $[variables.stageVersion2] "
-            echo "The version from the previous stage is $(stageVersion3) .. $[variables.stageVersion3] "
-            echo "Another: TagVersion: $(TagVersion)"
             echo "PublishNuGet: $(PublishNuGet)"
             echo "PublishGitHub: $(PublishGitHub)"
             echo "PublishVersion: $(PublishVersion)"
             echo "TagVersion: $(TagVersion)"
-            echo "TagVersion: $[TagVersion]"
-            echo "PublishVersion: $[ variables.PublishVersion ]"
             echo "XBUILDVERSION: $(XBUILDVERSION)"
             echo "-------------------------------- "
             set 
