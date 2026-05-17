@@ -59,6 +59,7 @@ variables:
   ${{ else }}:
     PublishNuGet: ${{ parameters.PublishNuGet }}
     PublishGitHub: ${{ parameters.PublishGitHub }}
+    TagVersion: "x.y.z"
 
 stages:
   - stage: BuildWindows
