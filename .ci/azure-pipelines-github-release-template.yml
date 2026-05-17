@@ -13,9 +13,6 @@ parameters:
 
 jobs:
   - job: GitHubRelease
-    dependsOn:
-      - StgBldWindows
-      - StgBldLinux
     displayName: GitHub Release
     pool:
       name: Default
