@@ -151,8 +151,8 @@ stages:
       - StgBldLinux
     condition: and(succeeded(), eq(variables['PublishGitHub'], true))
     variables:
-      tmp0: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER.VTAG']]
-      tmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
+      tmp0: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['JobLinuxBuild.SETVER.VTAG']]
+      tmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['JobWindowsBuild_arm64.SETVER0.VTAG0']]
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml
         parameters:
