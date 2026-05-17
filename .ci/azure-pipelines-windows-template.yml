@@ -65,7 +65,7 @@ jobs:
             updateBuildNumber: true
         
           # Save the calculated SemVer as an Azure DevOps output variable
-        - task: Bash@3
+        - task: CmdLine@2
           displayName: "Set TagVersion for future stages"
           inputs:
             targetType: "inline"
