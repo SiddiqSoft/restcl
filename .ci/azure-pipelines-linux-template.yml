@@ -41,15 +41,21 @@ jobs:
           updateBuildNumber: true
 
         # Save the calculated SemVer as an Azure DevOps output variable
-      - script: |
-          set TagVersion=$(GITVERSION_MAJORMINORPATCH)
-          echo "##vso[task.setvariable variable=TagVersion;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
-          echo "-------------------------------- "
-          set
-          echo "-------------------------------- "
-          echo "Now TagVersion: :$(TagVersion) should be :$(GITVERSION_MAJORMINORPATCH)"
-          echo "-------------------------------- "
-        name: SetVersionForFuture
+      - task: Bash@3
+        displayName: "Set TagVersion for future stages"
+        inputs:
+          targetType: "inline"
+          script: |
+            echo "-------------------------------- "
+            echo "The version from GitVersion is $(GITVERSION_MAJORMINORPATCH)"
+            echo "Setting TagVersion to $(GITVERSION_MAJORMINORPATCH) for future stages..."
+            echo "##vso[task.setvariable variable=TagVersion;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
+            echo "-------------------------------- "
+            set
+            echo "-------------------------------- "
+            echo "Now TagVersion: :$(TagVersion) should be :$(GITVERSION_MAJORMINORPATCH)"
+            echo "-------------------------------- "
+          name: SetVersionForFuture
 
       - task: CMake@1
         displayName: "CMake Configure $(cmake.preset)"
