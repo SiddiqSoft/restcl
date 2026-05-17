@@ -155,7 +155,7 @@ stages:
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml
         parameters:
-          displayName: Nuget Publication and GitHub Release
+          displayName: Nuget and GitHub Release 
           PublishNuGet: ${{ variables.PublishNuGet }}
           PublishGitHub: ${{ variables.PublishGitHub }}
-          ExtraParam: $[ stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER.VTAG'] ]
+          ExtraParam: $[ stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER.VTAG'] ]
