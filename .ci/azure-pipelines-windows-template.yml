@@ -74,9 +74,9 @@ jobs:
               echo "The version from GitVersion is $(GITVERSION_MAJORMINORPATCH)"
               echo "Setting TagVersion to $(GITVERSION_MAJORMINORPATCH) for future stages..."
               echo ##vso[task.setvariable variable=TagVersion;isOutput=true]$(GITVERSION_MAJORMINORPATCH)
-              set "PUBLISHVERSION=$(GITVERSION_MAJORMINORPATCH)"
-              set "TAGVERSION=$(GITVERSION_MAJORMINORPATCH)"
-              set "BUILDVERSION=$(GITVERSION_MAJORMINORPATCH)"
+              set "PUBLISHVERSION=%GITVERSION_MAJORMINORPATCH)%"
+              set "TAGVERSION=%GITVERSION_MAJORMINORPATCH)%"
+              set "BUILDVERSION=%GITVERSION_MAJORMINORPATCH)%"
               echo "-------------------------------- "
               set
               echo "-------------------------------- "
