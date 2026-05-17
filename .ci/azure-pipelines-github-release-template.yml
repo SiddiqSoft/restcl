@@ -13,6 +13,9 @@ parameters:
 
 jobs:
   - job: GitHubRelease
+    dependsOn:
+      - StgBldWindows
+      - StgBldLinux
     displayName: GitHub Release
     pool:
       name: Default
@@ -24,8 +27,8 @@ jobs:
       THISBUILDVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
       XBUILDVERSION: $[ variables['ExtraParam'] ]
       PUBLISHVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
-      fromVtag: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER.VTAG']]
-      fromVtag0: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
+      fromVtag: $[ stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER.VTAG'] ]
+      fromVtag0: $[ stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0'] ]
 
     steps:
       - checkout: none

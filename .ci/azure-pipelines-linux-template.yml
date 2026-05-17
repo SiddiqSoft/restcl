@@ -53,6 +53,7 @@ jobs:
       - bash: |
           echo "##vso[task.setvariable variable=THISBUILDVERSION;isOutput=true]$GITVERSION_MAJORMINORPATCH"
           echo "##vso[task.setvariable variable=THATBUILDVERSION;isOutput=true]9.9.9"
+          echo "##vso[task.setvariable variable=HELLOBUILDVERSION;isOutput=true]hello"
         name: SetVersionForFuture
         displayName: "Set TagVersion for future stages"
 
