@@ -18,6 +18,7 @@ jobs:
     variables:
       stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
       stageVersion2: $[ stageDependencies.BuildLinux.Linux.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+      stageVersion3: $[ stageDependencies.BuildLinux.Linux.outputs['version_step.GITVERSION_FULLSEMVER'] ]
       #TagVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
     steps:
       - checkout: none
@@ -35,6 +36,7 @@ jobs:
             echo "-------------------------------- "
             echo "The version from the previous stage is `$(stageVersion)` .. `${{ variables['stageVersion'] }}` "
             echo "The version from the previous stage is `$(stageVersion2)` .. `${{ variables['stageVersion2'] }}` "
+            echo "The version from the previous stage is `$(stageVersion3)` .. `${{ variables['stageVersion3'] }}` "
             echo "Another: TagVersion: $(TagVersion)"
             echo "PublishNuGet: $(PublishNuGet)"
             echo "PublishGitHub: $(PublishGitHub)"
