@@ -19,11 +19,11 @@ jobs:
       demands:
         - Agent.OS -equals Windows_NT
     variables:
-      stageVersion:  $[ stageDependencies.BuildWindows.WindowsBuild.outputs['SetVersionForFuture.TagVersion'] ]
-      stageVersion2: $[ stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion'] ]
-      stageVersion3: $[ stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.BuildVersion'] ]
-      TagVersion:    $[ stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion'] ]
-      PublishVersion: $[ stageDependencies.BuildWindows.WindowsBuild.outputs['SetVersionForFuture.PUBLISHVERSION'] ]
+      stageVersion:  $[stageDependencies.BuildWindows.WindowsBuild.outputs['SetVersionForFuture.TagVersion']]
+      stageVersion2: $[stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion']]
+      stageVersion3: $[stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.BuildVersion']]
+      TagVersion:    $[stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion']]
+      PublishVersion: $[stageDependencies.BuildWindows.WindowsBuild.outputs['SetVersionForFuture.PUBLISHVERSION']]
     steps:
       - checkout: none
       #- task: DownloadBuildArtifacts@0
