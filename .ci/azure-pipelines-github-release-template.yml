@@ -7,9 +7,12 @@ parameters:
   - name: PublishGitHub
     type: boolean
     default: true
-  - name: ExtraParam
+  - name: ExtraParam0
     type: string
     default: "0.0.0"
+  - name: ExtraParam1
+    type: string
+    default: "0.0.1"
 
 jobs:
   - job: GitHubRelease
@@ -33,8 +36,10 @@ jobs:
         inputs:
           script: |
             echo "PublishNuGet: $(PublishNuGet)"
-            echo "extraparam: ${{ parameters.ExtraParam }}"
-            echo "extraparam: $(ExtraParam)"
+            echo "extraparam0: ${{ parameters.ExtraParam0 }}"
+            echo "extraparam0: $(ExtraParam0)"
+            echo "extraparam1: ${{ parameters.ExtraParam1 }}"
+            echo "extraparam1: $(ExtraParam1)"
             echo "----------------------------------------------------------------"
             set 
       
