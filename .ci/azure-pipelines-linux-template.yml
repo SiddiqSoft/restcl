@@ -50,7 +50,7 @@ jobs:
           echo --------------------------------
         
         # Save the calculated SemVer as an Azure DevOps output variable
-      - bash: echo '##vso[task.setvariable variable=ZTagVersion;isOutput=true]${GITVERSION_MAJORMINORPATCH}'
+      - bash: echo '##vso[task.setvariable variable=THISBUILDVERSION;isOutput=true]${GITVERSION_MAJORMINORPATCH}'
         name: SetVersionForFuture
         displayName: "Set TagVersion for future stages"
 
