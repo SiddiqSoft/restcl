@@ -18,14 +18,6 @@ jobs:
       name: Default
       demands:
         - Agent.OS -equals Windows_NT
-    variables:
-      TagVersion: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
-      XPublishVersion: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THATBUILDVERSION']]
-      THISBUILDVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
-      XBUILDVERSION: $[ variables['ExtraParam'] ]
-      PUBLISHVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
-      fromVtag: $[ stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG'] ]
-      fromVtag0: $[ stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0'] ]
 
     steps:
       - checkout: none
@@ -40,18 +32,10 @@ jobs:
         displayName: "Echo variables for debugging"
         inputs:
           script: |
-            echo "-------------------------------- "
             echo "PublishNuGet: $(PublishNuGet)"
             echo "extraparam: ${{ parameters.ExtraParam }}"
-            echo "PublishGitHub: $(PublishGitHub)"
-            echo "PublishVersion: $(PublishVersion)"
-            echo "XPublishVersion: $(XPublishVersion)"
-            echo "TagVersion: $(TagVersion)"
-            echo "XBUILDVERSION: $(XBUILDVERSION)"
-            echo "ThisBuildVersion: $(ThisBuildVersion)"
-            echo "fromVtag: $(fromVtag)"
-            echo "fromVtag0: $(fromVtag0)"
-            echo "-------------------------------- "
+            echo "extraparam: $(ExtraParam)"
+            echo "----------------------------------------------------------------"
             set 
       
       - task: DownloadBuildArtifacts@0

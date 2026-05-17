@@ -64,34 +64,6 @@ jobs:
         configFilePath: "GitVersion.yml"
         updateBuildNumber: true
     
-    - script: |
-        echo "##vso[task.setvariable variable=VTAG;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
-      name: SETVER
-
-    - script: |
-        echo "##vso[task.setvariable variable=VTAG0;isOutput=true]hello"
-      name: SETVER0
-
-      # Save the calculated SemVer as an Azure DevOps output variable
-    - script: |
-        set va=$(GITVERSION_MAJORMINORPATCH)
-        echo "va = $va"
-        echo ##vso[task.setvariable variable=TagVersion;isOutput=true]%GITVERSION_MAJORMINORPATCH%
-        echo ##vso[task.setvariable variable=PUBLISHVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
-        echo ##vso[task.setvariable variable=BUILDVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
-        echo ##vso[task.setvariable variable=XBUILDVERSION;isOutput=true]$va
-      name: SetVersionForFuture
-
-    - script: |
-        echo "-------------------------------- "
-        echo "The version from GitVersion is $(GITVERSION_MAJORMINORPATCH)"
-        echo "TagVersion: $(TagVersion)"
-        echo "PublishVersion: $(PublishVersion)"
-        echo "BuildVersion: $(BuildVersion)"
-        echo "-------------------------------- "
-        set
-      displayName: "Echo GitVersion variables for debugging"
-
     - task: CMake@1
       displayName: "CMake Configure $(cmake.preset)"
       inputs:
