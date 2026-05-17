@@ -153,6 +153,6 @@ stages:
       - template: .ci/azure-pipelines-github-release-template.yml
         parameters:
           displayName: Nuget Publication and GitHub Release
-          PublishNuGet: $[ variables.PublishNuGet ]
-          PublishGitHub: $[ variables.PublishGitHub ]
+          PublishNuGet: ${{ variables.PublishNuGet }}
+          PublishGitHub: ${{ variables.PublishGitHub }}
           PublishVersion: $[ stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion'] ]
