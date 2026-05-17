@@ -114,6 +114,7 @@ stages:
       - template: .ci/azure-pipelines-linux-template.yml
         parameters:
           displayName: Linux Clang
+          architecture: ${{Agent.OSArchitecture}}
           matrixConfigs:
             Linux_Clang_Release:
               BuildType: Release
@@ -130,6 +131,7 @@ stages:
         - template: .ci/azure-pipelines-linux-template.yml
           parameters:
             displayName: Linux GCC
+            architecture: ${{Agent.OSArchitecture}}
             matrixConfigs:
               Linux_GCC_Release:
                 BuildType: Release

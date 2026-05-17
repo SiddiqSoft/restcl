@@ -5,6 +5,8 @@
 parameters:
   - name: displayName
     type: string
+  - name: architecture
+    type: string
   - name: matrixConfigs
     type: object
   - name: runTests
