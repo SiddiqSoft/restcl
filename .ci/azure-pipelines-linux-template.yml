@@ -42,6 +42,7 @@ jobs:
 
         # Save the calculated SemVer as an Azure DevOps output variable
       - script: |
+          set -e TagVersion=$(GITVERSION_MAJORMINORPATCH)
           echo "##vso[task.setvariable variable=GITVERSION_FULLSEMVER;isOutput=true]$(GITVERSION_FULLSEMVER)"
           echo "##vso[task.setvariable variable=GITVERSION_MAJORMINORPATCH;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
           echo "##vso[task.setvariable variable=TagVersion;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
@@ -49,9 +50,7 @@ jobs:
           echo "-------------------------------- "
           set
           echo "-------------------------------- "
-          set
-          echo "-------------------------------- "
-          echo "Now TagVersion: `$(TagVersion)` should be `$(GITVERSION_MAJORMINORPATCH)`"
+          echo "Now TagVersion: :$(TagVersion) should be :$(GITVERSION_MAJORMINORPATCH)"
           echo "-------------------------------- "
         name: SetVersionForFuture
 
