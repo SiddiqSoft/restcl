@@ -56,6 +56,7 @@ jobs:
             echo "Now TagVersion: :$(TagVersion) should be :$(GITVERSION_MAJORMINORPATCH)"
             echo "-------------------------------- "
           name: SetVersionForFuture
+          modifyEnvironment: true
 
       - task: CMake@1
         displayName: "CMake Configure $(cmake.preset)"

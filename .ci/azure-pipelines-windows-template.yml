@@ -65,19 +65,23 @@ jobs:
             updateBuildNumber: true
         
           # Save the calculated SemVer as an Azure DevOps output variable
-        - script: |
-            echo "Previous TagVersion: $(TagVersion)"
-            set TagVersion=$(GITVERSION_MAJORMINORPATCH)
-            echo "##vso[task.setvariable variable=GITVERSION_FULLSEMVER;isOutput=true]$(GITVERSION_FULLSEMVER)"
-            echo "##vso[task.setvariable variable=GITVERSION_MAJORMINORPATCH;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
-            echo "##vso[task.setvariable variable=TagVersion;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
-            echo "##vso[task.setvariable variable=GITVERSION_NUGETVERSIONV2;isOutput=true]$(GITVERSION_NUGETVERSIONV2)"
-            echo "-------------------------------- "
-            set
-            echo "-------------------------------- "
-            echo "Now TagVersion: `$(TagVersion)` should be `$(GITVERSION_MAJORMINORPATCH)`"
-            echo "-------------------------------- "
-          name: SetVersionForFuture
+        - task: CmdLine@2
+          displayName: "Set TagVersion for future stages"
+          inputs:
+          - script: |
+              echo "Previous TagVersion: $(TagVersion)"
+              set TagVersion=$(GITVERSION_MAJORMINORPATCH)
+              echo "##vso[task.setvariable variable=GITVERSION_FULLSEMVER;isOutput=true]$(GITVERSION_FULLSEMVER)"
+              echo "##vso[task.setvariable variable=GITVERSION_MAJORMINORPATCH;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
+              echo "##vso[task.setvariable variable=TagVersion;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
+              echo "##vso[task.setvariable variable=GITVERSION_NUGETVERSIONV2;isOutput=true]$(GITVERSION_NUGETVERSIONV2)"
+              echo "-------------------------------- "
+              set
+              echo "-------------------------------- "
+              echo "Now TagVersion: `$(TagVersion)` should be `$(GITVERSION_MAJORMINORPATCH)`"
+              echo "-------------------------------- "
+            name: SetVersionForFuture
+            modifyEnvironment: true
         
         - task: CMake@1
           displayName: "CMake Configure $(cmake.preset)"
