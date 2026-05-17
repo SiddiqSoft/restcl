@@ -17,7 +17,8 @@ jobs:
         - Agent.OS -equals Windows_NT
     variables:
       stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
-      TagVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+      stageVersion2: $[ stageDependencies.BuildLinux.Linux.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+      #TagVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
     steps:
       - checkout: none
       #- task: DownloadBuildArtifacts@0
@@ -26,20 +27,19 @@ jobs:
       #    downloadType: "single"
       #    artifactName: "release-assets"
       #    downloadPath: "$(Build.ArtifactStagingDirectory)"
-
-      - task: CmdLine@2
-        inputs:
-          script: |
-            echo "The version from the previous stage is $(stageVersion)"      
-            echo "Another: "
         
       - task: CmdLine@2
         displayName: "Echo variables for debugging"
         inputs:
           script: |
+            echo "-------------------------------- "
+            echo "The version from the previous stage is $(stageVersion)"
+            echo "The version from the previous stage is $(stageVersion2)"
+            echo "Another: TagVersion: $(TagVersion)"
             echo "PublishNuGet: $(PublishNuGet)"
             echo "PublishGitHub: $(PublishGitHub)"
             echo "TagVersion: $(TagVersion)"
+            echo "-------------------------------- "
             set 
       
       - task: DownloadBuildArtifacts@0
