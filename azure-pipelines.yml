@@ -147,8 +147,8 @@ stages:
   - stage: Publication
     displayName: Nuget Publication and GitHub Release
     dependsOn:
-      - BuildWindows
-      - BuildLinux
+      - StgBldWindows
+      - StgBldLinux
     condition: and(succeeded(), eq(variables['PublishGitHub'], true))
     jobs:
       - template: .ci/azure-pipelines-github-release-template.yml
