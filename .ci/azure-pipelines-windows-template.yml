@@ -21,8 +21,9 @@ parameters:
     default: false
 
 jobs:
-- job: WindowsBuild
+- job: WindowsBuild_${{ parameters.architecture }}
   displayName: ${{ parameters.displayName }}
+  condition: or(and(eq(${{ parameters.BuildX64 }}, true), eq(${{ parameters.architecture }}, 'x64')), eq(${{parameters.architecture}}, 'arm64')))
   workspace:
     clean: all
   pool:

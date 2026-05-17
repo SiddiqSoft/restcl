@@ -67,26 +67,25 @@ stages:
     condition: eq(${{ parameters.RunWindows }}, true)
     jobs:
         # This option is available only for x64 builds for Windows.
-      - ${{ if eq(parameters.BuildX64, true) }}:
-        - template: .ci/azure-pipelines-windows-template.yml
-          parameters:
-            displayName: Windows x64
-            architecture: x64
-            matrixConfigs:
-              Windows_x64_Release:
-                BuildType: Release
+      - template: .ci/azure-pipelines-windows-template.yml
+        parameters:
+          displayName: Windows x64
+          architecture: x64
+          matrixConfigs:
+            Windows_x64_Release:
+              BuildType: Release
+              BuildArchitecture: x64
+              cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
+              # This option is available for debug
+            ${{ if eq(parameters.BuildDebug, true) }}:
+              Windows_x64_Debug:
+                BuildType: Debug
                 BuildArchitecture: x64
                 cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-                # This option is available for debug
-              ${{ if eq(parameters.BuildDebug, true) }}:
-                Windows_x64_Debug:
-                  BuildType: Debug
-                  BuildArchitecture: x64
-                  cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-            runTests: ${{ parameters.RunTests }}
-            publishNuGet: ${{ parameters.PublishNuGet }}
-            BuildX64: ${{ parameters.BuildX64 }}
-            BuildDebug: ${{ parameters.BuildDebug }}
+          runTests: ${{ parameters.RunTests }}
+          publishNuGet: ${{ parameters.PublishNuGet }}
+          BuildX64: ${{ parameters.BuildX64 }}
+          BuildDebug: ${{ parameters.BuildDebug }}
       - template: .ci/azure-pipelines-windows-template.yml
         parameters:
           displayName: Windows arm64
