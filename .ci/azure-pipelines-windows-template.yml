@@ -75,7 +75,7 @@ jobs:
             echo "-------------------------------- "
             set
             echo "-------------------------------- "
-            echo "Now TagVersion: $(TagVersion)"
+            echo "Now TagVersion: `$(TagVersion)` should be `$(GITVERSION_MAJORMINORPATCH)`"
             echo "-------------------------------- "
           name: SetVersionForFuture
         

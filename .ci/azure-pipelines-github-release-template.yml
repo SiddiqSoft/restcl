@@ -33,8 +33,8 @@ jobs:
         inputs:
           script: |
             echo "-------------------------------- "
-            echo "The version from the previous stage is $(stageVersion)"
-            echo "The version from the previous stage is $(stageVersion2)"
+            echo "The version from the previous stage is `$(stageVersion)` .. `${{ variables['stageVersion'] }}` "
+            echo "The version from the previous stage is `$(stageVersion2)` .. `${{ variables['stageVersion2'] }}` "
             echo "Another: TagVersion: $(TagVersion)"
             echo "PublishNuGet: $(PublishNuGet)"
             echo "PublishGitHub: $(PublishGitHub)"
