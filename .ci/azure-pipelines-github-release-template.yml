@@ -41,8 +41,8 @@ jobs:
         inputs:
           script: |
             echo "PublishNuGet: $(PublishNuGet)"
-            echo "extraparam0: $(ExtraParam0)"
-            echo "extraparam1: $(ExtraParam1)"
+            echo "extraparam0: $(ExtraParam0). ${{ parameters.ExtraParam0 }}"
+            echo "extraparam1: $(ExtraParam1)   ${{ parameters.ExtraParam1 }}"
             echo "xtmp0: $(xtmp0)"
             echo "xtmp0a: $(xtmp0a)"
             echo "xtmp1: $(xtmp1)"
@@ -91,8 +91,8 @@ jobs:
         inputs:
           script: |
             echo "PublishNuGet: $(PublishNuGet)"
-            echo "extraparam0: $(ExtraParam0)"
-            echo "extraparam1: $(ExtraParam1)"
+            echo "extraparam0: $(ExtraParam0). ${{ parameters.ExtraParam0 }}"
+            echo "extraparam1: $(ExtraParam1)   ${{ parameters.ExtraParam1 }}"
             echo "xtmp0: $(xtmp0)"
             echo "xtmp0a: $(xtmp0a)"
             echo "xtmp1: $(xtmp1)"
