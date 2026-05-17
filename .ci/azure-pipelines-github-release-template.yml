@@ -7,7 +7,7 @@ parameters:
   - name: PublishGitHub
     type: boolean
     default: true
-  - name: PublishVersion
+  - name: ExtraParam
     type: string
     default: "0.0.0"
 
@@ -22,7 +22,7 @@ jobs:
       TagVersion: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
       XPublishVersion: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THATBUILDVERSION']]
       THISBUILDVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
-      XBUILDVERSION: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.BuildVersion']]
+      XBUILDVERSION: $[ variables['ExtraParam'] ]
       PUBLISHVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
 
     steps:
@@ -40,6 +40,7 @@ jobs:
           script: |
             echo "-------------------------------- "
             echo "PublishNuGet: $(PublishNuGet)"
+            echo "extraparam: $(ExtraParam)"
             echo "PublishGitHub: $(PublishGitHub)"
             echo "PublishVersion: $(PublishVersion)"
             echo "XPublishVersion: $(XPublishVersion)"
