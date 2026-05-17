@@ -143,7 +143,9 @@ stages:
                   LinuxCompiler: GCC
                   cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
             runTests: ${{ parameters.RunTests }}
-
+            
+    ##################################################################
+    # Stage: Publish the nuget package and release version to github
   - stage: Publication
     displayName: Nuget Publication and GitHub Release
     dependsOn:
