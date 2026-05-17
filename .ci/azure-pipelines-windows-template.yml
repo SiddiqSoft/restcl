@@ -73,7 +73,6 @@ jobs:
           echo ##vso[task.setvariable variable=TagVersion;isOutput=true]%GITVERSION_MAJORMINORPATCH%
           echo ##vso[task.setvariable variable=PUBLISHVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
           echo ##vso[task.setvariable variable=BUILDVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
-      modifyEnvironment: true
       
     - task: CMake@1
       displayName: "CMake Configure $(cmake.preset)"
