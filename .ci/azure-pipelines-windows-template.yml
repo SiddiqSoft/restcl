@@ -65,7 +65,7 @@ jobs:
         updateBuildNumber: true
     
     - script: |
-        echo "##vso[task.setvariable variable=VTAG;isOutput=true]$(GITVERSION_MAJORMINORPATCH)"
+        echo "##vso[task.setvariable variable=VTAG;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
       name: SETVER
 
     - script: |
