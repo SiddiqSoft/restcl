@@ -24,7 +24,7 @@ jobs:
       THISBUILDVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
       XBUILDVERSION: $[ variables['ExtraParam'] ]
       PUBLISHVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
-      fromVtag: $[ stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER.VTAG'] ]
+      fromVtag: $[ stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG'] ]
       fromVtag0: $[ stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0'] ]
 
     steps:
