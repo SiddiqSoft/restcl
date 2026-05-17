@@ -114,7 +114,7 @@ stages:
       - template: .ci/azure-pipelines-linux-template.yml
         parameters:
           displayName: Linux Clang
-          architecture: ${{Agent.OSArchitecture}}
+          architecture: $(AGENT_OSARCHITECTURE)
           matrixConfigs:
             Linux_Clang_Release:
               BuildType: Release
@@ -131,7 +131,7 @@ stages:
         - template: .ci/azure-pipelines-linux-template.yml
           parameters:
             displayName: Linux GCC
-            architecture: ${{Agent.OSArchitecture}}
+            architecture: $(AGENT_OSARCHITECTURE)
             matrixConfigs:
               Linux_GCC_Release:
                 BuildType: Release
@@ -156,4 +156,3 @@ stages:
           displayName: Nuget Publication and GitHub Release
           PublishNuGet: ${{ variables.PublishNuGet }}
           PublishGitHub: ${{ variables.PublishGitHub }}
-          PublishVersion: $[ stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion'] ]

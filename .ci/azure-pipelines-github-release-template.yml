@@ -20,7 +20,7 @@ jobs:
         - Agent.OS -equals Windows_NT
     variables:
       TagVersion: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
-      PublishVersion: $[stageDependencies.StgBldLinux.JobLinuxBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
+      XPublishVersion: $[stageDependencies.StgBldLinux.JobLinuxBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
       XBUILDVERSION: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.BuildVersion']]
 
     steps:
@@ -40,6 +40,7 @@ jobs:
             echo "PublishNuGet: $(PublishNuGet)"
             echo "PublishGitHub: $(PublishGitHub)"
             echo "PublishVersion: $(PublishVersion)"
+            echo "XPublishVersion: $(XPublishVersion)"
             echo "TagVersion: $(TagVersion)"
             echo "XBUILDVERSION: $(XBUILDVERSION)"
             echo "-------------------------------- "
