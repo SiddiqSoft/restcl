@@ -7,6 +7,9 @@ parameters:
   - name: PublishGitHub
     type: boolean
     default: true
+  - name: PublishVersion
+    type: string
+    default: "0.0.0"
 
 jobs:
   - job: GitHubRelease
@@ -34,12 +37,13 @@ jobs:
         inputs:
           script: |
             echo "-------------------------------- "
-            echo  "The version from the previous stage is $(stageVersion) .. $[variables['stageVersion']] "
-            echo "The version from the previous stage is $(stageVersion2) .. $[variables['stageVersion2']] "
-            echo "The version from the previous stage is $(stageVersion3) .. $[variables['stageVersion3']] "
+            echo  "The version from the previous stage is $(stageVersion) .. $[variables.stageVersion] "
+            echo "The version from the previous stage is $(stageVersion2) .. $[variables.stageVersion2] "
+            echo "The version from the previous stage is $(stageVersion3) .. $[variables.stageVersion3] "
             echo "Another: TagVersion: $(TagVersion)"
             echo "PublishNuGet: $(PublishNuGet)"
             echo "PublishGitHub: $(PublishGitHub)"
+            echo "PublishVersion: $(PublishVersion)"
             echo "TagVersion: $(TagVersion)"
             echo "TagVersion: $[TagVersion]"
             echo "-------------------------------- "
