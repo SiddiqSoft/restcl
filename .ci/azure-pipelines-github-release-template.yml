@@ -16,6 +16,11 @@ parameters:
 
 jobs:
   - job: GitHubRelease
+    variables:
+      xtmp0: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER.VTAG']]
+      xtmp0a: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG']]
+      xtmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
+      xtmp1a: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0_VTAG0']]
     displayName: GitHub Release
     pool:
       name: Default
@@ -38,6 +43,10 @@ jobs:
             echo "PublishNuGet: $(PublishNuGet)"
             echo "extraparam0: $(ExtraParam0)"
             echo "extraparam1: $(ExtraParam1)"
+            echo "xtmp0: $(xtmp0)"
+            echo "xtmp0a: $(xtmp0a)"
+            echo "xtmp1: $(xtmp1)"
+            echo "xtmp1a: $(xtmp1a)"
             echo "----------------------------------------------------------------"
             set 
       
