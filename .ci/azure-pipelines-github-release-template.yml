@@ -40,7 +40,7 @@ jobs:
           script: |
             echo "-------------------------------- "
             echo "PublishNuGet: $(PublishNuGet)"
-            echo "extraparam: $(ExtraParam)"
+            echo "extraparam: ${{ parameters.ExtraParam }}"
             echo "PublishGitHub: $(PublishGitHub)"
             echo "PublishVersion: $(PublishVersion)"
             echo "XPublishVersion: $(XPublishVersion)"
