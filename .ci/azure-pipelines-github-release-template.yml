@@ -36,9 +36,7 @@ jobs:
         inputs:
           script: |
             echo "PublishNuGet: $(PublishNuGet)"
-            echo "extraparam0: ${{ parameters.ExtraParam0 }}"
             echo "extraparam0: $(ExtraParam0)"
-            echo "extraparam1: ${{ parameters.ExtraParam1 }}"
             echo "extraparam1: $(ExtraParam1)"
             echo "----------------------------------------------------------------"
             set 
