@@ -16,9 +16,9 @@ jobs:
       demands:
         - Agent.OS -equals Windows_NT
     variables:
-      stageVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
-      stageVersion2: $[ stageDependencies.BuildLinux.Linux.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
-      stageVersion3: $[ stageDependencies.BuildLinux.Linux.outputs['version_step.GITVERSION_FULLSEMVER'] ]
+      stageVersion: $[stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.TagVersion']]
+      stageVersion2: $[stageDependencies.BuildLinux.Linux.version_step.outputs['version_step.TagVersion']]
+      stageVersion3: $[stageDependencies.BuildLinux.Linux.outputs['version_step.TagVersion']]
       #TagVersion: $[ stageDependencies.BuildWindows.WindowsBuildandTest.version_step.outputs['version_step.GITVERSION_FULLSEMVER'] ]
     steps:
       - checkout: none
