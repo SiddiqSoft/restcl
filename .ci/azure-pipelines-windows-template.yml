@@ -21,120 +21,120 @@ parameters:
     default: false
 
 jobs:
-  - ${{ if or(ne(parameters.architecture, 'x64'), eq(parameters.BuildX64, true)) }}:
-    - job: WindowsBuild_${{ parameters.architecture }}
-      displayName: ${{ parameters.displayName }}
-      workspace:
-        clean: all
-      pool:
-        name: Default
-        demands:
-          - Agent.OS -equals Windows_NT
-          - Agent.OSArchitecture -equals ${{ parameters.architecture }}
-      strategy:
-        matrix: ${{ parameters.matrixConfigs }}
-      steps:
-        - checkout: self
-          name: step1
+- job: WindowsBuild
+  displayName: ${{ parameters.displayName }}
+  workspace:
+    clean: all
+  pool:
+    name: Default
+    demands:
+      - Agent.OS -equals Windows_NT
+      - Agent.OSArchitecture -equals ${{ parameters.architecture }}
+  strategy:
+    matrix: ${{ parameters.matrixConfigs }}
+  steps:
+    - checkout: self
+      name: step1
 
-        - task: BatchScript@1
-          displayName: "Detect Visual Studio paths"
-          inputs:
-            filename: "$(System.DefaultWorkingDirectory)/.ci/pipeline_detect_vs_path.bat"
-            modifyEnvironment: true
+    - task: BatchScript@1
+      displayName: "Detect Visual Studio paths"
+      inputs:
+        filename: "$(System.DefaultWorkingDirectory)/.ci/pipeline_detect_vs_path.bat"
+        modifyEnvironment: true
 
-        - task: BatchScript@1
-          displayName: "Setup MSVC environment"
-          inputs:
-            filename: '$(VCVARS_PATH)'
-            arguments: '$(AGENT_OSARCHITECTURE)'
-            modifyEnvironment: true
+    - task: BatchScript@1
+      displayName: "Setup MSVC environment"
+      inputs:
+        filename: '$(VCVARS_PATH)'
+        arguments: '$(AGENT_OSARCHITECTURE)'
+        modifyEnvironment: true
 
-        - task: gitversion-setup@4
-          displayName: "Install GitVersion"
-          inputs:
-            versionSpec: "6.x"
-            preferLatestVersion: true
+    - task: gitversion-setup@4
+      displayName: "Install GitVersion"
+      inputs:
+        versionSpec: "6.x"
+        preferLatestVersion: true
 
-        - task: gitversion-execute@4
-          displayName: "Determine Version"
-          name: version_step
-          inputs:
-            useConfigFile: true
-            configFilePath: "GitVersion.yml"
-            updateBuildNumber: true
-        
-          # Save the calculated SemVer as an Azure DevOps output variable
-        - task: CmdLine@2
-          displayName: "Set TagVersion for future stages"
-          name: SetVersionForFuture
-          inputs:
-            targetType: "inline"
-            script: |
-              echo ##vso[task.setvariable variable=TagVersion;isOutput=true]$(GITVERSION_MAJORMINORPATCH)
-              echo ##vso[task.setvariable variable=PUBLISHVERSION;isOutput=true]$(GITVERSION_MAJORMINORPATCH)
-              echo ##vso[task.setvariable variable=BUILDVERSION;isOutput=true]$(GITVERSION_MAJORMINORPATCH)
+    - task: gitversion-execute@4
+      displayName: "Determine Version"
+      name: version_step
+      inputs:
+        useConfigFile: true
+        configFilePath: "GitVersion.yml"
+        updateBuildNumber: true
+    
+      # Save the calculated SemVer as an Azure DevOps output variable
+    - task: CmdLine@2
+      displayName: "Set TagVersion for future stages"
+      name: SetVersionForFuture
+      inputs:
+        targetType: "inline"
+        script: |
+          echo ##vso[task.setvariable variable=TagVersion;isOutput=true]%GITVERSION_MAJORMINORPATCH%
+          echo ##vso[task.setvariable variable=PUBLISHVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
+          echo ##vso[task.setvariable variable=BUILDVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
+      modifyEnvironment: true
+      
+    - task: CMake@1
+      displayName: "CMake Configure $(cmake.preset)"
+      inputs:
+        cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+        workingDirectory: "$(System.DefaultWorkingDirectory)"
 
-        - task: CMake@1
-          displayName: "CMake Configure $(cmake.preset)"
-          inputs:
-            cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
-            workingDirectory: "$(System.DefaultWorkingDirectory)"
+    - task: CMake@1
+      displayName: "CMake Build $(cmake.preset)"
+      inputs:
+        cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+        workingDirectory: "$(System.DefaultWorkingDirectory)"
+      condition: succeeded()
 
-        - task: CMake@1
-          displayName: "CMake Build $(cmake.preset)"
-          inputs:
-            cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
-            workingDirectory: "$(System.DefaultWorkingDirectory)"
-          condition: succeeded()
+    #- task: PublishBuildArtifacts@1
+    #  displayName: "Publish Windows build artifact $(cmake.preset)"
+    #  inputs:
+    #    PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+    #    ArtifactName: "build-$(cmake.preset)"
+    #    publishLocation: "Container"
+    #  condition: succeeded()
 
-        #- task: PublishBuildArtifacts@1
-        #  displayName: "Publish Windows build artifact $(cmake.preset)"
-        #  inputs:
-        #    PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-        #    ArtifactName: "build-$(cmake.preset)"
-        #    publishLocation: "Container"
-        #  condition: succeeded()
+    - task: CMake@1
+      displayName: "CMake Tests $(cmake.preset)"
+      inputs:
+        cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+      continueOnError: true
+      condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
 
-        - task: CMake@1
-          displayName: "CMake Tests $(cmake.preset)"
-          inputs:
-            cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
-          continueOnError: true
-          condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+      # Here we publish the results for Release build and for Debug only if those fail.
+    - task: PublishTestResults@2
+      displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
+      inputs:
+        testResultsFormat: "JUnit"
+        testRunTitle: "Tests $(cmake.preset)"
+        testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+        mergeTestResults: false
+        buildConfiguration: "$(BuildType)"
+      continueOnError: true
+      condition: and(succeeded(), eq(${{ parameters.runTests }}, true), or(eq(variables['BuildType'], 'Release'), failed()))
 
-          # Here we publish the results for Release build and for Debug only if those fail.
-        - task: PublishTestResults@2
-          displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
-          inputs:
-            testResultsFormat: "JUnit"
-            testRunTitle: "Tests $(cmake.preset)"
-            testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
-            mergeTestResults: false
-            buildConfiguration: "$(BuildType)"
-          continueOnError: true
-          condition: and(succeeded(), eq(${{ parameters.runTests }}, true), or(eq(variables['BuildType'], 'Release'), failed()))
+    - task: NuGetToolInstaller@1
+      displayName: "Install NuGet"
+      inputs:
+        versionSpec: ">=6.0.0-0"
+        checkLatest: true
+      condition: succeeded()
 
-        - task: NuGetToolInstaller@1
-          displayName: "Install NuGet"
-          inputs:
-            versionSpec: ">=6.0.0-0"
-            checkLatest: true
-          condition: succeeded()
+    - task: NuGetCommand@2
+      displayName: "NuGet pack v$(GITVERSION_MAJORMINORPATCH)"
+      inputs:
+        command: "pack"
+        packagesToPack: "pack/*.nuspec"
+        versioningScheme: "off"
+        buildProperties: "VERSION=$(GITVERSION_MAJORMINORPATCH)"
+      condition: succeeded()
 
-        - task: NuGetCommand@2
-          displayName: "NuGet pack v$(GITVERSION_MAJORMINORPATCH)"
-          inputs:
-            command: "pack"
-            packagesToPack: "pack/*.nuspec"
-            versioningScheme: "off"
-            buildProperties: "VERSION=$(GITVERSION_MAJORMINORPATCH)"
-          condition: succeeded()
-
-        - task: PublishBuildArtifacts@1
-          displayName: "Publish NuGet Artifacts"
-          inputs:
-            PathtoPublish: "$(Build.ArtifactStagingDirectory)"
-            ArtifactName: "nuget-packages"
-            publishLocation: "Container"
-          condition: succeeded()
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish NuGet Artifacts"
+      inputs:
+        PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+        ArtifactName: "nuget-packages"
+        publishLocation: "Container"
+      condition: succeeded()
