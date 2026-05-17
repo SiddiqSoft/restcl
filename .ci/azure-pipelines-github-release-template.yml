@@ -20,7 +20,7 @@ jobs:
         - Agent.OS -equals Windows_NT
     variables:
       TagVersion: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
-      XPublishVersion: $[stageDependencies.StgBldLinux.JobLinuxBuild_arm64.outputs['SetVersionForFuture.TagVersion']]
+      XPublishVersion: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.TagVersion']]
       XBUILDVERSION: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.BuildVersion']]
 
     steps:
