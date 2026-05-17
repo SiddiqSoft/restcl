@@ -21,7 +21,7 @@ jobs:
       xtmp0a: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG']]
       xtmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
       xtmp1a: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0_VTAG0']]
-    displayName: GitHub Release
+    displayName: Nuget Release
     pool:
       name: Default
       #demands:

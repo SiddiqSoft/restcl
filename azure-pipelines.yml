@@ -150,7 +150,7 @@ stages:
     dependsOn:
       - StgBldWindows
       - StgBldLinux
-    condition: and(succeeded(), eq(variables['PublishGitHub'], true))
+    condition: succeeded()
     variables:
       tmp0: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER.VTAG']]
       tmp0a: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG']]
