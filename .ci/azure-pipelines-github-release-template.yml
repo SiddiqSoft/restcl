@@ -43,6 +43,7 @@ jobs:
             echo "XPublishVersion: $(XPublishVersion)"
             echo "TagVersion: $(TagVersion)"
             echo "XBUILDVERSION: $(XBUILDVERSION)"
+            echo "ThisBuildVersion: $(ThisBuildVersion)"
             echo "-------------------------------- "
             set 
       
