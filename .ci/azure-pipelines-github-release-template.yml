@@ -24,6 +24,7 @@ jobs:
       stageVersion3: $[stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.BuildVersion']]
       TagVersion:    $[stageDependencies.BuildLinux.Linux.outputs['SetVersionForFuture.TagVersion']]
       PublishVersion: $[stageDependencies.BuildWindows.WindowsBuild.outputs['SetVersionForFuture.PUBLISHVERSION']]
+      XBUILDVERSION: $[stageDependencies.BuildWindows.WindowsBuild.outputs['SetVersionForFuture.BUILDVERSION']]
     steps:
       - checkout: none
       #- task: DownloadBuildArtifacts@0
@@ -48,6 +49,7 @@ jobs:
             echo "TagVersion: $(TagVersion)"
             echo "TagVersion: $[TagVersion]"
             echo "PublishVersion: $[ variables.PublishVersion ]"
+            echo "XBUILDVERSION: $(XBUILDVERSION)"
             echo "-------------------------------- "
             set 
       
