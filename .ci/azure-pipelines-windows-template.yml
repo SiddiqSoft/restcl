@@ -21,7 +21,8 @@ parameters:
     default: false
 
 jobs:
-- job: JobWindowsBuild_${{ parameters.architecture }}
+- job:
+  name: JobWindowsBuild_${{ parameters.architecture }}
   displayName: ${{ parameters.displayName }}
   condition: or(and(eq(${{parameters.BuildX64}}, true), eq('${{ parameters.architecture}}', 'x64')), eq('${{parameters.architecture}}', 'arm64') )
   workspace:
@@ -127,3 +128,7 @@ jobs:
         ArtifactName: "nuget-packages"
         publishLocation: "Container"
       condition: succeeded()
+
+    - script: |
+        echo "##vso[task.setvariable variable=VTAG0;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
+      name: SETVER0

@@ -12,7 +12,8 @@ parameters:
     default: true
 
 jobs:
-  - job: JobLinuxBuild
+  - job:
+    name: JobLinuxBuild
     displayName: ${{ parameters.displayName }}
     workspace:
       clean: all
@@ -39,20 +40,6 @@ jobs:
           useConfigFile: true
           configFilePath: "GitVersion.yml"
           updateBuildNumber: true
-        
-        # Set the version; according to the debug logs the ${GITVERSION_MAJORMINORPATCH} is expanded.
-      - script: |
-          echo "##vso[task.setvariable variable=VTAG;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
-        name: SETVER
-
-      - script: |
-          echo $(GITVERSION_MAJORMINORPATCH)
-          echo $(ThisBuildVersion) is set?
-          set THISBUILDVERSION=$(GITVERSION_MAJORMINORPATCH)
-          echo ThisBuildVersion is now $(ThisBuildVersion)
-          echo -------------------------------- 
-          set
-          echo --------------------------------
 
       - task: CMake@1
         displayName: "CMake Configure $(cmake.preset)"
@@ -92,3 +79,8 @@ jobs:
           buildConfiguration: "$(BuildType)"
         continueOnError: true
         condition: and(succeeded(), eq(${{ parameters.runTests }}, true), or(eq(variables['BuildType'], 'Release'), failed()))
+
+        # Set the version; according to the debug logs the ${GITVERSION_MAJORMINORPATCH} is expanded.
+      - script: |
+          echo "##vso[task.setvariable variable=VTAG;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
+        name: SETVER
