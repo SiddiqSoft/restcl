@@ -158,4 +158,4 @@ stages:
           displayName: Nuget and GitHub Release 
           PublishNuGet: ${{ variables.PublishNuGet }}
           PublishGitHub: ${{ variables.PublishGitHub }}
-          ExtraParam: $[ stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER.VTAG'] ]
+          ExtraParam: $[ stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER_VTAG'] ]
