@@ -23,6 +23,7 @@ jobs:
       XPublishVersion: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.TagVersion']]
       THISBUILDVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
       XBUILDVERSION: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SetVersionForFuture.BuildVersion']]
+      PUBLISHVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
 
     steps:
       - checkout: none
