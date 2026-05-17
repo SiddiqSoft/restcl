@@ -24,6 +24,8 @@ jobs:
       THISBUILDVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
       XBUILDVERSION: $[ variables['ExtraParam'] ]
       PUBLISHVERSION: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SetVersionForFuture.THISBUILDVERSION']]
+      fromVtag: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER.VTAG']]
+      fromVtag0: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
 
     steps:
       - checkout: none
@@ -47,6 +49,8 @@ jobs:
             echo "TagVersion: $(TagVersion)"
             echo "XBUILDVERSION: $(XBUILDVERSION)"
             echo "ThisBuildVersion: $(ThisBuildVersion)"
+            echo "fromVtag: $(fromVtag)"
+            echo "fromVtag0: $(fromVtag0)"
             echo "-------------------------------- "
             set 
       
