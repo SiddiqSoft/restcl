@@ -21,8 +21,8 @@ parameters:
     default: false
 
 jobs:
-  - ${{ if or(ne(parameters.architecture, 'x64'), eq(parameters.BuildX64, true)) }}:
-    - job: WindowsBuildandTest
+  ${{ if or(ne(parameters.architecture, 'x64'), eq(parameters.BuildX64, true)) }}:
+    - job: WindowsBuild_${{ parameters.architecture }}
       displayName: ${{ parameters.displayName }}
       workspace:
         clean: all
@@ -67,27 +67,14 @@ jobs:
           # Save the calculated SemVer as an Azure DevOps output variable
         - task: CmdLine@2
           displayName: "Set TagVersion for future stages"
+          name: SetVersionForFuture
           inputs:
             targetType: "inline"
             script: |
-              echo "-------------------------------- "
-              echo "The version from GitVersion is $(GITVERSION_MAJORMINORPATCH)"
-              echo "Setting TagVersion to $(GITVERSION_MAJORMINORPATCH) for future stages..."
-              echo ##vso[task.setvariable variable=TagVersion;isOutput=true]%GITVERSION_MAJORMINORPATCH%
-              set "PUBLISHVERSION=%GITVERSION_MAJORMINORPATCH)%"
-              set "TAGVERSION=%GITVERSION_MAJORMINORPATCH)%"
-              set "BUILDVERSION=%GITVERSION_MAJORMINORPATCH)%"
-              echo ##vso[task.setvariable variable=PUBLISHVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
-              echo ##vso[task.setvariable variable=TAGVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
-              echo ##vso[task.setvariable variable=BUILDVERSION;isOutput=true]%GITVERSION_MAJORMINORPATCH%
-              echo "-------------------------------- "
-              set
-              echo "-------------------------------- "
-              echo "Now TagVersion: :$(TagVersion) should be :$(GITVERSION_MAJORMINORPATCH)"
-              echo "-------------------------------- "
-            name: SetVersionForFuture
-            modifyEnvironment: true
-        
+              echo ##vso[task.setvariable variable=TagVersion;isOutput=true]$(GITVERSION_MAJORMINORPATCH)
+              echo ##vso[task.setvariable variable=PUBLISHVERSION;isOutput=true]$(GITVERSION_MAJORMINORPATCH)
+              echo ##vso[task.setvariable variable=BUILDVERSION;isOutput=true]$(GITVERSION_MAJORMINORPATCH)
+
         - task: CMake@1
           displayName: "CMake Configure $(cmake.preset)"
           inputs:
