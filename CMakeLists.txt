@@ -26,6 +26,7 @@ project(restcl
 # ____________________________________
 # Options; define and declare defaults
 option(${PROJECT_NAME}_BUILD_TESTS "${PROJECT_NAME} - Build tests. Uncheck for install only runs" OFF)
+option(CI_BUILDID "Version of this build" "0.0.0")
 
 # ____________________________________
 #  Library Definition
