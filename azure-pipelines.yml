@@ -61,9 +61,6 @@ variables:
     PublishGitHub: ${{ parameters.PublishGitHub }}
   ThisAgentOS: $(Agent.OS)
   ThisAgentArch: $(Agent.OSArchitecture)
-  THISBUILDVERSION: "0.0.0"
-  THATBUILDVERSION: "9.9.8"
-  VTAG: "unset"
 
 stages:
   - stage: StgBldWindows
