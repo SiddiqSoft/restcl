@@ -162,13 +162,15 @@ stages:
         displayName: Nuget Release 
         PublishNuGet: ${{ variables.PublishNuGet }}
         PublishGitHub: ${{ variables.PublishGitHub }}
-        ExtraParam0: $(tmp0)
-        ExtraParam1: $(tmp1)
+        TagVersion: ${{ variables.tmp0 }}
+        ExtraParam0: ${{ variables.tmp0 }}
+        ExtraParam1: ${{ variables.tmp1 }}
     - template: .ci/azure-pipelines-github-release-template.yml
       parameters:
         displayName: GitHub Release 
         PublishNuGet: ${{ variables.PublishNuGet }}
         PublishGitHub: ${{ variables.PublishGitHub }}
-        ExtraParam0: $(tmp0)
-        ExtraParam1: $(tmp1)
+        TagVersion: ${{ variables.tmp0 }}
+        ExtraParam0: ${{ variables.tmp0 }}
+        ExtraParam1: ${{ variables.tmp1 }}
 

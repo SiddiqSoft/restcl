@@ -7,6 +7,9 @@ parameters:
   - name: PublishGitHub
     type: boolean
     default: true
+  - name: TagVersion
+    type: string
+    default: "0.0.0"
   - name: ExtraParam0
     type: string
     default: "0.0.0"
@@ -47,6 +50,7 @@ jobs:
             echo "xtmp0a: $(xtmp0a)"
             echo "xtmp1: $(xtmp1)"
             echo "xtmp1a: $(xtmp1a)"
+            echo "TagVersion: $(TagVersion). ${{ parameters.TagVersion }}"
             echo "----------------------------------------------------------------"
             set 
       
