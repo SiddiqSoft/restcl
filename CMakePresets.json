@@ -16,7 +16,8 @@
             },
             "cacheVariables": {
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
-                "restcl_BUILD_TESTS": "ON"
+                "restcl_BUILD_TESTS": "ON",
+                "CI_BUILDID": "0.0.0"
             }
         },
         {
@@ -155,12 +156,11 @@
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
             "generator": "Ninja Multi-Config",
+            "inherits": "Project-Base",
             "cacheVariables": {
                 "CMAKE_MAKE_PROGRAM": "ninja.exe",
                 "CMAKE_C_COMPILER": "cl.exe",
-                "CMAKE_CXX_COMPILER": "cl.exe",
-                "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
-                "restcl_BUILD_TESTS": "ON"
+                "CMAKE_CXX_COMPILER": "cl.exe"
             },
             "environment": {
                 "CTEST_PARALLEL_LEVEL": "0",
