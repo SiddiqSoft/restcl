@@ -1,9 +1,6 @@
 parameters:
   - name: displayName
     type: string
-  - name: PublishNuGet
-    type: boolean
-    default: true
   - name: PublishGitHub
     type: boolean
     default: true

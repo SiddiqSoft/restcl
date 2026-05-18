@@ -4,9 +4,6 @@ parameters:
   - name: PublishNuGet
     type: boolean
     default: true
-  - name: PublishGitHub
-    type: boolean
-    default: true
   - name: TagVersion
     type: string
     default: "notset"

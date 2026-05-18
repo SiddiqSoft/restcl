@@ -340,7 +340,6 @@ stages:
         parameters:
           displayName: Nuget Release 
           PublishNuGet: ${{ variables.PublishNuGet }}
-          PublishGitHub: ${{ variables.PublishGitHub }}
           TagVersion: $[ build.buildNumber]  # Use build number as version
       
       # ====================================================================
@@ -352,6 +351,5 @@ stages:
       - template: .ci/az-publish-github.yml
         parameters:
           displayName: GitHub Release 
-          PublishNuGet: ${{ variables.PublishNuGet }}
           PublishGitHub: ${{ variables.PublishGitHub }}
           TagVersion: $[ build.buildNumber]  # Use build number as version
