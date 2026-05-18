@@ -10,8 +10,8 @@ jobs:
     displayName: Nuget Release
     pool:
       name: Default
-      #demands:
-      #  - Agent.OS -equals Windows_NT
+      demands:
+        - Agent.OS -equals Windows_NT # Picking other than windows causes occasional issues with Nuget.
     
     variables:
       TagVersion: $(Build.BuildNumber)
