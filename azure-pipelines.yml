@@ -155,6 +155,7 @@ stages:
     variables:
       tmp: $[ variables.TagVersion ]
       tmp0: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER.VTAG']]
+      tmp2: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER2.TagVersion']]
       tmp0a: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG']]
       tmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
       tmp1a: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0_VTAG0']]
