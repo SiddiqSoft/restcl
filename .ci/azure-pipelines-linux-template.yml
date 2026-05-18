@@ -86,5 +86,5 @@ jobs:
 
         # Set the version; according to the debug logs the ${GITVERSION_MAJORMINORPATCH} is expanded.
       - script: |
-          $TagVersion = "${GITVERSION_MAJORMINORPATCH}"
+          echo "##vso[task.setvariable variable=TagVersion;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
         name: SETVER2
