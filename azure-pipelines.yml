@@ -103,7 +103,7 @@ parameters:
   # Build Configuration Parameters
   # ========================================================================
   - name: BuildX64
-    displayName: "BuildX64 - Check to enable the x64 builds"
+    displayName: "BuildX64 - Check to enable the x64 builds (windows only)"
     type: boolean
     default: true
     # Description: Enable x64 architecture builds (in addition to default arm64)

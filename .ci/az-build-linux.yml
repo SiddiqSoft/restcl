@@ -47,7 +47,7 @@ parameters:
     # Description: Whether to run tests after building
     # When true: Runs ctest and publishes test results
     # When false: Skips test execution
-    
+
   - name: matrixConfigs
     type: object
     # Description: Matrix configuration for build types and compilers
@@ -61,6 +61,8 @@ parameters:
     #     LinuxCompiler: Clang
     #     cmake.preset: Linux-Clang-Debug
     # Used in: Strategy matrix for parallel builds
+    # Keep this parameter last otherwise we will end up getting an invalid
+    # argument to the build matrix below.
 
 # ============================================================================
 # JOBS
