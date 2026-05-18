@@ -340,7 +340,7 @@ stages:
         parameters:
           displayName: Nuget Release 
           PublishNuGet: ${{ variables.PublishNuGet }}
-          TagVersion: $[ build.buildNumber]  # Use build number as version
+          TagVersion: $(Build.BuildNumber)  # Use build number as version
       
       # ====================================================================
       # GitHub Release Job
@@ -352,4 +352,4 @@ stages:
         parameters:
           displayName: GitHub Release 
           PublishGitHub: ${{ variables.PublishGitHub }}
-          TagVersion: $[ build.buildNumber]  # Use build number as version
+          TagVersion: $(Build.BuildNumber)  # Use build number as version
