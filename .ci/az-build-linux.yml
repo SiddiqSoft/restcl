@@ -1,0 +1,314 @@
+# ============================================================================
+# Azure Pipelines Linux Build Template
+# ============================================================================
+#
+# Purpose: Build the project on Linux with Clang or GCC compiler
+# Called by: azure-pipelines.yml (StgBldLinux stage)
+# Triggers: When RunLinux parameter is true
+#
+# This template:
+# 1. Builds the project on Linux with Clang or GCC compiler
+# 2. Supports Release and Debug build types
+# 3. Runs tests (optional)
+# 4. Publishes build artifacts
+# 5. Saves version information for cross-stage sharing
+#
+# Requirements:
+# - Self-hosted build agents with CMake and Ninja installed
+# - CMake and Ninja must be available in PATH
+# - Clang 21 or better (for Clang builds)
+# - GCC 16 or better (for GCC builds)
+# - Linux operating system
+#
+# Key Differences from Windows Template:
+# - No NuGet package creation (NuGet is Windows-only)
+# - Saves version to files for cross-stage sharing
+# - Supports both Clang and GCC compilers
+# - Includes ASAN and code coverage for Debug builds
+#
+# ============================================================================
+
+# ============================================================================
+# PARAMETERS
+# ============================================================================
+# Parameters passed from the main pipeline (azure-pipelines.yml)
+# 
+# IMPORTANT: Parameters use compile-time syntax ${{ parameters.name }}
+# They are evaluated during pipeline parsing, not during job execution
+parameters:
+  - name: displayName
+    type: string
+    # Description: Display name for the job in Azure DevOps UI
+    # Example: "Linux Clang" or "Linux GCC"
+    
+  - name: matrixConfigs
+    type: object
+    # Description: Matrix configuration for build types and compilers
+    # Example:
+    #   Linux_Clang_Release:
+    #     BuildType: Release
+    #     LinuxCompiler: Clang
+    #     cmake.preset: Linux-Clang-Release
+    #   Linux_Clang_Debug:
+    #     BuildType: Debug
+    #     LinuxCompiler: Clang
+    #     cmake.preset: Linux-Clang-Debug
+    # Used in: Strategy matrix for parallel builds
+    
+  - name: runTests
+    type: boolean
+    default: true
+    # Description: Whether to run tests after building
+    # When true: Runs ctest and publishes test results
+    # When false: Skips test execution
+
+# ============================================================================
+# JOBS
+# ============================================================================
+# Job definition for Linux builds
+jobs:
+  # ========================================================================
+  # Linux Build Job
+  # ========================================================================
+  # Builds the library on Linux with Clang or GCC compiler
+  # Supports Release and Debug build types
+  # Runs tests and publishes artifacts
+  - job: JobLinuxBuild
+    displayName: ${{ parameters.displayName }}
+    
+    # ====================================================================
+    # WORKSPACE CONFIGURATION
+    # ====================================================================
+    # Clean workspace before each build
+    workspace:
+      clean: all
+      # Removes all files from previous builds
+      # Ensures clean build environment
+    
+    # ====================================================================
+    # AGENT POOL CONFIGURATION
+    # ====================================================================
+    # Specifies which build agent to use
+    pool:
+      name: Default
+      # Uses default agent pool
+      # Requires: Self-hosted agents with specific capabilities
+      demands:
+        - Agent.OS -equals Linux
+        # Requires: Linux operating system
+    
+    # ====================================================================
+    # STRATEGY MATRIX
+    # ====================================================================
+    # Defines matrix for parallel builds
+    # Creates separate job for each matrix configuration
+    strategy:
+      matrix: ${{ parameters.matrixConfigs }}
+      # Example matrix:
+      #   Linux_Clang_Release:
+      #     BuildType: Release
+      #     LinuxCompiler: Clang
+      #     cmake.preset: Linux-Clang-Release
+      #   Linux_Clang_Debug:
+      #     BuildType: Debug
+      #     LinuxCompiler: Clang
+      #     cmake.preset: Linux-Clang-Debug
+      #   Linux_GCC_Release:
+      #     BuildType: Release
+      #     LinuxCompiler: GCC
+      #     cmake.preset: Linux-GCC-Release
+    
+    # ====================================================================
+    # BUILD STEPS
+    # ====================================================================
+    # Sequential steps executed in order
+    steps:
+      # ====================================================================
+      # Step 1: Checkout Source Code
+      # ====================================================================
+      # Clones the repository to the build agent
+      - checkout: self
+        name: step1
+        # Checks out the current repository
+        # Makes source code available for build
+      
+      # ====================================================================
+      # Step 2: Install GitVersion
+      # ====================================================================
+      # Installs GitVersion tool for version detection
+      # GitVersion reads git tags and generates version numbers
+      - task: gitversion-setup@4
+        displayName: "Install GitVersion"
+        inputs:
+          versionSpec: "6.x"
+          # Version: 6.x (latest 6.x version)
+          preferLatestVersion: true
+          # Prefer latest version within spec
+      
+      # ====================================================================
+      # Step 3: Determine Version
+      # ====================================================================
+      # Runs GitVersion to determine semantic version
+      # Reads GitVersion.yml configuration
+      # Generates version variables for build
+      - task: gitversion-execute@4
+        displayName: "Determine Version"
+        name: version_step
+        # Step name: version_step
+        # Used to reference outputs from this step
+        inputs:
+          useConfigFile: true
+          # Use GitVersion.yml configuration file
+          configFilePath: "GitVersion.yml"
+          # Configuration file location
+          updateBuildNumber: true
+          # Update Azure DevOps build number with version
+        # Output variables:
+        # - GITVERSION_MAJORMINORPATCH: e.g., "1.2.3"
+        # - GITVERSION_SEMVER: e.g., "1.2.3-beta.1"
+        # - GITVERSION_FULLSEMVER: e.g., "1.2.3-beta.1+5.g1234567"
+      
+      # ====================================================================
+      # Step 4: CMake Configure
+      # ====================================================================
+      # Runs CMake to configure the build
+      # Generates build files (Makefiles or Ninja build files)
+      - task: CMake@1
+        displayName: "CMake Configure $(cmake.preset)"
+        inputs:
+          cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+          # Arguments:
+          # --preset $(cmake.preset): Use CMake preset (e.g., Linux-Clang-Release)
+          # -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH): Set build ID to version
+          # -DCPM_SOURCE_CACHE: Cache for C++ package manager
+          workingDirectory: "$(System.DefaultWorkingDirectory)"
+          # Working directory: Repository root
+      
+      # ====================================================================
+      # Step 5: CMake Build
+      # ====================================================================
+      # Runs CMake to build the library
+      # Compiles source code and links libraries
+      - task: CMake@1
+        displayName: "CMake Build $(cmake.preset)"
+        inputs:
+          cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+          # Arguments:
+          # --build: Build the project
+          # --preset $(cmake.preset): Use CMake preset
+          # -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH): Set build ID
+          # -DCPM_SOURCE_CACHE: Cache for C++ package manager
+          workingDirectory: "$(System.DefaultWorkingDirectory)"
+          # Working directory: Repository root
+        condition: succeeded()
+        # Only run if previous steps succeeded
+      
+      # ====================================================================
+      # Step 6: Save Version to Files
+      # ====================================================================
+      # Saves version information to files for cross-stage sharing
+      # This is the only safe approach to share version across stages
+      # and template files in Azure Pipelines
+      - bash: |
+          echo "${GITVERSION_MAJORMINORPATCH}" > TagVersion.txt
+          echo "${GITVERSION_FULLSEMVER}" > FullSemVer.txt
+        displayName: "Save version to file"
+        # Creates two files:
+        # - TagVersion.txt: Contains MAJOR.MINOR.PATCH version
+        # - FullSemVer.txt: Contains full semantic version with metadata
+        # These files are used by Publication stage to get version info
+      
+      # ====================================================================
+      # Step 7: Set Build Number (Main/Master Branch)
+      # ====================================================================
+      # Sets build number to MAJOR.MINOR.PATCH on main/master branches
+      # This creates clean version numbers for releases
+      - script: |
+          echo "##vso[build.updateBuildNumber]${GITVERSION_MAJORMINORPATCH}"
+        displayName: "Set Build Number to $(GITVERSION_MAJORMINORPATCH)"
+        # Updates Azure DevOps build number
+        # Example: "1.2.3"
+        condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+        # Only run if:
+        # - Previous steps succeeded
+        # - Building on main or master branch
+      
+      # ====================================================================
+      # Step 8: Set Build Number (Non-Main/Master Branch)
+      # ====================================================================
+      # Sets build number to SEMVER on non-main/master branches
+      # This creates pre-release version numbers for development
+      - script: |
+          echo "##vso[build.updateBuildNumber]${GITVERSION_SEMVER}"
+        displayName: "Set Build Number to $(GITVERSION_SEMVER)"
+        # Updates Azure DevOps build number
+        # Example: "1.2.3-beta.1"
+        condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
+        # Only run if:
+        # - Previous steps succeeded
+        # - NOT building on main or master branch
+      
+      # ====================================================================
+      # Step 9: Publish Build Artifacts
+      # ====================================================================
+      # Publishes build output as artifacts
+      # Makes build available for download and subsequent stages
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish Linux build artifact $(cmake.preset)"
+        inputs:
+          PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+          # Path to publish: Build output directory
+          ArtifactName: "build-$(cmake.preset)"
+          # Artifact name: e.g., "build-Linux-Clang-Release"
+          publishLocation: "Container"
+          # Publish to: Azure DevOps artifact container
+        condition: succeeded()
+        # Only run if previous steps succeeded
+      
+      # ====================================================================
+      # Step 10: Run Tests
+      # ====================================================================
+      # Runs ctest to execute test suite
+      # Generates JUnit XML test results
+      # For Debug builds: Includes ASAN (Address Sanitizer) output
+      - task: CMake@1
+        displayName: "CMake Tests $(cmake.preset)"
+        inputs:
+          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+          # Arguments:
+          # -E chdir: Change directory to tests directory
+          # ctest: Run tests
+          # --output-junit: Output JUnit XML format
+          # --output-on-failure: Show output for failed tests
+        continueOnError: true
+        # Continue even if tests fail (don't stop pipeline)
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+        # Only run if:
+        # - Previous steps succeeded
+        # - runTests parameter is true
+      
+      # ====================================================================
+      # Step 11: Publish Test Results
+      # ====================================================================
+      # Publishes test results to Azure DevOps
+      # Makes test results visible in pipeline UI
+      - task: PublishTestResults@2
+        displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
+        inputs:
+          testResultsFormat: "JUnit"
+          # Format: JUnit XML
+          testRunTitle: "Tests $(cmake.preset)"
+          # Title: e.g., "Tests Linux-Clang-Release"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+          # Test results file location
+          mergeTestResults: false
+          # Don't merge with other test results
+          buildConfiguration: "$(BuildType)"
+          # Build configuration: Release or Debug
+        continueOnError: true
+        # Continue even if publishing fails
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true), or(eq(variables['BuildType'], 'Release'), failed()))
+        # Only run if:
+        # - Previous steps succeeded
+        # - runTests parameter is true
+        # - Building Release OR tests failed

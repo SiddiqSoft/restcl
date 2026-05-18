@@ -1,0 +1,411 @@
+# ============================================================================
+# Azure Pipelines Windows Build Template
+# ============================================================================
+#
+# Purpose: Build the project on Windows with MSVC compiler
+# Called by: azure-pipelines.yml (StgBldWindows stage)
+# Triggers: When RunWindows parameter is true
+#
+# This template:
+# 1. Builds the project on Windows with MSVC compiler
+# 2. Supports x64 and arm64 architectures
+# 3. Runs tests (optional)
+# 4. Creates NuGet packages
+# 5. Publishes build artifacts
+#
+# Requirements:
+# - Self-hosted build agents with CMake and Ninja installed
+# - CMake and Ninja must be available in PATH
+# - Visual Studio 2022 or later
+# - Windows SDK
+#
+# ============================================================================
+
+# ============================================================================
+# PARAMETERS
+# ============================================================================
+# Parameters passed from the main pipeline (azure-pipelines.yml)
+# 
+# IMPORTANT: Parameters use compile-time syntax ${{ parameters.name }}
+# They are evaluated during pipeline parsing, not during job execution
+parameters:
+  - name: displayName
+    type: string
+    # Description: Display name for the job in Azure DevOps UI
+    # Example: "Windows x64" or "Windows arm64"
+    
+  - name: architecture
+    type: string
+    # Description: Target architecture for the build
+    # Values: "x64" or "arm64"
+    # Used in: Job name, agent demands, condition logic
+    
+  - name: matrixConfigs
+    type: object
+    # Description: Matrix configuration for build types
+    # Example:
+    #   Windows_x64_Release:
+    #     BuildType: Release
+    #     BuildArchitecture: x64
+    #     cmake.preset: Windows-x64-Release
+    # Used in: Strategy matrix for parallel builds
+    
+  - name: runTests
+    type: boolean
+    default: true
+    # Description: Whether to run tests after building
+    # When true: Runs ctest and publishes test results
+    # When false: Skips test execution
+    
+  - name: publishNuGet
+    type: boolean
+    default: false
+    # Description: Whether to publish NuGet packages
+    # Note: Currently not used in this template
+    # Reserved for future use
+    
+  - name: BuildX64
+    type: boolean
+    default: false
+    # Description: Enable x64 architecture builds
+    # When true: Allows x64 builds to run
+    # When false: Skips x64 builds (only arm64 runs)
+    
+  - name: BuildDebug
+    type: boolean
+    default: false
+    # Description: Enable Debug build type
+    # When true: Includes Debug builds in matrix
+    # When false: Only Release builds run
+
+# ============================================================================
+# JOBS
+# ============================================================================
+# Job definition for Windows builds
+jobs:
+  # ========================================================================
+  # Windows Build Job
+  # ========================================================================
+  # Builds the library on Windows with MSVC compiler
+  # Supports x64 and arm64 architectures
+  # Runs tests and creates NuGet packages
+  - job: JobWindowsBuild_${{ parameters.architecture }}
+    displayName: ${{ parameters.displayName }}
+    
+    # ====================================================================
+    # JOB CONDITION
+    # ====================================================================
+    # Controls when this job runs based on parameters
+    # Logic:
+    # - If BuildX64 is true AND architecture is x64: Run
+    # - OR if architecture is arm64: Run
+    # - Otherwise: Skip
+    condition: or(and(eq(${{parameters.BuildX64}}, true), eq('${{ parameters.architecture}}', 'x64')), eq('${{parameters.architecture}}', 'arm64') )
+    
+    # ====================================================================
+    # WORKSPACE CONFIGURATION
+    # ====================================================================
+    # Clean workspace before each build
+    workspace:
+      clean: all
+      # Removes all files from previous builds
+      # Ensures clean build environment
+    
+    # ====================================================================
+    # AGENT POOL CONFIGURATION
+    # ====================================================================
+    # Specifies which build agent to use
+    pool:
+      name: Default
+      # Uses default agent pool
+      # Requires: Self-hosted agents with specific capabilities
+      demands:
+        - Agent.OS -equals Windows_NT
+        # Requires: Windows operating system
+        - Agent.OSArchitecture -equals ${{ parameters.architecture }}
+        # Requires: Matching architecture (x64 or arm64)
+    
+    # ====================================================================
+    # STRATEGY MATRIX
+    # ====================================================================
+    # Defines matrix for parallel builds
+    # Creates separate job for each matrix configuration
+    strategy:
+      matrix: ${{ parameters.matrixConfigs }}
+      # Example matrix:
+      #   Windows_x64_Release:
+      #     BuildType: Release
+      #     BuildArchitecture: x64
+      #     cmake.preset: Windows-x64-Release
+      #   Windows_x64_Debug:
+      #     BuildType: Debug
+      #     BuildArchitecture: x64
+      #     cmake.preset: Windows-x64-Debug
+    
+    # ====================================================================
+    # BUILD STEPS
+    # ====================================================================
+    # Sequential steps executed in order
+    steps:
+      # ====================================================================
+      # Step 1: Checkout Source Code
+      # ====================================================================
+      # Clones the repository to the build agent
+      - checkout: self
+        name: step1
+        # Checks out the current repository
+        # Makes source code available for build
+      
+      # ====================================================================
+      # Step 2: Detect Visual Studio Paths
+      # ====================================================================
+      # Runs batch script to find Visual Studio installation
+      # Sets environment variables for MSVC compiler
+      - task: BatchScript@1
+        displayName: "Detect Visual Studio paths"
+        inputs:
+          filename: "$(System.DefaultWorkingDirectory)/.ci/pipeline_detect_vs_path.bat"
+          # Script: .ci/pipeline_detect_vs_path.bat
+          # Purpose: Finds Visual Studio installation directory
+          # Output: Sets VCVARS_PATH environment variable
+          modifyEnvironment: true
+          # Modifies environment for subsequent steps
+      
+      # ====================================================================
+      # Step 3: Setup MSVC Environment
+      # ====================================================================
+      # Runs vcvars batch script to setup MSVC compiler environment
+      # Sets up compiler, linker, and build tools
+      - task: BatchScript@1
+        displayName: "Setup MSVC environment"
+        inputs:
+          filename: '$(VCVARS_PATH)'
+          # Script: vcvars batch file (detected in previous step)
+          # Purpose: Sets up MSVC compiler environment
+          arguments: '$(AGENT_OSARCHITECTURE)'
+          # Argument: Architecture (x64 or arm64)
+          # Configures compiler for target architecture
+          modifyEnvironment: true
+          # Modifies environment for subsequent steps
+      
+      # ====================================================================
+      # Step 4: Install GitVersion
+      # ====================================================================
+      # Installs GitVersion tool for version detection
+      # GitVersion reads git tags and generates version numbers
+      - task: gitversion-setup@4
+        displayName: "Install GitVersion"
+        inputs:
+          versionSpec: "6.x"
+          # Version: 6.x (latest 6.x version)
+          preferLatestVersion: true
+          # Prefer latest version within spec
+      
+      # ====================================================================
+      # Step 5: Determine Version
+      # ====================================================================
+      # Runs GitVersion to determine semantic version
+      # Reads GitVersion.yml configuration
+      # Generates version variables for build
+      - task: gitversion-execute@4
+        displayName: "Determine Version"
+        name: version_step
+        # Step name: version_step
+        # Used to reference outputs from this step
+        inputs:
+          useConfigFile: true
+          # Use GitVersion.yml configuration file
+          configFilePath: "GitVersion.yml"
+          # Configuration file location
+          updateBuildNumber: true
+          # Update Azure DevOps build number with version
+        # Output variables:
+        # - GITVERSION_MAJORMINORPATCH: e.g., "1.2.3"
+        # - GITVERSION_SEMVER: e.g., "1.2.3-beta.1"
+      
+      # ====================================================================
+      # Step 6: CMake Configure
+      # ====================================================================
+      # Runs CMake to configure the build
+      # Generates build files (Visual Studio project files)
+      - task: CMake@1
+        displayName: "CMake Configure $(cmake.preset)"
+        inputs:
+          cmakeArgs: "--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+          # Arguments:
+          # --preset $(cmake.preset): Use CMake preset (e.g., Windows-x64-Release)
+          # -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH): Set build ID to version
+          # -DCPM_SOURCE_CACHE: Cache for C++ package manager
+          workingDirectory: "$(System.DefaultWorkingDirectory)"
+          # Working directory: Repository root
+      
+      # ====================================================================
+      # Step 7: CMake Build
+      # ====================================================================
+      # Runs CMake to build the library
+      # Compiles source code and links libraries
+      - task: CMake@1
+        displayName: "CMake Build $(cmake.preset)"
+        inputs:
+          cmakeArgs: "--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH) -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache"
+          # Arguments:
+          # --build: Build the project
+          # --preset $(cmake.preset): Use CMake preset
+          # -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH): Set build ID
+          # -DCPM_SOURCE_CACHE: Cache for C++ package manager
+          workingDirectory: "$(System.DefaultWorkingDirectory)"
+          # Working directory: Repository root
+        condition: succeeded()
+        # Only run if previous steps succeeded
+      
+      # ====================================================================
+      # Step 8: Set Build Number (Main/Master Branch)
+      # ====================================================================
+      # Sets build number to MAJOR.MINOR.PATCH on main/master branches
+      # This creates clean version numbers for releases
+      - task: PowerShell@2
+        displayName: "Set Build Number to $(GITVERSION_MAJORMINORPATCH)"
+        inputs:
+          targetType: "inline"
+          # Inline PowerShell script
+          script: |
+            Write-Host "##vso[build.updateBuildNumber]$(GITVERSION_MAJORMINORPATCH)"
+            # Updates Azure DevOps build number
+            # Example: "1.2.3"
+        condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+        # Only run if:
+        # - Previous steps succeeded
+        # - Building on main or master branch
+      
+      # ====================================================================
+      # Step 9: Set Build Number (Non-Main/Master Branch)
+      # ====================================================================
+      # Sets build number to SEMVER on non-main/master branches
+      # This creates pre-release version numbers for development
+      - task: PowerShell@2
+        displayName: "Set Build Number to $(GITVERSION_SEMVER)"
+        inputs:
+          targetType: "inline"
+          # Inline PowerShell script
+          script: |
+            Write-Host "##vso[build.updateBuildNumber]$(GITVERSION_SEMVER)"
+            # Updates Azure DevOps build number
+            # Example: "1.2.3-beta.1+5.g1234567"
+        condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master')))
+        # Only run if:
+        # - Previous steps succeeded
+        # - NOT building on main or master branch
+      
+      # ====================================================================
+      # Step 10: Publish Build Artifacts
+      # ====================================================================
+      # Publishes build output as artifacts
+      # Makes build available for download and subsequent stages
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish Windows build artifact $(cmake.preset)"
+        inputs:
+          PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+          # Path to publish: Build output directory
+          ArtifactName: "build-$(cmake.preset)"
+          # Artifact name: e.g., "build-Windows-x64-Release"
+          publishLocation: "Container"
+          # Publish to: Azure DevOps artifact container
+        condition: succeeded()
+        # Only run if previous steps succeeded
+      
+      # ====================================================================
+      # Step 11: Run Tests
+      # ====================================================================
+      # Runs ctest to execute test suite
+      # Generates JUnit XML test results
+      - task: CMake@1
+        displayName: "CMake Tests $(cmake.preset)"
+        inputs:
+          cmakeArgs: "-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure"
+          # Arguments:
+          # -E chdir: Change directory to tests directory
+          # ctest: Run tests
+          # --output-junit: Output JUnit XML format
+          # --output-on-failure: Show output for failed tests
+        continueOnError: true
+        # Continue even if tests fail (don't stop pipeline)
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+        # Only run if:
+        # - Previous steps succeeded
+        # - runTests parameter is true
+      
+      # ====================================================================
+      # Step 12: Publish Test Results
+      # ====================================================================
+      # Publishes test results to Azure DevOps
+      # Makes test results visible in pipeline UI
+      - task: PublishTestResults@2
+        displayName: "Publish Test Results $(cmake.preset)_test_detail.xml"
+        inputs:
+          testResultsFormat: "JUnit"
+          # Format: JUnit XML
+          testRunTitle: "Tests $(cmake.preset)"
+          # Title: e.g., "Tests Windows-x64-Release"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml"
+          # Test results file location
+          mergeTestResults: false
+          # Don't merge with other test results
+          buildConfiguration: "$(BuildType)"
+          # Build configuration: Release or Debug
+        continueOnError: true
+        # Continue even if publishing fails
+        condition: and(succeeded(), eq(${{ parameters.runTests }}, true), or(eq(variables['BuildType'], 'Release'), failed()))
+        # Only run if:
+        # - Previous steps succeeded
+        # - runTests parameter is true
+        # - Building Release OR tests failed
+      
+      # ====================================================================
+      # Step 13: Install NuGet
+      # ====================================================================
+      # Installs NuGet tool for package creation
+      - task: NuGetToolInstaller@1
+        displayName: "Install NuGet"
+        inputs:
+          versionSpec: ">=6.0.0-0"
+          # Version: 6.0.0 or later
+          checkLatest: true
+          # Check for latest version
+        condition: succeeded()
+        # Only run if previous steps succeeded
+      
+      # ====================================================================
+      # Step 14: Create NuGet Package
+      # ====================================================================
+      # Runs NuGet pack to create .nupkg package
+      # Uses .nuspec file to define package metadata
+      - task: NuGetCommand@2
+        displayName: "NuGet pack v$(GITVERSION_MAJORMINORPATCH)"
+        inputs:
+          command: "pack"
+          # Command: pack (create NuGet package)
+          packagesToPack: "pack/*.nuspec"
+          # Files to pack: All .nuspec files in pack directory
+          versioningScheme: "off"
+          # Versioning: Off (use buildProperties)
+          buildProperties: "VERSION=$(GITVERSION_MAJORMINORPATCH)"
+          # Build properties: Set VERSION to semantic version
+        condition: succeeded()
+        # Only run if previous steps succeeded
+      
+      # ====================================================================
+      # Step 15: Publish NuGet Artifacts
+      # ====================================================================
+      # Publishes NuGet packages as artifacts
+      # Makes packages available for download and publishing
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish NuGet Artifacts"
+        inputs:
+          PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+          # Path to publish: Artifact staging directory
+          ArtifactName: "nuget-packages"
+          # Artifact name: "nuget-packages"
+          publishLocation: "Container"
+          # Publish to: Azure DevOps artifact container
+        condition: succeeded()
+        # Only run if previous steps succeeded
