@@ -67,7 +67,7 @@ jobs:
 
         # Set the version to FULLSEMVER if we're NOT the master/main branch.
       - script: |
-          echo "##vso[build.updateBuildNumber]${GITVERSION_FULLSEMVER}"
+          echo "##vso[build.updateBuildNumber]${GITVERSION_SEMVER}"
         condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
 
       - task: PublishBuildArtifacts@1

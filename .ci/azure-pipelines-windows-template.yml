@@ -79,12 +79,12 @@ jobs:
 
       # Set the version to MAJOR.MINOR.PATCH if we're on the master/main branch.
     - script: |
-        echo "##vso[build.updateBuildNumber]${GITVERSION.MAJORMINORPATCH}"
+        echo "##vso[build.updateBuildNumber]$(GitVersion.MajorMinorPatch)"
       condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
 
       # Set the version to FULLSEMVER if we're NOT the master/main branch.
     - script: |
-        echo "##vso[build.updateBuildNumber]${GITVERSION.FULLSEMVER}"
+        echo "##vso[build.updateBuildNumber]$(GitVersion.SemVer)"
       condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
 
     - task: PublishBuildArtifacts@1
