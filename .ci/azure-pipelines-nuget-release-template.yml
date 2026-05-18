@@ -32,9 +32,9 @@ jobs:
         displayName: "Echo variables for debugging"
         inputs:
           script: |
-            echo "extraparam0: $(ExtraParam0). ${{ parameters.ExtraParam0 }}"
-            echo "extraparam1: $(ExtraParam1)   ${{ parameters.ExtraParam1 }}"
-            echo "TagVersion: $(TagVersion). ${{ parameters.TagVersion }}"
+            echo "extraparam0: . ${{ parameters.ExtraParam0 }}"
+            echo "extraparam1:    ${{ parameters.ExtraParam1 }}"
+            echo "TagVersion:  ${{ parameters.TagVersion }}"
             echo "----------------------------------------------------------------"
             set 
       
