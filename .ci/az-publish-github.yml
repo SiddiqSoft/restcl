@@ -10,8 +10,10 @@ jobs:
     displayName: GitHub Release
     pool:
       name: Default
+    
     variables:
       TagVersion: $(Build.BuildNumber)
+
     steps:
       - checkout: none
         

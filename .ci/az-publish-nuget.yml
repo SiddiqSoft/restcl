@@ -12,8 +12,10 @@ jobs:
       name: Default
       #demands:
       #  - Agent.OS -equals Windows_NT
+    
     variables:
-      TagVersion: $[ build.buildNumber ]
+      TagVersion: $(Build.BuildNumber)
+
     steps:
       - checkout: none
         
