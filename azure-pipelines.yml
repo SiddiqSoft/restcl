@@ -61,6 +61,7 @@ variables:
     PublishGitHub: ${{ parameters.PublishGitHub }}
   ThisAgentOS: $(Agent.OS)
   ThisAgentArch: $(Agent.OSArchitecture)
+  TagVersion: "notset"
 
 stages:
   - stage: StgBldWindows
@@ -152,6 +153,7 @@ stages:
       - StgBldLinux
     condition: succeeded()
     variables:
+      tmp: $[ variables.TagVersion ]
       tmp0: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER.VTAG']]
       tmp0a: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG']]
       tmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
@@ -162,7 +164,7 @@ stages:
         displayName: Nuget Release 
         PublishNuGet: ${{ variables.PublishNuGet }}
         PublishGitHub: ${{ variables.PublishGitHub }}
-        TagVersion: ${{ variables.tmp0 }}
+        TagVersion: ${{ variables.tmp }}
         ExtraParam0: ${{ variables.tmp0 }}
         ExtraParam1: ${{ variables.tmp1 }}
     - template: .ci/azure-pipelines-github-release-template.yml
@@ -170,7 +172,7 @@ stages:
         displayName: GitHub Release 
         PublishNuGet: ${{ variables.PublishNuGet }}
         PublishGitHub: ${{ variables.PublishGitHub }}
-        TagVersion: ${{ variables.tmp0 }}
+        TagVersion: ${{ variables.tmp }}
         ExtraParam0: ${{ variables.tmp0 }}
         ExtraParam1: ${{ variables.tmp1 }}
 
