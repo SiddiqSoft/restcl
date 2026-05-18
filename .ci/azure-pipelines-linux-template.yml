@@ -60,9 +60,15 @@ jobs:
           echo "${GITVERSION_FULLSEMVER}" > FullSemVer.txt
         displayName: "Save version to file"
 
+        # Set the version to MAJOR.MINOR.PATCH if we're on the master/main branch.
       - script: |
           echo "##vso[build.updateBuildNumber]${GITVERSION_MAJORMINORPATCH}"
-        condition: succeeded()
+        condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+
+        # Set the version to FULLSEMVER if we're NOT the master/main branch.
+      - script: |
+          echo "##vso[build.updateBuildNumber]${GITVERSION_FULLSEMVER}"
+        condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
 
       - task: PublishBuildArtifacts@1
         displayName: "Publish Linux build artifact $(cmake.preset)"

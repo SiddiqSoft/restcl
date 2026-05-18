@@ -77,9 +77,15 @@ jobs:
         workingDirectory: "$(System.DefaultWorkingDirectory)"
       condition: succeeded()
 
+      # Set the version to MAJOR.MINOR.PATCH if we're on the master/main branch.
     - script: |
-        echo "##vso[build.updateBuildNumber]${GITVERSION_MAJORMINORPATCH}"
-      condition: succeeded()
+        echo "##vso[build.updateBuildNumber]${GITVERSION.MAJORMINORPATCH}"
+      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+
+      # Set the version to FULLSEMVER if we're NOT the master/main branch.
+    - script: |
+        echo "##vso[build.updateBuildNumber]${GITVERSION.FULLSEMVER}"
+      condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
 
     - task: PublishBuildArtifacts@1
       displayName: "Publish Windows build artifact $(cmake.preset)"
