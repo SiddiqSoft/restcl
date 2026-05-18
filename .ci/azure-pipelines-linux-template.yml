@@ -83,3 +83,8 @@ jobs:
       - script: |
           echo "##vso[task.setvariable variable=VTAG;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
         name: SETVER
+
+        # Set the version; according to the debug logs the ${GITVERSION_MAJORMINORPATCH} is expanded.
+      - script: |
+          $TagVersion = "${GITVERSION_MAJORMINORPATCH}"
+        name: SETVER2
