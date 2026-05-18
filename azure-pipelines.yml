@@ -94,7 +94,7 @@ parameters:
   - name: RunLinuxClangOnly
     displayName: "RunLinuxClangOnly - Check to only run the Linux Clang builds and skip the Linux GCC builds"
     type: boolean
-    default: true
+    default: false
     # Description: When true, only runs Clang builds on Linux (faster CI)
     # When false, runs both Clang and GCC builds on Linux
     # Useful for quick feedback during development
@@ -105,7 +105,7 @@ parameters:
   - name: BuildX64
     displayName: "BuildX64 - Check to enable the x64 builds"
     type: boolean
-    default: false
+    default: true
     # Description: Enable x64 architecture builds (in addition to default arm64)
     # Note: Currently not used in Windows builds, reserved for future use
     
