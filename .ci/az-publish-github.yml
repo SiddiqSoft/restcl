@@ -4,9 +4,6 @@ parameters:
   - name: PublishGitHub
     type: boolean
     default: true
-  - name: TagVersion
-    type: string
-    default: "0.0.0"
 
 jobs:
   - job: GitHubRelease
@@ -14,7 +11,7 @@ jobs:
     pool:
       name: Default
     variables:
-      TagVersion: $[ build.buildNumber ]
+      TagVersion: $(Build.BuildNumber)
     steps:
       - checkout: none
         
@@ -22,7 +19,7 @@ jobs:
         displayName: "Echo variables for debugging"
         inputs:
           script: |
-            echo "TagVersion: ${{ parameters.TagVersion }}"
+            echo "TagVersion: $(TagVersion)"
             echo "BuildNumber:  $(Build.BuildNumber)"
             echo "----------------------------------------------------------------"
             set 

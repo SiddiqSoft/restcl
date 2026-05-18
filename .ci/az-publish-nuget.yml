@@ -4,9 +4,6 @@ parameters:
   - name: PublishNuGet
     type: boolean
     default: true
-  - name: TagVersion
-    type: string
-    default: "notset"
 
 jobs:
   - job: NugetRelease
@@ -24,7 +21,7 @@ jobs:
         displayName: "Echo variables for debugging"
         inputs:
           script: |
-            echo "TagVersion:  ${{ parameters.TagVersion }}"
+            echo "TagVersion:  $(TagVersion)"
             echo "BuildNumber:  $(Build.BuildNumber)"
             echo "----------------------------------------------------------------"
             set 
