@@ -241,6 +241,7 @@ stages:
         parameters:
           displayName: Windows arm64
           architecture: arm64
+          runTests: ${{ parameters.RunTests }}
           matrixConfigs:
             # Release build (always included)
             Windows_arm64_Release:
@@ -253,7 +254,6 @@ stages:
                 BuildType: Debug
                 BuildArchitecture: arm64
                 cmake.preset: Windows-$(BuildArchitecture)-$(BuildType)
-          runTests: ${{ parameters.RunTests }}
           publishNuGet: ${{ parameters.PublishNuGet }}
           BuildX64: ${{ parameters.BuildX64 }}
           BuildDebug: ${{ parameters.BuildDebug }}
@@ -278,6 +278,7 @@ stages:
       - template: .ci/az-build-linux.yml
         parameters:
           displayName: Linux Builds
+          runTests: ${{ parameters.RunTests }}
           matrixConfigs:
             # Release build (always included)
             Linux_Clang_Release:
@@ -302,7 +303,6 @@ stages:
                 BuildType: Debug
                 LinuxCompiler: GCC
                 cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-            runTests: ${{ parameters.RunTests }}
 
   # ==========================================================================
   # STAGE 3: PUBLICATION

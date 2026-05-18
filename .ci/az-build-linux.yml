@@ -41,6 +41,13 @@ parameters:
     # Description: Display name for the job in Azure DevOps UI
     # Example: "Linux Clang" or "Linux GCC"
     
+  - name: runTests
+    type: boolean
+    default: true
+    # Description: Whether to run tests after building
+    # When true: Runs ctest and publishes test results
+    # When false: Skips test execution
+    
   - name: matrixConfigs
     type: object
     # Description: Matrix configuration for build types and compilers
@@ -54,13 +61,6 @@ parameters:
     #     LinuxCompiler: Clang
     #     cmake.preset: Linux-Clang-Debug
     # Used in: Strategy matrix for parallel builds
-    
-  - name: runTests
-    type: boolean
-    default: true
-    # Description: Whether to run tests after building
-    # When true: Runs ctest and publishes test results
-    # When false: Skips test execution
 
 # ============================================================================
 # JOBS

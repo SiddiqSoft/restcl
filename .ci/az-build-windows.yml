@@ -40,6 +40,13 @@ parameters:
     # Values: "x64" or "arm64"
     # Used in: Job name, agent demands, condition logic
     
+  - name: runTests
+    type: boolean
+    default: true
+    # Description: Whether to run tests after building
+    # When true: Runs ctest and publishes test results
+    # When false: Skips test execution
+    
   - name: matrixConfigs
     type: object
     # Description: Matrix configuration for build types
@@ -49,13 +56,6 @@ parameters:
     #     BuildArchitecture: x64
     #     cmake.preset: Windows-x64-Release
     # Used in: Strategy matrix for parallel builds
-    
-  - name: runTests
-    type: boolean
-    default: true
-    # Description: Whether to run tests after building
-    # When true: Runs ctest and publishes test results
-    # When false: Skips test execution
     
   - name: publishNuGet
     type: boolean
