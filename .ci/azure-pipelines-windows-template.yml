@@ -78,14 +78,22 @@ jobs:
       condition: succeeded()
 
       # Set the version to MAJOR.MINOR.PATCH if we're on the master/main branch.
-    - script: |
-        echo "##vso[build.updateBuildNumber]$(GitVersion.MajorMinorPatch)"
+    - task: PowerShell@2
+      displayName: "Set Build Number to $(GITVERSION_MAJORMINORPATCH)"
+      inputs:
+        targetType: "inline"
+        script: |
+          Write-Host "##vso[build.updateBuildNumber]$(GITVERSION_MAJORMINORPATCH)"
       condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
 
-      # Set the version to FULLSEMVER if we're NOT the master/main branch.
-    - script: |
-        echo "##vso[build.updateBuildNumber]$(GitVersion.SemVer)"
-      condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
+      # Set the version to SEMVER if we're NOT the master/main branch.
+    - task: PowerShell@2
+      displayName: "Set Build Number to $(GITVERSION_SEMVER)"
+      inputs:
+        targetType: "inline"
+        script: |
+          Write-Host "##vso[build.updateBuildNumber]$(GITVERSION_SEMVER)"
+      condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master')))
 
     - task: PublishBuildArtifacts@1
       displayName: "Publish Windows build artifact $(cmake.preset)"
