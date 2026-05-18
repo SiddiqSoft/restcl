@@ -291,7 +291,7 @@ jobs:
             Write-Host "##vso[build.updateBuildNumber]$(GITVERSION_SEMVER)"
             # Updates Azure DevOps build number
             # Example: "1.2.3-beta.1+5.g1234567"
-        condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master')))
+        condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
         # Only run if:
         # - Previous steps succeeded
         # - NOT building on main or master branch
