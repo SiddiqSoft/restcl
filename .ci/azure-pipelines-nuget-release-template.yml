@@ -14,15 +14,17 @@ parameters:
     type: string
     default: "0.0.1"
 
-  - job: GitHubRelease
+  - job: NugetRelease
     variables:
       xtmp0: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER.VTAG']]
       xtmp0a: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG']]
       xtmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
       xtmp1a: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0_VTAG0']]
-    displayName: GitHub Release
+    displayName: Nuget Release
     pool:
       name: Default
+      #demands:
+      #  - Agent.OS -equals Windows_NT
 
     steps:
       - checkout: none
@@ -47,22 +49,19 @@ parameters:
             echo "----------------------------------------------------------------"
             set 
       
-      - task: GitHubRelease@1
-        displayName: "Release to GitHub v$(TagVersion)"
+      - task: DownloadBuildArtifacts@0
+        displayName: "Download NuGet packages"
         inputs:
-          gitHubConnection: "github-packages-sqs"
-          repositoryName: "$(Build.Repository.Name)"
-          action: "create"
-          target: "$(Build.SourceVersion)"
-          tagSource: "userSpecifiedTag"
-          tag: "$(TagVersion)"
-          title: "v$(TagVersion)"
-          releaseNotesSource: "inline"
-          releaseNotesInline: "Documentation https://github.com/$(Build.Repository.Name)"
-          isPreRelease: true
-          changeLogCompareToRelease: "lastFullRelease"
-          changeLogType: "commitBased"
-          addChangeLog: false
-          assetUploadMode: "replace"
-          assets: "$(Build.ArtifactStagingDirectory)/**/*"
-        condition: and(succeeded(), eq(variables['PublishGitHub'], true))
+          downloadType: "single"
+          artifactName: "nuget-packages"
+          downloadPath: "$(Build.ArtifactStagingDirectory)"
+        condition: succeeded()
+
+      - task: NuGetCommand@2
+        displayName: "NuGet push v$(TagVersion)"
+        inputs:
+          command: "push"
+          packagesToPush: "$(Build.ArtifactStagingDirectory)/**/*.nupkg"
+          nuGetFeedType: "external"
+          publishFeedCredentials: "sqs-nuget"
+        condition: and(succeeded(), eq(variables['PublishNuGet'], true))

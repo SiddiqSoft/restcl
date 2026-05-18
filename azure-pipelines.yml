@@ -157,11 +157,18 @@ stages:
       tmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
       tmp1a: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0_VTAG0']]
     jobs:
-      - template: .ci/azure-pipelines-github-release-template.yml
-        parameters:
-          displayName: Nuget and GitHub Release 
-          PublishNuGet: ${{ variables.PublishNuGet }}
-          PublishGitHub: ${{ variables.PublishGitHub }}
-          ExtraParam0: $(tmp0)
-          ExtraParam1: $(tmp1)
+    - template: .ci/azure-pipelines-nuget-release-template.yml
+      parameters:
+        displayName: Nuget Release 
+        PublishNuGet: ${{ variables.PublishNuGet }}
+        PublishGitHub: ${{ variables.PublishGitHub }}
+        ExtraParam0: $(tmp0)
+        ExtraParam1: $(tmp1)
+    - template: .ci/azure-pipelines-github-release-template.yml
+      parameters:
+        displayName: GitHub Release 
+        PublishNuGet: ${{ variables.PublishNuGet }}
+        PublishGitHub: ${{ variables.PublishGitHub }}
+        ExtraParam0: $(tmp0)
+        ExtraParam1: $(tmp1)
 
