@@ -152,28 +152,18 @@ stages:
       - StgBldWindows
       - StgBldLinux
     condition: succeeded()
-    variables:
-      tmp: $[ variables.TagVersion ]
-      tmp0: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER.VTAG']]
-      tmp2: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER2.TagVersion']]
-      tmp0a: $[stageDependencies.StgBldLinux.JobLinuxBuild.outputs['SETVER_VTAG']]
-      tmp1: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0.VTAG0']]
-      tmp1a: $[stageDependencies.StgBldWindows.JobWindowsBuild_arm64.outputs['SETVER0_VTAG0']]
     jobs:
     - template: .ci/azure-pipelines-nuget-release-template.yml
       parameters:
         displayName: Nuget Release 
         PublishNuGet: ${{ variables.PublishNuGet }}
         PublishGitHub: ${{ variables.PublishGitHub }}
-        TagVersion: ${{ variables.tmp }}
-        ExtraParam0: ${{ variables.tmp0 }}
-        ExtraParam1: ${{ variables.tmp1 }}
+        TagVersion: $[ build.buildNumber]
+
     - template: .ci/azure-pipelines-github-release-template.yml
       parameters:
         displayName: GitHub Release 
         PublishNuGet: ${{ variables.PublishNuGet }}
         PublishGitHub: ${{ variables.PublishGitHub }}
-        TagVersion: ${{ variables.tmp }}
-        ExtraParam0: ${{ variables.tmp0 }}
-        ExtraParam1: ${{ variables.tmp1 }}
+        TagVersion: $[ build.buildNumber]
 

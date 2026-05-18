@@ -78,7 +78,7 @@ jobs:
       condition: succeeded()
 
     - script: |
-        echo "##vso[build.setBuildNumber]${GITVERSION_MAJORMINORPATCH}"
+        echo "##vso[build.updateBuildNumber]${GITVERSION_MAJORMINORPATCH}"
       condition: succeeded()
 
     - task: PublishBuildArtifacts@1

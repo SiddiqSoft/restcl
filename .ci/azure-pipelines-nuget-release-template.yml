@@ -10,12 +10,6 @@ parameters:
   - name: TagVersion
     type: string
     default: "0.0.0"
-  - name: ExtraParam0
-    type: string
-    default: "0.0.0"
-  - name: ExtraParam1
-    type: string
-    default: "0.0.1"
 
 jobs:
   - job: NugetRelease
@@ -33,8 +27,6 @@ jobs:
         displayName: "Echo variables for debugging"
         inputs:
           script: |
-            echo "extraparam0: . ${{ parameters.ExtraParam0 }}"
-            echo "extraparam1:    ${{ parameters.ExtraParam1 }}"
             echo "TagVersion:  ${{ parameters.TagVersion }}"
             echo "BuildNumber:  $(Build.BuildNumber)"
             echo "----------------------------------------------------------------"
