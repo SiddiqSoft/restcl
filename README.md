@@ -297,14 +297,31 @@ restcl/
 │   ├── test_libcurl_helpers.cpp      # Unix/Linux-specific tests
 │   └── test_mock_and_coverage.cpp    # Mock and coverage tests
 ├── docs/                             # Documentation
+├── .ci/                              # CI/CD pipeline templates
+│   ├── az-build-windows.yml          # Windows build template (x64, arm64)
+│   ├── az-build-linux.yml            # Linux build template (Clang, GCC)
+│   ├── az-publish-nuget.yml          # NuGet package publishing
+│   └── az-publish-github.yml         # GitHub release creation
 ├── pack/                             # NuGet packaging and build helpers
 ├── CMakeLists.txt                    # Main CMake configuration
 ├── CMakePresets.json                 # CMake presets for builds
 ├── .clang-format                     # Code formatting rules
 ├── .clang-tidy                       # Static analysis configuration
 ├── best_practices.md                 # Comprehensive development guidelines
-└── azure-pipelines.yml               # CI/CD pipeline
+├── azure-pipelines.yml               # Main CI/CD pipeline orchestration
+└── README.md                         # This file
 ```
+
+### CI/CD Pipeline
+
+The project uses **Azure Pipelines** for automated building, testing, and publishing:
+
+- **Main Pipeline** (`azure-pipelines.yml`): Orchestrates three stages - Windows builds, Linux builds, and publication
+- **Build Templates** (`.ci/az-build-*.yml`): Platform-specific build configurations with comprehensive inline documentation
+- **Publish Templates** (`.ci/az-publish-*.yml`): Handles NuGet and GitHub release publishing
+- **Multi-Platform**: Builds on Windows (MSVC, x64/arm64) and Linux (Clang/GCC)
+- **Automatic Publishing**: Publishes to NuGet and GitHub on main/master branches
+- **Comprehensive Documentation**: All pipeline files include detailed inline comments explaining configuration and troubleshooting
 
 ### Core Components
 
