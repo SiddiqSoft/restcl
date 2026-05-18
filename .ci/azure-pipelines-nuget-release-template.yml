@@ -24,7 +24,8 @@ jobs:
       name: Default
       #demands:
       #  - Agent.OS -equals Windows_NT
-
+    variables:
+      TagVersion: $[ build.buildNumber ]
     steps:
       - checkout: none
         
@@ -35,6 +36,7 @@ jobs:
             echo "extraparam0: . ${{ parameters.ExtraParam0 }}"
             echo "extraparam1:    ${{ parameters.ExtraParam1 }}"
             echo "TagVersion:  ${{ parameters.TagVersion }}"
+            echo "BuildNumber:  $(Build.BuildNumber)"
             echo "----------------------------------------------------------------"
             set 
       

@@ -77,13 +77,19 @@ jobs:
         workingDirectory: "$(System.DefaultWorkingDirectory)"
       condition: succeeded()
 
-    #- task: PublishBuildArtifacts@1
-    #  displayName: "Publish Windows build artifact $(cmake.preset)"
-    #  inputs:
-    #    PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-    #    ArtifactName: "build-$(cmake.preset)"
-    #    publishLocation: "Container"
-    #  condition: succeeded()
+    - task: UpdateBuildNumber@1
+      displayName: "Set Build Number to $(GITVERSION_MAJORMINORPATCH)"
+      inputs:
+        buildNumber: "$(GITVERSION_MAJORMINORPATCH)"
+      condition: succeeded()
+
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish Windows build artifact $(cmake.preset)"
+      inputs:
+        PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+        ArtifactName: "build-$(cmake.preset)"
+        publishLocation: "Container"
+      condition: succeeded()
 
     - task: CMake@1
       displayName: "CMake Tests $(cmake.preset)"
@@ -127,11 +133,3 @@ jobs:
         ArtifactName: "nuget-packages"
         publishLocation: "Container"
       condition: succeeded()
-
-    - task: PowerShell@2
-      displayName: "Set Version Variable"
-      inputs:
-        targetType: "inline"
-        script: |
-          Write-Host "##vso[task.setvariable variable=VTAG0;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
-      name: SETVER0

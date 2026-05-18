@@ -53,13 +53,26 @@ jobs:
           workingDirectory: "$(System.DefaultWorkingDirectory)"
         condition: succeeded()
 
-      #- task: PublishBuildArtifacts@1
-      #  displayName: "Publish Linux build artifact $(cmake.preset)"
-      #  inputs:
-      #    PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
-      #    ArtifactName: "build-$(cmake.preset)"
-      #    publishLocation: "Container"
-      #  condition: succeeded()
+        # Save the version into a file.
+        # This is the only safe approach to share verion across stages and template files.
+      - bash: |
+          echo "${GITVERSION_MAJORMINORPATCH}" > TagVersion.txt
+          echo "${GITVERSION_FULLSEMVER}" > FullSemVer.txt
+        displayName: "Save version to file"
+
+      - task: UpdateBuildNumber@1
+        displayName: "Set Build Number to $(GITVERSION_MAJORMINORPATCH)"
+        inputs:
+          buildNumber: "$(GITVERSION_MAJORMINORPATCH)"
+        condition: succeeded()
+
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish Linux build artifact $(cmake.preset)"
+        inputs:
+          PathtoPublish: "$(System.DefaultWorkingDirectory)/build/$(cmake.preset)"
+          ArtifactName: "build-$(cmake.preset)"
+          publishLocation: "Container"
+        condition: succeeded()
 
       - task: CMake@1
         displayName: "CMake Tests $(cmake.preset)"
@@ -78,14 +91,3 @@ jobs:
           buildConfiguration: "$(BuildType)"
         continueOnError: true
         condition: and(succeeded(), eq(${{ parameters.runTests }}, true), or(eq(variables['BuildType'], 'Release'), failed()))
-
-        # Set the version; according to the debug logs the ${GITVERSION_MAJORMINORPATCH} is expanded.
-      - script: |
-          echo "##vso[task.setvariable variable=VTAG;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
-        name: SETVER
-
-        # Set the version; according to the debug logs the ${GITVERSION_MAJORMINORPATCH} is expanded.
-      - script: |
-          echo "##vso[task.setvariable variable=TagVersion;isOutput=true]${GITVERSION_MAJORMINORPATCH}"
-          set TagVersion=${GITVERSION_MAJORMINORPATCH}
-        name: SETVER2
