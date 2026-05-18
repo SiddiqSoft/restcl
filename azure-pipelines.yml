@@ -277,7 +277,7 @@ stages:
       # Uses az-build-linux.yml template
       - template: .ci/az-build-linux.yml
         parameters:
-          displayName: Linux Clang
+          displayName: Linux Builds
           matrixConfigs:
             # Release build (always included)
             Linux_Clang_Release:
@@ -290,27 +290,14 @@ stages:
                 BuildType: Debug
                 LinuxCompiler: Clang
                 cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
-          runTests: ${{ parameters.RunTests }}
-      
-      # ====================================================================
-      # Linux GCC Build Job
-      # ====================================================================
-      # Builds with GCC compiler (Release and optionally Debug)
-      # Only included when RunLinuxClangOnly is false
-      # This job is "activated" when RunLinuxClangOnly is false
-      # Uses az-build-linux.yml template
-      - ${{ if eq(parameters.RunLinuxClangOnly, false) }}:
-        - template: .ci/az-build-linux.yml
-          parameters:
-            displayName: Linux GCC
-            matrixConfigs:
               # Release build (always included)
+            ${{ if eq(parameters.RunLinuxClangOnly, false) }}:
               Linux_GCC_Release:
                 BuildType: Release
                 LinuxCompiler: GCC
                 cmake.preset: Linux-$(LinuxCompiler)-$(BuildType)
               # Debug build (only if BuildDebug parameter is true)
-              ${{ if eq(parameters.BuildDebug, true) }}:
+              ${{ if and(eq(parameters.RunLinuxClangOnly, false), eq(parameters.BuildDebug, true)) }}:
                 Linux_GCC_Debug:
                   BuildType: Debug
                   LinuxCompiler: GCC
