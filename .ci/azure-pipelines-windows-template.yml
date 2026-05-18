@@ -77,10 +77,8 @@ jobs:
         workingDirectory: "$(System.DefaultWorkingDirectory)"
       condition: succeeded()
 
-    - task: UpdateBuildNumber@1
-      displayName: "Set Build Number to $(GITVERSION_MAJORMINORPATCH)"
-      inputs:
-        buildNumber: "$(GITVERSION_MAJORMINORPATCH)"
+    - script: |
+        echo "##vso[build.setBuildNumber]${GITVERSION_MAJORMINORPATCH}"
       condition: succeeded()
 
     - task: PublishBuildArtifacts@1
