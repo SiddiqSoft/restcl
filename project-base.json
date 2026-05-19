@@ -5,6 +5,9 @@
             "name": "Project-Base",
             "displayName": "Project Base",
             "description": "Base preset for all project configurations.",
+            "cacheVariables": {
+                "restcl_BUILD_TESTS": "ON"
+            },
             "hidden": true
         }
     ]
