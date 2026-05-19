@@ -40,6 +40,9 @@ trigger:
       - development   # Development branch
       - develop       # Alternative development branch
       - release/*     # Release branches (e.g., release/1.0.0)
+  paths:
+    exclude:
+    - README.md
 
 # ============================================================================
 # PULL REQUEST CONFIGURATION

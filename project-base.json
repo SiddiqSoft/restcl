@@ -1,0 +1,11 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "Project-Base",
+            "displayName": "Project Base",
+            "description": "Base preset for all project configurations.",
+            "hidden": true
+        }
+    ]
+}
