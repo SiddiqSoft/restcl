@@ -1,6 +1,8 @@
 {
     "version": 8,
-    "include": [ "project-base.json" ],
+    "include": [
+        "project-base.json"
+    ],
     "cmakeMinimumRequired": {
         "major": 3,
         "minor": 29
@@ -58,6 +60,10 @@
             }
         },
         {
+            "name": "Darwin",
+            "inherits": "Apple-Release"
+        },
+        {
             "name": "Linux-Clang-Debug",
             "displayName": "Linux Clang Debug",
             "description": "Target Linux Clang (Debug)",
@@ -104,6 +110,10 @@
             }
         },
         {
+            "name": "Linux-Clang",
+            "inherits": "Linux-Clang-Release"
+        },
+        {
             "name": "Linux-GCC-Debug",
             "displayName": "Linux GCC Debug",
             "description": "Target Linux GCC (Debug)",
@@ -148,6 +158,10 @@
                     "remoteSourceRootDir": "$env{HOME}/.vs/$ms{projectDirName}"
                 }
             }
+        },
+        {
+            "name": "Linux-GCC",
+            "inherits": "Linux-GCC-Release"
         },
         {
             "name": "Windows-Base",
@@ -213,6 +227,10 @@
             }
         },
         {
+            "name": "Windows-x64",
+            "inherits": "Windows-x64-Release"
+        },
+        {
             "name": "Windows-arm64-Debug",
             "displayName": "Windows arm64 Debug",
             "description": "Target Windows with Ninja and MSVC (Debug) - Auto-detects Visual Studio version",
@@ -245,6 +263,10 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "Windows-arm64",
+            "inherits": "Windows-arm64-Release"
         }
     ],
     "buildPresets": [
@@ -257,11 +279,19 @@
             "configurePreset": "Apple-Release"
         },
         {
+            "name": "Darwin",
+            "configurePreset": "Apple-Release"
+        },
+        {
             "name": "Linux-GCC-Debug",
             "configurePreset": "Linux-GCC-Debug"
         },
         {
             "name": "Linux-GCC-Release",
+            "configurePreset": "Linux-GCC-Release"
+        },
+        {
+            "name": "Linux-GCC",
             "configurePreset": "Linux-GCC-Release"
         },
         {
@@ -273,6 +303,10 @@
             "configurePreset": "Linux-Clang-Release"
         },
         {
+            "name": "Linux-Clang",
+            "configurePreset": "Linux-Clang-Release"
+        },
+        {
             "name": "Windows-x64-Debug",
             "configurePreset": "Windows-x64-Debug"
         },
@@ -281,11 +315,19 @@
             "configurePreset": "Windows-x64-Release"
         },
         {
+            "name": "Windows-x64",
+            "configurePreset": "Windows-x64-Release"
+        },
+        {
             "name": "Windows-arm64-Debug",
             "configurePreset": "Windows-arm64-Debug"
         },
         {
             "name": "Windows-arm64-Release",
+            "configurePreset": "Windows-arm64-Release"
+        },
+        {
+            "name": "Windows-arm64",
             "configurePreset": "Windows-arm64-Release"
         }
     ],
@@ -303,6 +345,17 @@
         },
         {
             "name": "Apple-Release",
+            "configurePreset": "Apple-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Darwin",
             "configurePreset": "Apple-Release",
             "output": {
                 "outputOnFailure": true
@@ -335,6 +388,17 @@
             }
         },
         {
+            "name": "Linux-GCC",
+            "configurePreset": "Linux-GCC-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
             "name": "Linux-Clang-Debug",
             "configurePreset": "Linux-Clang-Debug",
             "output": {
@@ -347,6 +411,17 @@
         },
         {
             "name": "Linux-Clang-Release",
+            "configurePreset": "Linux-Clang-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Linux-Clang",
             "configurePreset": "Linux-Clang-Release",
             "output": {
                 "outputOnFailure": true
@@ -379,6 +454,17 @@
             }
         },
         {
+            "name": "Windows-x64",
+            "configurePreset": "Windows-x64-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
             "name": "Windows-arm64-Debug",
             "configurePreset": "Windows-arm64-Debug",
             "output": {
@@ -391,6 +477,17 @@
         },
         {
             "name": "Windows-arm64-Release",
+            "configurePreset": "Windows-arm64-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Windows-arm64",
             "configurePreset": "Windows-arm64-Release",
             "output": {
                 "outputOnFailure": true
