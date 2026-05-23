@@ -151,13 +151,6 @@ The library includes comprehensive documentation to help you get started and und
 - **See examples** → [docs/API.md - Examples](docs/API.md#examples)
 - **Understand retry** → [docs/AUTO_RETRY.md - Feature Overview](docs/AUTO_RETRY.md#feature-overview)
 
-### 📊 Documentation Statistics
-
-- **2,374 lines** of comprehensive documentation
-- **135+ code examples** covering all features
-- **45+ sections** organized by topic
-- **100% API coverage** with method signatures and descriptions
-- **87 tests documented** with examples and best practices
 
 ## Installation
 
