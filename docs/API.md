@@ -16,6 +16,8 @@
 
 ## Quick Start
 
+[Checkout the class diagram](./RESTCL_CLASS_DIAGRAM.md)
+
 ### Basic GET Request
 
 ```cpp
