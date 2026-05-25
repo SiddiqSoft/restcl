@@ -28,6 +28,12 @@ project(restcl
 option(${PROJECT_NAME}_BUILD_TESTS "${PROJECT_NAME} - Build tests. Uncheck for install only runs" OFF)
 option(CI_BUILDID "Version of this build" "0.0.0")
 
+set( CMAKE_CXX_STANDARD 23)
+set( CMAKE_CXX_STANDARD_REQUIRED On)
+set( CMAKE_CXX_EXTENSIONS OFF)
+# This will allow cmake aware IDE to pickup on library definitions
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ____________________________________
 #  Library Definition
 add_library(${PROJECT_NAME} INTERFACE)
@@ -45,10 +51,6 @@ target_compile_options( ${PROJECT_NAME}
                         INTERFACE
                         $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
 
-set( CMAKE_CXX_STANDARD 23)
-set( CMAKE_CXX_STANDARD_REQUIRED On)
-set( CMAKE_CXX_EXTENSIONS Off)
-                        
 # ____________________________________
 # Dependencies
 if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
