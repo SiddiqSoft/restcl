@@ -4,6 +4,8 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     set( CMAKE_CXX_STANDARD 23)
     set( CMAKE_CXX_STANDARD_REQUIRED On)
     set( CMAKE_CXX_EXTENSIONS Off)
+    # This will allow cmake aware IDE to pickup on library definitions
+    set( CMAKE_EXPORT_COMPILE_COMMANDS ON)
     
     add_executable(${TESTPROJ})
 
@@ -11,9 +13,6 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     target_compile_options( ${TESTPROJ}
                             PRIVATE
                             $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest> )
-    target_compile_options( ${TESTPROJ}
-                            PRIVATE
-                            $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
 
     # ASAN and Coverage only for Debug builds on Linux
     if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 

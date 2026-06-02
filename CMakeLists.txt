@@ -45,12 +45,6 @@ target_include_directories(${PROJECT_NAME}
                             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_23)
 
-# For std::stop_token and std::jthread on Clang 18 and Clang 19 we need to enable
-# the experimental-library flag.
-target_compile_options( ${PROJECT_NAME}
-                        INTERFACE
-                        $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
-
 # ____________________________________
 # Dependencies
 if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
@@ -74,11 +68,11 @@ CPMAddPackage("gh:SiddiqSoft/SplitUri#3.0.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
 CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.2.5")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
-CPMAddPackage("gh:SiddiqSoft/string2map#2.6.0")
+CPMAddPackage("gh:SiddiqSoft/string2map#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#2.1.1")
+CPMAddPackage("gh:SiddiqSoft/asynchrony#2.1.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 CPMAddPackage("gh:SiddiqSoft/GenProcessInfo#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE GenProcessInfo::GenProcessInfo)
