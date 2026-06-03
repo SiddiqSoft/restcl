@@ -431,8 +431,14 @@ namespace siddiqsoft
         /// @details Automatically sets the Host header to "host:port" format
         auto& setUri(const Uri<char, AuthorityHttp<char>>& u)
         {
-            uri              = u;
-            headers[HF_HOST] = std::format("{}:{}", uri.authority.host, uri.authority.port);
+            uri = u;
+            
+            if (!uri.authority.host.empty() && uri.authority.port > 0) {
+                headers[HF_HOST] = std::format("{}:{}", uri.authority.host, uri.authority.port);
+            }
+            else if (!uri.authority.host.empty()) {
+                headers[HF_HOST] = uri.authority.host;
+            }
 
             return *this;
         }
