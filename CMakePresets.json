@@ -284,15 +284,27 @@
         },
         {
             "name": "Linux-GCC-Debug",
-            "configurePreset": "Linux-GCC-Debug"
+            "configurePreset": "Linux-GCC-Debug",
+            "nativeToolOptions": [
+                "-j",
+                "2"
+            ]
         },
         {
             "name": "Linux-GCC-Release",
-            "configurePreset": "Linux-GCC-Release"
+            "configurePreset": "Linux-GCC-Release",
+            "nativeToolOptions": [
+                "-j",
+                "2"
+            ]
         },
         {
             "name": "Linux-GCC",
-            "configurePreset": "Linux-GCC-Release"
+            "configurePreset": "Linux-GCC-Release",
+            "nativeToolOptions": [
+                "-j",
+                "2"
+            ]
         },
         {
             "name": "Linux-Clang-Debug",

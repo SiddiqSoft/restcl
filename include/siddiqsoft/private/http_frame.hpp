@@ -389,7 +389,7 @@ namespace siddiqsoft
                 }
             }
             // No match.. return exception
-            throw std::invalid_argument(std::format("Unknown {}", fragment).c_str());
+            throw std::invalid_argument(std::format("Unknown {}", fragment));
         }
 
         /// @brief Get the current HTTP protocol version
@@ -418,7 +418,7 @@ namespace siddiqsoft
                 }
             }
             // No match.. return exception
-            throw std::invalid_argument(std::format("Unknown {}", fragment).c_str());
+            throw std::invalid_argument(std::format("Unknown {}", fragment));
         }
 
         /// @brief Get the current HTTP method
@@ -548,9 +548,9 @@ namespace siddiqsoft
         /// @details Automatically sets Content-Type and Content-Length headers
         auto& setContent(const std::string& ctype, const std::string& c)
         {
-            if (ctype.empty() && !c.empty()) throw std::invalid_argument("Content-Type cannot be empty");
+            if (ctype.empty() && !c.empty()) throw std::invalid_argument("Content-Type cannot be empty when content is provided");
             if (!ctype.empty() && c.empty())
-                throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype).c_str());
+                throw std::invalid_argument(std::format("Content-Type is {} but no content provided!", ctype));
 
             if (!ctype.empty() && !c.empty() && content) {
                 content->body          = c;

@@ -167,7 +167,7 @@ namespace siddiqsoft
             : _pool {pool}
             , _hndl {std::move(item)}
         {
-#if defined(DEBUG0)
+#if defined(DEBUG)
             _owningTid = std::this_thread::get_id();
             std::print(std::cerr, "{} - 0/0 New BUNDLE id:{}..\n", __func__, _id);
 #endif
@@ -194,7 +194,7 @@ namespace siddiqsoft
         /// @note Typically called after a failed request to prevent reuse of a bad handle
         void abandon()
         {
-#if defined(DEBUG0)
+#if defined(DEBUG)
             std::print(std::cerr,
                        "CurlContextBundle::abandon - id:{}  {} Abandoning BUNDLE "
                        "*********************************************************************\n",
@@ -215,22 +215,21 @@ namespace siddiqsoft
         /// @note This destructor is exception-safe
         ~CurlContextBundle()
         {
-#if defined(DEBUG0)
+#if defined(DEBUG)
             std::print(std::cerr, "{} - 1/2 Clearing contents..\n", __func__);
 #endif
 
             if (_contents) _contents.reset();
             if (_hndl) {
                 _pool.checkin(std::move(_hndl));
-#if defined(DEBUG0)
+#if defined(DEBUG)
                 std::print(std::cerr,
-                           "{} - 2/2 Returning BUNDLE  id:{}:{}  Capacity:{}..\n",
+                           "{} - 2/2 Returning BUNDLE  id:{}:{}  Capacity:{}..",
                            __func__,
                            _id,
                            (void*)_hndl.get(),
                            _pool.size());
 #endif
-                _hndl.reset();
             }
         }
     };
@@ -258,18 +257,18 @@ namespace siddiqsoft
 
             std::call_once(_libCurlOnceFlag, []() {
                 if (_singleton = std::shared_ptr<LibCurlSingleton>(new LibCurlSingleton()); _singleton) {
-#if defined(DEBUG0)
+#if defined(DEBUG)
                     std::print(std::cerr, "{} - Onetime initialization!\n", __func__);
 #endif
                     // Perform once-per-application LibCURL initialization logic
                     if (auto rc = curl_global_init(CURL_GLOBAL_ALL); rc == CURLE_OK) {
                         _singleton->isInitialized = true;
-#if defined(DEBUG0)
+#if defined(DEBUG)
                         std::print(std::cerr, "{} - Initialized:{} curl_global_init()\n", __func__, _singleton->isInitialized);
 #endif
                     }
                     else {
-#if defined(DEBUG0)
+#if defined(DEBUG)
                         std::print(std::cerr, "{} - Initialize failed! {}\n", __func__, curl_easy_strerror(rc));
 #endif
                         throw std::runtime_error(curl_easy_strerror(rc));
@@ -620,11 +619,25 @@ namespace siddiqsoft
                 if (content->remainingSize) {
                     // Clamp to the smaller of remaining data or available buffer
                     auto dataSizeToCopyToLibCurl = content->remainingSize;
+                    
+                    // Bug #2: Validate that body is not empty before dereferencing
+                    if (content->body.empty()) {
+                        content->remainingSize = 0;
+                        return 0;
+                    }
                     if (dataSizeToCopyToLibCurl > sizeToSendToLibCurlBuffer) {
                         dataSizeToCopyToLibCurl = sizeToSendToLibCurlBuffer;
                     }
 
                     memcpy(libCurlBuffer, content->body.data() + content->offset, dataSizeToCopyToLibCurl);
+                    
+                    // Bug #3: Add bounds checking to prevent integer overflow
+                    if (content->offset > content->length - dataSizeToCopyToLibCurl) {
+                        // Prevent overflow - offset would exceed length
+                        content->remainingSize = 0;
+                        return dataSizeToCopyToLibCurl;
+                    }
+                    
                     content->offset += dataSizeToCopyToLibCurl;
                     // If we reached the size of the content buffer then we have no more to send
                     if (content->offset >= content->length)
