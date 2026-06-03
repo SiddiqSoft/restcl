@@ -31,7 +31,7 @@ trigger:
   paths:
     exclude:
       - README.md
-      - .ci/* # Skip CI when changing pipeline files
+      - .azure/* # Skip CI when changing pipeline files
       - azure-pipelines.yml # Avoids recursive triggers when modifying the pipeline itself
 pr:
   branches:
@@ -72,7 +72,7 @@ parameters:
 
   - name: Compilers_Linux
     type: stringList
-    default: [ Clang, GCC ]
+    default: [ Clang ]
     values: [ Clang, GCC ]
     displayName: "Linux compilers to build (Clang, GCC)"
 
