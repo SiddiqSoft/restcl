@@ -5,7 +5,7 @@
 # This pipeline:
 # 1. Builds the library across multiple platforms with a build matrix
 #    - Windows (x64, arm64) with MSVC
-#    - Linux (x64) with Clang and GCC
+#    - Linux (x64) with Clang (pre-selected) and GCC (optional as the compiler crashes.)
 # 2. Runs tests on all platforms (configurable)
 # 3. Publishes to NuGet and GitHub (on main/master branches)
 #
@@ -14,7 +14,6 @@
 # 2. Linux - Cleanup, build, and test for Linux with matrix for architecture and compiler
 # 3. Publication - Publishes to NuGet and GitHub
 #
-# Documentation: See PIPELINE_DOCUMENTATION_INDEX.md for detailed information
 # ============================================================================
 
 # ============================================================================
