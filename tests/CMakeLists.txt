@@ -14,17 +14,14 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                             PRIVATE
                             $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest> )
 
-    # ASAN and Coverage only for Debug builds on Linux
-    if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
-        #OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu]) # Skip on GCC
-        )
-       AND (CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg]))
+    # ASAN and Coverage for MacOS and Linux (using Clang)
+    if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg])))
         message(STATUS "Using sanitizers for leak and address on ${CMAKE_CXX_COMPILER_ID}")
-        target_compile_options(${TESTPROJ} PRIVATE "SHELL:-fsanitize=address,leak")
-        target_link_options(${TESTPROJ} PRIVATE "SHELL:-fsanitize=address,leak")
-        #message(STATUS "Enable instrumentation for code coverage")
-        #target_compile_options(${TESTPROJ} PRIVATE -coverage -O0 -g)
-        #target_link_options(${TESTPROJ} PRIVATE -coverage)
+        target_compile_options(${TESTPROJ} PRIVATE "SHELL:-fsanitize=address,undefined -fprofile-instr-generate -fcoverage-mapping")
+        target_link_options(${TESTPROJ} PRIVATE "SHELL:-fsanitize=address,undefined -fprofile-instr-generate -fcoverage-mapping")
+        message(STATUS "Enable instrumentation for code coverage")
+        target_compile_options(${TESTPROJ} PRIVATE -coverage -O0 -g)
+        target_link_options(${TESTPROJ} PRIVATE -coverage)
     endif()
 
     if( CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
@@ -33,13 +30,15 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     endif()
 
     # Dependencies
+    message(STATUS "  Adding dependencies for CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
     CPMAddPackage("gh:google/googletest#v1.17.0")
     target_sources( ${TESTPROJ}
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/tests/test_serializers.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_validation.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_postbin.cpp
-                    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
+                    # We have to include the exact AppleClang otherwise we get linker errors about missing symbols from libcurl.
+                    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
                     ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_edge_cases.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_mock_and_coverage.cpp
@@ -48,7 +47,9 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     target_link_libraries(${TESTPROJ} PRIVATE
             GTest::gtest_main
             nlohmann_json::nlohmann_json
-            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:CURL::libcurl>
+            # We have to include the exact AppleClang otherwise we get linker errors about missing symbols from libcurl.
+            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:CURL::libcurl>
+            # For Windows, we require linking this Windows-specific library.
             $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
             RunOnEnd::RunOnEnd
             SplitUri::SplitUri

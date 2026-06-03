@@ -509,13 +509,13 @@ namespace siddiqsoft
         {
             for (auto& [k, v] : headers.items()) {
                 if (v.is_string()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<std::string>());
+                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.template get<std::string>());
                 }
                 else if (v.is_number_unsigned()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<uint64_t>());
+                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.template get<uint64_t>());
                 }
                 else if (v.is_number_integer()) {
-                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.get<int>());
+                    std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.template get<int>());
                 }
                 else {
                     std::format_to(std::back_inserter(rs), "{}: {}\r\n", k, v.dump());

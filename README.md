@@ -416,6 +416,8 @@ The library includes a comprehensive test suite covering:
 - **Integration Tests** (`test_postbin.cpp`): Real HTTP calls to external services
 - **Platform-Specific Tests** (`test_libcurl_helpers.cpp`): Unix/Linux-specific libcurl tests
 - **Mock Tests** (`test_mock_and_coverage.cpp`): Mock objects and code coverage validation
+- R&D and daily development is on the MacOS while the CI is on Linux (fedora) and Windows (Windows 11).
+    - All the tests work on the MacOS using LLVM as well as AppleClang
 
 ### Running Tests
 
