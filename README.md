@@ -361,11 +361,17 @@ Extends `http_frame` with response parsing, status codes, and reason phrases.
 ### Compiler Requirements
 
 - **C++23 Standard**: Required
-- **Visual Studio 2022**: For Windows builds (MSVC)
-- **Clang 18+** or **GCC 13+**: For Unix/Linux builds
-- **Clang on macOS**: With `-fexperimental-library` flag for `std::stop_token` and `std::jthread`
+- **Visual Studio 2022/2026**: For Windows builds (MSVC)
+- **Clang 18+**: For Linux Builds
+- **GCC 13+**: Disabled due to gcc crashes when using ninja
+- **Clang (LLVM) on macOS**: Use homebrew install LLVM
+- **Clang (XCode) on macOS**: Use Apple Clang 21.x.x
 
 ## Building
+
+> **NOTE**
+>
+> GCC builds are disabled as part of the CI process due to frequent lock up during compilation using ninja.
 
 ### Prerequisites
 

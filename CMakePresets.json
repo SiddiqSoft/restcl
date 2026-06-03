@@ -22,8 +22,8 @@
             }
         },
         {
-            "name": "Apple-Debug",
-            "displayName": "Apple-Debug (Homebrew LLVM)",
+            "name": "Apple-LLVM-Debug",
+            "displayName": "Apple-LLVM-Debug (Homebrew LLVM)",
             "description": "Using compilers: C = /opt/homebrew/opt/llvm/bin/clang, CXX = /opt/homebrew/opt/llvm/bin/clang++",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "inherits": "Common-Base",
@@ -41,8 +41,8 @@
             }
         },
         {
-            "name": "Apple-Release",
-            "displayName": "Apple-Release (Homebrew LLVM)",
+            "name": "Apple-LLVM-Release",
+            "displayName": "Apple-LLVM-Release (Homebrew LLVM)",
             "description": "Using compilers: C = /opt/homebrew/opt/llvm/bin/clang, CXX = /opt/homebrew/opt/llvm/bin/clang++",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "inherits": "Common-Base",
@@ -58,6 +58,42 @@
                 "lhs": "${hostSystemName}",
                 "rhs": "Darwin"
             }
+        },
+        {
+            "name": "Apple-Debug",
+            "displayName": "Apple-Debug (Default Xcode)",
+            "description": "Using default Apple compiler toolchain from Xcode",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "Common-Base",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "Apple-Release",
+            "displayName": "Apple-Release (Default Xcode)",
+            "description": "Using default Apple compiler toolchain from Xcode",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "Common-Base",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "Darwin-LLVM",
+            "inherits": "Apple-LLVM-Release"
         },
         {
             "name": "Darwin",
@@ -194,8 +230,8 @@
         },
         {
             "name": "Windows-x64-Debug",
-            "displayName": "Windows x64 Debug",
-            "description": "Target Windows with Ninja and MSVC (Debug) - Auto-detects Visual Studio version",
+            "displayName": "Win x64 Debug",
+            "description": "Target Win with Ninja and MSVC (Debug) - Auto-detects Visual Studio version",
             "architecture": {
                 "value": "x64",
                 "strategy": "external"
@@ -211,8 +247,8 @@
         },
         {
             "name": "Windows-x64-Release",
-            "displayName": "Windows x64 Release",
-            "description": "Target Windows with Ninja and MSVC (Release) - Auto-detects Visual Studio version",
+            "displayName": "Win x64 Release",
+            "description": "Target Win with Ninja and MSVC (Release) - Auto-detects Visual Studio version",
             "architecture": {
                 "value": "x64",
                 "strategy": "external"
@@ -232,8 +268,8 @@
         },
         {
             "name": "Windows-arm64-Debug",
-            "displayName": "Windows arm64 Debug",
-            "description": "Target Windows with Ninja and MSVC (Debug) - Auto-detects Visual Studio version",
+            "displayName": "Win arm64 Debug",
+            "description": "Target Win with Ninja and MSVC (Debug) - Auto-detects Visual Studio version",
             "architecture": {
                 "value": "arm64",
                 "strategy": "external"
@@ -249,8 +285,8 @@
         },
         {
             "name": "Windows-arm64-Release",
-            "displayName": "Windows arm64 Release",
-            "description": "Target Windows with Ninja and MSVC (Release) - Auto-detects Visual Studio version",
+            "displayName": "Win arm64 Release",
+            "description": "Target Win with Ninja and MSVC (Release) - Auto-detects Visual Studio version",
             "architecture": {
                 "value": "arm64",
                 "strategy": "external"
@@ -271,6 +307,14 @@
     ],
     "buildPresets": [
         {
+            "name": "Apple-LLVM-Debug",
+            "configurePreset": "Apple-LLVM-Debug"
+        },
+        {
+            "name": "Apple-LLVM-Release",
+            "configurePreset": "Apple-LLVM-Release"
+        },
+        {
             "name": "Apple-Debug",
             "configurePreset": "Apple-Debug"
         },
@@ -279,32 +323,24 @@
             "configurePreset": "Apple-Release"
         },
         {
+            "name": "Darwin-LLVM",
+            "configurePreset": "Apple-LLVM-Release"
+        },
+        {
             "name": "Darwin",
             "configurePreset": "Apple-Release"
         },
         {
             "name": "Linux-GCC-Debug",
-            "configurePreset": "Linux-GCC-Debug",
-            "nativeToolOptions": [
-                "-j",
-                "2"
-            ]
+            "configurePreset": "Linux-GCC-Debug"
         },
         {
             "name": "Linux-GCC-Release",
-            "configurePreset": "Linux-GCC-Release",
-            "nativeToolOptions": [
-                "-j",
-                "2"
-            ]
+            "configurePreset": "Linux-GCC-Release"
         },
         {
             "name": "Linux-GCC",
-            "configurePreset": "Linux-GCC-Release",
-            "nativeToolOptions": [
-                "-j",
-                "2"
-            ]
+            "configurePreset": "Linux-GCC-Release"
         },
         {
             "name": "Linux-Clang-Debug",
@@ -345,6 +381,28 @@
     ],
     "testPresets": [
         {
+            "name": "Apple-LLVM-Debug",
+            "configurePreset": "Apple-LLVM-Debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Apple-LLVM-Release",
+            "configurePreset": "Apple-LLVM-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
             "name": "Apple-Debug",
             "configurePreset": "Apple-Debug",
             "output": {
@@ -358,6 +416,17 @@
         {
             "name": "Apple-Release",
             "configurePreset": "Apple-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Darwin-LLVM",
+            "configurePreset": "Apple-LLVM-Release",
             "output": {
                 "outputOnFailure": true
             },
