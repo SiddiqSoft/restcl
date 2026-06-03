@@ -141,13 +141,13 @@ namespace siddiqsoft
         std::thread::id _owningTid {};
 #endif
         /// @brief The checked-out CURL handle from the resource pool
-        std::shared_ptr<CURL>                 _hndl;
+        std::shared_ptr<CURL> _hndl;
         /// @brief Reference to the resource pool for returning the handle on destruction
         resource_pool<std::shared_ptr<CURL>>& _pool;
         /// @brief Content buffer for storing response data from libcurl callbacks
-        std::shared_ptr<ContentType>          _contents {new ContentType()};
+        std::shared_ptr<ContentType> _contents {new ContentType()};
         /// @brief Unique identifier for this bundle instance (for debugging)
-        uint32_t                              _id = __COUNTER__;
+        uint32_t _id = __COUNTER__;
 
     public:
         /// @brief Deleted default constructor - bundles must be created with a pool and handle
@@ -176,7 +176,7 @@ namespace siddiqsoft
         /// @brief Gets the raw CURL handle pointer.
         /// @return Raw pointer to the CURL handle
         /// @note The returned pointer is valid only while this bundle exists
-        CURL*                        curlHandle() { return _hndl.get(); };
+        CURL* curlHandle() { return _hndl.get(); };
 
         /// @brief Gets the shared pointer to the content buffer.
         /// @return Shared pointer to the ContentType object for response data
@@ -436,7 +436,7 @@ namespace siddiqsoft
                                 {RESTCL_CONFIG_COMMON_HEADERS, nullptr}};
 
 
-    /// @brief Dispatches the callback with the request and response result.
+        /// @brief Dispatches the callback with the request and response result.
         ///
         /// @details Invokes either the provided callback or the globally configured callback
         ///          with the request and response. Increments statistics counters for tracking
@@ -619,8 +619,8 @@ namespace siddiqsoft
                 if (content->remainingSize) {
                     // Clamp to the smaller of remaining data or available buffer
                     auto dataSizeToCopyToLibCurl = content->remainingSize;
-                    
-                    // Bug #2: Validate that body is not empty before dereferencing
+
+                    // Validate that body is not empty before dereferencing
                     if (content->body.empty()) {
                         content->remainingSize = 0;
                         return 0;
@@ -629,15 +629,17 @@ namespace siddiqsoft
                         dataSizeToCopyToLibCurl = sizeToSendToLibCurlBuffer;
                     }
 
+                    // We've already validated that content->body is non-empty at this point
                     memcpy(libCurlBuffer, content->body.data() + content->offset, dataSizeToCopyToLibCurl);
-                    
-                    // Bug #3: Add bounds checking to prevent integer overflow
+
+                    // Add bounds checking to prevent integer overflow
                     if (content->offset > content->length - dataSizeToCopyToLibCurl) {
                         // Prevent overflow - offset would exceed length
+                        content->offset = content->length; // Move offset to the end
                         content->remainingSize = 0;
                         return dataSizeToCopyToLibCurl;
                     }
-                    
+
                     content->offset += dataSizeToCopyToLibCurl;
                     // If we reached the size of the content buffer then we have no more to send
                     if (content->offset >= content->length)
