@@ -53,41 +53,41 @@ resources:
 parameters:
   - name: Architectures
     type: stringList
-    default: [ arm64 ]
-    values: [ arm64, x64 ]
+    default: [arm64]
+    values: [arm64, x64]
     displayName: "Architectures to build (x64, arm64)"
-  
+
   - name: Platforms
     type: stringList
-    default: [ Windows, Linux ]
-    values: [ Windows, Linux, Darwin ]
+    default: [Windows, Linux]
+    values: [Windows, Linux, Darwin]
     displayName: "Platforms to build (Windows, Linux)"
-  
+
   # Compiler Selection per Platform
   - name: Compilers_Windows
     type: stringList
-    default: [ MSVC ]
-    values: [ MSVC ]
+    default: [MSVC]
+    values: [MSVC]
     displayName: "Windows compilers to build (MSVC)"
 
   - name: Compilers_Linux
     type: stringList
-    default: [ Clang ]
-    values: [ Clang, GCC ]
+    default: [Clang]
+    values: [Clang, GCC]
     displayName: "Linux compilers to build (Clang, GCC)"
 
   - name: Compilers_Darwin
     type: stringList
-    default: [ Clang ]
-    values: [ Clang ]
+    default: [Clang]
+    values: [Clang]
     displayName: "Darwin compilers to build (Clang, GCC)"
 
   - name: BuildTypes
     type: stringList
-    default: [ Release ]
-    values: [ Release, Debug ]
+    default: [Release]
+    values: [Release, Debug]
     displayName: "Build types to build (Release, Debug)"
-  
+
   # Testing
   - name: RunTests
     type: boolean
@@ -145,21 +145,21 @@ stages:
     dependsOn: []
 
     jobs:
-    - ${{ if eq(parameters.Cleanup, true) }}:
-      - template: .ci/az-cleanup-windows.yml
-        parameters:
-          displayName: "Windows Cleanup"
-          BuildOperatingSystem: $(Agent.OS)
-          CleanupDirectory: ${{ variables.cpmCachePath }}
+      - ${{ if eq(parameters.Cleanup, true) }}:
+          - template: .azure/az-cleanup-windows.yml
+            parameters:
+              displayName: "Windows Cleanup"
+              BuildOperatingSystem: $(Agent.OS)
+              CleanupDirectory: ${{ variables.cpmCachePath }}
 
-    - template: .ci/az-build-windows.yml
-      parameters:
-        displayName: "Windows Build and Test"
-        architectures: ${{ parameters.Architectures }}
-        compilers: ${{ parameters.Compilers_Windows }}
-        buildTypes: ${{ parameters.BuildTypes }}
-        runTests: ${{ parameters.RunTests }}
-        publishNuGet: ${{ variables.PublishNuGet }}
+      - template: .azure/az-build-windows.yml
+        parameters:
+          displayName: "Windows Build and Test"
+          architectures: ${{ parameters.Architectures }}
+          compilers: ${{ parameters.Compilers_Windows }}
+          buildTypes: ${{ parameters.BuildTypes }}
+          runTests: ${{ parameters.RunTests }}
+          publishNuGet: ${{ variables.PublishNuGet }}
 
   # ==========================================================================
   # STAGE 1: LINUX BUILD
@@ -170,20 +170,20 @@ stages:
     dependsOn: []
 
     jobs:
-    - ${{ if eq(parameters.Cleanup, true) }}:
-      - template: .ci/az-cleanup-linux.yml
-        parameters:
-          displayName: "Linux Cleanup"
-          BuildOperatingSystem: $(Agent.OS)
-          CleanupDirectory: ${{ variables.cpmCachePath }}
+      - ${{ if eq(parameters.Cleanup, true) }}:
+          - template: .azure/az-cleanup-linux.yml
+            parameters:
+              displayName: "Linux Cleanup"
+              BuildOperatingSystem: $(Agent.OS)
+              CleanupDirectory: ${{ variables.cpmCachePath }}
 
-    - template: .ci/az-build-linux.yml
-      parameters:
-        displayName: "Linux Build and Test"
-        architectures: ${{ parameters.Architectures }}
-        compilers: ${{ parameters.Compilers_Linux }}
-        buildTypes: ${{ parameters.BuildTypes }}
-        runTests: ${{ parameters.RunTests }}
+      - template: .azure/az-build-linux.yml
+        parameters:
+          displayName: "Linux Build and Test"
+          architectures: ${{ parameters.Architectures }}
+          compilers: ${{ parameters.Compilers_Linux }}
+          buildTypes: ${{ parameters.BuildTypes }}
+          runTests: ${{ parameters.RunTests }}
 
   # ==========================================================================
   # STAGE 3: PUBLICATION
@@ -196,12 +196,12 @@ stages:
     condition: and(or(eq(${{ variables.PublishGitHub }}, true), eq(${{ variables.PublishNuGet }}, true)), succeeded())
     jobs:
       - ${{ if eq(variables.PublishNuGet, true) }}:
-        - template: .ci/az-publish-nuget.yml
-          parameters:
-            displayName: NuGet Release
-            PublishNuGet: ${{ variables.PublishNuGet }}
-  
-      - template: .ci/az-publish-github.yml
+          - template: .azure/az-publish-nuget.yml
+            parameters:
+              displayName: NuGet Release
+              PublishNuGet: ${{ variables.PublishNuGet }}
+
+      - template: .azure/az-publish-github.yml
         parameters:
           displayName: GitHub Release
           PublishGitHub: ${{ variables.PublishGitHub }}
