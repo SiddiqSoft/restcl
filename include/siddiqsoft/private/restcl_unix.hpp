@@ -35,6 +35,7 @@
 #include <exception>
 #include <utility>
 #include <variant>
+#include <random>
 
 #include "nlohmann/json.hpp"
 
@@ -318,7 +319,7 @@ namespace siddiqsoft
                     // return an existing handle..
                     auto ctxbndl = std::shared_ptr<CurlContextBundle>(
                             new CurlContextBundle {curlHandlePool, std::move(curlHandlePool.checkout())});
-#if defined(DEBUG0)
+#if defined(DEBUG)
                     std::print(std::cerr,
                                "{} - Existing BUNDLE id:{}:{}; Capacity:{}\n",
                                __func__,
@@ -342,12 +343,12 @@ namespace siddiqsoft
 
             // ..return a new handle..
             auto curlHandle = curl_easy_init();
-#if defined(DEBUG0)
+#if defined(DEBUG)
             std::print(std::cerr, "{} - Invoking curl_easy_init...{}\n", __func__, (void*)curlHandle);
 #endif
 
             if (auto rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGFUNCTION, LibCurlSingleton::debugCallback); rc == CURLE_OK) {
-#if defined(DEBUG0)
+#if defined(DEBUG)
                 std::println(std::cerr, "{} - Setting the debug Callback..", __func__);
 #endif
                 static const int DebugTraceData = 1;
@@ -355,7 +356,7 @@ namespace siddiqsoft
                 if (rc != CURLE_OK) {
                     std::println(std::cerr, "{} - Setting the debug Callback data..FAILED: {}", __func__, curl_easy_strerror(rc));
                 }
-#if defined(DEBUG0)
+#if defined(DEBUG)
                 curl_easy_setopt(curlHandle, CURLOPT_VERBOSE, 1L);
 #endif
             }
@@ -365,7 +366,7 @@ namespace siddiqsoft
 
             auto ctxbndlnew = std::shared_ptr<CurlContextBundle>(new CurlContextBundle {
                     curlHandlePool, std::shared_ptr<CURL> {curlHandle, [](CURL* cc) {
-#if defined(DEBUG0)
+#if defined(DEBUG)
                                                                std::print(std::cerr,
                                                                           "Invoking curl_easy_cleanup...{}\n",
                                                                           reinterpret_cast<void*>(cc));
@@ -419,7 +420,7 @@ namespace siddiqsoft
     {
     private:
         std::shared_ptr<LibCurlSingleton> singletonInstance {};
-        uint32_t                          id = __COUNTER__;
+        uint32_t                          id = std::rand();
 
         basic_callbacktype _callback {};
 
@@ -635,7 +636,7 @@ namespace siddiqsoft
                     // Add bounds checking to prevent integer overflow
                     if (content->offset > content->length - dataSizeToCopyToLibCurl) {
                         // Prevent overflow - offset would exceed length
-                        content->offset = content->length; // Move offset to the end
+                        content->offset        = content->length; // Move offset to the end
                         content->remainingSize = 0;
                         return dataSizeToCopyToLibCurl;
                     }
