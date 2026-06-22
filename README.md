@@ -239,7 +239,7 @@ if (response && response->statusCode() == 200) {
 
 ## API Reference
 
-For comprehensive API documentation, see [API.md](API.md).
+For comprehensive API documentation, see [API.md](docs/API.md).
 
 ## Architecture
 
@@ -429,67 +429,15 @@ For comprehensive guidance on code style, testing strategies, common patterns, a
 
 ## Design Philosophy
 
-### Motivation
-
 Design a library where JSON is a first-class API metaphor for interacting with RESTful servers.
-
-### Core Principles
-
 1. **Focused Scope**: REST interactions with JSON only. This limitation allows us to simplify usage and make it feel very C++ instead of the C-like API of Win32 or LibCURL.
-
-2. **Modern C++**: C++23 is required, enabling:
+1. **Modern C++**: C++23 is required, enabling:
    - Visual Studio 2022 on Windows
    - WinHTTP library with HTTP/2 support
    - Modern language features and idioms
-
-3. **Header-Only**: Easy integration with no compilation overhead for the library itself.
-
+   - RAII for ensuring automatic cleanup
+   - Async with callbacks (no promise/future)
+1. **Header-Only**: Easy integration with no compilation overhead for the library itself.
 4. **Native Implementations**: Use platform-specific libraries for actual IO:
    - Windows: WinHTTP library
    - Unix/Linux/macOS: libcurl
-
-5. **User-Defined Literals**: Support for convenient syntax like `_GET`, `_DELETE`, etc. via the `siddiqsoft::restcl_literals` namespace.
-
-6. **Instructional**: Use as little code as necessary and be clear about intent.
-
-7. **Interface-Focused**: The focus is on the interface to the end user, not internal complexity.
-
-8. **Simplicity Over Performance**: Hide the underlying implementation and prioritize clarity.
-
-## Roadmap
-
-- [ ] Performance optimizations
-- [ ] Additional test coverage
-- [ ] Extended documentation with more examples
-- [ ] Support for additional content types
-- [ ] Enhanced error diagnostics
-
-## Contributing
-
-Contributions are welcome! Please ensure:
-
-1. Code follows the style guidelines in [best_practices.md](best_practices.md)
-2. All tests pass: `ctest --preset default`
-3. New features include appropriate tests
-4. Documentation is updated accordingly
-5. Code is formatted with clang-format: `clang-format -i <file>`
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For issues, questions, or suggestions:
-
-1. Check the [best_practices.md](best_practices.md) for comprehensive guidance
-2. Review existing [GitHub Issues](https://github.com/SiddiqSoft/restcl/issues)
-3. Create a new issue with detailed information
-4. For security concerns, please email privately
-
-## Acknowledgments
-
-- Built with modern C++23 features
-- Uses [nlohmann/json](https://github.com/nlohmann/json) for JSON handling
-- Cross-platform support via WinHTTP and libcurl
-- Comprehensive testing with Google Test framework
