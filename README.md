@@ -414,19 +414,6 @@ For comprehensive guidance on code style, testing strategies, common patterns, a
 - Register global callbacks via `configure()` and override per-request
 - Use `std::atomic<bool>` with `.wait()` and `.notify_all()` for test synchronization
 
-#### Code Style
-- Classes: PascalCase (e.g., `rest_request`, `HttpRESTClient`)
-- Functions: camelCase (e.g., `setMethod()`, `getUri()`)
-- Constants: UPPER_SNAKE_CASE (e.g., `HTTP_NEWLINE`)
-- Private members: Prefix with underscore (e.g., `_statusCode`)
-- Namespaces: lowercase (e.g., `siddiqsoft`, `restcl_literals`)
-
-#### Documentation
-- Use Doxygen comments (`///` or `/**`) for public APIs
-- Include `@brief`, `@param`, `@return`, `@throw` tags
-- Comment non-obvious algorithms or platform-specific code
-- Guard debug output with `#if defined(DEBUG)`
-
 ## Design Philosophy
 
 Design a library where JSON is a first-class API metaphor for interacting with RESTful servers.
