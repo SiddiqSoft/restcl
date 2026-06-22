@@ -1,29 +1,32 @@
 {
     "version": 8,
+    "include": [
+        "project-base.json"
+    ],
     "cmakeMinimumRequired": {
         "major": 3,
         "minor": 29
     },
     "configurePresets": [
         {
-            "name": "Project-Base",
+            "name": "Common-Base",
             "hidden": true,
+            "inherits": "Project-Base",
             "generator": "Ninja",
             "environment": {
                 "CTEST_PARALLEL_LEVEL": "0",
                 "CMAKE_COLOR_DIAGNOSTICS": "1"
             },
             "cacheVariables": {
-                "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
-                "restcl_BUILD_TESTS": "ON"
+                "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache"
             }
         },
         {
-            "name": "Apple-Debug",
-            "displayName": "Apple-Debug (Homebrew LLVM)",
+            "name": "Apple-LLVM-Debug",
+            "displayName": "Apple-LLVM-Debug (Homebrew LLVM)",
             "description": "Using compilers: C = /opt/homebrew/opt/llvm/bin/clang, CXX = /opt/homebrew/opt/llvm/bin/clang++",
             "binaryDir": "${sourceDir}/build/${presetName}",
-            "inherits": "Project-Base",
+            "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
@@ -38,11 +41,11 @@
             }
         },
         {
-            "name": "Apple-Release",
-            "displayName": "Apple-Release (Homebrew LLVM)",
+            "name": "Apple-LLVM-Release",
+            "displayName": "Apple-LLVM-Release (Homebrew LLVM)",
             "description": "Using compilers: C = /opt/homebrew/opt/llvm/bin/clang, CXX = /opt/homebrew/opt/llvm/bin/clang++",
             "binaryDir": "${sourceDir}/build/${presetName}",
-            "inherits": "Project-Base",
+            "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
@@ -57,12 +60,52 @@
             }
         },
         {
+            "name": "Apple-Debug",
+            "displayName": "Apple-Debug (Default Xcode)",
+            "description": "Using default Apple compiler toolchain from Xcode",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "Common-Base",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "Apple-Release",
+            "displayName": "Apple-Release (Default Xcode)",
+            "description": "Using default Apple compiler toolchain from Xcode",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "Common-Base",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "Darwin-LLVM",
+            "inherits": "Apple-LLVM-Release"
+        },
+        {
+            "name": "Darwin",
+            "inherits": "Apple-Release"
+        },
+        {
             "name": "Linux-Clang-Debug",
             "displayName": "Linux Clang Debug",
-            "description": "Target Linux Clang(Debug)",
+            "description": "Target Linux Clang (Debug)",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "inherits": "Project-Base",
+            "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
@@ -82,10 +125,10 @@
         {
             "name": "Linux-Clang-Release",
             "displayName": "Linux Clang Release",
-            "description": "Target Linux Clang(Release)",
+            "description": "Target Linux Clang (Release)",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "inherits": "Project-Base",
+            "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
@@ -103,12 +146,16 @@
             }
         },
         {
+            "name": "Linux-Clang",
+            "inherits": "Linux-Clang-Release"
+        },
+        {
             "name": "Linux-GCC-Debug",
             "displayName": "Linux GCC Debug",
-            "description": "Target Linux GCC(Debug)",
+            "description": "Target Linux GCC (Debug)",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "inherits": "Project-Base",
+            "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "/usr/bin/gcc",
@@ -131,7 +178,7 @@
             "description": "Target Linux GCC (Release)",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "inherits": "Project-Base",
+            "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "/usr/bin/gcc",
@@ -149,64 +196,138 @@
             }
         },
         {
-            "name": "Windows-base",
-            "description": "Target Windows with the Visual Studio development environment.",
+            "name": "Linux-GCC",
+            "inherits": "Linux-GCC-Release"
+        },
+        {
+            "name": "Windows-Base",
             "hidden": true,
-            "generator": "Visual Studio 17 2022",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "inherits": "Project-Base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
+            "generator": "Ninja Multi-Config",
+            "inherits": "Common-Base",
             "cacheVariables": {
+                "CMAKE_MAKE_PROGRAM": "ninja.exe",
                 "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe"
+            },
+            "environment": {
+                "CTEST_PARALLEL_LEVEL": "0",
+                "CMAKE_COLOR_DIAGNOSTICS": "1"
             },
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
                 "rhs": "Windows"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Windows"
+                    ]
+                }
             }
         },
         {
-            "name": "Windows-Debug",
-            "displayName": "Windows x64 Debug",
-            "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
-            "inherits": "Windows-base",
+            "name": "Windows-x64-Debug",
+            "displayName": "Win x64 Debug",
+            "description": "Target Win with Ninja and MSVC (Debug) - Auto-detects Visual Studio version",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=x64",
+                "strategy": "external"
+            },
+            "inherits": "Windows-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "Windows-Release",
-            "displayName": "Windows x64 Release",
-            "description": "Target Windows (64-bit) with the Visual Studio development environment. (RelWithDebInfo)",
-            "inherits": "Windows-base",
+            "name": "Windows-x64-Release",
+            "displayName": "Win x64 Release",
+            "description": "Target Win with Ninja and MSVC (Release) - Auto-detects Visual Studio version",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=x64",
+                "strategy": "external"
+            },
+            "inherits": "Windows-Base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
         },
         {
-            "name": "Custom configure preset",
-            "displayName": "Custom configure preset",
-            "description": "Sets Ninja generator, build and install directory",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "name": "Windows-x64",
+            "inherits": "Windows-x64-Release"
+        },
+        {
+            "name": "Windows-arm64-Debug",
+            "displayName": "Win arm64 Debug",
+            "description": "Target Win with Ninja and MSVC (Debug) - Auto-detects Visual Studio version",
+            "architecture": {
+                "value": "arm64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=arm64",
+                "strategy": "external"
+            },
+            "inherits": "Windows-Base",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+                "CMAKE_BUILD_TYPE": "Debug"
             }
+        },
+        {
+            "name": "Windows-arm64-Release",
+            "displayName": "Win arm64 Release",
+            "description": "Target Win with Ninja and MSVC (Release) - Auto-detects Visual Studio version",
+            "architecture": {
+                "value": "arm64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=arm64",
+                "strategy": "external"
+            },
+            "inherits": "Windows-Base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "Windows-arm64",
+            "inherits": "Windows-arm64-Release"
         }
     ],
     "buildPresets": [
+        {
+            "name": "Apple-LLVM-Debug",
+            "configurePreset": "Apple-LLVM-Debug"
+        },
+        {
+            "name": "Apple-LLVM-Release",
+            "configurePreset": "Apple-LLVM-Release"
+        },
         {
             "name": "Apple-Debug",
             "configurePreset": "Apple-Debug"
         },
         {
             "name": "Apple-Release",
+            "configurePreset": "Apple-Release"
+        },
+        {
+            "name": "Darwin-LLVM",
+            "configurePreset": "Apple-LLVM-Release"
+        },
+        {
+            "name": "Darwin",
             "configurePreset": "Apple-Release"
         },
         {
@@ -218,6 +339,10 @@
             "configurePreset": "Linux-GCC-Release"
         },
         {
+            "name": "Linux-GCC",
+            "configurePreset": "Linux-GCC-Release"
+        },
+        {
             "name": "Linux-Clang-Debug",
             "configurePreset": "Linux-Clang-Debug"
         },
@@ -226,15 +351,57 @@
             "configurePreset": "Linux-Clang-Release"
         },
         {
-            "name": "Windows-Debug",
-            "configurePreset": "Windows-Debug"
+            "name": "Linux-Clang",
+            "configurePreset": "Linux-Clang-Release"
         },
         {
-            "name": "Windows-Release",
-            "configurePreset": "Windows-Release"
+            "name": "Windows-x64-Debug",
+            "configurePreset": "Windows-x64-Debug"
+        },
+        {
+            "name": "Windows-x64-Release",
+            "configurePreset": "Windows-x64-Release"
+        },
+        {
+            "name": "Windows-x64",
+            "configurePreset": "Windows-x64-Release"
+        },
+        {
+            "name": "Windows-arm64-Debug",
+            "configurePreset": "Windows-arm64-Debug"
+        },
+        {
+            "name": "Windows-arm64-Release",
+            "configurePreset": "Windows-arm64-Release"
+        },
+        {
+            "name": "Windows-arm64",
+            "configurePreset": "Windows-arm64-Release"
         }
     ],
     "testPresets": [
+        {
+            "name": "Apple-LLVM-Debug",
+            "configurePreset": "Apple-LLVM-Debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Apple-LLVM-Release",
+            "configurePreset": "Apple-LLVM-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
         {
             "name": "Apple-Debug",
             "configurePreset": "Apple-Debug",
@@ -248,6 +415,28 @@
         },
         {
             "name": "Apple-Release",
+            "configurePreset": "Apple-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Darwin-LLVM",
+            "configurePreset": "Apple-LLVM-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Darwin",
             "configurePreset": "Apple-Release",
             "output": {
                 "outputOnFailure": true
@@ -280,6 +469,17 @@
             }
         },
         {
+            "name": "Linux-GCC",
+            "configurePreset": "Linux-GCC-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
             "name": "Linux-Clang-Debug",
             "configurePreset": "Linux-Clang-Debug",
             "output": {
@@ -302,8 +502,8 @@
             }
         },
         {
-            "name": "Windows-Debug",
-            "configurePreset": "Windows-Debug",
+            "name": "Linux-Clang",
+            "configurePreset": "Linux-Clang-Release",
             "output": {
                 "outputOnFailure": true
             },
@@ -313,8 +513,63 @@
             }
         },
         {
-            "name": "Windows-Release",
-            "configurePreset": "Windows-Release",
+            "name": "Windows-x64-Debug",
+            "configurePreset": "Windows-x64-Debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Windows-x64-Release",
+            "configurePreset": "Windows-x64-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Windows-x64",
+            "configurePreset": "Windows-x64-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Windows-arm64-Debug",
+            "configurePreset": "Windows-arm64-Debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Windows-arm64-Release",
+            "configurePreset": "Windows-arm64-Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "Windows-arm64",
+            "configurePreset": "Windows-arm64-Release",
             "output": {
                 "outputOnFailure": true
             },

@@ -27,6 +27,14 @@ project(restcl
 # Options; define and declare defaults
 option(${PROJECT_NAME}_BUILD_TESTS "${PROJECT_NAME} - Build tests. Uncheck for install only runs" OFF)
 
+set( CMAKE_CXX_STANDARD 23)
+set( CMAKE_CXX_STANDARD_REQUIRED ON)
+set( CMAKE_CXX_EXTENSIONS Off)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_ENABLE_C_CLANG_TIDY ON)
+set(CMAKE_ENABLE_CXX_CLANG_TIDY ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # ____________________________________
 #  Library Definition
 add_library(${PROJECT_NAME} INTERFACE)
@@ -44,10 +52,18 @@ target_compile_options( ${PROJECT_NAME}
                         INTERFACE
                         $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
 
-set( CMAKE_CXX_STANDARD 23)
-set( CMAKE_CXX_STANDARD_REQUIRED On)
-set( CMAKE_CXX_EXTENSIONS Off)
-                        
+find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
+
+if(CLANG_TIDY_EXE AND CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
+    # This runs the analyzer with all default checks enabled
+    # We skip anything that is not in our project.
+    message(STATUS "  >> Using clang-tidy checks=*")
+    set(CMAKE_CXX_CLANG_TIDY 
+        ${CLANG_TIDY_EXE} 
+        "-checks=*"
+        "--header-filter=^(${CMAKE_CURRENT_SOURCE_DIR}/|${PROJECT_SOURCE_DIR}/include/)")
+endif()
+
 # ____________________________________
 # Dependencies
 if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
