@@ -15,9 +15,6 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     target_compile_options( ${TESTPROJ}
                             PRIVATE
                             $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest> )
-    target_compile_options( ${TESTPROJ}
-                            PRIVATE
-                            $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
 
     # Check if mold is available on the system
     find_program(MOLD_LINKER mold)
@@ -58,7 +55,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         set(OPTIMIZE_FLAGS "-O0")
         set(OTHER_FLAGS "-g")
         if( CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
-            set(DEBUG_COMPILE_FLAGS -g3 -O0)
+            set(DEBUG_COMPILE_FLAGS -g3)
         endif()
     endif()
 
@@ -66,6 +63,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     if( CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_SYSTEM_NAME STREQUAL "Windows" )
         message(STATUS "  >> LSAN is not supported on Windows/MSVC and AppleClang, skipping..")
     else()
+        message(STATUS "  >> Setting LSAN for ${CMAKE_CXX_COMPILER_ID} / ${CMAKE_SYSTEM_NAME}")
         set(LSAN_FLAGS "-fsanitize=leak")
     endif()
 
@@ -80,6 +78,8 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
 
     # Dependencies
     CPMAddPackage("gh:google/googletest#v1.17.0")
+
+    # Sources
     target_sources( ${TESTPROJ}
                     PRIVATE
                     ${PROJECT_SOURCE_DIR}/tests/test_serializers.cpp

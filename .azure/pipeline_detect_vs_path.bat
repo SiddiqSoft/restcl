@@ -1,0 +1,23 @@
+@echo off
+rem detect the location of Visual Studio vcvars and set the path
+
+rem Path to vswhere.exe (usually installed with VS)
+set "vswhere=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+
+rem Find the installation path of the latest Visual Studio version
+for /f "usebackq tokens=*" %%i in (`"%vswhere%" -latest -property installationPath`) do (
+    set "VS_PATH=%%i"
+)
+
+if not defined VS_PATH (
+    echo Visual Studio installation not found.
+    exit /b 1
+)
+
+rem vcvarsall.bat location for VS 2017+
+set "VCVARS_PATH=%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat"
+echo "Found Visual Studio at: `%VS_PATH%`"
+echo "Found vcvarsall.bat at: `%VCVARS_PATH%`"
+echo "Saving the %VCVARS_PATH% to environment variables"
+echo ##vso[task.setvariable variable=VCVARS_PATH]%VCVARS_PATH%
+echo "done."

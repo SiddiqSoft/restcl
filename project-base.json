@@ -6,7 +6,7 @@
             "displayName": "Project Base",
             "description": "Base preset for all project configurations.",
             "cacheVariables": {
-                "AzureCppUtils_BUILD_TESTS": "ON",
+                "restcl_BUILD_TESTS": "ON",
                 "CI_BUILDID": "0.0.0"
             },
             "hidden": true

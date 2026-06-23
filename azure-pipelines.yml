@@ -1,238 +1,207 @@
-###############################################
-# SiddiqSoft Azure DevOps Pipelines Template  #
-# For C++ Projects                            #
-# Version 2.0                                 #
-###############################################
+# ============================================================================
+# Azure Pipelines Main Configuration
+# ============================================================================
+#
+# This pipeline:
+# 1. Builds the library across multiple platforms with a build matrix
+#    - Windows (x64, arm64) with MSVC
+#    - Linux (x64) with Clang and GCC
+# 2. Runs tests on all platforms (configurable)
+# 3. Publishes to NuGet and GitHub (on main/master branches)
+#
+# Pipeline Stages:
+# 1. Windows - Cleanup, build, and test for Windows with matrix for architecture and compiler
+# 2. Linux - Cleanup, build, and test for Linux with matrix for architecture and compiler
+# 3. Publication - Publishes to NuGet and GitHub
+#
+# Documentation: See PIPELINE_DOCUMENTATION_INDEX.md for detailed information
+# ============================================================================
+
+# ============================================================================
+# TRIGGER & PR CONFIGURATION
+# ============================================================================
 trigger:
-  batch: 'true'
   branches:
     include:
-    - master
-    - main
-    - bugfix/*
-    - release/*
-    - hotfix/*
-    - feature/*
+      - main
+      - master
+      - development
+      - devel
+      - release/*
   paths:
     exclude:
-    - README.md
-    - best_practices.md
+      - README.md
+      - .azure/*
+      - azure-pipelines.yml # Avoids recursive triggers when modifying the pipeline itself
+pr:
+  branches:
+    include:
+      - main
+      - release/*
 
+# ============================================================================
+# RESOURCES
+# ============================================================================
+resources:
+  repositories:
+    - repository: self
+      type: git
+
+# ============================================================================
+# PARAMETERS
+# ============================================================================
+parameters:
+  - name: Architectures
+    type: stringList
+    default: [ arm64 ]
+    values: [ arm64, x64 ]
+    displayName: "Architectures to build (x64, arm64)"
+  
+  - name: Platforms
+    type: stringList
+    default: [ Windows, Linux ]
+    values: [ Windows, Linux, Darwin ]
+    displayName: "Platforms to build (Windows, Linux)"
+  
+  # Compiler Selection per Platform
+  - name: Compilers_Windows
+    type: stringList
+    default: [ MSVC ]
+    values: [ MSVC ]
+    displayName: "Windows compilers to build (MSVC)"
+
+  - name: Compilers_Linux
+    type: stringList
+    default: [ Clang ]
+    values: [ Clang, GCC ]
+    displayName: "Linux compilers to build (Clang, GCC)"
+
+  - name: Compilers_Darwin
+    type: stringList
+    default: [ Clang ]
+    values: [ Clang ]
+    displayName: "Darwin compilers to build (Clang, GCC)"
+
+  - name: BuildTypes
+    type: stringList
+    default: [ Release ]
+    values: [ Release, Debug ]
+    displayName: "Build types to build (Release, Debug)"
+  
+  # Testing
+  - name: RunTests
+    type: boolean
+    default: true
+    displayName: "Run tests after building"
+
+  # Publishing
+  - name: PublishNuGet
+    type: boolean
+    default: false
+    displayName: "Publish to NuGet (auto-enabled on main/master)"
+
+  - name: PublishGitHub
+    type: boolean
+    default: false
+    displayName: "Create GitHub release (auto-enabled on main/master)"
+
+  # Cleanup
+  - name: Cleanup
+    type: boolean
+    default: false
+    displayName: "Cleanup only (skip builds and tests)"
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  # Auto-enable publishing on main/master branches
+  ${{ if and(eq(parameters.PublishNuGet, false), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))) }}:
+    PublishNuGet: true
+    PublishGitHub: true
+  ${{ else }}:
+    PublishNuGet: ${{ parameters.PublishNuGet }}
+    PublishGitHub: ${{ parameters.PublishGitHub }}
+
+  # System information
+  AgentOS: $(Agent.OS)
+  AgentArch: $(Agent.OSArchitecture)
+
+  # Build paths
+  cpmCachePath: $(Agent.HomeDirectory)/.cpmcache
+  buildOutputPat_h: $(System.DefaultWorkingDirectory)/build/$(cmakePreset)
+  testResultsPat_h: $(System.DefaultWorkingDirectory)/build/$(cmakePreset)/tests/results
+
+# ============================================================================
+# STAGES
+# ============================================================================
 stages:
-################################## STAGE ####################################
-# STAGE: BuildTest                                                          #
-#############################################################################
-- stage: BuildTest
-  displayName: 'Building, Testing and Package'
-  jobs:
-  - job: buildWindows
-    displayName: 'Build and Test Windows'
-    workspace:
-      clean: all
-    pool:
-      name: Default
-      demands:
-        - Agent.OS -equals Windows_NT
-    strategy:
-      matrix:
-        Debug:
-          BuildType: Debug
-          cmake.preset: 'Windows-$(BuildType)'
-          MSBuildConfiguration: Debug
-        Release:
-          BuildType: Release
-          cmake.preset: 'Windows-$(BuildType)'
-          MSBuildConfiguration: Release
-    steps:
-    - checkout: self
-      name: step1
-    
-    - task: gitversion-setup@4
-      displayName: 'Install GitVersion..'
-      inputs:
-        versionSpec: '6.x'
-        preferLatestVersion: true
-    
-    - task: gitversion-execute@4
-      displayName: 'Determine Version..'
-      name: version_step
-      inputs:
-        useConfigFile: true
-        configFilePath: 'GitVersion.yml'
-    
-    - task: CMake@1
-      displayName: 'CMake Configure $(cmake.preset)'
-      inputs:
-        cmakeArgs: '--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
-    
-    - task: CMake@1
-      displayName: 'CMake Build $(cmake.preset)'
-      inputs:
-        cmakeArgs: '--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
-      condition: succeeded()
-    
-    - task: CMake@1
-      displayName: 'CMake Tests $(cmake.preset)'
-      inputs:
-        cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure'
-      continueOnError: true
-      condition: succeeded()
-    
-    - task: PublishTestResults@2
-      displayName: 'Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml'
-      inputs:
-          testResultsFormat: 'JUnit'
-          testResultsFiles: '$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml'
-          mergeTestResults: false
-          buildConfiguration: '$(BuildType)'
-      continueOnError: true
-      condition: succeeded()
-    
-    - task: NuGetToolInstaller@1
-      displayName: 'Install Nuget on Windows'
-      inputs:
-        versionSpec: '>=6.0.0-0'
-        checkLatest: true
-      condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
-    
-    - task: NuGetCommand@2
-      displayName: 'NuGet pack v$(GITVERSION_MAJORMINORPATCH)'
-      inputs:
-        command: 'pack'
-        packagesToPack: 'pack/*.nuspec'
-        versioningScheme: 'off'
-        buildProperties: 'VERSION=$(GITVERSION_MAJORMINORPATCH)'
-      condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Windows'))
-    
-    - task: NuGetCommand@2
-      displayName: 'NuGet push (Windows only)'
-      inputs:
-        command: 'push'
-        packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;build/*.nupkg'
-        nuGetFeedType: 'external'
-        publishFeedCredentials: 'sqs-nuget'
-      condition: and(succeeded(), eq(variables['BuildType'], 'Release'), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')), startsWith(variables['Agent.OS'], 'Windows'))
-    
-    - task: GitHubRelease@1
-      displayName: 'Release to GitHub'
-      inputs:
-        gitHubConnection: 'github-packages-sqs'
-        repositoryName: '$(Build.Repository.Name)'
-        action: 'create'
-        target: '$(Build.SourceVersion)'
-        tagSource: 'userSpecifiedTag'
-        tag: '$(GITVERSION_MAJORMINORPATCH)'
-        title: 'v$(GITVERSION_MAJORMINORPATCH)'
-        releaseNotesSource: 'inline'
-        releaseNotesInline: 'Documentation https://github.com/$(Build.Repository.Name)'
-        isPreRelease: true
-        changeLogCompareToRelease: 'lastFullRelease'
-        changeLogType: 'commitBased'
-        addChangeLog: false
-        assetUploadMode: 'replace'
-      condition: and(succeeded(), eq(variables['BuildType'], 'Release'), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')), startsWith(variables['Agent.OS'], 'Windows'))
+  # ==========================================================================
+  # STAGE 1: WINDOWS BUILD
+  # ==========================================================================
+  - stage: Windows
+    displayName: Windows
+    condition: ${{ containsValue(parameters.Platforms, 'Windows') }}
+    dependsOn: []
 
-#   ##################################################################################################### #### ## #
-#   #### Job buildLinux ################################################################################# #### ## #
-#   ##################################################################################################### #### ## #
-  - job: buildLinux
-    displayName: 'Build and Test Linux'
-    workspace:
-      clean: all
-    pool:
-      name: Default
-      demands:
-        - Agent.OS -equals Linux
-    strategy:
-      matrix:
-        GCC-Debug:
-          BuildType: Debug
-          cmake.preset: 'Linux-GCC-$(BuildType)'
-          MSBuildConfiguration: Debug
-          cmakeExtraArgs: 
-        GCC-Release:
-          BuildType: Release
-          cmake.preset: 'Linux-GCC-$(BuildType)'
-          cmakeExtraArgs: 
-          MSBuildConfiguration: Release
-        Clang-Debug:
-          BuildType: Debug
-          cmake.preset: 'Linux-Clang-$(BuildType)'
-          MSBuildConfiguration: Debug
-          cmakeExtraArgs: 
-        Clang-Release:
-          BuildType: Release
-          cmake.preset: 'Linux-Clang-$(BuildType)'
-          cmakeExtraArgs: 
-          MSBuildConfiguration: Release
-    steps:
-    - checkout: self
-      name: step1
-    
-    - task: gitversion-setup@4
-      displayName: 'Install GitVersion..'
-      inputs:
-        versionSpec: '6.x'
-        preferLatestVersion: true
-    
-    - task: gitversion-execute@4
-      displayName: 'Determine Version..'
-      name: version_step
-      inputs:
-        useConfigFile: true
-        configFilePath: 'GitVersion.yml'
-    
-    - task: CMake@1
-      displayName: 'CMake Configure $(cmake.preset)'
-      inputs:
-        cmakeArgs: '--preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
-    
-    - task: CMake@1
-      displayName: 'CMake Build $(cmake.preset)'
-      inputs:
-        cmakeArgs: '--build --preset $(cmake.preset) -DCI_BUILDID=$(GITVERSION_MAJORMINORPATCH)  -DCPM_SOURCE_CACHE=$(Agent.HomeDirectory)/.cpmcache'
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
-      condition: succeeded()
-    
-    - task: CMake@1
-      displayName: 'CMake Tests $(cmake.preset)'
-      env:
-        "CTEST_OUTPUT_ON_FAILURE": "TRUE"
-      inputs:
-        cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure --verbose'
-      condition: succeeded()
-      continueOnError: true
-    - task: CMake@1
-      displayName: 'CTest Coverage $(cmake.preset) (Linux only)'
-      env:
-        "CTEST_OUTPUT_ON_FAILURE": "TRUE"
-      inputs:
-        cmakeArgs: '-E chdir $(System.DefaultWorkingDirectory)/build/$(cmake.preset) ctest $(System.DefaultWorkingDirectory)/build/$(cmake.preset) --output-junit $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml --output-on-failure --verbose -T Test -T Coverage'
-      condition: and(succeeded(), eq(variables['BuildType'], 'Debug'), startsWith(variables['Agent.OS'], 'Linux'), startsWith(variables['Agent.OSArchitecture'], 'X64'))
-      continueOnError: true
-    - task: CmdLine@2
-      displayName: 'Coverage collection (Linux builds Only)'
-      inputs:
-        script: |
-          echo "gcovr --delete --root ../../ --print-summary --xml-pretty --xml coverage.xml .  --filter='$(System.DefaultWorkingDirectory)/include/siddiqsoft/*' --filter='$(System.DefaultWorkingDirectory)/tests/*' --gcov-executable 'llvm-cov gcov'"
-          gcovr --delete --root $(System.DefaultWorkingDirectory)/ --print-summary --xml-pretty --xml $(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/coverage.xml $(System.DefaultWorkingDirectory)/build/$(cmake.preset)  --filter='$(System.DefaultWorkingDirectory)/include/*' --filter='$(System.DefaultWorkingDirectory)/tests/*' --gcov-executable 'llvm-cov gcov'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/build/$(cmake.preset)'
-      condition: and(succeeded(), eq(variables['BuildType'], 'Debug'), startsWith(variables['Agent.OS'], 'Linux'), startsWith(variables['Agent.OSArchitecture'], 'X64'))
-    - task: PublishTestResults@2
-      displayName: 'Publish $(BuildType) Test Results $(cmake.preset)_test_detail.xml'
-      inputs:
-        testResultsFormat: 'JUnit'
-        testResultsFiles: '$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/$(cmake.preset)_test_detail.xml'
-        mergeTestResults: false
-        buildConfiguration: '$(BuildType)'
-      continueOnError: false
-      condition: succeeded()
-    - task: PublishCodeCoverageResults@2
-      displayName: 'Publish Coverage Results (Linux builds)'
-      inputs:
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)/build/$(cmake.preset)/tests/results/coverage.*'
-      condition: and(succeeded(), startsWith(variables['Agent.OS'], 'Linux'), startsWith(variables['Agent.OSArchitecture'], 'X64'), eq(variables['BuildType'], 'Debug'))
-    
+    jobs:
+    - ${{ if eq(parameters.Cleanup, true) }}:
+      - template: .azure/az-cleanup-windows.yml
+        parameters:
+          displayName: "Windows Cleanup"
+          BuildOperatingSystem: $(Agent.OS)
+          CleanupDirectory: ${{ variables.cpmCachePath }}
+
+    - template: .azure/az-build-windows.yml
+      parameters:
+        displayName: "Windows Build and Test"
+        architectures: ${{ parameters.Architectures }}
+        compilers: ${{ parameters.Compilers_Windows }}
+        buildTypes: ${{ parameters.BuildTypes }}
+        runTests: ${{ parameters.RunTests }}
+        publishNuGet: ${{ variables.PublishNuGet }}
+
+  # ==========================================================================
+  # STAGE 1: LINUX BUILD
+  # ==========================================================================
+  - stage: Linux
+    displayName: Linux
+    condition: ${{ containsValue(parameters.Platforms, 'Linux') }}
+    dependsOn: []
+
+    jobs:
+    - ${{ if eq(parameters.Cleanup, true) }}:
+      - template: .azure/az-cleanup-linux.yml
+        parameters:
+          displayName: "Linux Cleanup"
+          BuildOperatingSystem: $(Agent.OS)
+          CleanupDirectory: ${{ variables.cpmCachePath }}
+
+    - template: .azure/az-build-linux.yml
+      parameters:
+        displayName: "Linux Build and Test"
+        architectures: ${{ parameters.Architectures }}
+        compilers: ${{ parameters.Compilers_Linux }}
+        buildTypes: ${{ parameters.BuildTypes }}
+        runTests: ${{ parameters.RunTests }}
+
+  # ==========================================================================
+  # STAGE 3: PUBLICATION
+  # ==========================================================================
+  - stage: Publication
+    displayName: Publication
+    dependsOn:
+      - Windows
+      - Linux
+    condition: and(or(eq(${{ variables.PublishGitHub }}, true), eq(${{ variables.PublishNuGet }}, true)), succeeded())
+    jobs:
+      - ${{ if eq(variables.PublishNuGet, true) }}:
+        - template: .azure/az-publish-nuget.yml
+          parameters:
+            displayName: NuGet Release
+            PublishNuGet: ${{ variables.PublishNuGet }}
+  
+      - template: .azure/az-publish-github.yml
+        parameters:
+          displayName: GitHub Release
+          PublishGitHub: ${{ variables.PublishGitHub }}

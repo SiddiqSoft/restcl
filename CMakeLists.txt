@@ -46,12 +46,6 @@ target_include_directories(${PROJECT_NAME}
                             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_23)
 
-# For std::stop_token and std::jthread on Clang 18 and Clang 19 we need to enable
-# the experimental-library flag.
-target_compile_options( ${PROJECT_NAME}
-                        INTERFACE
-                        $<$<CXX_COMPILER_ID:Clang>:-fexperimental-library> )
-
 find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
 
 if(CLANG_TIDY_EXE AND CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
@@ -66,7 +60,9 @@ endif()
 
 # ____________________________________
 # Dependencies
+message(STATUS "${PROJECT_NAME} - Dependencies.. for compiler ${CMAKE_CXX_COMPILER_ID}")
 if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
+        OR (CMAKE_CXX_COMPILER_ID MATCHES [Aa][Pp][Pp][Ll][Ee][Cc][Ll][Aa][Nn][Gg]) 
         OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu])))
     # Linux/Unix specific
     # Make sure you install libcurl-devel on Linux
@@ -83,15 +79,15 @@ endif()
 
 CPMAddPackage("gh:nlohmann/json#v3.12.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
-CPMAddPackage("gh:SiddiqSoft/SplitUri#3.0.0")
+CPMAddPackage("gh:SiddiqSoft/SplitUri#3.0.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
-CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.2.5")
+CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.2.9")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
-CPMAddPackage("gh:SiddiqSoft/string2map#2.5.0")
+CPMAddPackage("gh:SiddiqSoft/string2map#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
-CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.2")
+CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.5")
 target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#2.1.1")
+CPMAddPackage("gh:SiddiqSoft/asynchrony#2.2.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 
 
