@@ -18,7 +18,12 @@
                 "CMAKE_COLOR_DIAGNOSTICS": "1"
             },
             "cacheVariables": {
-                "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache"
+                "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
+                "CMAKE_CXX_STANDARD": "23",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+                "CMAKE_CXX_EXTENSIONS ": "OFF",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_POSITION_INDEPENDENT_CODE": "ON"
             }
         },
         {
@@ -31,8 +36,11 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
                 "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_OSX_SYSROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+                "CMAKE_OSX_SYSROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+                "CMAKE_ENABLE_C_CLANG_TIDY": "ON",
+                "CMAKE_ENABLE_CXX_CLANG_TIDY": "ON",
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy",
+                "CMAKE_BUILD_TYPE": "Debug"
             },
             "condition": {
                 "type": "equals",
@@ -50,8 +58,11 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
                 "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_OSX_SYSROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+                "CMAKE_OSX_SYSROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+                "CMAKE_ENABLE_C_CLANG_TIDY": "ON",
+                "CMAKE_ENABLE_CXX_CLANG_TIDY": "ON",
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy",
+                "CMAKE_BUILD_TYPE": "Release"
             },
             "condition": {
                 "type": "equals",
@@ -67,6 +78,9 @@
             "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_ENABLE_C_CLANG_TIDY": "ON",
+                "CMAKE_ENABLE_CXX_CLANG_TIDY": "ON",
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy",
                 "CMAKE_BUILD_TYPE": "Debug"
             },
             "condition": {
@@ -83,6 +97,9 @@
             "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_ENABLE_C_CLANG_TIDY": "ON",
+                "CMAKE_ENABLE_CXX_CLANG_TIDY": "ON",
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy",
                 "CMAKE_BUILD_TYPE": "Release"
             },
             "condition": {

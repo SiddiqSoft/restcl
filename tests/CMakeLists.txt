@@ -1,14 +1,6 @@
 if(${${PROJECT_NAME}_BUILD_TESTS})
     set(TESTPROJ ${PROJECT_NAME}_tests)
 
-    set( CMAKE_CXX_STANDARD 23)
-    set( CMAKE_CXX_STANDARD_REQUIRED ON)
-    set( CMAKE_CXX_EXTENSIONS Off)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-    set(CMAKE_ENABLE_C_CLANG_TIDY ON)
-    set(CMAKE_ENABLE_CXX_CLANG_TIDY ON)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-    
     add_executable(${TESTPROJ})
 
     target_compile_features(${TESTPROJ} PRIVATE cxx_std_23)
@@ -25,17 +17,6 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         add_link_options("-fuse-ld=mold")
     else()
         message(STATUS "  >> mold not found, falling back to default linker.")
-    endif()
-
-    find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
-
-    if(CLANG_TIDY_EXE AND CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
-        # This runs the analyzer with all default checks enabled
-        # We skip anything that is not in our project.
-        message(STATUS "  >> Using clang-tidy from ${CLANG_TIDY_EXE}")
-        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};--config-file=${PROJECT_SOURCE_DIR}/.clang-tidy" )
-    else()
-        message(STATUS "  >> Skip `clang-tidy` for build type: ${CMAKE_BUILD_TYPE}..${CLANG_TIDY_EXE}")
     endif()
 
     # UndefinedBehaviorSanitizer is not available on Windows
