@@ -65,11 +65,13 @@ if((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg])
     # Linux/Unix specific
     # Make sure you install libcurl-devel on Linux
     find_package(CURL 8.7 REQUIRED)
+    message(STATUS "  >> Curl Includes: ${CURL_INCLUDE_DIRS} and libs: ${CURL_LIBRARIES}")
     target_link_libraries(${PROJECT_NAME} INTERFACE CURL::libcurl)
 elseif( (CMAKE_CXX_COMPILER_ID MATCHES [Aa][Pp][Pp][Ll][Ee][Cc][Ll][Aa][Nn][Gg]) )
     # MacOS AppleClang (non-homebrew) specific
     set(CURL_ROOT "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr")
     find_package(CURL 8.7 REQUIRED)
+    message(STATUS "  >> Curl Includes: ${CURL_INCLUDE_DIRS} and libs: ${CURL_LIBRARIES}")
     # Note: Do not use include_directories(${CURL_INCLUDE_DIRS}) here.
     # The CURL::libcurl imported target already provides include paths as SYSTEM includes,
     # which avoids conflicts between Homebrew LLVM's C++ headers and the macOS SDK C headers.

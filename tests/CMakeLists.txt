@@ -84,7 +84,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
                     ${PROJECT_SOURCE_DIR}/tests/test_serializers.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_validation.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_postbin.cpp
-                    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
+                    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:${PROJECT_SOURCE_DIR}/tests/test_libcurl_helpers.cpp>
                     ${PROJECT_SOURCE_DIR}/tests/test_restcl.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_edge_cases.cpp
                     ${PROJECT_SOURCE_DIR}/tests/test_mock_and_coverage.cpp)
@@ -92,7 +92,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     target_link_libraries(${TESTPROJ} PRIVATE
             GTest::gtest_main
             nlohmann_json::nlohmann_json
-            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:CURL::libcurl>
+            $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:CURL::libcurl>
             $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
             RunOnEnd::RunOnEnd
             SplitUri::SplitUri
