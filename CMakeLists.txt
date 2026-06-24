@@ -61,11 +61,15 @@ endif()
 # ____________________________________
 # Dependencies
 message(STATUS "${PROJECT_NAME} - Dependencies.. for compiler ${CMAKE_CXX_COMPILER_ID}")
-if(((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
-        OR (CMAKE_CXX_COMPILER_ID MATCHES [Aa][Pp][Pp][Ll][Ee][Cc][Ll][Aa][Nn][Gg]) 
-        OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu])))
+if((CMAKE_CXX_COMPILER_ID MATCHES [Cc][Ll][Aa][Nn][Gg]) 
+        OR (CMAKE_CXX_COMPILER_ID MATCHES [Gg][Nn][Uu]))
     # Linux/Unix specific
     # Make sure you install libcurl-devel on Linux
+    find_package(CURL 8.7 REQUIRED)
+    target_link_libraries(${PROJECT_NAME} INTERFACE CURL::libcurl)
+elseif( (CMAKE_CXX_COMPILER_ID MATCHES [Aa][Pp][Pp][Ll][Ee][Cc][Ll][Aa][Nn][Gg]) )
+    # MacOS AppleClang (non-homebrew) specific
+    set(CURL_ROOT "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr")
     find_package(CURL 8.7 REQUIRED)
     # Note: Do not use include_directories(${CURL_INCLUDE_DIRS}) here.
     # The CURL::libcurl imported target already provides include paths as SYSTEM includes,
