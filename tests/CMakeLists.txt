@@ -32,11 +32,10 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     if(CLANG_TIDY_EXE AND CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
         # This runs the analyzer with all default checks enabled
         # We skip anything that is not in our project.
-        message(STATUS "  >> Using clang-tidy checks=*")
-        set(CMAKE_CXX_CLANG_TIDY 
-            ${CLANG_TIDY_EXE} 
-            "-checks=*"
-            "--header-filter=^(${CMAKE_CURRENT_SOURCE_DIR}/|${PROJECT_SOURCE_DIR}/include/)")
+        message(STATUS "  >> Using clang-tidy from ${CLANG_TIDY_EXE}")
+        set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE} )
+    else()
+        message(STATUS "  >> Skip `clang-tidy` for build type: ${CMAKE_BUILD_TYPE}..${CLANG_TIDY_EXE}")
     endif()
 
     # UndefinedBehaviorSanitizer is not available on Windows
@@ -104,7 +103,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
 
     include(GoogleTest)
     gtest_discover_tests(${TESTPROJ} XML_OUTPUT_DIR "${PROJECT_SOURCE_DIR}/tests/results")
-
+    
     include(CTest)
     message(STATUS "  Finished configuring for ${PROJECT_NAME} -- ${PROJECT_NAME}_BUILD_TESTS = ${${PROJECT_NAME}_BUILD_TESTS}")
 endif()

@@ -51,11 +51,10 @@ find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
 if(CLANG_TIDY_EXE AND CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
     # This runs the analyzer with all default checks enabled
     # We skip anything that is not in our project.
-    message(STATUS "  >> Using clang-tidy checks=*")
-    set(CMAKE_CXX_CLANG_TIDY 
-        ${CLANG_TIDY_EXE} 
-        "-checks=*"
-        "--header-filter=^(${CMAKE_CURRENT_SOURCE_DIR}/|${PROJECT_SOURCE_DIR}/include/)")
+    message(STATUS "  >> Using clang-tidy from ${CLANG_TIDY_EXE}")
+    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE} )
+else()
+    message(STATUS "  >> Skip `clang-tidy` for build type: ${CMAKE_BUILD_TYPE}..${CLANG_TIDY_EXE}")
 endif()
 
 # ____________________________________
