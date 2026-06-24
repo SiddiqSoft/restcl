@@ -1,1 +1,3 @@
 Checks: 'modernize-*,cppcoreguidelines-*,-modernize-use-trailing-return-type,-cppcoreguidelines-avoid-magic-numbers'
+# Only report warnings for files inside your 'src' or 'include' directories
+HeaderFilterRegex: '^(tests/|include/).*'
