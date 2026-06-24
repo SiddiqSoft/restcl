@@ -33,7 +33,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         # This runs the analyzer with all default checks enabled
         # We skip anything that is not in our project.
         message(STATUS "  >> Using clang-tidy from ${CLANG_TIDY_EXE}")
-        set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE} )
+        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};--config-file=${PROJECT_SOURCE_DIR}/.clang-tidy" )
     else()
         message(STATUS "  >> Skip `clang-tidy` for build type: ${CMAKE_BUILD_TYPE}..${CLANG_TIDY_EXE}")
     endif()
