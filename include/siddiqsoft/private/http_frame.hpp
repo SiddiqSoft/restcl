@@ -34,7 +34,7 @@
 #include <format>
 #include <iterator>
 #include <expected>
-#include <regex>
+#include <ctre.hpp>
 
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
@@ -43,7 +43,7 @@
 
 namespace siddiqsoft
 {
-    static const std::regex  HTTP_RESPONSE_REGEX {"(HTTP.*)\\s(\\d+)\\s([^\\r\\n]*)\\r\\n"};
+    static constexpr auto    HTTP_RESPONSE_REGEX = ctll::fixed_string {"(HTTP.*)\\s(\\d+)\\s([^\\r\\n]*)\\r\\n"};
     static const std::string HTTP_NEWLINE {"\r\n"};
     static const std::string ELEM_NEWLINE_LF {"\n"};
     static const std::string ELEM_SEPERATOR {": "};
@@ -69,7 +69,7 @@ namespace siddiqsoft
                                   {HttpProtocolVersionType::Http3, "HTTP/3"},
                                   {HttpProtocolVersionType::UNKNOWN, "UNKNOWN"}});
 
-    static const std::map<HttpProtocolVersionType, std::string> HttpProtocolVersions {
+    static const std::map<HttpProtocolVersionType, std::string_view> HttpProtocolVersions {
             {HttpProtocolVersionType::Http1, "HTTP/1.0"},
             {HttpProtocolVersionType::Http11, "HTTP/1.1"},
             {HttpProtocolVersionType::Http12, "HTTP/1.2"},
@@ -103,15 +103,15 @@ namespace siddiqsoft
                                   {HttpMethodType::METHOD_OPTIONS, "OPTIONS"}});
 
     /// @brief HTTP Protocol version: Http2, Http11 and Http3
-    static const std::map<HttpMethodType, std::string> HttpVerbs {{HttpMethodType::METHOD_GET, "GET"},
-                                                                  {HttpMethodType::METHOD_HEAD, "HEAD"},
-                                                                  {HttpMethodType::METHOD_POST, "POST"},
-                                                                  {HttpMethodType::METHOD_PUT, "PUT"},
-                                                                  {HttpMethodType::METHOD_DELETE, "DELETE"},
-                                                                  {HttpMethodType::METHOD_CONNECT, "CONNECT"},
-                                                                  {HttpMethodType::METHOD_OPTIONS, "OPTIONS"},
-                                                                  {HttpMethodType::METHOD_TRACE, "TRACE"},
-                                                                  {HttpMethodType::METHOD_PATCH, "PATCH"}};
+    static const std::map<HttpMethodType, std::string_view> HttpVerbs {{HttpMethodType::METHOD_GET, "GET"},
+                                                                       {HttpMethodType::METHOD_HEAD, "HEAD"},
+                                                                       {HttpMethodType::METHOD_POST, "POST"},
+                                                                       {HttpMethodType::METHOD_PUT, "PUT"},
+                                                                       {HttpMethodType::METHOD_DELETE, "DELETE"},
+                                                                       {HttpMethodType::METHOD_CONNECT, "CONNECT"},
+                                                                       {HttpMethodType::METHOD_OPTIONS, "OPTIONS"},
+                                                                       {HttpMethodType::METHOD_TRACE, "TRACE"},
+                                                                       {HttpMethodType::METHOD_PATCH, "PATCH"}};
 
     static const std::string HF_CONTENT_LENGTH {"Content-Length"};
     static const std::string HF_CONTENT_TYPE {"Content-Type"};
@@ -155,7 +155,7 @@ namespace siddiqsoft
     /**
      * @class ContentType
      * @brief Manages HTTP content including type, body, and transmission state
-     * 
+     *
      * @details
      * The ContentType class encapsulates HTTP message body content along with metadata
      * about the content. It tracks:
@@ -164,14 +164,14 @@ namespace siddiqsoft
      * - Total length of the content
      * - Current offset for streaming/chunked transmission
      * - Remaining bytes to transmit
-     * 
+     *
      * This class supports multiple assignment operators for convenient content setting:
      * - From JSON objects (nlohmann::json)
      * - From plain strings
      * - From other ContentType objects
-     * 
+     *
      * @note The class is designed to work with HTTP streaming and chunked transfer encoding
-     * 
+     *
      * @example
      * @code
      * ContentType content;
@@ -186,22 +186,22 @@ namespace siddiqsoft
     public:
         /// @brief Content-Type header value (e.g., "application/json", "text/plain")
         std::string type {};
-        
+
         /// @brief The actual content body as a string
         std::string body {};
-        
+
         /// @brief Total length of the content in bytes
-        size_t      length {0};
-        
+        size_t length {0};
+
         /// @brief Current offset for streaming/chunked transmission
-        size_t      offset {0};
-        
+        size_t offset {0};
+
         /// @brief Remaining bytes to transmit (length - offset)
-        size_t      remainingSize {0};
+        size_t remainingSize {0};
 
         /// @brief Default constructor - creates empty content
-        ContentType()  = default;
-        
+        ContentType() = default;
+
         /// @brief Destructor
         ~ContentType() = default;
 
@@ -287,9 +287,9 @@ namespace siddiqsoft
     /**
      * @class http_frame
      * @brief Base class for HTTP requests and responses with protocol, method, URI, headers, and content management
-     * 
+     *
      * @tparam CharT Character type (default: char)
-     * 
+     *
      * @details
      * The http_frame class is the foundation for both HTTP requests and responses. It provides:
      * - HTTP protocol version management (HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3)
@@ -298,11 +298,11 @@ namespace siddiqsoft
      * - Header management with JSON serialization
      * - Content type and body handling
      * - Method chaining for fluent API
-     * 
+     *
      * This is an abstract base class that must be extended by rest_request and rest_response.
-     * 
+     *
      * @note The class automatically initializes with HTTP/1.1 protocol and a Date header
-     * 
+     *
      * @example
      * @code
      * // Typically used through derived classes
@@ -320,25 +320,25 @@ namespace siddiqsoft
     protected:
 #endif
         /// @brief HTTP protocol version (default: HTTP/1.1)
-        HttpProtocolVersionType          protocol {HttpProtocolVersionType::Http11};
-        
+        HttpProtocolVersionType protocol {HttpProtocolVersionType::Http11};
+
         /// @brief HTTP method (GET, POST, etc.)
-        HttpMethodType                   method {};
-        
+        HttpMethodType method {};
+
         /// @brief Parsed URI with scheme, authority, path, and query
         Uri<CharT, AuthorityHttp<CharT>> uri {};
-        
+
         /// @brief HTTP headers as JSON object (includes Date header by default)
-        nlohmann::json                   headers {{"Date", DateUtils::RFC7231()}};
-        
+        nlohmann::json headers {{"Date", DateUtils::RFC7231()}};
+
         /// @brief HTTP message body content with type and metadata
-        std::shared_ptr<ContentType>     content {new ContentType()};
+        std::shared_ptr<ContentType> content {new ContentType()};
 
     protected:
         /// @brief Helper to identify HTTP protocol version from string fragment
         /// @param fragment String starting with HTTP protocol version
         /// @return HttpProtocolVersionType enum value or UNKNOWN
-        static auto isHttpProtocol(const std::string& fragment)
+        static auto isHttpProtocol(const std::string_view& fragment)
         {
             for (const auto& [i, p] : HttpProtocolVersions) {
                 if (fragment.starts_with(p)) return i;
@@ -350,7 +350,7 @@ namespace siddiqsoft
         /// @brief Helper to identify HTTP method from string fragment
         /// @param fragment String containing HTTP method name
         /// @return HttpMethodType enum value or METHOD_UNKNOWN
-        static auto isHttpVerb(const std::string& fragment)
+        static auto isHttpVerb(const std::string_view& fragment)
         {
             for (const auto& [i, v] : HttpVerbs) {
                 if (v == fragment) return i;
@@ -362,9 +362,9 @@ namespace siddiqsoft
     public:
         /// @brief Virtual destructor for proper cleanup of derived classes
         virtual ~http_frame() = default;
-        
+
         /// @brief Default constructor
-        http_frame()          = default;
+        http_frame() = default;
 
 
         /// @brief Set HTTP protocol version from enum

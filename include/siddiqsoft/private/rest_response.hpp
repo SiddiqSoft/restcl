@@ -15,11 +15,10 @@
  */
 
 #pragma once
-#include <exception>
 #ifndef REST_RESPONSE_HPP
 #define REST_RESPONSE_HPP
 
-
+#include <exception>
 #include <iostream>
 #include <string>
 
@@ -92,32 +91,35 @@ namespace siddiqsoft
                                    const std::string::iterator& bufferEnd) noexcept(false)
         {
             using namespace std;
+
             auto useCRLF              = true;
             auto lineEndDelimiterSize = HTTP_NEWLINE.size();
+            auto matchStartLine       = ctre::search<HTTP_RESPONSE_REGEX>(bufferStart, bufferEnd);
 
-            match_results<string::iterator> matchStartLine;
-
-            auto found = regex_search(bufferStart, bufferEnd, matchStartLine, HTTP_RESPONSE_REGEX);
             // Did we find a message..?
-            if (found && (matchStartLine.size() >= 3)) {
+            if (matchStartLine && (matchStartLine.count() >= 3)) {
                 // The regex is very precise and there is no chance we will end up here
                 // with an ill-formed (or unsupported) start-line.
-                if (http_frame<CharT>::isHttpVerb(matchStartLine[3]) != HttpMethodType::METHOD_UNKNOWN) {
-                    httpm.setMethod(matchStartLine[3].str()).setUri(matchStartLine[2].str()).setProtocol(matchStartLine[3].str());
+                if (http_frame<CharT>::isHttpVerb(matchStartLine.get<3>().to_view()) != HttpMethodType::METHOD_UNKNOWN) {
+                    httpm.setMethod(matchStartLine.get<3>().str())
+                            .setUri(matchStartLine.get<2>().str())
+                            .setProtocol(matchStartLine.get<3>().str());
                 }
-                else if (http_frame<CharT>::isHttpProtocol(matchStartLine[1]) != HttpProtocolVersionType::UNKNOWN) {
-                    httpm.setStatus(std::stoi(matchStartLine[2].str()), matchStartLine[3].str()).setProtocol(matchStartLine[1]);
+                else if (http_frame<CharT>::isHttpProtocol(matchStartLine.get<1>().to_view()) != HttpProtocolVersionType::UNKNOWN) {
+                    httpm.setStatus(std::stoi(matchStartLine.get<2>().str()), matchStartLine.get<3>().str())
+                            .setProtocol(matchStartLine.get<1>().str());
                 }
 
                 // Offset the start to the point after the start-line. Make sure to skip over any prefix!
                 // We may have junk or left-over crud at the start (especially if we're using text files)
-                bufferStart += (matchStartLine.length() + matchStartLine.prefix().length());
+                // bufferStart += (matchStartLine.count() + matchStartLine.prefix().length());
+                bufferStart = matchStartLine.get<0>().end();
             }
             else {
                 throw std::invalid_argument {std::format("{} - HTTP Startline not found.", __func__)};
             }
 
-            return found;
+            return (bool)matchStartLine;
         }
 
     protected:

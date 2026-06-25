@@ -436,7 +436,7 @@ namespace siddiqsoft
                                passTest.notify_all();
                            });
 
-            for (auto i = 0; i < ITER_COUNT; i++) {
+            for (unsigned i = 0; i < ITER_COUNT; i++) {
                 if (i % 3 == 0) {
                     wrc->sendAsync("https://www.cnn.com/?client=chrome"_GET);
                 }

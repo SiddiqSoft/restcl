@@ -73,6 +73,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     target_link_libraries(${TESTPROJ} PRIVATE
             GTest::gtest_main
             nlohmann_json::nlohmann_json
+            ctre::ctre
             $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:CURL::libcurl>
             $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
             RunOnEnd::RunOnEnd

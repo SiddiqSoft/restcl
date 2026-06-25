@@ -75,6 +75,8 @@ CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.5")
 target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.2.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
+cpmaddpackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
+target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
 
 
 # ____________________________________

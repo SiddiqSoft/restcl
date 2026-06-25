@@ -321,4 +321,72 @@ namespace siddiqsoft
 
         EXPECT_EQ(CLIENT_COUNT, passTest.load());
     }
+
+    // Added as part of #18; changing from std::regex to ctre
+    struct TestableRestResponse : public siddiqsoft::rest_response<char>
+    {
+        using siddiqsoft::rest_response<char>::parseStartLine;
+    };
+
+    TEST_F(Validation, should_parse_valid_response_start_line)
+    {
+        std::string          source = "HTTP/1.1 200 OK\r\n";
+        auto                 it     = source.begin();
+        TestableRestResponse resp;
+        bool                 result = TestableRestResponse::parseStartLine(resp, it, source.end());
+
+        EXPECT_TRUE(result);
+        EXPECT_EQ(resp.statusCode(), 200);
+        EXPECT_EQ(resp.reasonCode(), "OK");
+        EXPECT_EQ(resp.getProtocol(), HttpProtocolVersionType::Http11);
+        EXPECT_EQ(it, source.end());
+    }
+
+    TEST_F(Validation, should_parse_response_start_line_with_leading_junk)
+    {
+        std::string          source = "garbageHTTP/1.1 404 Not Found\r\n";
+        auto                 it     = source.begin();
+        TestableRestResponse resp;
+        bool                 result = TestableRestResponse::parseStartLine(resp, it, source.end());
+
+        EXPECT_TRUE(result);
+        EXPECT_EQ(resp.statusCode(), 404);
+        EXPECT_EQ(resp.reasonCode(), "Not Found");
+        EXPECT_EQ(resp.getProtocol(), siddiqsoft::HttpProtocolVersionType::Http11);
+        EXPECT_EQ(it, source.end());
+    }
+
+    TEST_F(Validation, should_throw_for_invalid_start_line)
+    {
+        std::string          source = "HTTP/1.1 twohundred OK\r\n";
+        auto                 it     = source.begin();
+        TestableRestResponse resp;
+
+        bool thrown = false;
+        try {
+            TestableRestResponse::parseStartLine(resp, it, source.end());
+        }
+        catch (const std::invalid_argument&) {
+            thrown = true;
+        }
+
+        EXPECT_TRUE(thrown);
+    }
+
+    TEST_F(Validation, should_throw_for_truncated_start_line)
+    {
+        std::string          source = "HTTP/1.1 200\r\n";
+        auto                 it     = source.begin();
+        TestableRestResponse resp;
+
+        bool thrown = false;
+        try {
+            TestableRestResponse::parseStartLine(resp, it, source.end());
+        }
+        catch (const std::invalid_argument&) {
+            thrown = true;
+        }
+
+        EXPECT_TRUE(thrown);
+    }
 } // namespace siddiqsoft
