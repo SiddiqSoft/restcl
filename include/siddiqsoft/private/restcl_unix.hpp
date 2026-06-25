@@ -307,30 +307,12 @@ namespace siddiqsoft
         }
 
     public:
+        // Disallow copy-construct
         HttpRESTClient(const HttpRESTClient&)            = delete;
         HttpRESTClient& operator=(const HttpRESTClient&) = delete;
-
-        /// @brief Move constructor. We have the object hSession which must be transferred to our instance.
-        /// @param src Source object is "cleared"
-        HttpRESTClient(HttpRESTClient&& src) noexcept
-            : _callback(std::move(src._callback))
-            , _config(src._config)
-            , id(src.id)
-        {
-            isInitialized     = src.isInitialized;
-            ioAttempt         = src.ioAttempt.load();
-            ioAttemptFailed   = src.ioAttemptFailed.load();
-            ioConnect         = src.ioConnect.load();
-            ioConnectFailed   = src.ioConnectFailed.load();
-            ioSend            = src.ioSend.load();
-            ioSendFailed      = src.ioSendFailed.load();
-            ioReadAttempt     = src.ioReadAttempt.load();
-            ioRead            = src.ioRead.load();
-            ioReadFailed      = src.ioReadFailed.load();
-            callbackAttempt   = src.callbackAttempt.load();
-            callbackFailed    = src.callbackFailed.load();
-            callbackCompleted = src.callbackCompleted.load();
-        }
+        // Disallow move-construct
+        HttpRESTClient(const HttpRESTClient&&)            = delete;
+        HttpRESTClient& operator=(const HttpRESTClient&&) = delete;
 
     protected:
         HttpRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}, std::shared_ptr<LibCurlSingleton> lci = {})
@@ -789,8 +771,11 @@ namespace siddiqsoft
         friend void          to_json(nlohmann::json& dest, const HttpRESTClient& src);
 
     public:
+        /// @brief Initializes an instance of the basic_restclient<> for Windows or *NIX systems.
         [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
         {
+            // In the case of *NIX, we use Curl and thus obtain the Curl Lib singleton
+            // thus setting up this new restclient with the curl singleton.
             return std::shared_ptr<HttpRESTClient> {
                     new HttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb), LibCurlSingleton::GetInstance())};
         }
