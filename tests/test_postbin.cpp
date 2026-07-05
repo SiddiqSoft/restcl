@@ -380,14 +380,14 @@ namespace siddiqsoft
                                }
                            });
 
-            for (auto i = 0; i < ITER_COUNT; i++) {
-                if (i % 3 == 0) {
+            for (auto i = 0u; i < ITER_COUNT; i++) {
+                if (i % 3u == 0u) {
                     rest_request req(
                             HttpMethodType::METHOD_GET,
                             siddiqsoft::Uri(std::format("https://www.postb.in/api/bin/{}?iteration=3--{}", SessionBinId, i)));
                     wrc->sendAsync(std::move(req));
                 }
-                else if (i % 2 == 0) {
+                else if (i % 2u == 0u) {
                     rest_request req(HttpMethodType::METHOD_GET,
                                      siddiqsoft::Uri(std::format("https://www.postb.in/{}?iteration=2--{}", SessionBinId, i)));
                     wrc->sendAsync(std::move(req));

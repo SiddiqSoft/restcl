@@ -51,6 +51,7 @@
 #include "siddiqsoft/acw32h.hpp"
 #include "siddiqsoft/conversion-utils.hpp"
 
+#include "siddiqsoft/RWLEnvelope.hpp"
 #include "siddiqsoft/simple_pool.hpp"
 
 namespace siddiqsoft
@@ -226,7 +227,7 @@ namespace siddiqsoft
 
         basic_callbacktype _callback {};
         uint32_t           id = __COUNTER__;
-        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
+        siddiqsoft::RWLEnvelope<nlohmann::json>     _config {{"userAgent", "siddiqsoft.restcl/2"},
                                     {"trace", false},
                                     {"id", id},
                                     {"connectTimeout", 0L},

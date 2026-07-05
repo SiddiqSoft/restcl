@@ -80,6 +80,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
             SplitUri::SplitUri
             string2map::string2map
             asynchrony::asynchrony
+            RWLEnvelope::RWLEnvelope
             AzureCppUtils::AzureCppUtils
             StringHelpers::StringHelpers)
 

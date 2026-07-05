@@ -53,6 +53,7 @@
 #include "siddiqsoft/conversion-utils.hpp"
 #include "siddiqsoft/RunOnEnd.hpp"
 
+#include "siddiqsoft/RWLEnvelope.hpp"
 #include "siddiqsoft/simple_pool.hpp"
 #include "siddiqsoft/resource_pool.hpp"
 
@@ -153,16 +154,16 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackCompleted {0};
 
     private:
-        basic_callbacktype _callback {};
-        nlohmann::json     _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                    {"trace", false},
-                                    {"id", id},
-                                    {"freshConnect", false},
-                                    {"connectTimeout", 0L},
-                                    {"timeout", 0L},
-                                    {"verifyPeer", 1L},
-                                    {"downloadDirectory", nullptr},
-                                    {"headers", nullptr}};
+        basic_callbacktype                      _callback {};
+        siddiqsoft::RWLEnvelope<nlohmann::json> _config {{{"userAgent", "siddiqsoft.restcl/2"},
+                                                          {"trace", false},
+                                                          {"id", id},
+                                                          {"freshConnect", false},
+                                                          {"connectTimeout", 0L},
+                                                          {"timeout", 0L},
+                                                          {"verifyPeer", 1L},
+                                                          {"downloadDirectory", nullptr},
+                                                          {"headers", nullptr}}};
 
 
         inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
@@ -338,7 +339,8 @@ namespace siddiqsoft
          */
         basic_restclient& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& func = {}) override
         {
-            if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
+            if (!cfg.is_null() && !cfg.empty())
+                _config.mutate([](auto& container, const auto& cfg) noexcept { container.update(cfg); }, cfg);
 
             if (func) _callback = std::move(func);
             isInitialized = true;
@@ -364,35 +366,36 @@ namespace siddiqsoft
 
         void prepareContext(CurlContextBundlePtr ctxCurl)
         {
-            CURLcode rc = CURLcode::CURLE_NOT_BUILT_IN;
+            CURLcode rc     = CURLcode::CURLE_NOT_BUILT_IN;
+            auto     config = _config.snapshot(); // peek at the snapshot of the config to avoid locking for long periods
 
             // std::print(std::cerr, "{} - Invoked.. ctxCurl:{}\n", __func__, (void*)ctxCurl->curlHandle());
 
             if (ctxCurl && ((CURL*)ctxCurl->curlHandle()) != NULL) curl_easy_reset((CURL*)ctxCurl->curlHandle());
 
             // std::print(std::cerr, "{} - Configuring options...\n", __func__);
-            if (long v = _config.value("connectTimeout", 0); v > 0) {
+            if (long v = config.value("connectTimeout", 0); v > 0) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CONNECTTIMEOUT_MS, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
-            if (long v = _config.value("timeout", 0); v > 0) {
+            if (long v = config.value("timeout", 0); v > 0) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
-            if (long v = _config.value("verifyPeer", 1); v == 0) {
+            if (long v = config.value("verifyPeer", 1); v == 0) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
-            if (_config.value("freshConnect", false)) {
+            if (config.value("freshConnect", false)) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_FRESH_CONNECT, 1L); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
-            if (_config.value("trace", false)) {
+            if (config.value("trace", false)) {
                 if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_VERBOSE, 1L); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
@@ -429,6 +432,9 @@ namespace siddiqsoft
             if (auto ctxCurl = singletonInstance->getEasyHandle();
                 ((CURL*)ctxCurl->curlHandle() != nullptr) && !destinationHost.empty())
             {
+                // peek at the snapshot of the config
+                auto config = _config.snapshot();
+
                 // Configures the context with options such as timeout, connectionTimeout, verbose, freshConnect..
                 prepareContext(ctxCurl);
                 // Set User-Agent
@@ -440,7 +446,7 @@ namespace siddiqsoft
                             CURLOPT_USERAGENT,
                             req.getHeaders()
                                     .value("User-Agent",
-                                           _config.value("userAgent", _config.value("/headers/User-Agent"_json_pointer, "")))
+                                           config.value("userAgent", config.value("/headers/User-Agent"_json_pointer, "")))
                                     .c_str());
                     rc == CURLE_OK)
                 {
@@ -459,7 +465,7 @@ namespace siddiqsoft
                                 }
                                 else {
                                     ioSendFailed++;
-                                    if (_config.value("trace", false)) {
+                                    if (config.value("trace", false)) {
                                         std::print(std::cerr,
                                                    "{} - curl_easy_perform() failed: `{}`\n{}\n",
                                                    __func__,
@@ -475,7 +481,7 @@ namespace siddiqsoft
                 // To reach here is failure!
                 // Abandon so we we dot re-use a failed resource!
                 ctxCurl->abandon();
-                if (_config.value("trace", false)) {
+                if (config.value("trace", false)) {
                     std::println(std::cerr,
                                  "{} - some failure `{}`; abandon context !!\n{}\n",
                                  __func__,

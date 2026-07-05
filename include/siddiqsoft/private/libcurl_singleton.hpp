@@ -191,22 +191,27 @@ namespace siddiqsoft
             try {
                 // It is critical for us to check if we are non-empty otherwise
                 // there will be a race-condition during the checkout
-                if (isInitialized && (curlHandlePool.size() > 0)) {
-                    // return an existing handle..
-                    auto ctxbndl = std::shared_ptr<CurlContextBundle>(
-                            new CurlContextBundle {curlHandlePool, std::move(curlHandlePool.checkout())});
+                if (isInitialized.load()) {
+                    if (curlHandlePool.size() > 0) {
+                        // return an existing handle..
+                        auto ctxbndl = std::shared_ptr<CurlContextBundle>(
+                                new CurlContextBundle {curlHandlePool, std::move(curlHandlePool.checkout())});
 #if defined(DEBUG0)
-                    std::print(std::cerr,
-                               "{} - Existing BUNDLE id:{}:{}; Capacity:{}\n",
-                               __func__,
-                               ctxbndl->_id,
-                               reinterpret_cast<void*>((CURL*)ctxbndl->curlHandle()),
-                               curlHandlePool.size());
+                        std::print(std::cerr,
+                                   "{} - Existing BUNDLE id:{}:{}; Capacity:{}\n",
+                                   __func__,
+                                   ctxbndl->_id,
+                                   reinterpret_cast<void*>((CURL*)ctxbndl->curlHandle()),
+                                   curlHandlePool.size());
 #endif
-                    return ctxbndl;
+                        return ctxbndl;
+                    }
+                    else {
+                        std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}\n", __func__, curlHandlePool.size());
+                    }
                 }
                 else if (!isInitialized) {
-                    std::print(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}\n", __func__, curlHandlePool.size());
+                    std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}\n", __func__, curlHandlePool.size());
                 }
             }
             catch (std::runtime_error& re) {
@@ -271,10 +276,10 @@ namespace siddiqsoft
 
 #if defined(DEBUG) || defined(_DEBUG)
     public:
-        bool isInitialized {false};
+        std::atomic_bool isInitialized {false};
 #else
     private:
-        bool isInitialized {false};
+        std::atomic_bool isInitialized {false};
 #endif
     };
 
