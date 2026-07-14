@@ -3,7 +3,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
 
     add_executable(${TESTPROJ})
 
-    target_compile_features(${TESTPROJ} PRIVATE cxx_std_23)
+    target_compile_features(${TESTPROJ} PRIVATE cxx_std_${CMAKE_CXX_STANDARD})
     target_compile_options( ${TESTPROJ}
                             PRIVATE
                             $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest> )

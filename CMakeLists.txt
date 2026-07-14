@@ -36,7 +36,7 @@ target_include_directories(${PROJECT_NAME}
                             INTERFACE
                             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
                             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_23)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
 # ____________________________________
 # Dependencies
@@ -75,7 +75,7 @@ CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.5")
 target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
 CPMAddPackage("gh:SiddiqSoft/RWLEnvelope#1.5.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE RWLEnvelope::RWLEnvelope)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#2.2.2")
+CPMAddPackage("gh:SiddiqSoft/asynchrony#cd75aa43e715ec2ae9f09b9cf68adde6dc50ad90")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 cpmaddpackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
