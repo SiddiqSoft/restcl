@@ -640,7 +640,7 @@ namespace siddiqsoft
             }
 
 #if defined(DEBUG)
-            if (_config.value("trace", false)) {
+            if (_config.observe([](const auto& d) noexcept { return d.value("trace", false); })) {
                 std::println(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
             }
 #endif
