@@ -12,15 +12,19 @@
 // #if defined(__linux__) || defined(__APPLE__)
 
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <atomic>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
+#include <cctype>
 #include <iostream>
 #include <barrier>
 #include <version>
 #include <expected>
 #include <format>
+#include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -32,6 +36,21 @@
 namespace siddiqsoft
 {
     using namespace restcl_literals;
+
+    static bool isWellFormedConcurrentUserAgent(const std::string& value, std::string_view prefix)
+    {
+        if (!value.starts_with(prefix)) return false;
+
+        const auto suffix = value.substr(prefix.size());
+        const auto slash  = suffix.find('/');
+        if ((slash == std::string::npos) || (slash == 0) || (slash == (suffix.size() - 1))) return false;
+
+        const auto isDigits = [](std::string_view sv) {
+            return !sv.empty() && std::all_of(sv.begin(), sv.end(), [](unsigned char ch) { return std::isdigit(ch) != 0; });
+        };
+
+        return isDigits(std::string_view {suffix}.substr(0, slash)) && isDigits(std::string_view {suffix}.substr(slash + 1));
+    }
 
     class TestSends : public ::testing::Test
     {
@@ -467,6 +486,256 @@ namespace siddiqsoft
         }
 
         EXPECT_GE(completedCallbacks.load(std::memory_order_relaxed), threadCount * iterationsPerThread);
+    }
+
+    TEST_F(TestSends, ConcurrentConfigureAndSendAsync_Windows_UserAgentStaysWellFormed)
+    {
+        constexpr unsigned       threadCount         = 4;
+        constexpr unsigned       iterationsPerThread = 8;
+        constexpr std::string_view userAgentPrefix {"win-race-test/"};
+
+        std::barrier      startBarrier(threadCount + 1);
+        std::atomic_uint  completedCallbacks {0};
+        std::atomic_uint  malformedHeaders {0};
+        std::vector<std::thread> workers;
+        workers.reserve(threadCount);
+
+        auto wrc = GetRESTClient({{"trace", false}});
+
+        for (unsigned threadIndex = 0; threadIndex < threadCount; ++threadIndex) {
+            workers.emplace_back([&, threadIndex] {
+                startBarrier.arrive_and_wait();
+                for (unsigned iter = 0; iter < iterationsPerThread; ++iter) {
+                    wrc->configure({{"userAgent", std::format("{}{}/{}", userAgentPrefix, threadIndex, iter)}});
+                    wrc->sendAsync("http://127.0.0.1:1/"_GET,
+                                   [&](const auto& req, std::expected<rest_response<>, int> resp) {
+                                       (void)resp;
+                                       auto header = req.getHeaders().value("User-Agent", "");
+                                       if (!isWellFormedConcurrentUserAgent(header, userAgentPrefix)) {
+                                           malformedHeaders.fetch_add(1, std::memory_order_relaxed);
+                                       }
+                                       completedCallbacks.fetch_add(1, std::memory_order_relaxed);
+                                   });
+                }
+            });
+        }
+
+        startBarrier.arrive_and_wait();
+
+        for (auto& worker : workers) {
+            worker.join();
+        }
+
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (completedCallbacks.load(std::memory_order_relaxed) < (threadCount * iterationsPerThread) &&
+               std::chrono::steady_clock::now() < deadline)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        EXPECT_EQ(threadCount * iterationsPerThread, completedCallbacks.load(std::memory_order_relaxed));
+        EXPECT_EQ(0u, malformedHeaders.load(std::memory_order_relaxed));
+    }
+
+    TEST_F(TestSends, ConcurrentConfigureAndSendSync_Windows_UserAgentStaysWellFormed)
+    {
+        constexpr unsigned         threadCount         = 4;
+        constexpr unsigned         iterationsPerThread = 8;
+        constexpr std::string_view userAgentPrefix {"win-sync-race-test/"};
+
+        std::barrier      startBarrier(threadCount + 1);
+        std::atomic_uint  malformedHeaders {0};
+        std::vector<std::thread> workers;
+        workers.reserve(threadCount);
+
+        auto wrc = GetRESTClient({{"trace", false}});
+
+        for (unsigned threadIndex = 0; threadIndex < threadCount; ++threadIndex) {
+            workers.emplace_back([&, threadIndex] {
+                startBarrier.arrive_and_wait();
+                for (unsigned iter = 0; iter < iterationsPerThread; ++iter) {
+                    wrc->configure({{"userAgent", std::format("{}{}/{}", userAgentPrefix, threadIndex, iter)}});
+
+                    auto req = "http://127.0.0.1:1/"_GET;
+                    auto resp = wrc->send(req);
+                    (void)resp;
+
+                    auto header = req.getHeaders().value("User-Agent", "");
+                    if (!isWellFormedConcurrentUserAgent(header, userAgentPrefix)) {
+                        malformedHeaders.fetch_add(1, std::memory_order_relaxed);
+                    }
+                }
+            });
+        }
+
+        startBarrier.arrive_and_wait();
+
+        for (auto& worker : workers) {
+            worker.join();
+        }
+
+        EXPECT_EQ(0u, malformedHeaders.load(std::memory_order_relaxed));
+    }
+
+    TEST_F(TestSends, ConcurrentConfigureAndSendSync_Windows_SessionPublicationIsAtomic)
+    {
+        auto wrc = GetRESTClient({{"trace", false}});
+
+        wrc->resetSessionForTesting();
+
+        std::atomic_bool hookEntered {false};
+        std::atomic_bool releaseHook {false};
+
+        auto cleanup = RunOnEnd([&] {
+            WinHttpRESTClient::beforePublishSessionHook = {};
+            releaseHook.store(true, std::memory_order_release);
+            releaseHook.notify_all();
+        });
+
+        WinHttpRESTClient::beforePublishSessionHook = [&] {
+            hookEntered.store(true, std::memory_order_release);
+            hookEntered.notify_all();
+            releaseHook.wait(false);
+        };
+
+        std::jthread configureThread([&] {
+            wrc->configure({{"userAgent", "win-publication-test/1"}});
+        });
+
+        hookEntered.wait(false);
+
+        auto req  = "http://127.0.0.1:1/"_GET;
+        auto resp = wrc->send(req);
+
+        releaseHook.store(true, std::memory_order_release);
+        releaseHook.notify_all();
+        configureThread.join();
+
+        ASSERT_FALSE(resp.has_value());
+        EXPECT_NE(static_cast<int>(E_FAIL), resp.error());
+    }
+
+    TEST_F(TestSends, ConcurrentConfigureAndMixedSend_Windows_UserAgentStaysWellFormed)
+    {
+        constexpr unsigned         threadCount         = 6;
+        constexpr unsigned         iterationsPerThread = 8;
+        constexpr std::string_view syncPrefix {"win-mixed-sync/"};
+        constexpr std::string_view asyncPrefix {"win-mixed-async/"};
+
+        std::barrier      startBarrier(threadCount + 1);
+        std::atomic_uint  asyncCallbacks {0};
+        std::atomic_uint  malformedHeaders {0};
+        std::vector<std::thread> workers;
+        workers.reserve(threadCount);
+
+        auto wrc = GetRESTClient({{"trace", false}});
+
+        for (unsigned threadIndex = 0; threadIndex < threadCount; ++threadIndex) {
+            workers.emplace_back([&, threadIndex] {
+                startBarrier.arrive_and_wait();
+                const bool useAsync = (threadIndex % 2) == 0;
+                for (unsigned iter = 0; iter < iterationsPerThread; ++iter) {
+                    auto prefix = useAsync ? asyncPrefix : syncPrefix;
+                    wrc->configure({{"userAgent", std::format("{}{}/{}", prefix, threadIndex, iter)}});
+
+                    if (useAsync) {
+                        wrc->sendAsync("http://127.0.0.1:1/"_GET,
+                                       [&](const auto& req, std::expected<rest_response<>, int> resp) {
+                                           (void)resp;
+                                           auto header = req.getHeaders().value("User-Agent", "");
+                                           if (!isWellFormedConcurrentUserAgent(header, asyncPrefix)) {
+                                               malformedHeaders.fetch_add(1, std::memory_order_relaxed);
+                                           }
+                                           asyncCallbacks.fetch_add(1, std::memory_order_relaxed);
+                                       });
+                    }
+                    else {
+                        auto req  = "http://127.0.0.1:1/"_GET;
+                        auto resp = wrc->send(req);
+                        (void)resp;
+
+                        auto header = req.getHeaders().value("User-Agent", "");
+                        if (!isWellFormedConcurrentUserAgent(header, syncPrefix)) {
+                            malformedHeaders.fetch_add(1, std::memory_order_relaxed);
+                        }
+                    }
+                }
+            });
+        }
+
+        startBarrier.arrive_and_wait();
+
+        for (auto& worker : workers) {
+            worker.join();
+        }
+
+        const auto expectedAsyncCallbacks = (threadCount / 2 + (threadCount % 2)) * iterationsPerThread;
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (asyncCallbacks.load(std::memory_order_relaxed) < expectedAsyncCallbacks &&
+               std::chrono::steady_clock::now() < deadline)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        EXPECT_EQ(expectedAsyncCallbacks, asyncCallbacks.load(std::memory_order_relaxed));
+        EXPECT_EQ(0u, malformedHeaders.load(std::memory_order_relaxed));
+    }
+
+    TEST_F(TestSends, AsyncCallbacksCanReconfigureWhileOtherThreadsSend_Windows)
+    {
+        constexpr unsigned         callbackRequestCount = 12;
+        constexpr unsigned         syncRequestCount     = 12;
+        constexpr std::string_view callbackPrefix {"win-callback-race/"};
+        constexpr std::string_view foregroundPrefix {"win-foreground-race/"};
+
+        std::atomic_uint callbackCount {0};
+        std::atomic_uint callbackMalformed {0};
+        std::atomic_uint syncMalformed {0};
+
+        auto wrc = GetRESTClient({{"trace", false}});
+
+        std::jthread syncWorker([&] {
+            for (unsigned iter = 0; iter < syncRequestCount; ++iter) {
+                wrc->configure({{"userAgent", std::format("{}{}/{}", foregroundPrefix, 0, iter)}});
+
+                auto req  = "http://127.0.0.1:1/"_GET;
+                auto resp = wrc->send(req);
+                (void)resp;
+
+                auto header = req.getHeaders().value("User-Agent", "");
+                if (!isWellFormedConcurrentUserAgent(header, foregroundPrefix)) {
+                    syncMalformed.fetch_add(1, std::memory_order_relaxed);
+                }
+            }
+        });
+
+        for (unsigned iter = 0; iter < callbackRequestCount; ++iter) {
+            wrc->configure({{"userAgent", std::format("{}{}/{}", callbackPrefix, 0, iter)}});
+            wrc->sendAsync("http://127.0.0.1:1/"_GET,
+                           [&, iter](const auto& req, std::expected<rest_response<>, int> resp) {
+                               (void)resp;
+                               auto header = req.getHeaders().value("User-Agent", "");
+                               if (!isWellFormedConcurrentUserAgent(header, callbackPrefix)) {
+                                   callbackMalformed.fetch_add(1, std::memory_order_relaxed);
+                               }
+
+                               wrc->configure({{"userAgent", std::format("{}{}/{}", callbackPrefix, 1, iter)}});
+                               callbackCount.fetch_add(1, std::memory_order_relaxed);
+                           });
+        }
+
+        syncWorker.join();
+
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (callbackCount.load(std::memory_order_relaxed) < callbackRequestCount &&
+               std::chrono::steady_clock::now() < deadline)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        EXPECT_EQ(callbackRequestCount, callbackCount.load(std::memory_order_relaxed));
+        EXPECT_EQ(0u, callbackMalformed.load(std::memory_order_relaxed));
+        EXPECT_EQ(0u, syncMalformed.load(std::memory_order_relaxed));
     }
 #endif
 

@@ -217,6 +217,19 @@ namespace siddiqsoft
         std::string  UserAgent {"siddiqsoft.restcl/2"};
         std::wstring UserAgentW {L"siddiqsoft.restcl/2"};
 
+#if defined(RESTCL_ENABLE_TEST_HOOKS)
+    public:
+        static inline std::function<void()> beforePublishSessionHook {};
+
+        void resetSessionForTesting()
+        {
+            std::scoped_lock lock(callbackMutex);
+            hSession = {};
+        }
+
+    protected:
+#endif
+
     private:
         static const DWORD           READBUFFERSIZE {8192};
         static inline const char*    RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
@@ -310,7 +323,12 @@ namespace siddiqsoft
 
                 UserAgent  = newUserAgent;
                 UserAgentW = newUserAgentW;
-                if (newSession) hSession = std::move(newSession);
+                if (newSession) {
+#if defined(RESTCL_ENABLE_TEST_HOOKS)
+                    if (beforePublishSessionHook) beforePublishSessionHook();
+#endif
+                    hSession = std::move(newSession);
+                }
             }
 
             return *this;
@@ -391,18 +409,22 @@ namespace siddiqsoft
             uint32_t nRetry {0}, nError {0};
             char     cBuf[READBUFFERSIZE] {};
             DWORD    dwFlagsSize = 0;
+            auto&    strServer = req.uri.authority.host;
 
             // First order - adjust the UserAgent
-                auto defaultUserAgent =
+            auto defaultUserAgent =
                     config.value("userAgent", config.value("/headers/User-Agent"_json_pointer, "siddiqsoft.restcl/2"));
-                if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = defaultUserAgent;
+            if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = defaultUserAgent;
 
-            if (hSession != NULL) {
-                auto& strServer = req.uri.authority.host;
-                if (ACW32HINTERNET hConnect {WinHttpConnect(
-                            hSession, ConversionUtils::convert_to<char, wchar_t>(strServer).c_str(), req.uri.authority.port, 0)};
-                    hConnect != NULL)
-                {
+            auto hConnect = [&]() -> ACW32HINTERNET {
+                std::scoped_lock lock(callbackMutex);
+                if (hSession == NULL) return {};
+
+                return ACW32HINTERNET {
+                        WinHttpConnect(hSession, ConversionUtils::convert_to<char, wchar_t>(strServer).c_str(), req.uri.authority.port, 0)};
+            }();
+
+            if (hConnect != NULL) {
                     std::string strMethod  = to_string(req.getMethod());
                     auto        strUrl     = req.uri.urlPart;
                     std::string strVersion = to_string(req.getProtocol());
@@ -578,10 +600,6 @@ namespace siddiqsoft
                     else {
                         return std::unexpected {static_cast<int>(hr)};
                     }
-                }
-                else {
-                    return std::unexpected {static_cast<int>(hr)};
-                }
             }
             else {
                 return std::unexpected {static_cast<int>(hr)};
