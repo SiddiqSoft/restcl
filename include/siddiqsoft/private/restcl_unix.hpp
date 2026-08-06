@@ -136,7 +136,7 @@ namespace siddiqsoft
         static const uint32_t             READBUFFERSIZE {8192};
         static inline const char*         RESTCL_ACCEPT_TYPES[4] {"application/json", "text/json", "*/*", NULL};
         std::shared_ptr<LibCurlSingleton> singletonInstance {};
-        bool                              isInitialized {false};
+        std::atomic_bool                  isInitialized {false};
         uint32_t                          id = __COUNTER__;
 
     protected:
@@ -155,6 +155,7 @@ namespace siddiqsoft
 
     private:
         basic_callbacktype                      _callback {};
+        mutable std::mutex                     callbackMutex {};
         siddiqsoft::RWLEnvelope<nlohmann::json> _config {{{"userAgent", "siddiqsoft.restcl/2"},
                                                           {"trace", false},
                                                           {"id", id},
@@ -166,16 +167,23 @@ namespace siddiqsoft
                                                           {"headers", nullptr}}};
 
 
-        inline void dispatchCallback(basic_callbacktype& cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
+        inline void dispatchCallback(basic_callbacktype cb, rest_request<char>& req, std::expected<rest_response<char>, int> resp)
         {
             callbackAttempt++;
             if (cb) {
                 cb(req, resp);
                 callbackCompleted++;
             }
-            else if (_callback) {
-                _callback(req, resp);
-                callbackCompleted++;
+            else {
+                basic_callbacktype configuredCallback;
+                {
+                    std::scoped_lock lock(callbackMutex);
+                    configuredCallback = _callback;
+                }
+                if (configuredCallback) {
+                    configuredCallback(req, resp);
+                    callbackCompleted++;
+                }
             }
         }
 
@@ -353,8 +361,11 @@ namespace siddiqsoft
             if (!cfg.is_null() && !cfg.empty())
                 _config.mutate([](auto& container, const auto& cfg) noexcept { container.update(cfg); }, cfg);
 
-            if (func) _callback = std::move(func);
-            isInitialized = true;
+            if (func) {
+                std::scoped_lock lock(callbackMutex);
+                _callback = std::move(func);
+            }
+            isInitialized.store(true, std::memory_order_release);
             return *this;
         }
 
@@ -363,13 +374,24 @@ namespace siddiqsoft
         /// @param callback The method will be async and there will not be a response object returned
         basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}) override
         {
-            if (!isInitialized) throw std::runtime_error("Initialization failed/incomplete!");
+            if (!isInitialized.load(std::memory_order_acquire)) throw std::runtime_error("Initialization failed/incomplete!");
 
-            if (!_callback && !callback)
+            basic_callbacktype callbackToUse;
+            {
+                std::scoped_lock lock(callbackMutex);
+                if (callback) {
+                    callbackToUse = std::move(callback);
+                }
+                else {
+                    callbackToUse = _callback;
+                }
+            }
+
+            if (!callbackToUse)
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            pool.queue(RestPoolArgsType {std::move(req), callback ? std::move(callback) : _callback});
+            pool.queue(RestPoolArgsType {std::move(req), std::move(callbackToUse)});
 
             return *this;
         }

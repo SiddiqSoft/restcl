@@ -226,6 +226,7 @@ namespace siddiqsoft
         ACW32HINTERNET hSession {};
 
         basic_callbacktype _callback {};
+        mutable std::mutex callbackMutex {};
         uint32_t           id = __COUNTER__;
         siddiqsoft::RWLEnvelope<nlohmann::json>     _config {{"userAgent", "siddiqsoft.restcl/2"},
                                     {"trace", false},
@@ -267,33 +268,45 @@ namespace siddiqsoft
         basic_restclient<char>& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
             if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
-            if (cb) _callback = std::move(cb);
 
-            UserAgent  = _config.value("userAgent", _config.value("/headers/User-Agent"_json_pointer, ""));
-            UserAgentW = ConversionUtils::convert_to<char, wchar_t>(UserAgent);
+            std::string  newUserAgent {};
+            std::wstring newUserAgentW {};
+            ACW32HINTERNET newSession {};
 
-            if (hSession == NULL) {
-                hSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
-                if (hSession) {
-                    const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
-                    const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+            {
+                std::scoped_lock lock(callbackMutex);
+                if (cb) _callback = std::move(cb);
 
-                    // Enable HTTP/2 protocol
-                    if (!WinHttpSetOption(
-                                hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
-                    {
+                newUserAgent  = _config.value("userAgent", _config.value("/headers/User-Agent"_json_pointer, ""));
+                newUserAgentW = ConversionUtils::convert_to<char, wchar_t>(newUserAgent);
+
+                if (hSession == NULL) {
+                    newSession = std::move(WinHttpOpen(newUserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
+                    if (newSession) {
+                        const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
+                        const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
+
+                        // Enable HTTP/2 protocol
+                        if (!WinHttpSetOption(
+                                    newSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
+                        {
 #ifdef _DEBUG
-                        std::print(std::cerr, "{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+                            std::print(std::cerr, "{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
 #endif
-                    }
+                        }
 
-                    // Enable decompression
-                    if (!WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
+                        // Enable decompression
+                        if (!WinHttpSetOption(newSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
 #ifdef _DEBUG
-                        std::print(std::cerr, "{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+                            std::print(std::cerr, "{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
 #endif
+                        }
                     }
                 }
+
+                UserAgent  = newUserAgent;
+                UserAgentW = newUserAgentW;
+                if (newSession) hSession = std::move(newSession);
             }
 
             return *this;
@@ -317,11 +330,22 @@ namespace siddiqsoft
         /// @param callback The method will be async and there will not be a response object returned
         basic_restclient<char>& sendAsync(rest_request<char>&& req, basic_callbacktype&& cb = {}) override
         {
-            if (!_callback && !cb)
+            basic_callbacktype callbackToUse {};
+            {
+                std::scoped_lock lock(callbackMutex);
+                if (cb) {
+                    callbackToUse = std::move(cb);
+                }
+                else {
+                    callbackToUse = _callback;
+                }
+            }
+
+            if (!callbackToUse)
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            pool.queue(RestPoolArgsType<char> {std::move(req), cb ? std::move(cb) : _callback});
+            pool.queue(RestPoolArgsType<char> {std::move(req), std::move(callbackToUse)});
 
             return *this;
         }

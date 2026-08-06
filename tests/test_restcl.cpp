@@ -21,6 +21,8 @@
 #include <version>
 #include <expected>
 #include <format>
+#include <thread>
+#include <vector>
 
 
 #include "nlohmann/json.hpp"
@@ -391,6 +393,82 @@ namespace siddiqsoft
         EXPECT_TRUE(passTest.load());
     }
 
+
+    TEST_F(TestSends, ConcurrentConfigureAndSendDoesNotRace)
+    {
+        constexpr unsigned threadCount      = 4;
+        constexpr unsigned iterationsPerThread = 10;
+        std::barrier        startBarrier(threadCount + 1);
+        std::atomic_uint   completedCallbacks {0};
+        std::vector<std::thread> workers;
+        workers.reserve(threadCount);
+
+        auto wrc = GetRESTClient({{"trace", false}});
+
+        for (unsigned threadIndex = 0; threadIndex < threadCount; ++threadIndex) {
+            workers.emplace_back([&, threadIndex] {
+                startBarrier.arrive_and_wait();
+                for (unsigned iter = 0; iter < iterationsPerThread; ++iter) {
+                    wrc->configure({{"userAgent", std::format("race-test/{}/{}", threadIndex, iter)}});
+                    wrc->sendAsync("http://127.0.0.1:1/"_GET,
+                                   [&](const auto&, std::expected<rest_response<>, int> resp) {
+                                       (void)resp;
+                                       completedCallbacks.fetch_add(1, std::memory_order_relaxed);
+                                   });
+                }
+            });
+        }
+
+        startBarrier.arrive_and_wait();
+
+        for (auto& worker : workers) {
+            worker.join();
+        }
+
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (completedCallbacks.load(std::memory_order_relaxed) < (threadCount * iterationsPerThread) &&
+               std::chrono::steady_clock::now() < deadline) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        EXPECT_EQ(threadCount * iterationsPerThread, completedCallbacks.load(std::memory_order_relaxed));
+    }
+
+#if (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
+    TEST_F(TestSends, ConcurrentConfigureAndSendDoesNotRace_Windows)
+    {
+        constexpr unsigned threadCount = 4;
+        constexpr unsigned iterationsPerThread = 4;
+        std::barrier       startBarrier(threadCount + 1);
+        std::atomic_uint   completedCallbacks {0};
+        std::vector<std::thread> workers;
+        workers.reserve(threadCount);
+
+        auto wrc = GetRESTClient({{"trace", false}});
+
+        for (unsigned threadIndex = 0; threadIndex < threadCount; ++threadIndex) {
+            workers.emplace_back([&, threadIndex] {
+                startBarrier.arrive_and_wait();
+                for (unsigned iter = 0; iter < iterationsPerThread; ++iter) {
+                    wrc->configure({{"userAgent", std::format("win-race-test/{}/{}", threadIndex, iter)}});
+                    wrc->sendAsync("http://127.0.0.1:1/"_GET,
+                                   [&](const auto&, std::expected<rest_response<>, int> resp) {
+                                       (void)resp;
+                                       completedCallbacks.fetch_add(1, std::memory_order_relaxed);
+                                   });
+                }
+            });
+        }
+
+        startBarrier.arrive_and_wait();
+
+        for (auto& worker : workers) {
+            worker.join();
+        }
+
+        EXPECT_GE(completedCallbacks.load(std::memory_order_relaxed), threadCount * iterationsPerThread);
+    }
+#endif
 
     TEST_F(TestSends, StressSitesParallel)
     {
