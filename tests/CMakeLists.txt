@@ -78,6 +78,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
             $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
             RunOnEnd::RunOnEnd
             SplitUri::SplitUri
+            arrp::arrp
             string2map::string2map
             asynchrony::asynchrony
             RWLEnvelope::RWLEnvelope
