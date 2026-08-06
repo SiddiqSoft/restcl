@@ -241,13 +241,13 @@ namespace siddiqsoft
         basic_callbacktype                      _callback {};
         mutable std::mutex                      callbackMutex {};
         uint32_t                                id = __COUNTER__;
-        siddiqsoft::RWLEnvelope<nlohmann::json> _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                                         {"trace", false},
-                                                         {"id", id},
-                                                         {"connectTimeout", 0L},
-                                                         {"timeout", 0L},
-                                                         {"downloadDirectory", nullptr},
-                                                         {"headers", nullptr}};
+        siddiqsoft::RWLEnvelope<nlohmann::json> _config {nlohmann::json{{"userAgent", "siddiqsoft.restcl/2"},
+                                                             {"trace", false},
+                                                             {"id", id},
+                                                             {"connectTimeout", 0L},
+                                                             {"timeout", 0L},
+                                                             {"downloadDirectory", nullptr},
+                                                             {"headers", nullptr}}};
 
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
@@ -280,7 +280,9 @@ namespace siddiqsoft
 
         basic_restclient<char>& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
-            if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
+            if (!cfg.is_null() && !cfg.empty()) {
+                _config.mutate([](auto& container, const auto& config) noexcept { container.update(config); }, cfg);
+            }
 
             std::string    newUserAgent {};
             std::wstring   newUserAgentW {};
@@ -290,7 +292,8 @@ namespace siddiqsoft
                 std::scoped_lock lock(callbackMutex);
                 if (cb) _callback = std::move(cb);
 
-                newUserAgent  = _config.value("userAgent", _config.value("/headers/User-Agent"_json_pointer, ""));
+                auto config = _config.snapshot();
+                newUserAgent = config.value("userAgent", config.value("/headers/User-Agent"_json_pointer, ""));
                 newUserAgentW = ConversionUtils::convert_to<char, wchar_t>(newUserAgent);
 
                 if (hSession == NULL) {
@@ -339,7 +342,7 @@ namespace siddiqsoft
         /// @param src Source object is "cleared"
         WinHttpRESTClient(WinHttpRESTClient&& src) noexcept
             : hSession(std::move(src.hSession))
-            , _config(src._config)
+            , _config(std::move(src._config))
             , UserAgent(src.UserAgent)
             , UserAgentW(src.UserAgentW)
             , _callback(std::move(src._callback))
@@ -409,7 +412,8 @@ namespace siddiqsoft
             uint32_t nRetry {0}, nError {0};
             char     cBuf[READBUFFERSIZE] {};
             DWORD    dwFlagsSize = 0;
-            auto&    strServer = req.uri.authority.host;
+            auto&    requestUri = req.getUri();
+            auto&    strServer  = requestUri.authority.host;
 
             // First order - adjust the UserAgent
             auto defaultUserAgent =
@@ -421,12 +425,12 @@ namespace siddiqsoft
                 if (hSession == NULL) return {};
 
                 return ACW32HINTERNET {
-                        WinHttpConnect(hSession, ConversionUtils::convert_to<char, wchar_t>(strServer).c_str(), req.uri.authority.port, 0)};
+                        WinHttpConnect(hSession, ConversionUtils::convert_to<char, wchar_t>(strServer).c_str(), requestUri.authority.port, 0)};
             }();
 
             if (hConnect != NULL) {
                     std::string strMethod  = to_string(req.getMethod());
-                    auto        strUrl     = req.uri.urlPart;
+                    auto        strUrl     = requestUri.urlPart;
                     std::string strVersion = to_string(req.getProtocol());
 
                     if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
@@ -435,7 +439,7 @@ namespace siddiqsoft
                                                                     ConversionUtils::convert_to<char, wchar_t>(strVersion).c_str(),
                                                                     NULL,
                                                                     RESTCL_ACCEPT_TYPES_W,
-                                                                    (req.uri.scheme == UriScheme::WebHttps)
+                                                                    (requestUri.scheme == UriScheme::WebHttps)
                                                                             ? WINHTTP_FLAG_SECURE | WINHTTP_FLAG_REFRESH
                                                                             : WINHTTP_FLAG_REFRESH)};
                         hRequest != NULL)
