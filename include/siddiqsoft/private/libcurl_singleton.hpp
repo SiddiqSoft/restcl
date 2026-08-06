@@ -91,7 +91,6 @@ namespace siddiqsoft
             _contents.reset();
         }
 
-    private:
         void cleanup() noexcept
         {
             if (m_handle != nullptr) {
@@ -112,13 +111,13 @@ namespace siddiqsoft
     class LibCurlSingleton
     {
     protected:
-        arrp::resource_pool<CurlContextBundle> curlHandlePool {[](auto& rsrc) {
+        arrp::resource_pool<CurlContextBundle> curlHandlePool {[](CurlContextBundle& rsrc) {
             // This method is invoked for each resource that is invalidated
             // or about to be cleaned up.
-            if ((CURL*)rsrc != nullptr) {
-                std::println(" - Pool cleanup handler - cleanup curl handle:{}", static_cast<void*>((CURL*)rsrc));
-                curl_easy_cleanup(rsrc);
-                }
+            if (auto* handle = rsrc.curlHandle(); handle != nullptr) {
+                std::println(" - Pool cleanup handler - cleanup curl handle:{}", static_cast<void*>(handle));
+                rsrc.cleanup();
+            }
         }};
 
         LibCurlSingleton() = default;

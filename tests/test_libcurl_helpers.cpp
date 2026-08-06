@@ -78,6 +78,26 @@ namespace siddiqsoft
         EXPECT_EQ("Operation not permitted", rre.to_string());
     }
 
+    TEST(libcurl_helpers, pooled_bundle_cleanup_marks_handle_as_released)
+    {
+        std::atomic<CURL*> observedHandle {nullptr};
+        arrp::resource_pool<CurlContextBundle> pool { [&](CurlContextBundle& resource) {
+            resource.cleanup();
+            observedHandle.store(resource.m_handle, std::memory_order_relaxed);
+        } };
+
+        auto* rawHandle = curl_easy_init();
+        ASSERT_NE(rawHandle, nullptr);
+
+        CurlContextBundle bundle {rawHandle};
+        ASSERT_NE(bundle.m_handle, nullptr);
+
+        pool.seed(std::move(bundle));
+        pool.clear();
+
+        EXPECT_EQ(observedHandle.load(std::memory_order_relaxed), nullptr);
+    }
+
 } // namespace siddiqsoft
 
 #endif
