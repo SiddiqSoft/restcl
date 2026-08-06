@@ -290,14 +290,14 @@ namespace siddiqsoft
         }
 
 
-        auto& extractHeadersFromLibCurl(CurlContextBundlePtr ctxCurl, http_frame<>& dest)
+        auto& extractHeadersFromLibCurl(CurlContextBundlePtr& ctxCurl, http_frame<>& dest)
         {
             int          headerCount {0};
             curl_header* currentHeader {nullptr};
             curl_header* previousHeader {nullptr};
 
             do {
-                if (currentHeader = curl_easy_nextheader(ctxCurl->curlHandle(), CURLH_HEADER, -1, previousHeader); currentHeader) {
+                if (currentHeader = curl_easy_nextheader((*ctxCurl).curlHandle(), CURLH_HEADER, -1, previousHeader); currentHeader) {
                     dest.setHeader(currentHeader->name, currentHeader->value);
                     previousHeader = currentHeader;
                     headerCount++;
@@ -305,6 +305,17 @@ namespace siddiqsoft
             } while (currentHeader);
 
             return dest;
+        }
+
+        void resetContentState(std::shared_ptr<ContentType> cntnts)
+        {
+            if (!cntnts) return;
+
+            cntnts->body.clear();
+            cntnts->type.clear();
+            cntnts->length = 0;
+            cntnts->offset = 0;
+            cntnts->remainingSize = 0;
         }
 
     public:
@@ -364,39 +375,39 @@ namespace siddiqsoft
         }
 
 
-        void prepareContext(CurlContextBundlePtr ctxCurl)
+        void prepareContext(CurlContextBundlePtr& ctxCurl)
         {
             CURLcode rc     = CURLcode::CURLE_NOT_BUILT_IN;
             auto     config = _config.snapshot(); // peek at the snapshot of the config to avoid locking for long periods
 
-            // std::print(std::cerr, "{} - Invoked.. ctxCurl:{}\n", __func__, (void*)ctxCurl->curlHandle());
+            // std::print(std::cerr, "{} - Invoked.. ctxCurl:{}\n", __func__, (void*)(*ctxCurl).curlHandle());
 
-            if (ctxCurl && ((CURL*)ctxCurl->curlHandle()) != NULL) curl_easy_reset((CURL*)ctxCurl->curlHandle());
+            if (ctxCurl && ((CURL*)(*ctxCurl).curlHandle()) != NULL) curl_easy_reset((CURL*)(*ctxCurl).curlHandle());
 
             // std::print(std::cerr, "{} - Configuring options...\n", __func__);
             if (long v = config.value("connectTimeout", 0); v > 0) {
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CONNECTTIMEOUT_MS, v); rc != CURLE_OK)
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CONNECTTIMEOUT_MS, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
             if (long v = config.value("timeout", 0); v > 0) {
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
             if (long v = config.value("verifyPeer", 1); v == 0) {
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
             if (config.value("freshConnect", false)) {
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_FRESH_CONNECT, 1L); rc != CURLE_OK)
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_FRESH_CONNECT, 1L); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
             if (config.value("trace", false)) {
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_VERBOSE, 1L); rc != CURLE_OK)
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_VERBOSE, 1L); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
 
@@ -430,10 +441,12 @@ namespace siddiqsoft
 #endif
 
             if (auto ctxCurl = singletonInstance->getEasyHandle();
-                ((CURL*)ctxCurl->curlHandle() != nullptr) && !destinationHost.empty())
+                ((CURL*)(*ctxCurl).curlHandle() != nullptr) && !destinationHost.empty())
             {
                 // peek at the snapshot of the config
                 auto config = _config.snapshot();
+                auto responseContent = (*ctxCurl)._contents;
+                resetContentState(responseContent);
 
                 // Configures the context with options such as timeout, connectionTimeout, verbose, freshConnect..
                 prepareContext(ctxCurl);
@@ -442,7 +455,7 @@ namespace siddiqsoft
                 // otherwise use the one configured in the config
                 // or the one set in the config headers
                 if (rc = curl_easy_setopt(
-                            ctxCurl->curlHandle(),
+                            (*ctxCurl).curlHandle(),
                             CURLOPT_USERAGENT,
                             req.getHeaders()
                                     .value("User-Agent",
@@ -452,15 +465,15 @@ namespace siddiqsoft
                 {
                     ioAttempt++;
                     if (rc = prepareStartLine(ctxCurl, req); rc == CURLE_OK) {
-                        if (rc = prepareIOHandlers(ctxCurl, req, ctxCurl->_contents); rc == CURLE_OK) {
+                        if (rc = prepareIOHandlers(ctxCurl, req, responseContent); rc == CURLE_OK) {
                             if (auto curlHeaders = prepareCurlHeaders(ctxCurl, req); curlHeaders) {
                                 // Send the request..
-                                if (rc = curl_easy_perform(ctxCurl->curlHandle()); rc == CURLE_OK) {
+                                if (rc = curl_easy_perform((*ctxCurl).curlHandle()); rc == CURLE_OK) {
                                     ioSend++;
                                     // Parse the response..
                                     extractStartLine(ctxCurl, resp);
                                     extractHeadersFromLibCurl(ctxCurl, resp);
-                                    extractContents(ctxCurl->_contents, resp);
+                                    extractContents(responseContent, resp);
                                     return resp;
                                 }
                                 else {
@@ -479,8 +492,8 @@ namespace siddiqsoft
                 }
 
                 // To reach here is failure!
-                // Abandon so we we dot re-use a failed resource!
-                ctxCurl->abandon();
+                // Invalidate so we do not re-use a failed resource!
+                ctxCurl.invalidate();
                 if (config.value("trace", false)) {
                     std::println(std::cerr,
                                  "{} - some failure `{}`; abandon context !!\n{}\n",
@@ -503,12 +516,17 @@ namespace siddiqsoft
         }
 
 
-        CURLcode prepareIOHandlers(CurlContextBundlePtr ctxCurl, rest_request<>& req, std::shared_ptr<ContentType> cntnts)
+        CURLcode prepareIOHandlers(CurlContextBundlePtr& ctxCurl, rest_request<>& req, std::shared_ptr<ContentType> cntnts)
         {
             CURLcode rc {CURLE_OK};
 
+            if (!cntnts) {
+                cntnts = std::make_shared<ContentType>();
+            }
+            resetContentState(cntnts);
+
             // Setup the CURL library for callback for the *response* from the remote!
-            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK) {
+            if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK) {
                 std::println(std::cerr, "{} - Failed setting writefunction! rc:{}", __func__, curl_easy_strerror(rc));
                 return rc;
             }
@@ -516,39 +534,31 @@ namespace siddiqsoft
 #if defined(DEBUG0)
                 std::println(std::cerr, "{} - Setting writefunction data..............................", __func__);
 #endif
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) {
                     std::println(std::cerr, "{} - Failed setting writefunction data! rc:{}", __func__, curl_easy_strerror(rc));
                     return rc;
                 }
             }
 
-            // Special cases for each verb..
+
             if ((req.getMethod() == HttpMethodType::METHOD_PUT) || (req.getMethod() == HttpMethodType::METHOD_PATCH) ||
                 (req.getMethod() == HttpMethodType::METHOD_POST))
             {
-                // WARNING!
-                // The cntnts is the *incoming* or *response* FROM the remote server!
-                // The req object contains contents that is to be SENT *to* the remote server!
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDS, req.getContentBody().c_str()); rc != CURLE_OK)
-                    return rc;
-                else {
-                    if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POSTFIELDSIZE, req.getContent()->length);
-                        rc != CURLE_OK)
+                if (auto& reqContent = req.getContent(); reqContent->length > 0) {
+                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDS, req.getContentBody().c_str()); rc != CURLE_OK)
                         return rc;
-                    else {
-                        // Why do this again?!
-                        // When you call the POSTFIELDS it resets the verb to POST so we have to ensure that it is set
-                        // back to the requested verb such as PUT or PATCH!
-                        prepareStartLine(ctxCurl, req);
+                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, reqContent->length); rc != CURLE_OK)
+                        return rc;
 
-#if defined(DEBUG0)
-                        std::println(std::cerr,
-                                     "{} - Method:{}  POSTFIELDS: -- {}:{}",
-                                     __func__,
-                                     req.getMethod(),
-                                     req.getContent()->length,
-                                     req.getContentBody());
-#endif
+                    if (rc = prepareStartLine(ctxCurl, req); rc != CURLE_OK) {
+                        return rc;
+                    }
+                }
+                else {
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDS, nullptr);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, 0L);
+                    if (rc = prepareStartLine(ctxCurl, req); rc != CURLE_OK) {
+                        return rc;
                     }
                 }
             }
@@ -562,7 +572,7 @@ namespace siddiqsoft
                              reqContent->length);
 #endif
                 //  Set the output/send callback which will process the req's content
-                if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK) {
                     std::println(std::cerr, "{} - Failed setting readfunction! rc:{}", __func__, curl_easy_strerror(rc));
                     return rc;
                 }
@@ -570,7 +580,7 @@ namespace siddiqsoft
 #if defined(DEBUG0)
                     std::println(std::cerr, "{} - Setting readfunction data.................", __func__);
 #endif
-                    if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_READDATA, reqContent.get()); rc != CURLE_OK) {
+                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_READDATA, reqContent.get()); rc != CURLE_OK) {
                         std::println(std::cerr, "{} - Failed setting readfunction data!! rc:{}", __func__, curl_easy_strerror(rc));
                         return rc;
                     }
@@ -588,27 +598,27 @@ namespace siddiqsoft
          * @param req Reference to the request
          * @return CURLcode Error from libCurl
          */
-        CURLcode prepareStartLine(CurlContextBundlePtr ctxCurl, rest_request<>& req)
+        CURLcode prepareStartLine(CurlContextBundlePtr& ctxCurl, rest_request<>& req)
         {
             CURLcode rc {CURLE_OK};
 
             // Set the protocol..
             switch (req.getProtocol()) {
                 case HttpProtocolVersionType::Http1:
-                    rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+                    rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
                     break;
                 case HttpProtocolVersionType::Http2:
-                    rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+                    rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
                     break;
                 case HttpProtocolVersionType::Http3:
-                    rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_3);
+                    rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_3);
                     break;
                 case HttpProtocolVersionType::Http11:
-                default: rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1); break;
+                default: rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1); break;
             }
 
             // Set the URL..
-            if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_URL, req.getUri().string().c_str()); rc != CURLE_OK) {
+            if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_URL, req.getUri().string().c_str()); rc != CURLE_OK) {
                 std::println(std::cerr,
                              "{} - url set failed Uri: {}  Failed: {}",
                              __func__,
@@ -619,20 +629,48 @@ namespace siddiqsoft
             // Setup the method..
             switch (req.getMethod()) {
                 case HttpMethodType::METHOD_PUT:
-                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PUT");
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, "PUT");
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
                     req.setHeader("Transfer-Encoding", {});
                     req.setHeader("Expect", {});
                     break;
-                case HttpMethodType::METHOD_PATCH: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "PATCH"); break;
-                case HttpMethodType::METHOD_DELETE: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "DELETE"); break;
-                case HttpMethodType::METHOD_OPTIONS:
-                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_CUSTOMREQUEST, "OPTIONS");
+                case HttpMethodType::METHOD_PATCH:
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, "PATCH");
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
                     break;
-                case HttpMethodType::METHOD_POST: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 1L); break;
-                case HttpMethodType::METHOD_HEAD: curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_NOBODY, 1L); break;
+                case HttpMethodType::METHOD_DELETE:
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, "DELETE");
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
+                    break;
+                case HttpMethodType::METHOD_OPTIONS:
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, "OPTIONS");
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
+                    break;
+                case HttpMethodType::METHOD_POST:
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 1L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, nullptr);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
+                    break;
+                case HttpMethodType::METHOD_HEAD:
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 1L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, nullptr);
+                    break;
                 case HttpMethodType::METHOD_GET:
-                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTPGET, 1L);
-                    curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 1L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, nullptr);
                     break;
                 default:
                     std::println(std::cerr, "{} - {} to {} UNSUPPORTED verb!", __func__, req.getMethod(), req.getHost());
@@ -648,7 +686,7 @@ namespace siddiqsoft
             return rc;
         }
 
-        auto prepareCurlHeaders(CurlContextBundlePtr ctxCurl, rest_request<>& req) -> std::shared_ptr<struct curl_slist>
+        auto prepareCurlHeaders(CurlContextBundlePtr& ctxCurl, rest_request<>& req) -> std::shared_ptr<struct curl_slist>
         {
             CURLcode rc = CURLE_NOT_BUILT_IN;
 
@@ -700,7 +738,7 @@ namespace siddiqsoft
                 if (curlHeaders != NULL) {
                     // Immediately save so we ensure proper cleanup
                     std::shared_ptr<struct curl_slist> retHeaders {curlHeaders, curl_slist_free_all};
-                    if (rc = curl_easy_setopt(ctxCurl->curlHandle(), CURLOPT_HTTPHEADER, curlHeaders); rc == CURLE_OK) {
+                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPHEADER, curlHeaders); rc == CURLE_OK) {
                         return retHeaders;
                     }
                 }
@@ -734,14 +772,14 @@ namespace siddiqsoft
         }
 
 
-        void extractStartLine(CurlContextBundlePtr ctxCurl, rest_response<>& dest)
+        void extractStartLine(CurlContextBundlePtr& ctxCurl, rest_response<>& dest)
         {
             CURLcode rc {CURLE_OK};
             long     sc {0};
 
-            if (rc = curl_easy_getinfo(ctxCurl->curlHandle(), CURLINFO_RESPONSE_CODE, &sc); rc == CURLE_OK) {
+            if (rc = curl_easy_getinfo((*ctxCurl).curlHandle(), CURLINFO_RESPONSE_CODE, &sc); rc == CURLE_OK) {
                 long vc {0};
-                if (rc = curl_easy_getinfo(ctxCurl->curlHandle(), CURLINFO_HTTP_VERSION, &vc); rc == CURLE_OK) {
+                if (rc = curl_easy_getinfo((*ctxCurl).curlHandle(), CURLINFO_HTTP_VERSION, &vc); rc == CURLE_OK) {
                     switch (vc) {
                         case CURL_HTTP_VERSION_1_0: dest.setProtocol(HttpProtocolVersionType::Http1); break;
                         case CURL_HTTP_VERSION_1_1: dest.setProtocol(HttpProtocolVersionType::Http11); break;
@@ -753,7 +791,7 @@ namespace siddiqsoft
 
                     // Get the read/data size from server
                     curl_off_t cl {};
-                    if (rc = curl_easy_getinfo(ctxCurl->curlHandle(), CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &cl); rc == CURLE_OK) {
+                    if (rc = curl_easy_getinfo((*ctxCurl).curlHandle(), CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &cl); rc == CURLE_OK) {
                         if ((cl > 0) && (cl != -1) && dest.getContent() && (dest.getContent()->length == 0))
                             dest.getContent()->remainingSize = dest.getContent()->length = cl;
                     }

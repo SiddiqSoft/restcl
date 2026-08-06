@@ -27,13 +27,15 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <utility>
 #include <stdio.h>
 #include <exception>
 
 #include "curl/curl.h"
 #include "curl/easy.h"
 
-#include "siddiqsoft/resource_pool.hpp"
+#include "siddiqsoft/arrp.hpp"
+
 #include "http_frame.hpp"
 
 
@@ -48,70 +50,58 @@ namespace siddiqsoft
     class CurlContextBundle
     {
     public:
-#if defined(DEBUG)
-        std::thread::id _owningTid {};
-#endif
-        std::shared_ptr<CURL>                 _hndl;                         // The checkout'd curl handle
-        resource_pool<std::shared_ptr<CURL>>& _pool;                         // Reference to where we should checkin
-        std::shared_ptr<ContentType>          _contents {new ContentType()}; // Always a new instance
-        uint32_t                              _id = __COUNTER__;
+        CURL*                        m_handle {};
+        std::shared_ptr<ContentType> _contents {std::make_shared<ContentType>()}; // Always a new instance
 
     public:
-        CurlContextBundle() = delete;
-        CurlContextBundle(resource_pool<std::shared_ptr<CURL>>& pool, std::shared_ptr<CURL> item)
-            : _pool {pool}
-            , _hndl {std::move(item)}
+        CurlContextBundle() = default;
+        explicit CurlContextBundle(CURL* handle)
+            : m_handle {handle}
         {
-#if defined(DEBUG0)
-            _owningTid = std::this_thread::get_id();
-            std::print(std::cerr, "{} - 0/0 New BUNDLE id:{}..\n", __func__, _id);
-#endif
         }
 
-        CURL*                        curlHandle() { return _hndl.get(); };
+        CurlContextBundle(const CurlContextBundle&)            = delete;
+        CurlContextBundle& operator=(const CurlContextBundle&) = delete;
+
+        CurlContextBundle(CurlContextBundle&& item) noexcept
+            : m_handle {std::exchange(item.m_handle, nullptr)}
+            , _contents {std::move(item._contents)}
+        {
+        }
+
+        CurlContextBundle& operator=(CurlContextBundle&& item) noexcept
+        {
+            if (this != &item) {
+                cleanup();
+                m_handle  = std::exchange(item.m_handle, nullptr);
+                _contents = std::move(item._contents);
+            }
+            return *this;
+        }
+
+        ~CurlContextBundle() { cleanup(); }
+
+                                     operator CURL*() { return m_handle; };
+        CURL*                        curlHandle() const { return m_handle; }
         std::shared_ptr<ContentType> contents() { return _contents; }
 
-        /**
-         * @brief Abandon the CurlContextBundle so we do not return it to the pool!
-         *        The shared_ptr is released and will be freed when ref count zero
-         *        clearing the underlying CURL resource.
-         *
-         */
         void abandon()
         {
-#if defined(DEBUG0)
-            std::print(std::cerr,
-                       "CurlContextBundle::abandon - id:{}  {} Abandoning BUNDLE "
-                       "*********************************************************************\n",
-                       _id,
-                       _owningTid);
-#endif
-            _hndl.reset();
+            cleanup();
+            _contents.reset();
         }
 
-        ~CurlContextBundle()
+    private:
+        void cleanup() noexcept
         {
-#if defined(DEBUG0)
-            std::print(std::cerr, "{} - 1/2 Clearing contents..\n", __func__);
-#endif
-
-            if (_contents) _contents.reset();
-            if (_hndl) {
-                _pool.checkin(std::move(_hndl));
-#if defined(DEBUG0)
-                std::print(std::cerr,
-                           "{} - 2/2 Returning BUNDLE  id:{}:{}  Capacity:{}..\n",
-                           __func__,
-                           _id,
-                           (void*)_hndl.get(),
-                           _pool.size());
-#endif
-                _hndl.reset();
+            if (m_handle != nullptr) {
+                curl_easy_cleanup(m_handle);
+                m_handle = nullptr;
             }
         }
     };
 
-    using CurlContextBundlePtr = std::shared_ptr<CurlContextBundle>;
+    using CurlContextBundlePtr = arrp::resource_guard<CurlContextBundle>;
 
 
     /**
@@ -122,7 +112,14 @@ namespace siddiqsoft
     class LibCurlSingleton
     {
     protected:
-        resource_pool<std::shared_ptr<CURL>> curlHandlePool {};
+        arrp::resource_pool<CurlContextBundle> curlHandlePool {[](auto& rsrc) {
+            // This method is invoked for each resource that is invalidated
+            // or about to be cleaned up.
+            if ((CURL*)rsrc != nullptr) {
+                std::println(" - Pool cleanup handler - cleanup curl handle:{}", static_cast<void*>((CURL*)rsrc));
+                curl_easy_cleanup(rsrc);
+                }
+        }};
 
         LibCurlSingleton() = default;
 
@@ -131,6 +128,7 @@ namespace siddiqsoft
         {
             static std::shared_ptr<LibCurlSingleton> _singleton;
             static std::once_flag                    _libCurlOnceFlag;
+            static const int                         DebugTraceData = 1;
 
             std::call_once(_libCurlOnceFlag, []() {
                 if (_singleton = std::shared_ptr<LibCurlSingleton>(new LibCurlSingleton()); _singleton) {
@@ -140,12 +138,41 @@ namespace siddiqsoft
                     // Perform once-per-application LibCURL initialization logic
                     if (auto rc = curl_global_init(CURL_GLOBAL_ALL); rc == CURLE_OK) {
                         _singleton->isInitialized = true;
-#if defined(DEBUG0)
-                        std::print(std::cerr, "{} - Initialized:{} curl_global_init()\n", __func__, _singleton->isInitialized);
-#endif
+
+                        // Set the factory callback for whenever we need a new curl handle and the
+                        // pool has already loaned out everything..
+                        _singleton->curlHandlePool.set_factory_callback([] {
+                            auto curlHandle = curl_easy_init();
+                            if (!curlHandle) {
+                                throw std::runtime_error("curl_easy_init() failed");
+                            }
+
+                            if (auto rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGFUNCTION, LibCurlSingleton::debugCallback);
+                                rc == CURLE_OK)
+                            {
+                                rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGDATA, &DebugTraceData);
+                                if (rc == CURLE_OK) {
+                                    return CurlContextBundle {curlHandle};
+                                }
+                                else if (rc != CURLE_OK) {
+                                    curl_easy_cleanup(curlHandle);
+                                    std::println(std::cerr,
+                                                 "{} - Setting the debug Callback data..FAILED: {}",
+                                                 __func__,
+                                                 curl_easy_strerror(rc));
+                                    throw std::runtime_error(curl_easy_strerror(rc));
+                                }
+                            }
+                            else {
+                                curl_easy_cleanup(curlHandle);
+                                std::println(
+                                        std::cerr, "{} - Setting the debug Callback..FAILED: {}", __func__, curl_easy_strerror(rc));
+                                throw std::runtime_error(curl_easy_strerror(rc));
+                            }
+                        });
                     }
                     else {
-#if defined(DEBUG0)
+#if defined(DEBUG)
                         std::print(std::cerr, "{} - Initialize failed! {}\n", __func__, curl_easy_strerror(rc));
 #endif
                         throw std::runtime_error(curl_easy_strerror(rc));
@@ -189,80 +216,20 @@ namespace siddiqsoft
         [[nodiscard("Clears the CURL when this object goes out of scope.")]] auto getEasyHandle() -> CurlContextBundlePtr
         {
             try {
-                // It is critical for us to check if we are non-empty otherwise
-                // there will be a race-condition during the checkout
                 if (isInitialized.load()) {
-                    if (curlHandlePool.size() > 0) {
-                        // return an existing handle..
-                        auto ctxbndl = std::shared_ptr<CurlContextBundle>(
-                                new CurlContextBundle {curlHandlePool, std::move(curlHandlePool.checkout())});
-#if defined(DEBUG0)
-                        std::print(std::cerr,
-                                   "{} - Existing BUNDLE id:{}:{}; Capacity:{}\n",
-                                   __func__,
-                                   ctxbndl->_id,
-                                   reinterpret_cast<void*>((CURL*)ctxbndl->curlHandle()),
-                                   curlHandlePool.size());
-#endif
-                        return ctxbndl;
-                    }
-                    else {
-                        std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}\n", __func__, curlHandlePool.size());
-                    }
+                    return curlHandlePool.try_borrow_create();
                 }
-                else if (!isInitialized) {
-                    std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}\n", __func__, curlHandlePool.size());
-                }
+
+                std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}\n", __func__, curlHandlePool.size());
             }
             catch (std::runtime_error& re) {
-                // ignore the exception.. and..
                 std::print(std::cerr, "{} - Failed existing BUNDLE from pool. {}\n", __func__, re.what());
             }
             catch (...) {
                 std::print(std::cerr, "{} - Failed existing BUNDLE from pool. unknown error\n", __func__);
             }
 
-            // ..return a new handle..
-            auto curlHandle = curl_easy_init();
-#if defined(DEBUG0)
-            std::print(std::cerr, "{} - Invoking curl_easy_init...{}\n", __func__, (void*)curlHandle);
-#endif
-
-            if (auto rc = curl_easy_setopt(curlHandle, CURLOPT_DEBUGFUNCTION, LibCurlSingleton::debugCallback); rc == CURLE_OK) {
-#if defined(DEBUG0)
-                std::println(std::cerr, "{} - Setting the debug Callback..", __func__);
-#endif
-                static const int DebugTraceData = 1;
-                rc                              = curl_easy_setopt(curlHandle, CURLOPT_DEBUGDATA, &DebugTraceData);
-                if (rc != CURLE_OK) {
-                    std::println(std::cerr, "{} - Setting the debug Callback data..FAILED: {}", __func__, curl_easy_strerror(rc));
-                }
-#if defined(DEBUG0)
-                curl_easy_setopt(curlHandle, CURLOPT_VERBOSE, 1L);
-#endif
-            }
-            else {
-                std::println(std::cerr, "{} - Setting the debug Callback..FAILED: {}", __func__, curl_easy_strerror(rc));
-            }
-
-            auto ctxbndlnew = std::shared_ptr<CurlContextBundle>(new CurlContextBundle {
-                    curlHandlePool, std::shared_ptr<CURL> {curlHandle, [](CURL* cc) {
-#if defined(DEBUG0)
-                                                               std::print(std::cerr,
-                                                                          "Invoking curl_easy_cleanup...{}\n",
-                                                                          reinterpret_cast<void*>(cc));
-#endif
-                                                               if (cc != NULL) curl_easy_cleanup(cc);
-                                                           }}});
-#if defined(DEBUG0)
-            std::print(std::cerr,
-                       "{} - NEW BUNDLE id:{}:{}; Capacity:{}\n",
-                       __func__,
-                       ctxbndlnew->_id,
-                       reinterpret_cast<void*>((CURL*)ctxbndlnew->curlHandle()),
-                       curlHandlePool.size());
-#endif
-            return ctxbndlnew;
+            return curlHandlePool.try_borrow_create();
         };
 
 

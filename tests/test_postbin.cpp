@@ -225,11 +225,15 @@ namespace siddiqsoft
     {
         auto doc = PostBin::createResource(
                 {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
-        std::println(std::cerr, "{} - Create'd Response:\n{}", __func__, doc.dump(2));
+        std::println(std::cerr,
+                     "{} - Create'd Response:\n{}\n\n-------------------------------------------------------------",
+                     __func__,
+                     doc.dump());
         EXPECT_EQ(1, doc.at("userId"));
         EXPECT_EQ(__func__, doc.at("source"));
 
         auto docUpdated = PostBin::updateResource("1", doc);
+        EXPECT_TRUE(docUpdated.is_object());
         std::println(std::cerr, "{} - Update'd Response:\n{}", __func__, docUpdated.dump(2));
         EXPECT_EQ(doc.at("index"), docUpdated.at("index"));
         EXPECT_EQ(__func__, docUpdated.at("source"));
