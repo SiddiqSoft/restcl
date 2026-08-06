@@ -139,14 +139,17 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         restcl           wrc      = GetRESTClient();
 
-        wrc->configure().sendAsync(
+        std::println(std::cerr, "{} - Configuring the REST client for GET google.com\n", __func__);
+        wrc->configure();
+        std::println(std::cerr, "{} - Sending GET request to google.com\n", __func__);
+        wrc->sendAsync(
                 "https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
-                        // std::print(std::cerr,
-                        //            "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
-                        //            __func__,
-                        //            nlohmann::json(*resp).dump(3));
+                        std::print(std::cerr,
+                                   "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
+                                   __func__,
+                                   nlohmann::json(*resp).dump(3));
                     }
                     else if (resp.has_value()) {
                         auto [ec, emsg] = resp->status();
