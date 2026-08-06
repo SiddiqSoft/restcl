@@ -249,6 +249,7 @@ namespace siddiqsoft
 
         doc["source"]   = "New Source Name";
         auto docUpdated = PostBin::patchResource(doc.at("id").dump(), doc);
+        EXPECT_TRUE(docUpdated.is_object());
         std::println(std::cerr, "{} - Update'd Response:\n{}", __func__, docUpdated.dump(2));
         EXPECT_EQ(1, docUpdated.at("userId"));
         EXPECT_EQ("New Source Name", docUpdated.at("source"));

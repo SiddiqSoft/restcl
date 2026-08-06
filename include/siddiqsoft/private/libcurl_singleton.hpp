@@ -194,15 +194,7 @@ namespace siddiqsoft
 
         ~LibCurlSingleton()
         {
-#if defined(DEBUG)
-            std::print(std::cerr, "{} - Invoked. Cleanup {} resource_pool objects..\n", __func__, curlHandlePool.size());
-#endif
             curlHandlePool.clear();
-#if defined(DEBUG)
-            std::print(std::cerr,
-                       "{} - Invoked. Cleanup global LibCURL..\n*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-**-*\n",
-                       __func__);
-#endif
             curl_global_cleanup();
         }
 
