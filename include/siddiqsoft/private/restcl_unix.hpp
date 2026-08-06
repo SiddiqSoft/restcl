@@ -155,7 +155,7 @@ namespace siddiqsoft
 
     private:
         basic_callbacktype                      _callback {};
-        mutable std::mutex                     callbackMutex {};
+        mutable std::mutex                      callbackMutex {};
         siddiqsoft::RWLEnvelope<nlohmann::json> _config {{{"userAgent", "siddiqsoft.restcl/2"},
                                                           {"trace", false},
                                                           {"id", id},
@@ -305,7 +305,8 @@ namespace siddiqsoft
             curl_header* previousHeader {nullptr};
 
             do {
-                if (currentHeader = curl_easy_nextheader((*ctxCurl).curlHandle(), CURLH_HEADER, -1, previousHeader); currentHeader) {
+                if (currentHeader = curl_easy_nextheader((*ctxCurl).curlHandle(), CURLH_HEADER, -1, previousHeader); currentHeader)
+                {
                     dest.setHeader(currentHeader->name, currentHeader->value);
                     previousHeader = currentHeader;
                     headerCount++;
@@ -321,8 +322,8 @@ namespace siddiqsoft
 
             cntnts->body.clear();
             cntnts->type.clear();
-            cntnts->length = 0;
-            cntnts->offset = 0;
+            cntnts->length        = 0;
+            cntnts->offset        = 0;
             cntnts->remainingSize = 0;
         }
 
@@ -466,7 +467,7 @@ namespace siddiqsoft
                 ((CURL*)(*ctxCurl).curlHandle() != nullptr) && !destinationHost.empty())
             {
                 // peek at the snapshot of the config
-                auto config = _config.snapshot();
+                auto config          = _config.snapshot();
                 auto responseContent = (*ctxCurl)._contents;
                 resetContentState(responseContent);
 
@@ -567,7 +568,8 @@ namespace siddiqsoft
                 (req.getMethod() == HttpMethodType::METHOD_POST))
             {
                 if (auto& reqContent = req.getContent(); reqContent->length > 0) {
-                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDS, req.getContentBody().c_str()); rc != CURLE_OK)
+                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDS, req.getContentBody().c_str());
+                        rc != CURLE_OK)
                         return rc;
                     if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, reqContent->length); rc != CURLE_OK)
                         return rc;

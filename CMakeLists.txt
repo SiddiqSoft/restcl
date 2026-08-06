@@ -77,9 +77,9 @@ CPMAddPackage("gh:SiddiqSoft/RWLEnvelope#1.5.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE RWLEnvelope::RWLEnvelope)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.3.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
-CPMAddPackage("gh:SiddiqSoft/arrp#3601cd82fc237185176380a9dcef4b1f5efc305c")
+CPMAddPackage("gh:SiddiqSoft/arrp#d434d35648819f251e55e0bfbc1facc6b8473d36")
 target_link_libraries(${PROJECT_NAME} INTERFACE arrp::arrp)
-cpmaddpackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
+CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
 
 

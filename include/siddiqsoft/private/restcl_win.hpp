@@ -205,7 +205,7 @@ namespace siddiqsoft
             : error(ec)
         {
         }
-        operator std::string() { return messageFromWininetCode(error); }
+             operator std::string() { return messageFromWininetCode(error); }
         auto to_string() const { return messageFromWininetCode(error); }
     };
 
@@ -225,16 +225,16 @@ namespace siddiqsoft
         /// @brief Shared session for the entire class. This is also used by the threadpool as it send()s the data.
         ACW32HINTERNET hSession {};
 
-        basic_callbacktype _callback {};
-        mutable std::mutex callbackMutex {};
-        uint32_t           id = __COUNTER__;
-        siddiqsoft::RWLEnvelope<nlohmann::json>     _config {{"userAgent", "siddiqsoft.restcl/2"},
-                                    {"trace", false},
-                                    {"id", id},
-                                    {"connectTimeout", 0L},
-                                    {"timeout", 0L},
-                                    {"downloadDirectory", nullptr},
-                                    {"headers", nullptr}};
+        basic_callbacktype                      _callback {};
+        mutable std::mutex                      callbackMutex {};
+        uint32_t                                id = __COUNTER__;
+        siddiqsoft::RWLEnvelope<nlohmann::json> _config {{"userAgent", "siddiqsoft.restcl/2"},
+                                                         {"trace", false},
+                                                         {"id", id},
+                                                         {"connectTimeout", 0L},
+                                                         {"timeout", 0L},
+                                                         {"downloadDirectory", nullptr},
+                                                         {"headers", nullptr}};
 
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
@@ -269,8 +269,8 @@ namespace siddiqsoft
         {
             if (!cfg.is_null() && !cfg.empty()) _config.update(cfg);
 
-            std::string  newUserAgent {};
-            std::wstring newUserAgentW {};
+            std::string    newUserAgent {};
+            std::wstring   newUserAgentW {};
             ACW32HINTERNET newSession {};
 
             {
@@ -287,8 +287,10 @@ namespace siddiqsoft
                         const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
                         // Enable HTTP/2 protocol
-                        if (!WinHttpSetOption(
-                                    newSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag)))
+                        if (!WinHttpSetOption(newSession,
+                                              WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL,
+                                              (LPVOID)&enableHTTP2Flag,
+                                              sizeof(enableHTTP2Flag)))
                         {
 #ifdef _DEBUG
                             std::print(std::cerr, "{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
@@ -296,7 +298,9 @@ namespace siddiqsoft
                         }
 
                         // Enable decompression
-                        if (!WinHttpSetOption(newSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression))) {
+                        if (!WinHttpSetOption(
+                                    newSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression)))
+                        {
 #ifdef _DEBUG
                             std::print(std::cerr, "{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
 #endif
@@ -416,22 +420,22 @@ namespace siddiqsoft
                         auto         contentLength  = req.getHeaders().value("Content-Length", 0);
                         std::wstring requestHeaders = ConversionUtils::convert_to<char, wchar_t>(req.encodeHeaders());
                         nError                      = WinHttpAddRequestHeaders(hRequest,
-                                                          requestHeaders.c_str(),
-                                                          static_cast<DWORD>(requestHeaders.length()),
-                                                          WINHTTP_ADDREQ_FLAG_ADD);
+                                                                               requestHeaders.c_str(),
+                                                                               static_cast<DWORD>(requestHeaders.length()),
+                                                                               WINHTTP_ADDREQ_FLAG_ADD);
 
                         dwError                     = ERROR_SUCCESS;
                         // Send the request
                         // Note: use getContentBody() which returns a reference to avoid
                         // dangling pointer from encodeContent() which returns a temporary copy.
                         auto& contentBody = req.getContentBody();
-                        nError = WinHttpSendRequest(hRequest,
-                                                    WINHTTP_NO_ADDITIONAL_HEADERS,
-                                                    0,
-                                                    contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
-                                                    contentLength,
-                                                    contentLength,
-                                                    NULL);
+                        nError            = WinHttpSendRequest(hRequest,
+                                                               WINHTTP_NO_ADDITIONAL_HEADERS,
+                                                               0,
+                                                               contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
+                                                               contentLength,
+                                                               contentLength,
+                                                               NULL);
 
                         if (nError == FALSE && (dwError = GetLastError()) == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED) {
                             nError = WinHttpSetOption(
@@ -584,8 +588,8 @@ namespace siddiqsoft
         }
 
     public:
-        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {},
-                                                 basic_callbacktype&&  cb  = {}) -> std::shared_ptr<WinHttpRESTClient>
+        [[nodiscard]] static auto CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+                -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
 #if defined(DEBUG) || defined(_DEBUG)
