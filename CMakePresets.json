@@ -220,7 +220,7 @@
             "hidden": true,
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "generator": "Ninja Multi-Config",
+            "generator": "Ninja",
             "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_MAKE_PROGRAM": "ninja.exe",
