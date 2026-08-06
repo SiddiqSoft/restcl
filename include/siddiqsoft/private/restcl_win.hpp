@@ -213,7 +213,7 @@ namespace siddiqsoft
     /// @brief Windows implementation of the basic_restclient
     class WinHttpRESTClient : public basic_restclient<char>
     {
-    public:
+    protected:
         std::string  UserAgent {"siddiqsoft.restcl/2"};
         std::wstring UserAgentW {L"siddiqsoft.restcl/2"};
 
@@ -361,6 +361,7 @@ namespace siddiqsoft
         [[nodiscard]] std::expected<rest_response<>, int> send(rest_request<char>& req)
         {
             rest_response<char> resp {};
+            auto                config = _config.snapshot();
 
             /// @brief Lambda to Parse the first line from the HTTP response into its parts: version, status and the reason
             /// phrase
@@ -392,9 +393,9 @@ namespace siddiqsoft
             DWORD    dwFlagsSize = 0;
 
             // First order - adjust the UserAgent
-            if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = UserAgent;
-            auto strUserAgent =
-                    req.getHeaders().contains("User-Agent") ? req.getHeaders().value("User-Agent", UserAgent) : UserAgent;
+                auto defaultUserAgent =
+                    config.value("userAgent", config.value("/headers/User-Agent"_json_pointer, "siddiqsoft.restcl/2"));
+                if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = defaultUserAgent;
 
             if (hSession != NULL) {
                 auto& strServer = req.uri.authority.host;
