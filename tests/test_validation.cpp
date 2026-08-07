@@ -363,19 +363,24 @@ namespace siddiqsoft
 
     TEST_F(Validation, should_throw_for_invalid_start_line)
     {
+        bool                 thrown = false;
         std::string          source = "HTTP/1.1 twohundred OK\r\n";
-        auto                 it     = source.begin();
-        TestableRestResponse resp;
+        {
+            auto                 it = source.begin();
+            TestableRestResponse resp;
 
-        bool thrown = false;
-        try {
-            TestableRestResponse::parseStartLine(resp, it, source.end());
-        }
-        catch (const std::invalid_argument&) {
-            thrown = true;
-        }
-        catch (const std::exception& ex) {
-            std::cerr << "Unexpected exception: " << ex.what() << std::endl;
+            try {
+                TestableRestResponse::parseStartLine(resp, it, source.end());
+            }
+            catch (const std::invalid_argument&) {
+                thrown = true;
+            }
+            catch (const std::exception& ex) {
+                std::cerr << "Unexpected exception: " << ex.what() << std::endl;
+            }
+            catch (...) {
+                std::println(std::cerr, "{} - Generic exception!", __func__);
+            }
         }
 
         EXPECT_TRUE(thrown);
