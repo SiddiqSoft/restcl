@@ -509,7 +509,7 @@ namespace siddiqsoft
                     wrc->configure({{"userAgent", std::format("{}{}/{}", userAgentPrefix, threadIndex, iter)}});
                     wrc->sendAsync("http://127.0.0.1:1/"_GET,
                                    [&](const auto& req, std::expected<rest_response<>, int> resp) {
-                                       (void)resp;
+                                       //(void)resp;
                                        auto header = req.getHeaders().value("User-Agent", "");
                                        if (!isWellFormedConcurrentUserAgent(header, userAgentPrefix)) {
                                            malformedHeaders.fetch_add(1, std::memory_order_relaxed);
@@ -530,7 +530,7 @@ namespace siddiqsoft
         while (completedCallbacks.load(std::memory_order_relaxed) < (threadCount * iterationsPerThread) &&
                std::chrono::steady_clock::now() < deadline)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
         EXPECT_EQ(threadCount * iterationsPerThread, completedCallbacks.load(std::memory_order_relaxed));

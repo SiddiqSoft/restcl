@@ -299,33 +299,35 @@ namespace siddiqsoft
         EXPECT_NO_THROW({
             restcl wrc = GetRESTClient();
 
-            wrc->configure({{"freshConnect", true},
-                            {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
-                           [&](const auto& req, std::expected<rest_response<>, int> resp) {
-                               callbackCounter++;
+            wrc->configure(
+                    {{"freshConnect", true},
+                     {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
+                    [&](const auto& req, std::expected<rest_response<>, int> resp) {
+                        callbackCounter++;
+                        std::println("{} - Callback; passTest:{}; callbackCounter:{}\n",
+                                     __func__,
+                                     passTest.load(),
+                                     callbackCounter.load());
+                        
+                        if (resp->success()) {
+                            passTest += resp->statusCode() >= 200;
+                            passTest.notify_all();
+                        }
+                        else if (resp.has_value()) {
+                            passTest += resp->statusCode() != 0;
+                            std::print(std::cerr,
+                                       "{} Threads::test_1 - Got error: {} for {} -- {}\n",
+                                       __func__,
+                                       resp->statusCode(),
+                                       req.getUri().authority.host,
+                                       resp->reasonCode());
+                        }
+                        else {
+                            std::print(std::cerr, "{} Threads::test_1 - Unknown error! passTest:{}\n", __func__, passTest.load());
+                        }
+                    });
 
-                               if (resp->success()) {
-                                   passTest += resp->statusCode() >= 200;
-                                   passTest.notify_all();
-                               }
-                               else if (resp.has_value()) {
-                                   passTest += resp->statusCode() != 0;
-                                   std::print(std::cerr,
-                                              "{} Threads::test_1 - Got error: {} for {} -- {}\n",
-                                              __func__,
-                                              resp->statusCode(),
-                                              req.getUri().authority.host,
-                                              resp->reasonCode());
-                               }
-                               else {
-                                   std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);
-                               }
-                           });
-            /*
-                        rest_request req(HttpMethodType::METHOD_GET,
-                                         siddiqsoft::Uri(std::format("https://www.postb.in/api/bin/{}?iteration=000",
-               SessionBinId))); wrc->sendAsync(std::move(req));
-            */
+
             wrc->sendAsync(
                     rest_request {HttpMethodType::METHOD_GET,
                                   siddiqsoft::Uri(std::format("https://www.postb.in/api/bin/{}?iteration=000", SessionBinId))});

@@ -378,3 +378,4 @@ build/**
 /test/validation_tests/CodeAnalysisResultManifest.txt
 /test/validation_tests/test.nativecodeanalysis.xml
 *.filters
+restcl.slnx
