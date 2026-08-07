@@ -39,7 +39,9 @@
 #include <expected>
 #include <format>
 
+#define JSON_BRACE_INIT_COPY_SEMANTICS 1
 #include "nlohmann/json.hpp"
+
 #include "siddiqsoft/SplitUri.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
 
@@ -136,33 +138,33 @@ namespace siddiqsoft
 
     TEST_F(Validation, GET_google_com)
     {
-        std::atomic_bool passTest = false;
-        restcl           wrc      = GetRESTClient();
+        auto passTest = std::atomic_bool {false};
+        auto wrc      = GetRESTClient();
 
         std::println(std::cerr, "{} - Configuring the REST client for GET google.com\n", __func__);
         wrc->configure();
         std::println(std::cerr, "{} - Sending GET request to google.com\n", __func__);
-        wrc->sendAsync(
-                "https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
-                    if (resp && resp->success()) {
-                        passTest = true;
-                        std::print(std::cerr,
-                                   "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
-                                   __func__,
-                                   nlohmann::json(*resp).dump(3));
-                    }
-                    else if (resp.has_value()) {
-                        auto [ec, emsg] = resp->status();
-                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
-                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
-                    }
-                    else {
-                        std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
-                    }
-                    passTest.notify_all();
-                });
+        wrc->sendAsync("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
+            if (resp && resp->success()) {
+                passTest = true;
+                std::print(std::cerr,
+                           "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
+                           __func__,
+                           nlohmann::json(*resp).dump(3));
+            }
+            else if (resp.has_value()) {
+                auto [ec, emsg] = resp->status();
+                passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
+                std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+            }
+            else {
+                std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
+            }
+            passTest.notify_all();
+        });
 
         passTest.wait(false);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
         EXPECT_TRUE(passTest.load());
     }
 
@@ -372,6 +374,9 @@ namespace siddiqsoft
         catch (const std::invalid_argument&) {
             thrown = true;
         }
+        catch (const std::exception& ex) {
+            std::cerr << "Unexpected exception: " << ex.what() << std::endl;
+        }
 
         EXPECT_TRUE(thrown);
     }
@@ -388,6 +393,9 @@ namespace siddiqsoft
         }
         catch (const std::invalid_argument&) {
             thrown = true;
+        }
+        catch (const std::exception& ex) {
+            std::cerr << "Unexpected exception: " << ex.what() << std::endl;
         }
 
         EXPECT_TRUE(thrown);

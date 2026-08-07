@@ -39,7 +39,10 @@
 #endif
 #pragma comment(lib, "winhttp")
 
-
+// This setting is needed to avoid the issue where the config initialization via initalizer list fails to compile due to the
+// nlohmann::json library's use of brace initialization. By defining this macro, we ensure that the library uses copy semantics for
+// brace initialization, which resolves the compilation issue.
+#define JSON_BRACE_INIT_COPY_SEMANTICS 1
 #include "nlohmann/json.hpp"
 
 #include "http_frame.hpp"
@@ -241,18 +244,18 @@ namespace siddiqsoft
         basic_callbacktype                      _callback {};
         mutable std::mutex                      callbackMutex {};
         uint32_t                                id = __COUNTER__;
-        siddiqsoft::RWLEnvelope<nlohmann::json> _config {nlohmann::json{{"userAgent", "siddiqsoft.restcl/2"},
-                                                             {"trace", false},
-                                                             {"id", id},
-                                                             {"connectTimeout", 0L},
-                                                             {"timeout", 0L},
-                                                             {"downloadDirectory", nullptr},
-                                                             {"headers", nullptr}}};
+        siddiqsoft::RWLEnvelope<nlohmann::json> _config {{{"userAgent", "siddiqsoft.restcl/2"},
+                                                          {"trace", false},
+                                                          {"id", id},
+                                                          {"connectTimeout", 0L},
+                                                          {"timeout", 0L},
+                                                          {"downloadDirectory", nullptr},
+                                                          {"headers", nullptr}}};
 
         /// @brief Adds asynchrony to the library via the roundrobin_pool utility
         simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
             // This function is invoked any time we have an item
-            // The arg is moved here and belongs to use. Once this
+            // The arg is moved here and belongs to us. Once this
             // method completes the lifetime of the object ends;
             // typically this is *after* we invoke the callback.
             try {
@@ -280,24 +283,29 @@ namespace siddiqsoft
 
         basic_restclient<char>& configure(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) override
         {
+            // Combine any provided configuration with the seed data..
             if (!cfg.is_null() && !cfg.empty()) {
                 _config.mutate([](auto& container, const auto& config) noexcept { container.update(config); }, cfg);
             }
 
-            std::string    newUserAgent {};
-            std::wstring   newUserAgentW {};
+
             ACW32HINTERNET newSession {};
+
+            // Get the useragent strings..
+            UserAgent  = _config.mutate([](const auto& doc) noexcept {
+                // return the value of userAgent if it exists, otherwise return the value of `headers.User-Agent` if it exists,
+                // otherwise return an empty string
+                // return doc.value("userAgent", doc.value("/headers/User-Agent"_json_pointer, ""));
+                return doc.value("userAgent", "");
+            });
+            UserAgentW = ConversionUtils::convert_to<char, wchar_t>(UserAgent);
 
             {
                 std::scoped_lock lock(callbackMutex);
                 if (cb) _callback = std::move(cb);
 
-                auto config = _config.snapshot();
-                newUserAgent = config.value("userAgent", config.value("/headers/User-Agent"_json_pointer, ""));
-                newUserAgentW = ConversionUtils::convert_to<char, wchar_t>(newUserAgent);
-
                 if (hSession == NULL) {
-                    newSession = std::move(WinHttpOpen(newUserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
+                    newSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
                     if (newSession) {
                         const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
                         const DWORD decompression   = WINHTTP_DECOMPRESSION_FLAG_ALL;
@@ -324,8 +332,6 @@ namespace siddiqsoft
                     }
                 }
 
-                UserAgent  = newUserAgent;
-                UserAgentW = newUserAgentW;
                 if (newSession) {
 #if defined(RESTCL_ENABLE_TEST_HOOKS)
                     if (beforePublishSessionHook) beforePublishSessionHook();
@@ -412,198 +418,193 @@ namespace siddiqsoft
             uint32_t nRetry {0}, nError {0};
             char     cBuf[READBUFFERSIZE] {};
             DWORD    dwFlagsSize = 0;
-            auto&    requestUri = req.getUri();
-            auto&    strServer  = requestUri.authority.host;
+            auto&    requestUri  = req.getUri();
+            auto&    strServer   = requestUri.authority.host;
 
             // First order - adjust the UserAgent
-            auto defaultUserAgent =
-                    config.value("userAgent", config.value("/headers/User-Agent"_json_pointer, "siddiqsoft.restcl/2"));
-            if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = defaultUserAgent;
+            if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = UserAgent;
 
             auto hConnect = [&]() -> ACW32HINTERNET {
                 std::scoped_lock lock(callbackMutex);
                 if (hSession == NULL) return {};
 
-                return ACW32HINTERNET {
-                        WinHttpConnect(hSession, ConversionUtils::convert_to<char, wchar_t>(strServer).c_str(), requestUri.authority.port, 0)};
+                return ACW32HINTERNET {WinHttpConnect(
+                        hSession, ConversionUtils::convert_to<char, wchar_t>(strServer).c_str(), requestUri.authority.port, 0)};
             }();
 
             if (hConnect != NULL) {
-                    std::string strMethod  = to_string(req.getMethod());
-                    auto        strUrl     = requestUri.urlPart;
-                    std::string strVersion = to_string(req.getProtocol());
+                std::string strMethod  = to_string(req.getMethod());
+                auto        strUrl     = requestUri.urlPart;
+                std::string strVersion = to_string(req.getProtocol());
 
-                    if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
-                                                                    ConversionUtils::convert_to<char, wchar_t>(strMethod).c_str(),
-                                                                    ConversionUtils::convert_to<char, wchar_t>(strUrl).c_str(),
-                                                                    ConversionUtils::convert_to<char, wchar_t>(strVersion).c_str(),
-                                                                    NULL,
-                                                                    RESTCL_ACCEPT_TYPES_W,
-                                                                    (requestUri.scheme == UriScheme::WebHttps)
-                                                                            ? WINHTTP_FLAG_SECURE | WINHTTP_FLAG_REFRESH
-                                                                            : WINHTTP_FLAG_REFRESH)};
-                        hRequest != NULL)
-                    {
-                        auto         contentLength  = req.getHeaders().value("Content-Length", 0);
-                        std::wstring requestHeaders = ConversionUtils::convert_to<char, wchar_t>(req.encodeHeaders());
-                        nError                      = WinHttpAddRequestHeaders(hRequest,
-                                                                               requestHeaders.c_str(),
-                                                                               static_cast<DWORD>(requestHeaders.length()),
-                                                                               WINHTTP_ADDREQ_FLAG_ADD);
+                if (ACW32HINTERNET hRequest {WinHttpOpenRequest(hConnect,
+                                                                ConversionUtils::convert_to<char, wchar_t>(strMethod).c_str(),
+                                                                ConversionUtils::convert_to<char, wchar_t>(strUrl).c_str(),
+                                                                ConversionUtils::convert_to<char, wchar_t>(strVersion).c_str(),
+                                                                NULL,
+                                                                RESTCL_ACCEPT_TYPES_W,
+                                                                (requestUri.scheme == UriScheme::WebHttps)
+                                                                        ? WINHTTP_FLAG_SECURE | WINHTTP_FLAG_REFRESH
+                                                                        : WINHTTP_FLAG_REFRESH)};
+                    hRequest != NULL)
+                {
+                    auto         contentLength  = req.getHeaders().value("Content-Length", 0);
+                    std::wstring requestHeaders = ConversionUtils::convert_to<char, wchar_t>(req.encodeHeaders());
+                    nError                      = WinHttpAddRequestHeaders(
+                            hRequest, requestHeaders.c_str(), static_cast<DWORD>(requestHeaders.length()), WINHTTP_ADDREQ_FLAG_ADD);
 
-                        dwError                     = ERROR_SUCCESS;
-                        // Send the request
-                        // Note: use getContentBody() which returns a reference to avoid
-                        // dangling pointer from encodeContent() which returns a temporary copy.
-                        auto& contentBody = req.getContentBody();
-                        nError            = WinHttpSendRequest(hRequest,
-                                                               WINHTTP_NO_ADDITIONAL_HEADERS,
-                                                               0,
-                                                               contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
-                                                               contentLength,
-                                                               contentLength,
-                                                               NULL);
+                    dwError = ERROR_SUCCESS;
+                    // Send the request
+                    // Note: use getContentBody() which returns a reference to avoid
+                    // dangling pointer from encodeContent() which returns a temporary copy.
+                    auto& contentBody = req.getContentBody();
+                    nError            = WinHttpSendRequest(hRequest,
+                                                           WINHTTP_NO_ADDITIONAL_HEADERS,
+                                                           0,
+                                                           contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
+                                                           contentLength,
+                                                           contentLength,
+                                                           NULL);
 
-                        if (nError == FALSE && (dwError = GetLastError()) == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED) {
-                            nError = WinHttpSetOption(
-                                    hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, WINHTTP_NO_CLIENT_CERT_CONTEXT, 0);
-                            if (nError == TRUE) {
-                                nError = WinHttpSendRequest(hRequest,
-                                                            WINHTTP_NO_ADDITIONAL_HEADERS,
-                                                            0,
-                                                            contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
-                                                            contentLength,
-                                                            contentLength,
-                                                            NULL);
-                            }
+                    if (nError == FALSE && (dwError = GetLastError()) == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED) {
+                        nError = WinHttpSetOption(hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, WINHTTP_NO_CLIENT_CERT_CONTEXT, 0);
+                        if (nError == TRUE) {
+                            nError = WinHttpSendRequest(hRequest,
+                                                        WINHTTP_NO_ADDITIONAL_HEADERS,
+                                                        0,
+                                                        contentLength > 0 ? LPVOID(contentBody.c_str()) : NULL,
+                                                        contentLength,
+                                                        contentLength,
+                                                        NULL);
                         }
+                    }
 
-                        // *************
-                        // Receive phase
-                        // *************
-                        // Get the "response" and the headers..
+                    // *************
+                    // Receive phase
+                    // *************
+                    // Get the "response" and the headers..
+                    if (nError == FALSE) {
+                        dwError = GetLastError();
+                    }
+                    else {
+                        // Signals we should finish the request and wait for response from server.
+                        nError = WinHttpReceiveResponse(hRequest, NULL);
                         if (nError == FALSE) {
                             dwError = GetLastError();
                         }
                         else {
-                            // Signals we should finish the request and wait for response from server.
-                            nError = WinHttpReceiveResponse(hRequest, NULL);
-                            if (nError == FALSE) {
-                                dwError = GetLastError();
-                            }
-                            else {
-                                // Get the headers next.. including the response line
-                                DWORD dwSize = 0;
+                            // Get the headers next.. including the response line
+                            DWORD dwSize = 0;
 
-                                // First, use WinHttpQueryHeaders to obtain the size of the buffer.
-                                WinHttpQueryHeaders(hRequest,
-                                                    WINHTTP_QUERY_RAW_HEADERS_CRLF,
-                                                    WINHTTP_HEADER_NAME_BY_INDEX,
-                                                    NULL,
-                                                    &dwSize,
-                                                    WINHTTP_NO_HEADER_INDEX);
+                            // First, use WinHttpQueryHeaders to obtain the size of the buffer.
+                            WinHttpQueryHeaders(hRequest,
+                                                WINHTTP_QUERY_RAW_HEADERS_CRLF,
+                                                WINHTTP_HEADER_NAME_BY_INDEX,
+                                                NULL,
+                                                &dwSize,
+                                                WINHTTP_NO_HEADER_INDEX);
 
-                                // Allocate memory for the buffer.
-                                if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-                                    // A silly decision by the library to always return the headers as wchar_t
-                                    // despite the fact that over the wire we've got UTF-8/ASCII encoded headers
-                                    // The body is where encode varies and here in our library we focus on utf-8 json.
-                                    // The buffer must be wchar_t and we must adjust the size to account for the
-                                    // actual number of characters since the dwSize is in bytes not wchar_t characters!
-                                    auto lpOutBuffer = std::make_unique<wchar_t[]>(dwSize);
+                            // Allocate memory for the buffer.
+                            if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+                                // A silly decision by the library to always return the headers as wchar_t
+                                // despite the fact that over the wire we've got UTF-8/ASCII encoded headers
+                                // The body is where encode varies and here in our library we focus on utf-8 json.
+                                // The buffer must be wchar_t and we must adjust the size to account for the
+                                // actual number of characters since the dwSize is in bytes not wchar_t characters!
+                                auto lpOutBuffer = std::make_unique<wchar_t[]>(dwSize);
 
-                                    // Now, use WinHttpQueryHeaders to retrieve the header.
-                                    nError = WinHttpQueryHeaders(hRequest,
-                                                                 WINHTTP_QUERY_RAW_HEADERS_CRLF,
-                                                                 WINHTTP_HEADER_NAME_BY_INDEX,
-                                                                 lpOutBuffer.get(),
-                                                                 &dwSize,
-                                                                 WINHTTP_NO_HEADER_INDEX);
-                                    if (nError == TRUE && (lpOutBuffer != nullptr)) {
-                                        // The data is wchar_t but the dwSize returns bytes; adjustmend required.
-                                        dwSize /= sizeof(wchar_t);
-                                        // We need to skip the first line of the respose as it is the status response line.
-                                        // Decode the CRLF string into key-value elements.
-                                        std::wstring src {lpOutBuffer.get(), dwSize};
+                                // Now, use WinHttpQueryHeaders to retrieve the header.
+                                nError = WinHttpQueryHeaders(hRequest,
+                                                             WINHTTP_QUERY_RAW_HEADERS_CRLF,
+                                                             WINHTTP_HEADER_NAME_BY_INDEX,
+                                                             lpOutBuffer.get(),
+                                                             &dwSize,
+                                                             WINHTTP_NO_HEADER_INDEX);
+                                if (nError == TRUE && (lpOutBuffer != nullptr)) {
+                                    // The data is wchar_t but the dwSize returns bytes; adjustmend required.
+                                    dwSize /= sizeof(wchar_t);
+                                    // We need to skip the first line of the respose as it is the status response line.
+                                    // Decode the CRLF string into key-value elements.
+                                    std::wstring src {lpOutBuffer.get(), dwSize};
 
-                                        auto [ver, status, reason, startOfHeaders] = extractResponseLine(src);
-                                        src.erase(0, startOfHeaders);
-                                        resp.setStatus(status, reason);
-                                        resp.setProtocol(ver);
+                                    auto [ver, status, reason, startOfHeaders] = extractResponseLine(src);
+                                    src.erase(0, startOfHeaders);
+                                    resp.setStatus(status, reason);
+                                    resp.setProtocol(ver);
 
-                                        // Parse the response into json object..
-                                        // Extract the heads into a map<string,string> where the source is wstring and the
-                                        // output is string This is then fed to the json which will create a headers object.
-                                        resp.setHeaders(
-                                                string2map::parse<std::wstring, std::string, std::map<std::string, std::string>>(
-                                                        src, L": ", L"\r\n"));
-                                    }
+                                    // Parse the response into json object..
+                                    // Extract the heads into a map<string,string> where the source is wstring and the
+                                    // output is string This is then fed to the json which will create a headers object.
+                                    resp.setHeaders(
+                                            string2map::parse<std::wstring, std::string, std::map<std::string, std::string>>(
+                                                    src, L": ", L"\r\n"));
                                 }
                             }
                         }
+                    }
 
-                        // Next stage is to check for any errors and if none, get the body
-                        if (dwError == ERROR_WINHTTP_NAME_NOT_RESOLVED) {
-                            return std::unexpected(static_cast<int>(dwError));
-                        }
-                        else if ((dwError == ERROR_WINHTTP_CANNOT_CONNECT) || (dwError == ERROR_WINHTTP_CONNECTION_ERROR) ||
-                                 (dwError == ERROR_WINHTTP_OPERATION_CANCELLED) || (dwError == ERROR_WINHTTP_LOGIN_FAILURE) ||
-                                 (dwError == ERROR_WINHTTP_INVALID_SERVER_RESPONSE) || (dwError == ERROR_WINHTTP_RESEND_REQUEST) ||
-                                 (dwError == ERROR_WINHTTP_SECURE_FAILURE) || (dwError == ERROR_WINHTTP_TIMEOUT))
-                        {
-                            return std::unexpected {static_cast<int>(dwError)};
-                        }
-                        else if (dwError == ERROR_WINHTTP_INVALID_URL) {
-                            return std::unexpected {static_cast<int>(dwError)};
-                        }
-                        else if (dwError != ERROR_FILE_NOT_FOUND) {
-                            nRetry = 0;
-                            // while (dwError == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED)
-                            //{
-                            //	nError = WinHttpSetOption(
-                            //			hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, WINHTTP_NO_CLIENT_CERT_CONTEXT, 0);
-                            //
-                            //	dwError = ERROR_SUCCESS;
-                            //	nError  = WinHttpSendRequest(hRequest,
-                            //  !requestHeaders.empty() ? requestHeaders.c_str() : NULL,
-                            //  -1,
-                            //  argBody.has_value() ? (void*)argBody.value_or("").c_str() : NULL,
-                            //  DWORD(argBody.value_or("").length()),
-                            //  DWORD(argBody.value_or("").length()),
-                            //  NULL);
-                            //	dwError = GetLastError();
-                            //
-                            //	nRetry++;
-                            //
-                            //	if (nRetry > HTTPS_MAXRETRY) break;
-                            //}
+                    // Next stage is to check for any errors and if none, get the body
+                    if (dwError == ERROR_WINHTTP_NAME_NOT_RESOLVED) {
+                        return std::unexpected(static_cast<int>(dwError));
+                    }
+                    else if ((dwError == ERROR_WINHTTP_CANNOT_CONNECT) || (dwError == ERROR_WINHTTP_CONNECTION_ERROR) ||
+                             (dwError == ERROR_WINHTTP_OPERATION_CANCELLED) || (dwError == ERROR_WINHTTP_LOGIN_FAILURE) ||
+                             (dwError == ERROR_WINHTTP_INVALID_SERVER_RESPONSE) || (dwError == ERROR_WINHTTP_RESEND_REQUEST) ||
+                             (dwError == ERROR_WINHTTP_SECURE_FAILURE) || (dwError == ERROR_WINHTTP_TIMEOUT))
+                    {
+                        return std::unexpected {static_cast<int>(dwError)};
+                    }
+                    else if (dwError == ERROR_WINHTTP_INVALID_URL) {
+                        return std::unexpected {static_cast<int>(dwError)};
+                    }
+                    else if (dwError != ERROR_FILE_NOT_FOUND) {
+                        nRetry = 0;
+                        // while (dwError == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED)
+                        //{
+                        //	nError = WinHttpSetOption(
+                        //			hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, WINHTTP_NO_CLIENT_CERT_CONTEXT, 0);
+                        //
+                        //	dwError = ERROR_SUCCESS;
+                        //	nError  = WinHttpSendRequest(hRequest,
+                        //  !requestHeaders.empty() ? requestHeaders.c_str() : NULL,
+                        //  -1,
+                        //  argBody.has_value() ? (void*)argBody.value_or("").c_str() : NULL,
+                        //  DWORD(argBody.value_or("").length()),
+                        //  DWORD(argBody.value_or("").length()),
+                        //  NULL);
+                        //	dwError = GetLastError();
+                        //
+                        //	nRetry++;
+                        //
+                        //	if (nRetry > HTTPS_MAXRETRY) break;
+                        //}
 
-                            std::string rawResponse {};
+                        std::string rawResponse {};
 
-                            do {
-                                // Returns byte stream; accumulate until we're out of data.
-                                hr = WinHttpReadData(hRequest, cBuf, READBUFFERSIZE - 1, &dwBytesRead)
-                                           ? S_OK
-                                           : HRESULT_FROM_WIN32(GetLastError());
-                                if (dwBytesRead) {
-                                    cBuf[dwBytesRead] = '\0';
-                                    rawResponse.append(cBuf, dwBytesRead);
-                                }
-                            } while (dwBytesRead > 0);
+                        do {
+                            // Returns byte stream; accumulate until we're out of data.
+                            hr = WinHttpReadData(hRequest, cBuf, READBUFFERSIZE - 1, &dwBytesRead)
+                                       ? S_OK
+                                       : HRESULT_FROM_WIN32(GetLastError());
+                            if (dwBytesRead) {
+                                cBuf[dwBytesRead] = '\0';
+                                rawResponse.append(cBuf, dwBytesRead);
+                            }
+                        } while (dwBytesRead > 0);
 
-                            hr = S_OK;
-                            resp.setContent(rawResponse);
+                        hr = S_OK;
+                        resp.setContent(rawResponse);
 
-                            // Invoke the callback
-                            return resp;
-                        }
-                        else {
-                            return std::unexpected {static_cast<int>(dwError)};
-                        }
+                        // Invoke the callback
+                        return resp;
                     }
                     else {
-                        return std::unexpected {static_cast<int>(hr)};
+                        return std::unexpected {static_cast<int>(dwError)};
                     }
+                }
+                else {
+                    return std::unexpected {static_cast<int>(hr)};
+                }
             }
             else {
                 return std::unexpected {static_cast<int>(hr)};
