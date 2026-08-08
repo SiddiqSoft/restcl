@@ -251,7 +251,7 @@ namespace siddiqsoft
             std::println(std::cerr,
                          "{} - Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
                          __func__,
-                         libCurlBuffer,
+                         static_cast<void*>(libCurlBuffer),
                          size,
                          nmemb,
                          contentPtr);
@@ -487,8 +487,8 @@ namespace siddiqsoft
                     rc == CURLE_OK)
                 {
                     ioAttempt++;
-                    if (rc = prepareStartLine(ctxCurl, req); rc == CURLE_OK) {
-                        if (rc = prepareIOHandlers(ctxCurl, req, responseContent); rc == CURLE_OK) {
+                    if (rc = prepareIOHandlers(ctxCurl, req, responseContent); rc == CURLE_OK) {
+                        if (rc = prepareStartLine(ctxCurl, req); rc == CURLE_OK) {
                             if (auto curlHeaders = prepareCurlHeaders(ctxCurl, req); curlHeaders) {
                                 // Send the request..
                                 if (rc = curl_easy_perform((*ctxCurl).curlHandle()); rc == CURLE_OK) {
@@ -567,50 +567,28 @@ namespace siddiqsoft
             if ((req.getMethod() == HttpMethodType::METHOD_PUT) || (req.getMethod() == HttpMethodType::METHOD_PATCH) ||
                 (req.getMethod() == HttpMethodType::METHOD_POST))
             {
-                if (auto& reqContent = req.getContent(); reqContent->length > 0) {
+                auto& reqContent = req.getContent();
+                if (reqContent && reqContent->length > 0) {
                     if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDS, req.getContentBody().c_str());
                         rc != CURLE_OK)
                         return rc;
-                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, reqContent->length); rc != CURLE_OK)
+                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, static_cast<long>(reqContent->length));
+                        rc != CURLE_OK)
                         return rc;
-
-                    if (rc = prepareStartLine(ctxCurl, req); rc != CURLE_OK) {
-                        return rc;
-                    }
                 }
                 else {
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDS, nullptr);
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, 0L);
-                    if (rc = prepareStartLine(ctxCurl, req); rc != CURLE_OK) {
-                        return rc;
-                    }
                 }
             }
-
-            if (auto& reqContent = req.getContent(); (reqContent->length > 0)) {
-#if defined(DEBUG0)
-                std::println(std::cerr,
-                             "{} - Method:{}  Registering data sender for {} bytes.",
-                             __func__,
-                             req.getMethod(),
-                             reqContent->length);
-#endif
-                //  Set the output/send callback which will process the req's content
-                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_READFUNCTION, onSendCallback); rc != CURLE_OK) {
-                    std::println(std::cerr, "{} - Failed setting readfunction! rc:{}", __func__, curl_easy_strerror(rc));
-                    return rc;
-                }
-                else {
-#if defined(DEBUG0)
-                    std::println(std::cerr, "{} - Setting readfunction data.................", __func__);
-#endif
-                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_READDATA, reqContent.get()); rc != CURLE_OK) {
-                        std::println(std::cerr, "{} - Failed setting readfunction data!! rc:{}", __func__, curl_easy_strerror(rc));
-                        return rc;
-                    }
-                }
+            else {
+                curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDS, nullptr);
+                curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, 0L);
             }
 
+            curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_UPLOAD, 0L);
+            curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_READFUNCTION, nullptr);
+            curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_READDATA, nullptr);
 
             return rc;
         }
@@ -650,19 +628,22 @@ namespace siddiqsoft
                              curl_easy_strerror(rc));
             }
 
+            // Disable Expect: header by default for all requests unless user provided one
+            if (!req.getHeaders().contains("Expect")) {
+                req.setHeader("Expect", "");
+            }
+
             // Setup the method..
             switch (req.getMethod()) {
                 case HttpMethodType::METHOD_PUT:
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, "PUT");
-                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 1L);
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 0L);
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
-                    req.setHeader("Transfer-Encoding", {});
-                    req.setHeader("Expect", {});
                     break;
                 case HttpMethodType::METHOD_PATCH:
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, "PATCH");
-                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 0L);
+                    curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POST, 1L);
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_HTTPGET, 0L);
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
                     break;
@@ -718,6 +699,7 @@ namespace siddiqsoft
             if (auto curlHeaders = curl_slist_append(NULL, "X-restcl-v2:"); curlHeaders != NULL) {
                 try {
                     for (auto& [k, v] : req.getHeaders().items()) {
+                        if (k == "Content-Length" || k == "content-length") continue;
 #if defined(DEBUG0)
                         if (_config.value("trace", false)) {
                             std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
