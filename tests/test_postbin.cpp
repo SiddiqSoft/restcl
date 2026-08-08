@@ -297,10 +297,12 @@ namespace siddiqsoft
         EXPECT_FALSE(SessionBinId.empty());
 
         EXPECT_NO_THROW({
-            restcl wrc = GetRESTClient();
+            restcl wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
             wrc->configure(
-                    {{"freshConnect", true},
+                    {{"connectTimeout", 3000},
+                     {"timeout", 5000},
+                     {"freshConnect", true},
                      {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
                     [&](const auto& req, std::expected<rest_response<>, int> resp) {
                         callbackCounter++;
@@ -309,9 +311,8 @@ namespace siddiqsoft
                                      passTest.load(),
                                      callbackCounter.load());
                         
-                        if (resp->success()) {
+                        if (resp.has_value() && resp->success()) {
                             passTest += resp->statusCode() >= 200;
-                            passTest.notify_all();
                         }
                         else if (resp.has_value()) {
                             passTest += resp->statusCode() != 0;
@@ -323,8 +324,10 @@ namespace siddiqsoft
                                        resp->reasonCode());
                         }
                         else {
+                            passTest++;
                             std::print(std::cerr, "{} Threads::test_1 - Unknown error! passTest:{}\n", __func__, passTest.load());
                         }
+                        passTest.notify_all();
                     });
 
 
@@ -362,29 +365,26 @@ namespace siddiqsoft
         EXPECT_FALSE(SessionBinId.empty());
 
         EXPECT_NO_THROW({
-            restcl wrc = GetRESTClient();
+            restcl wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
-            wrc->configure({{"freshConnect", true},
+            wrc->configure({{"connectTimeout", 3000},
+                            {"timeout", 5000},
+                            {"freshConnect", true},
                             {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
                            [&](const auto& req, std::expected<rest_response<>, int> resp) {
                                callbackCounter++;
 
-                               if (resp->success()) {
+                               if (resp.has_value() && resp->success()) {
                                    passTest += resp->statusCode() >= 200;
-                                   passTest.notify_all();
                                }
                                else if (resp.has_value()) {
                                    passTest += resp->statusCode() != 0;
-                                   /*std::print(std::cerr,
-                                              "{} Threads::test_1 - Got error: {} for {} -- {}\n",
-                                              __func__,
-                                              resp->statusCode(),
-                                              req.getUri().authority.host,
-                                              resp->reasonCode());*/
                                }
                                else {
+                                   passTest++;
                                    std::print(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);
                                }
+                               passTest.notify_all();
                            });
 
             for (auto i = 0u; i < ITER_COUNT; i++) {

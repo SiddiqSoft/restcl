@@ -138,13 +138,13 @@ namespace siddiqsoft
 
     TEST_F(Validation, GET_google_com)
     {
+        auto done     = std::atomic_bool {false};
         auto passTest = std::atomic_bool {false};
-        auto wrc      = GetRESTClient();
+        auto wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         std::println(std::cerr, "{} - Configuring the REST client for GET google.com\n", __func__);
-        wrc->configure();
         std::println(std::cerr, "{} - Sending GET request to google.com\n", __func__);
-        wrc->sendAsync("https://www.google.com/"_GET, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
+        wrc->sendAsync("https://www.google.com/"_GET, [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
             if (resp && resp->success()) {
                 passTest = true;
                 std::print(std::cerr,
@@ -160,21 +160,23 @@ namespace siddiqsoft
             else {
                 std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
             }
-            passTest.notify_all();
+            done = true;
+            done.notify_all();
         });
 
-        passTest.wait(false);
+        done.wait(false);
         std::this_thread::sleep_for(std::chrono::seconds(2));
         EXPECT_TRUE(passTest.load());
     }
 
     TEST_F(Validation, GET_duckduckgo_com)
     {
+        std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
-        restcl           wrc      = GetRESTClient();
+        restcl           wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         wrc->configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
-                .sendAsync("https://duckduckgo.com"_GET, [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
+                .sendAsync("https://duckduckgo.com"_GET, [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
                     if (resp && resp->success()) {
                         passTest = true;
                         // nlohmann::json doc(*resp);
@@ -189,24 +191,28 @@ namespace siddiqsoft
                         passTest = true;
                         std::print(std::cerr, "{}: failed: du{}\n", __func__, resp.error());
                     }
-                    passTest.notify_all();
+                    done = true;
+                    done.notify_all();
                 });
 
-        passTest.wait(false);
+        done.wait(false);
         EXPECT_TRUE(passTest.load());
     }
 
     TEST_F(Validation, POST_httpbin)
     {
-        std::atomic_int passTest = 0;
-        restcl wrc = GetRESTClient({{"trace", false},
+        std::atomic_bool done     = false;
+        std::atomic_int  passTest = 0;
+        restcl wrc = GetRESTClient({{"connectTimeout", 3000},
+                                    {"timeout", 5000},
+                                    {"trace", false},
                                     {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
                                     {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
         auto   postRequest = "https://httpbin.org/post"_POST;
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
-        wrc->sendAsync(std::move(postRequest), [&passTest](const auto& req, std::expected<rest_response<>, int> resp) {
+        wrc->sendAsync(std::move(postRequest), [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
             if (resp.has_value() && resp->success()) {
                 passTest = 1;
                 // nlohmann::json doc(*resp);
@@ -224,11 +230,12 @@ namespace siddiqsoft
                 passTest = -1;
                 std::print(std::cerr, "{}: failed:{}\n", __func__, resp.error());
             }
-            passTest.notify_all();
+            done = true;
+            done.notify_all();
         });
 
-        passTest.wait(0);
-        EXPECT_TRUE(passTest.load());
+        done.wait(false);
+        EXPECT_NE(0, passTest.load());
     }
 
 
