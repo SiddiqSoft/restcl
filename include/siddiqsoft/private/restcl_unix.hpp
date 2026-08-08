@@ -758,7 +758,11 @@ namespace siddiqsoft
         {
             try {
                 // Fixup the content data..type and length
-                cntnt->type = resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
+                if (!cntnt->body.empty()) {
+                    cntnt->type = resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
+                } else {
+                    cntnt->type.clear();
+                }
                 // headers in libcurl are always string values so we'd need to convert them to integer
                 cntnt->length =
                         std::stoi(resp.getHeaders().value(HF_CONTENT_LENGTH, resp.getHeaders().value("content-length", "0")));
