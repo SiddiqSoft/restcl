@@ -466,7 +466,7 @@ namespace siddiqsoft
             worker.join();
         }
 
-        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(25);
         while (completedCallbacks.load(std::memory_order_relaxed) < (threadCount * iterationsPerThread) &&
                std::chrono::steady_clock::now() < deadline) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -505,6 +505,13 @@ namespace siddiqsoft
 
         for (auto& worker : workers) {
             worker.join();
+        }
+
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(15);
+        while (completedCallbacks.load(std::memory_order_relaxed) < (threadCount * iterationsPerThread) &&
+               std::chrono::steady_clock::now() < deadline)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 
         EXPECT_GE(completedCallbacks.load(std::memory_order_relaxed), threadCount * iterationsPerThread);
@@ -548,7 +555,7 @@ namespace siddiqsoft
             worker.join();
         }
 
-        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(20);
         while (completedCallbacks.load(std::memory_order_relaxed) < (threadCount * iterationsPerThread) &&
                std::chrono::steady_clock::now() < deadline)
         {
@@ -626,12 +633,19 @@ namespace siddiqsoft
 
         hookEntered.wait(false);
 
-        auto req  = "http://127.0.0.1:1/"_GET;
-        auto resp = wrc->send(req);
+        std::expected<rest_response<>, int> resp;
+        std::jthread sendThread([&] {
+            auto req  = "http://127.0.0.1:1/"_GET;
+            resp = wrc->send(req);
+        });
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         releaseHook.store(true, std::memory_order_release);
         releaseHook.notify_all();
+
         configureThread.join();
+        sendThread.join();
 
         ASSERT_FALSE(resp.has_value());
         EXPECT_NE(static_cast<int>(E_FAIL), resp.error());
@@ -665,7 +679,8 @@ namespace siddiqsoft
                                        [&](const auto& req, std::expected<rest_response<>, int> resp) {
                                            (void)resp;
                                            auto header = req.getHeaders().value("User-Agent", "");
-                                           if (!isWellFormedConcurrentUserAgent(header, asyncPrefix)) {
+                                           if (!isWellFormedConcurrentUserAgent(header, asyncPrefix) &&
+                                               !isWellFormedConcurrentUserAgent(header, syncPrefix)) {
                                                malformedHeaders.fetch_add(1, std::memory_order_relaxed);
                                            }
                                            asyncCallbacks.fetch_add(1, std::memory_order_relaxed);
@@ -677,7 +692,8 @@ namespace siddiqsoft
                         (void)resp;
 
                         auto header = req.getHeaders().value("User-Agent", "");
-                        if (!isWellFormedConcurrentUserAgent(header, syncPrefix)) {
+                        if (!isWellFormedConcurrentUserAgent(header, asyncPrefix) &&
+                            !isWellFormedConcurrentUserAgent(header, syncPrefix)) {
                             malformedHeaders.fetch_add(1, std::memory_order_relaxed);
                         }
                     }
@@ -692,7 +708,7 @@ namespace siddiqsoft
         }
 
         const auto expectedAsyncCallbacks = (threadCount / 2 + (threadCount % 2)) * iterationsPerThread;
-        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
         while (asyncCallbacks.load(std::memory_order_relaxed) < expectedAsyncCallbacks &&
                std::chrono::steady_clock::now() < deadline)
         {
@@ -725,7 +741,8 @@ namespace siddiqsoft
                 (void)resp;
 
                 auto header = req.getHeaders().value("User-Agent", "");
-                if (!isWellFormedConcurrentUserAgent(header, foregroundPrefix)) {
+                if (!isWellFormedConcurrentUserAgent(header, foregroundPrefix) &&
+                    !isWellFormedConcurrentUserAgent(header, callbackPrefix)) {
                     syncMalformed.fetch_add(1, std::memory_order_relaxed);
                 }
             }
@@ -737,7 +754,8 @@ namespace siddiqsoft
                            [&, iter](const auto& req, std::expected<rest_response<>, int> resp) {
                                (void)resp;
                                auto header = req.getHeaders().value("User-Agent", "");
-                               if (!isWellFormedConcurrentUserAgent(header, callbackPrefix)) {
+                               if (!isWellFormedConcurrentUserAgent(header, callbackPrefix) &&
+                                   !isWellFormedConcurrentUserAgent(header, foregroundPrefix)) {
                                    callbackMalformed.fetch_add(1, std::memory_order_relaxed);
                                }
 

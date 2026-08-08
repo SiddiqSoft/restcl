@@ -291,18 +291,12 @@ namespace siddiqsoft
 
             ACW32HINTERNET newSession {};
 
-            // Get the useragent strings..
-            UserAgent  = _config.mutate([](const auto& doc) noexcept {
-                // return the value of userAgent if it exists, otherwise return the value of `headers.User-Agent` if it exists,
-                // otherwise return an empty string
-                // return doc.value("userAgent", doc.value("/headers/User-Agent"_json_pointer, ""));
-                return doc.value("userAgent", "");
-            });
-            UserAgentW = ConversionUtils::convert_to<char, wchar_t>(UserAgent);
-
             {
                 std::scoped_lock lock(callbackMutex);
                 if (cb) _callback = std::move(cb);
+
+                UserAgent  = _config.snapshot().value("userAgent", "");
+                UserAgentW = ConversionUtils::convert_to<char, wchar_t>(UserAgent);
 
                 if (hSession == NULL) {
                     newSession = std::move(WinHttpOpen(UserAgentW.c_str(), WINHTTP_ACCESS_TYPE_NO_PROXY, NULL, NULL, 0));
@@ -376,6 +370,12 @@ namespace siddiqsoft
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
+            auto config = _config.snapshot();
+            auto userAgent = config.value("userAgent", "siddiqsoft.restcl/2");
+            if (!req.getHeaders().contains("User-Agent")) {
+                req.getHeaders()["User-Agent"] = userAgent;
+            }
+
             pool.queue(RestPoolArgsType<char> {std::move(req), std::move(callbackToUse)});
 
             return *this;
@@ -422,7 +422,8 @@ namespace siddiqsoft
             auto&    strServer   = requestUri.authority.host;
 
             // First order - adjust the UserAgent
-            if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = UserAgent;
+            auto userAgent = config.value("userAgent", "siddiqsoft.restcl/2");
+            if (!req.getHeaders().contains("User-Agent")) req.getHeaders()["User-Agent"] = userAgent;
 
             auto hConnect = [&]() -> ACW32HINTERNET {
                 std::scoped_lock lock(callbackMutex);
