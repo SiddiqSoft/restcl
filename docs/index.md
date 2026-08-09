@@ -1,496 +1,129 @@
-﻿restcl : A focused REST Client for Modern C++
--------------------------------------------
+# restcl: A Focused REST Client for Modern C++
 
-<!-- badges -->
-[![CodeQL](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml)
-[![Build Status](https://dev.azure.com/siddiqsoft/siddiqsoft/_apis/build/status/SiddiqSoft.restcl?branchName=main)](https://dev.azure.com/siddiqsoft/siddiqsoft/_build/latest?definitionId=13&branchName=main)
-![](https://img.shields.io/nuget/v/SiddiqSoft.restcl)
-![](https://img.shields.io/github/v/tag/SiddiqSoft/restcl)
-![](https://img.shields.io/azure-devops/tests/siddiqsoft/siddiqsoft/13)
-<!--![](https://img.shields.io/azure-devops/coverage/siddiqsoft/siddiqsoft/13)-->
-<!-- end badges -->
+<div class="badge-container">
+  <a href="https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml"><img src="https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml/badge.svg" alt="CodeQL"></a>
+  <a href="https://dev.azure.com/siddiqsoft/siddiqsoft/_build/latest?definitionId=13&branchName=main"><img src="https://dev.azure.com/siddiqsoft/siddiqsoft/_apis/build/status/SiddiqSoft.restcl?branchName=main" alt="Build Status"></a>
+  <a href="https://www.nuget.org/packages/SiddiqSoft.restcl"><img src="https://img.shields.io/nuget/v/SiddiqSoft.restcl" alt="NuGet Version"></a>
+  <a href="https://github.com/SiddiqSoft/restcl/tags"><img src="https://img.shields.io/github/v/tag/SiddiqSoft/restcl" alt="GitHub Tag"></a>
+</div>
 
-# Getting started
+**`restcl`** is a header-only Modern C++20 REST client library designed with `nlohmann::json` as a first-class API metaphor for interacting with RESTful servers.
 
-- This library uses Windows code and requires VS 2019 v16.11.2 or better.
-- On Windows with VisualStudio, use the Nuget package! 
-- Make sure you use `c++latest` as the `<format>` is no longer in the `c++20` option pending ABI resolution.
+---
 
-> **NOTE**
-> We are going to track VS 2022 and make full use of C++20 facilities and the API is subject to change.
+## Design Objectives
 
+* **JSON as First-Class Metaphor**: Standard JSON objects represent requests, headers, and payloads for an intuitive, JavaScript-like API.
+* **Modern C++20**: Requires C++20 with support for concepts, user-defined literals, and `std::format`.
+* **Cross-Platform & Native IO**:
+    * **Windows**: Uses native `WinHTTP` library (`WinHttpRESTClient`).
+    * **Linux / macOS**: Uses `libcurl` (`HttpRESTClient`).
+* **Factory Function**: Convenient `siddiqsoft::GetRESTClient()` creates the appropriate client instance for your host platform.
+* **User-Defined Literals**: Expressive HTTP request creation with `"https://api.example.com/endpoint"_GET`.
 
-# Dependencies
+---
 
-We use [NuGet](https://nuget.org) for dependencies. Why? Simply put, it is the *easiest* source for obtaining packages. Publishing your own packages is superior to the manual and as-yet-immature [vcpkg](https://vcpkg.io/en/index.html). _They want me to [git clone](https://vcpkg.io/en/getting-started.html?platform=windows) the thing and build it first..._ _NuGet, comparatively, gives you a first-class experience and writing your own packages is a breeze! Sure, it does not work for non-Windows and I'll have to eventually tackle CMake._
+## Quick Example
 
-Package     | Comments
------------:|:----------
-[nlohmann.json](https://github.com/nlohmann/json)<br/>![](https://img.shields.io/nuget/v/nlohmann.json)| This is one of the simplest JSON libraries for C++.<br/>We have to make choices and this is our choice: clean, simple and elegant over efficiency. Our use-case <br/>The library is quite conformant and lends itself to general purpose use since it uses `<vector>` underneath it all.<br/>We leave time and experience (plus manpower) to optimize this library for us. So long as it works and we do not have to worry about some JAVA-esque or C-style interface!
-[azure-cpp-utils](https://github.com/SiddiqSoft/azure-cpp-utils)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.restcl) | This is library with helpers for encryption, base64 encode/decode and conversion of utf8<-->wide strings.
-[SplitUri](https://github.com/SiddiqSoft/SplitUri)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.SplitUri) | This is library provides parsing of the url.
-[string2map](https://github.com/SiddiqSoft/string2map)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.string2map) | This library provides for parsing of HTTP headers into a std::map
-[acw32h](https://github.com/SiddiqSoft/acw32h)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.acw32h) | This library provides for an auto-closing wrapper for HINTERNET, HSESSION and HINSTANCE objects.
-[RunOnEnd](https://github.com/SiddiqSoft/RunOnEnd)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.RunOnEnd) | This library provides for arbitrary lambda call on scope exit.
-[asynchrony-lib](https://github.com/SiddiqSoft/asynchrony-lib)<br/>![](https://img.shields.io/nuget/v/SiddiqSoft.asynchrony-lib) | Provides for utility to add asynchrony to the restcl library.
+=== "Cross-Platform Factory"
 
-_Unless otherwise noted, use the latest. We're quite aggressive updating dependencies._
-
-<hr/>
-
-
-# API
-
-Namespace: `siddiqsoft`<br/>
-File: `restcl_winhttp.hpp`
-
-> **NOTE** Internal helpers have been omitted for clarity and when not used by the client code.
-
-## class `siddiqsoft::WinHttpRESTClient`
-
-This is the starting point for your client. We make extensive use of initializer list and json to make REST calls more JavaScript-like. Just take a look at the [example](#examples).
-
-### Signature
-
-```cpp
-    class WinHttpRESTClient : public basic_restclient
-    {
-        WinHttpRESTClient(const WinHttpRESTClient&) = delete;
-        WinHttpRESTClient& operator=(const WinHttpRESTClient&) = delete;
-
-        WinHttpRESTClient(WinHttpRESTClient&&);
-        WinHttpRESTClient(const std::string& ua = {});
-
-        rest_response send(rest_request& req);
-        void send(rest_request&& req, basic_callbacktype&& callback);
-        void send(rest_request&& req, basic_callbacktype& callback);
-    };
-```
-
-### Member Variables
-
-_Private members are implementation-specific and detailed in the source file._
-
-### Member Functions
-
-#### `WinHttpRESTClient::WinHttpRESTClient`
-```cpp
-    WinHttpRESTClient::WinHttpRESTClient( const std::string& );
-```
-
-Creates the Windows REST Client with given UserAgent string and creates a reusable `HSESSION` object.
-
-Sets the HTTP/2 option and the decompression options
-
-##### Parameters
-
-- `ua` User agent string; defaults to `siddiqsoft.restcl_winhttp/0.9.2 (Windows NT; x64)`
-
-
-#### `WinHttpRESTClient::send`
-```cpp
-    rest_response send(rest_request& req);
-```
-
-Uses the existing hSession to connect, send, receive data from the remote server and returns the response in **synchronous mode**.
-
-
-##### Parameters
-
-Parameter | Type | Description
----------:|------|:-----------
-`req` | [`rest_request`](#class-rest_request) | The Request to be sent to the remote server.
-return | [`rest_response`](#alias-rest_response) | The Response from the remote server or IO error code and message.
-
-See the [examples](#examples) section.
-
-
-#### `WinHttpRESTClient::send`
-```cpp
-    void send(rest_request&& req, basic_callbacktype&& callback);
-    void send(rest_request&& req, basic_callbacktype& callback);
-```
-
-Uses the existing hSession to connect, send, receive data from the remote server and fire the callback.
-
-Returns immediately once the request has been queued into the threadpool.
-
-> _Why no "return object"?_
->
-> Invoking a lambda and minimize the data-copy as well as lifetime of the underlying objects.
-> The callback has the original request as well as the response as `const` to minimize data race.
-
-##### Parameters
-
-Parameter | Type | Description
----------:|------|:-----------
-`req` | [`rest_request`](#class-rest_request) | The Request to be sent to the remote server. The data is required to be moved into the function as it takes ownership of the request lifetime.
-`callback` | [`basic_callbacktype`](#alias-basic_callbacktype) | The callback is invoked on completion or an error. There are two versions: you can pass an existing function/member or a lambda.
-
-See the [examples](#examples) section.
-
-
-## alias `basic_callbacktype`
-
-### Signature
-```cpp
-    using basic_callbacktype = std::function<void(const rest_request&  req,
-                                                  const rest_response<>& resp)>;
-```
-
-Callback invoked by the library on error / success. The request and response are valid for the lifespan of the call but may not be modified.
-
-##### Parameters
-
-Parameter | Type | Description
----------:|------|:-----------
-`req` | [`const rest_request`](#class-rest_request) | The Request to be sent to the remote server.
-`resp` | [`const rest_response`](#class-rest_response) | The Response from the remote server.
-
-<hr/>
-
-
-## class `rest_request`
-
-### Signature
-```cpp
-class rest_request
-{
-protected:
-    rest_request();
-    explicit rest_request(const std::string& endpoint);
-    explicit rest_request(const Uri<char>& s);
-
-public:
-    const auto&     operator[](const auto& key) const;
-    auto&           operator[](const auto& key);
-    rest_request&  setContent(const std::string& contentType, const std::string& content);
-    rest_request&  setContent(const nlohmann::json& c);
-    std::string     getContent() const;
-    void            encodeHeaders_to(std::string& rs) const;
-    std::string     encode() const;
-
-    Uri<char, AuthorityHttp<char>> uri;
-
-protected:
-    nlohmann::json  rrd;
-```
-
-#### Member Variables
-
-Parameter | Type | Description
----------:|------|:-----------
-`uri` | [`Uri<char,AuthorityHttp<char>>`](https://siddiqsoft.github.io/SplitUri/#class-siddiqsofturi) | The Uri for this client
-`rrd` | [`nlohmann::json`](https://json.nlohmann.me/) | The json contains the request data: `{"request": {"method": "GET", "uri": {}, "version": ""}, "headers": {}, "content": nullptr}`
-
-The underlying json object has the following structure
-
-Field | Type | Description
-------|------|------------
-`request` | json | Contains the request line decomposed into the key-values<br/>- `method` - `GET`, `POST`, etc.<br/>- `url` - The path to the document<br/>- `version` - `HTTP/2` or `HTTP/1.1`
-
-
-#### Member Functions
-
-##### `rest_request::operator[] const`
-```cpp
-    const auto&        operator[](const auto& key) const;
-```
-
-The `key` can be either `std::string` or `json_pointer` type.
-
-Accessor for `request`, `headers` and `content` (returns the key within the underlying json object).
-
-To access the request path: `req["request"]["url"]` and to access the `Content-Type`, you'd use `req["headers"]["Content-Type"]`. You can also use `json_pointer` notation to access the elements: `req["/headers/Content-Type"_json_pointer]`
-
-> API simplicity. Use an access model that is simple and flexible without the need for adding specific methods
-
-##### `rest_request::operator[]`
-```cpp
-    auto&              operator[](const auto& key);
-```
-
-The `key` can be either `std::string` or `json_pointer` type.
-
-Mutator for `request`, `headers` and `content` (returns the key within the underlying json object).
-
-To access the request path: `req["request"]["url"]` and to access the `Content-Type`, you'd use `req["headers"]["Content-Type"]`. You can also use `json_pointer` notation to access the elements: `req["/headers/Content-Type"_json_pointer]`
-
-##### `rest_request::setContent`
-
-```cpp
-    rest_request& setContent(const std::string& contentType,
-                              const std::string& content);
-```
-
-- contentType - Set the content type header
-- content - Set the content body
-
-Convenience method to set non-JSON content along with the headers `Content-Type` and `Content-Length`.
-
-Functionally equivalent to the following:
-```cpp
-    req["content"]= content;
-    req["headers"]["Content-Type"]= contentType;
-```
-> If the header `Content-Length` is not set then the value is calculated during the `encode()` invocation.
-
-##### `rest_request::setContent`
-
-```cpp
-    rest_request& setContent(const nlohmann::json& c);
-```
-
-- contentType - Set the content type header
-- content - Set the content body
-
-Convenience method to set non-JSON content along with the headers `Content-Type` and `Content-Length`.
-
-Functionally equivalent to the following: `req["content"]= content; // where content is json`
-
-##### `rest_request::getContent const`
-
-```cpp
-    std::string        getContent() const;
-```
-
-Returns a serialized representation of the content.
-
-If the content is json then the method `.dump()` is invoked to serialized the json.
-
-##### `rest_request::encodeHeaders_to`
-
-```cpp
-    void               encodeHeaders_to(std::string& rs) const;
-```
-
-Helper to encode the headers to a given string using `std::format` and `std::back_inserter`.
-
-##### `rest_request::encode`
-
-```cpp
-    std::string        encode() const;
-```
-
-Helper encodes the HTTP request with request line, header section and the content.
-
-<hr/>
-
-
-## class `rest_response`
-
-### Signature
-```cpp
-class rest_response
-{
-protected:
-    rest_response();
-
-public:
-    struct response_code
-    {
-        uint32_t    code {0};
-        std::string message {};
-    };
-
-    rest_response(const rest_response<>&);
-    rest_response(rest_response<>&&);
-
-    rest_response<>& operator=(rest_response<>&&);
-    rest_response<>& operator=(const rest_response<>&);
-    rest_response<>& setContent(const std::string&);
-    const auto&     operator[](const auto&) const;
-    auto&           operator[](const auto&);
-    std::string     encode() const;
-    bool            success() const;
-    response_code   status() const;
-
-protected:
-    nlohmann::json rrd { {"response", { {"version", HTTPProtocolVersion::Http2},
-                                        {"status", 0},
-                                        {"reason", ""}}},
-                         {"headers", nullptr},
-                         {"content", nullptr} };
-```
-
-#### `rest_response::response_code`
-
-Name        | Type | Description
------------:|------|:-----------
-`code`     | `uint32_t` | If the IO was successful then the value is the HTTP status code.
-`message` | `std::string` | For successful IO this is the reason phrase otherwise it is the WinHTTP error message corresponding to the IO error code.
-
-
-#### Member Variables
-
-Parameter | Type | Description
----------:|------|:-----------
-`rrd` | [`nlohmann::json`]() | The json contains the response data: `{"response": {"reason": "OK", "status": 200, "version": ""}, "headers": {}, "content": nullptr}`
-
-The internal `response_code` struct represents the IO error code and IO error message or the HTTP response status and HTTP reason string.
-
-#### Member Functions
-
-> Omit eplanations for constructors. They're pretty standard default/empty, move constructors and move assignment operator.
-
-
-##### `rest_response::setContent`
-
-```cpp
-    rest_response<>&              setContent(const std::string& content);
-```
-- content - Set the content body as read by the server.
-
-This method should not be used by the client.
-
-The client must use the headers to figure out the type of the content and its length.
-
-
-##### `rest_response::success`
-
-```cpp
-    bool                             success() const;
-```
-
-Returns true if the HTTP status >=99 and <400. False if there is any IO error or status >400 from the remote server.
-
-
-##### `rest_response::operator[] const`
-```cpp
-    const auto&        operator[](const auto& key) const;
-```
-
-The `key` can be either `std::string` or `json_pointer` type.
-
-Accessor for `response`, `headers` and `content` (returns the key within the underlying json object).
-
-To access the request path: `req["response"]["url"]` and to access the `Content-Type`, you'd use `resp["headers"]["Content-Type"]`. You can also use `json_pointer` notation to access the elements: `resp["/headers/Content-Type"_json_pointer]`
-
-> API simplicity. Use an access model that is simple and flexible without the need for adding specific methods
-
-##### `rest_response::operator[]`
-```cpp
-    auto&              operator[](const auto& key);
-```
-
-The `key` can be either `std::string` or `json_pointer` type.
-
-Mutator for `response`, `headers` and `content` (returns the key within the underlying json object).
-
-To access the request path: `resp["request"]["url"]` and to access the `Content-Type`, you'd use `resp["headers"]["Content-Type"]`. You can also use `json_pointer` notation to access the elements: `req["/headers/Content-Type"_json_pointer]`
-
-##### `rest_response::encode`
-
-```cpp
-    std::string                      encode() const;
-```
-
-##### `rest_response::status`
-
-```cpp
-    response_code status() const;
-```
-
-Returns [`response_code`](#rest_responseresponse_code) status/ioerror and the reason-phrase or ioerror message.
-
-Equivalent to `resp["response"]["status"]` and `resp["response"]["reason"]` or the WinHTTP error code and the corresponding WinHTTP message.
-
-<hr/>
-
-
-## Examples
-
-### GET
-
-```cpp
+    ```cpp
     #include "siddiqsoft/restcl.hpp"
-    #include "siddiqsoft/restcl_winhttp.hpp"
-    ...
+
     using namespace siddiqsoft;
-    using namespace siddiqsoft::splituri_literals;
+    using namespace siddiqsoft::restcl_literals;
 
-    WinHttpRESTClient wrc("my-user-agent-string");
-
-    // Create a simple GET request from the endpoint string
-    // Send the request and invoke the callback.
-    wrc->send( "https://google.com"_GET,
-              [](const auto& req, const auto& resp) {
-                 if(resp.success())
-                    doSomething();
-              });
-```
-
-### POST
-
-```cpp
-    #include "siddiqsoft/restcl.hpp"
-    #include "siddiqsoft/restcl_winhttp.hpp"
-    ...
-    using namespace siddiqsoft;
-    using namespace siddiqsoft::splituri_literals;
-
-    WinHttpRESTClient wrc("my-user-agent-string");
-        ...
-    // Create a POST request by parsing out the string
-    auto myPost= "https://server:999/path?q=hello-world"_POST;
-    // Add custom header
-    myPost["headers"]["X-MyHeader"]= "my-header-value";
-    // Adds the content with supplied json object and sets the 
-    // headers Content-Length and Content-Type
-    myPost.setContent( { {"foo", "bar"}, {"goto", 99} } );
-    // Send the request and invoke the callback
-    wrc->send( std::move(myReq), [](auto& req, auto& resp){
-                                    if(resp.success())
-                                        doSomething();
-                                    else
-                                        logError(resp.error());
-                                });
-```
-
-This is the *actual* [implemenation](https://github.com/SiddiqSoft/CosmosClient/blob/main/src/azure-cosmos-restcl.hpp) of the Azure Cosmos REST create-document call:
-
-Our design is data descriptive and makes use of the initializer list, overloads to make the task of creating a REST call simple. Our goal is to allow you to focus on your task and not worry about the underlying IO call (one of the few things that I like about JavaScript's model).
-
-The code here focusses on the REST API and its structure as required by the [Cosmos REST API]( https://docs.microsoft.com/en-us/rest/api/documentdb/create-a-document). You're not struggling with the library or dealing with yet-another-string class or some convoluted JSON library or a talkative API or legacy C-like APIs.
-
-```cpp
-    /// @brief Create an entity in documentdb using the json object as the payload.
-    /// @param dbName Database name
-    /// @param collName Collection name
-    /// @param doc The document must include the `id` and the partition key.
-    /// @return status code and the created document as returned by Cosmos
-    CosmosResponseType create(const std::string& dbName, const std::string& collName, const nlohmann::json& doc)
+    int main()
     {
-        ...
-        CosmosResponseType ret {0xFA17, {}};
-        auto               ts   = DateUtils::RFC7231();
-        auto               pkId = "siddiqsoft.com";
-        auto               auth = EncryptionUtils::CosmosToken<char>(
-                                                cnxn.current().Key,
-                                                "POST",
-                                                "docs",
-                                                std::format("dbs/{}/colls/{}", dbName, collName),
-                                                ts);
+        // Automatically instantiates WinHttpRESTClient on Windows
+        // or HttpRESTClient on Linux/macOS
+        auto client = GetRESTClient({
+            {"userAgent", "my-app/1.0"},
+            {"timeout", 5000}
+        });
 
-        restClient.send( siddiqsoft::ReqPost {
-                            std::format("{}dbs/{}/colls/{}/docs",
-                                        cnxn.current().currentWriteUri(),
-                                        dbName,
-                                        collName),
-                            { {"Authorization", auth},
-                             {"x-ms-date", ts},
-                             {"x-ms-documentdb-partitionkey", nlohmann::json {pkId}},
-                             {"x-ms-version", config["apiVersion"]},
-                             {"x-ms-cosmos-allow-tentative-writes", "true"} },
-                            doc},
-                         [&ret](const auto& req, const auto& resp) {
-                            ret = {std::get<0>(resp.status()), resp.success() ? std::move(resp["content"])
-                                                                              : nlohmann::json {}};
-                       });
+        // 1. Simple GET request using literal operator
+        auto response = client->send("https://httpbin.org/get"_GET);
+        if (response && response->success()) {
+            std::cout << "Response body: " << response->content->body << std::endl;
+        }
 
-        return ret;
+        // 2. POST request with custom header and JSON body
+        auto req = "https://httpbin.org/post"_POST;
+        req.headers["X-Custom-Header"] = "my-header-value";
+        req.setContent({ {"name", "Modern C++"}, {"version", 20} });
+
+        // Synchronous send
+        auto postResponse = client->send(req);
+        if (postResponse && postResponse->success()) {
+            std::cout << "Status: " << postResponse->statusCode() << std::endl;
+        }
+
+        return 0;
     }
-```
+    ```
 
-## Notes
+=== "Windows (WinHTTP)"
 
+    ```cpp
+    #include "siddiqsoft/restcl.hpp"
+
+    using namespace siddiqsoft;
+    using namespace siddiqsoft::restcl_literals;
+
+    int main()
+    {
+        WinHttpRESTClient client("my-user-agent-string");
+
+        // Send GET request asynchronously with callback
+        client.sendAsync("https://httpbin.org/get"_GET, [](auto& req, auto resp) {
+            if (resp && resp->success()) {
+                std::cout << "GET succeeded with status " << resp->statusCode() << std::endl;
+            }
+        });
+
+        return 0;
+    }
+    ```
+
+=== "Linux / macOS (libcurl)"
+
+    ```cpp
+    #include "siddiqsoft/restcl.hpp"
+
+    using namespace siddiqsoft;
+    using namespace siddiqsoft::restcl_literals;
+
+    int main()
+    {
+        HttpRESTClient client({{"userAgent", "LinuxClient/1.0"}});
+
+        auto req = "https://httpbin.org/put"_PUT;
+        req.setContent({{"status", "active"}});
+
+        auto resp = client.send(req);
+        if (resp && resp->success()) {
+            std::cout << "PUT Response: " << resp->content->body << std::endl;
+        }
+
+        return 0;
+    }
+    ```
+
+---
+
+## Requirements
+
+| Requirement | Details |
+| :--- | :--- |
+| **Language Standard** | C++20 or higher (`/std:c++latest` on MSVC, `-std=c++20` on Clang/GCC) |
+| **Dependencies** | [`nlohmann/json`](https://github.com/nlohmann/json), [`SplitUri`](https://github.com/SiddiqSoft/SplitUri), [`azure-cpp-utils`](https://github.com/SiddiqSoft/azure-cpp-utils) |
+| **Platform Support** | Windows (MSVC 2019+), Linux (GCC 11+, Clang 13+), macOS (Apple Clang 13+) |
+
+---
+
+## Navigation
+
+- [**Features**](features/index.md): Discover user-defined literals, async callbacks, and the JSON API metaphor.
+- [**Integration**](integration/index.md): Guides for CMake, git submodules, and NuGet package integration.
+- [**API Reference**](api/index.md): Detailed API documentation for `GetRESTClient`, request/response models, and client interfaces.

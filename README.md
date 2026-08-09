@@ -267,7 +267,7 @@ restcl/
 │   ├── test_postbin.cpp              # Integration tests with external services
 │   ├── test_libcurl_helpers.cpp      # Unix/Linux-specific tests
 │   └── test_mock_and_coverage.cpp    # Mock and coverage tests
-├── docs/                             # Doxygen documentation
+├── docs/                             # MkDocs documentation site
 ├── pack/                             # NuGet packaging and build helpers
 ├── CMakeLists.txt                    # Main CMake configuration
 ├── CMakePresets.json                 # CMake presets for builds
@@ -320,7 +320,7 @@ Extends `http_frame` with response parsing, status codes, and reason phrases.
 | Clang-Format | Latest | Code formatting |
 | Clang-Tidy | Latest | Static analysis |
 | Google Test | v1.17.0 | Testing framework |
-| Doxygen | Latest | Documentation generation |
+| MkDocs | Material 9.5+ | Documentation site generation |
 
 ### Compiler Requirements
 

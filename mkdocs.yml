@@ -1,0 +1,85 @@
+site_name: restcl
+site_description: Azure REST API Helpers for Modern C++
+site_author: Siddiq Software LLC
+site_url: https://siddiqsoft.github.io/restcl/
+repo_url: https://github.com/SiddiqSoft/restcl
+repo_name: SiddiqSoft/restcl
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+extra_css:
+  - css/custom.css
+
+nav:
+  - Home: index.md
+  - Features:
+      - Overview: features/index.md
+      - User-Defined Literals: features/literals.md
+      - Asynchronous Operations: features/async.md
+      - First-Class JSON Metaphor: features/json_metaphor.md
+  - Integration:
+      - Quick Start: integration/index.md
+      - CMake & Submodules: integration/cmake.md
+      - NuGet Package: integration/nuget.md
+  - API Reference:
+      - Overview: api/index.md
+      - GetRESTClient: api/get_rest_client.md
+      - WinHttpRESTClient: api/winhttp_rest_client.md
+      - HttpRESTClient: api/http_rest_client.md
+      - basic_restclient: api/basic_restclient.md
+      - rest_request: api/rest_request.md
+      - rest_response: api/rest_response.md
+      - restcl_literals: api/restcl_literals.md
+  - License: license.md

@@ -105,6 +105,11 @@ parameters:
     default: false
     displayName: "Create GitHub release (auto-enabled on main/master)"
 
+  - name: PublishDocs
+    type: boolean
+    default: false
+    displayName: "Publish documentation site (auto-enabled on main/master)"
+
   # Cleanup
   - name: Cleanup
     type: boolean
@@ -119,9 +124,11 @@ variables:
   ${{ if and(eq(parameters.PublishNuGet, false), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))) }}:
     PublishNuGet: true
     PublishGitHub: true
+    PublishDocs: true
   ${{ else }}:
     PublishNuGet: ${{ parameters.PublishNuGet }}
     PublishGitHub: ${{ parameters.PublishGitHub }}
+    PublishDocs: ${{ parameters.PublishDocs }}
 
   # System information
   AgentOS: $(Agent.OS)
@@ -193,7 +200,7 @@ stages:
     dependsOn:
       - Windows
       - Linux
-    condition: and(or(eq(${{ variables.PublishGitHub }}, true), eq(${{ variables.PublishNuGet }}, true)), succeeded())
+    condition: and(or(eq(${{ variables.PublishGitHub }}, true), eq(${{ variables.PublishNuGet }}, true), eq(${{ variables.PublishDocs }}, true)), succeeded())
     jobs:
       - ${{ if eq(variables.PublishNuGet, true) }}:
         - template: .azure/az-publish-nuget.yml
@@ -201,7 +208,13 @@ stages:
             displayName: NuGet Release
             PublishNuGet: ${{ variables.PublishNuGet }}
   
-      - template: .azure/az-publish-github.yml
-        parameters:
-          displayName: GitHub Release
-          PublishGitHub: ${{ variables.PublishGitHub }}
+      - ${{ if eq(variables.PublishGitHub, true) }}:
+        - template: .azure/az-publish-github.yml
+          parameters:
+            displayName: GitHub Release
+            PublishGitHub: ${{ variables.PublishGitHub }}
+
+      - ${{ if eq(variables.PublishDocs, true) }}:
+        - template: .azure/az-publish-docs.yml
+          parameters:
+            displayName: Publish Documentation Site

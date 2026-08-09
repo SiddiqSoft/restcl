@@ -1,0 +1,37 @@
+/* Custom styling matching json.nlohmann.me aesthetic */
+:root {
+  --md-text-font: "Roboto", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+  --md-code-font: "JetBrains Mono", SFMono-Regular, Consolas, Menlo, monospace;
+}
+
+/* Enhancements for tables */
+.md-typeset table:not([class]) {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+  font-weight: 600;
+}
+
+/* Badge styling */
+.badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+
+/* Code block tweaks */
+.md-typeset pre > code {
+  border-radius: 6px;
+}
+
+/* Admonition tweaks */
+.md-typeset .admonition {
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
