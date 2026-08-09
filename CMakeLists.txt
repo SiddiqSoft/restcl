@@ -36,7 +36,7 @@ target_include_directories(${PROJECT_NAME}
                             INTERFACE
                             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
                             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_23)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
 # ____________________________________
 # Dependencies
@@ -73,9 +73,13 @@ CPMAddPackage("gh:SiddiqSoft/string2map#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.5")
 target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
-CPMAddPackage("gh:SiddiqSoft/asynchrony#2.2.0")
+CPMAddPackage("gh:SiddiqSoft/RWLEnvelope#1.5.3")
+target_link_libraries(${PROJECT_NAME} INTERFACE RWLEnvelope::RWLEnvelope)
+CPMAddPackage("gh:SiddiqSoft/asynchrony#2.3.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
-cpmaddpackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
+CPMAddPackage("gh:SiddiqSoft/arrp#d706784a3bff392b7d575ab3473ccc13e2df8ff7")
+target_link_libraries(${PROJECT_NAME} INTERFACE arrp::arrp)
+CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
 
 

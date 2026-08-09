@@ -19,9 +19,8 @@
             },
             "cacheVariables": {
                 "CPM_SOURCE_CACHE": "${sourceParentDir}/.cpmcache",
-                "CMAKE_CXX_STANDARD": "23",
                 "CMAKE_CXX_STANDARD_REQUIRED": "ON",
-                "CMAKE_CXX_EXTENSIONS ": "OFF",
+                "CMAKE_CXX_EXTENSIONS": "OFF",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_POSITION_INDEPENDENT_CODE": "ON"
             }
@@ -221,7 +220,7 @@
             "hidden": true,
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
-            "generator": "Ninja Multi-Config",
+            "generator": "Ninja",
             "inherits": "Common-Base",
             "cacheVariables": {
                 "CMAKE_MAKE_PROGRAM": "ninja.exe",

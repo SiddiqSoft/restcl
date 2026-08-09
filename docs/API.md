@@ -1,860 +1,366 @@
 # restcl API Reference
 
-Complete documentation of all public API calls in the restcl library.
+This document describes the current public API surface in the codebase.
 
 ## Table of Contents
 
 - [Factory Function](#factory-function)
-- [REST Client Interface](#rest-client-interface)
-- [REST Request API](#rest-request-api)
-- [REST Response API](#rest-response-api)
-- [HTTP Frame Base Class](#http-frame-base-class)
-- [Platform-Specific Implementation](#platform-specific-implementation)
+- [Core Client Interface](#core-client-interface)
+- [Request API](#request-api)
+- [Response API](#response-api)
+- [Shared HTTP Frame API](#shared-http-frame-api)
+- [Platform Implementations](#platform-implementations)
 - [Error Handling](#error-handling)
 
 ## Factory Function
 
-### `GetRESTClient()`
+### GetRESTClient
 
-**Source:** [`include/siddiqsoft/restcl.hpp`](include/siddiqsoft/restcl.hpp)
+**Source:** `include/siddiqsoft/restcl.hpp`
 
 **Signature:**
+
 ```cpp
 [[nodiscard]] static auto GetRESTClient(
-    const nlohmann::json& cfg = {}, 
+    const nlohmann::json& cfg = {},
     basic_callbacktype&& cb = {}
 );
 ```
 
-**Description:**
-Factory function that creates and returns a platform-specific REST client instance. On Unix/Linux/macOS, returns `HttpRESTClient` (libcurl-based). On Windows, returns `WinHttpRESTClient` (WinHTTP-based).
+Returns a platform-specific client instance:
 
-**Parameters:**
-- `cfg` (optional): JSON configuration object with the following keys:
-  - `"userAgent"` (string): User-Agent header (default: "siddiqsoft.restcl/2")
-  - `"trace"` (boolean): Enable verbose logging (default: false)
-  - `"connectTimeout"` (integer): Connection timeout in milliseconds (default: 0 = no timeout)
-  - `"timeout"` (integer): Overall request timeout in milliseconds (default: 0 = no timeout)
-  - `"verifyPeer"` (integer): SSL peer verification (1 = enabled, 0 = disabled, default: 1)
-  - `"freshConnect"` (boolean): Force new connections instead of reusing (default: false)
+- Unix and macOS: `std::shared_ptr<HttpRESTClient>`
+- Windows: `std::shared_ptr<WinHttpRESTClient>`
 
-- `cb` (optional): Global callback function for async operations. Can be overridden per-request.
-  - Signature: `void(rest_request<>&, std::expected<rest_response<>, int>)`
+The callback type is:
 
-**Returns:**
-- `std::shared_ptr<HttpRESTClient>` on Unix/Linux/macOS
-- `std::shared_ptr<WinHttpRESTClient>` on Windows
-
-**Throws:**
-- `std::runtime_error` if platform initialization fails
-
-**Example:**
 ```cpp
-auto client = siddiqsoft::GetRESTClient({
-    {"userAgent", "MyApp/1.0"},
-    {"connectTimeout", 3000},
-    {"timeout", 5000}
-});
+using basic_callbacktype = std::function<
+    void(rest_request<>&, std::expected<rest_response<>, int>)
+>;
 ```
 
----
+### Configuration keys
 
-## REST Client Interface
+Common keys accepted by platform clients:
 
-### `configure()`
+- `userAgent` (string, default `"siddiqsoft.restcl/2"`)
+- `trace` (bool, default `false`)
+- `connectTimeout` (integer milliseconds, default `0`)
+- `timeout` (integer milliseconds, default `0`)
+- `headers` (json object, optional)
+- `downloadDirectory` (implementation-reserved)
 
-**Source:** [`include/siddiqsoft/private/basic_restclient.hpp`](include/siddiqsoft/private/basic_restclient.hpp)
+Unix and macOS only:
 
-**Signature:**
+- `verifyPeer` (integer, default `1`; set to `0` to disable SSL peer verification)
+- `freshConnect` (bool, default `false`)
+
+## Core Client Interface
+
+**Source:** `include/siddiqsoft/private/basic_restclient.hpp`
+
+Template:
+
+```cpp
+template <typename CharT = char>
+class basic_restclient
+```
+
+### configure
+
 ```cpp
 virtual basic_restclient& configure(
-    const nlohmann::json& cfg = {}, 
-    basic_callbacktype&& func = {}
-);
+    const nlohmann::json& = {},
+    basic_callbacktype&& = {}
+) = 0;
 ```
 
-**Description:**
-Configures the REST client with optional settings and a global callback handler. This is typically called once after client creation.
+Configures provider settings and optionally registers a default async callback.
 
-**Parameters:**
-- `cfg` (optional): JSON configuration object (same keys as `GetRESTClient()`)
-- `func` (optional): Global callback function for async operations
+### send
 
-**Returns:**
-- Reference to self for method chaining
-
-**Example:**
 ```cpp
-client->configure({
-    {"userAgent", "MyApp/2.0"},
-    {"timeout", 10000}
-}, [](const auto& req, auto resp) {
-    if (resp) {
-        std::cout << "Response: " << resp->statusCode() << "\n";
-    }
-});
+[[nodiscard]] virtual std::expected<rest_response<CharT>, int>
+send(rest_request<>&) = 0;
 ```
 
----
+Synchronous request execution.
 
-### `send()`
+### sendAsync
 
-**Signature:**
-```cpp
-[[nodiscard]] virtual std::expected<rest_response<>, int> send(
-    rest_request<>& req
-);
-```
-
-**Description:**
-Performs a synchronous HTTP request and returns the response or error code.
-
-**Parameters:**
-- `req`: Reference to the REST request object
-
-**Returns:**
-- `std::expected<rest_response<>, int>` containing either:
-  - Success: `rest_response<>` with status code, headers, and body
-  - Error: Error code (platform-specific)
-
-**Error Codes:**
-- Windows: WinHTTP error codes (12001, 12002, 12029, etc.)
-- Unix/Linux: POSIX error codes (ECONNRESET, EBUSY, etc.)
-
-**Example:**
-```cpp
-auto request = "https://api.example.com/users"_GET;
-auto response = client->send(request);
-
-if (response) {
-    std::cout << "Status: " << response->statusCode() << "\n";
-    std::cout << "Body: " << response->getContentBody() << "\n";
-} else {
-    std::cerr << "Error: " << response.error() << "\n";
-}
-```
-
----
-
-### `sendAsync()`
-
-**Signature:**
 ```cpp
 virtual basic_restclient& sendAsync(
-    rest_request<>&& req, 
-    basic_callbacktype&& callback = {}
-);
+    rest_request<>&&,
+    basic_callbacktype&& = {}
+) = 0;
 ```
 
-**Description:**
-Performs an asynchronous HTTP request. The callback is invoked when the response is received or an error occurs.
+Asynchronous request execution. A callback must be provided either here or through `configure`.
 
-**Parameters:**
-- `req`: Rvalue reference to the REST request object (moved)
-- `callback` (optional): Callback function for this specific request
-  - If not provided, uses the global callback from `configure()`
-  - Signature: `void(rest_request<>&, std::expected<rest_response<>, int>)`
+Behavior notes:
 
-**Returns:**
-- Reference to self for method chaining
+- Unix and macOS may throw `std::runtime_error` if client initialization is incomplete.
+- All platforms throw `std::invalid_argument` if no callback is available.
 
-**Throws:**
-- `std::runtime_error` if client is not initialized
-- `std::invalid_argument` if no callback is provided (neither globally nor per-request)
+## Request API
 
-**Example:**
+**Source:** `include/siddiqsoft/private/rest_request.hpp`
+
+Class:
+
 ```cpp
-auto request = "https://api.example.com/data"_GET;
-
-client->sendAsync(std::move(request), [](const auto& req, auto resp) {
-    if (resp) {
-        std::cout << "Async response: " << resp->statusCode() << "\n";
-    } else {
-        std::cerr << "Async error: " << resp.error() << "\n";
-    }
-});
+template <typename CharT = char>
+class rest_request : public http_frame<CharT>
 ```
 
----
+### Constructors
 
-## REST Request API
-
-**Source:** [`include/siddiqsoft/private/rest_request.hpp`](include/siddiqsoft/private/rest_request.hpp)
-
-### `rest_request<CharT>` Constructors
-
-**Signature:**
 ```cpp
-rest_request();  // Default constructor
+rest_request() = default;
 
-rest_request(const HttpMethodType& method, const Uri<CharT, AuthorityHttp<CharT>>& uri);
+rest_request(const HttpMethodType&,
+             const Uri<CharT, AuthorityHttp<CharT>>);
 
-rest_request(const HttpMethodType& method, const Uri<CharT, AuthorityHttp<CharT>>& uri, 
+rest_request(const HttpMethodType&,
+             const Uri<CharT, AuthorityHttp<CharT>>,
              const nlohmann::json& headers);
 
-rest_request(const HttpMethodType& method, const Uri<CharT, AuthorityHttp<CharT>>& uri,
-             const nlohmann::json& headers, const nlohmann::json& content);
+rest_request(const HttpMethodType&,
+             const Uri<CharT, AuthorityHttp<CharT>>,
+             const nlohmann::json& headers,
+             const nlohmann::json& content);
 ```
 
-**Description:**
-Creates a REST request with optional method, URI, headers, and content.
+### User-defined literals
 
-**Example:**
+Namespace: `siddiqsoft::restcl_literals`
+
 ```cpp
-// Using default constructor
-rest_request<> req;
-req.setMethod(HttpMethodType::METHOD_GET);
-req.setUri("https://api.example.com/users");
-
-// Using parameterized constructor
-rest_request<> req2(HttpMethodType::METHOD_POST, 
-                    Uri<char, AuthorityHttp<char>>("https://api.example.com/users"),
-                    nlohmann::json{{"Authorization", "Bearer token"}});
+operator""_GET(const char*, size_t)
+operator""_HEAD(const char*, size_t)
+operator""_POST(const char*, size_t)
+operator""_PUT(const char*, size_t)
+operator""_DELETE(const char*, size_t)
+operator""_CONNECT(const char*, size_t)
+operator""_OPTIONS(const char*, size_t)
+operator""_TRACE(const char*, size_t)
+operator""_PATCH(const char*, size_t)
 ```
 
----
+All return `rest_request<char>`.
 
-### User-Defined Literals
+### encode
 
-**Signature:**
 ```cpp
-rest_request<char> operator""_GET(const char* url, size_t sz);
-rest_request<char> operator""_POST(const char* url, size_t sz);
-rest_request<char> operator""_PUT(const char* url, size_t sz);
-rest_request<char> operator""_DELETE(const char* url, size_t sz);
-rest_request<char> operator""_PATCH(const char* url, size_t sz);
-rest_request<char> operator""_HEAD(const char* url, size_t sz);
-rest_request<char> operator""_OPTIONS(const char* url, size_t sz);
-rest_request<char> operator""_TRACE(const char* url, size_t sz);
-rest_request<char> operator""_CONNECT(const char* url, size_t sz);
+std::string encode() const override;
 ```
 
-**Description:**
-Convenient user-defined literals for creating requests with specific HTTP methods.
+Builds the HTTP wire representation (start line, headers, optional body).
 
-**Example:**
+Throws `std::invalid_argument` if content type exists but body is empty.
+
+## Response API
+
+**Source:** `include/siddiqsoft/private/rest_response.hpp`
+
+Class:
+
 ```cpp
-using namespace siddiqsoft::restcl_literals;
-
-auto get_req = "https://api.example.com/users"_GET;
-auto post_req = "https://api.example.com/users"_POST;
-auto delete_req = "https://api.example.com/users/123"_DELETE;
+template <typename CharT = char>
+class rest_response : public http_frame<CharT>
 ```
 
----
+### Status helpers
 
-### `setMethod()`
-
-**Signature:**
-```cpp
-auto& setMethod(const HttpMethodType& method);
-auto& setMethod(const std::string& method);
-```
-
-**Description:**
-Sets the HTTP method for the request.
-
-**Parameters:**
-- `method`: HTTP method as enum or string ("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "TRACE", "CONNECT")
-
-**Returns:**
-- Reference to self for method chaining
-
-**Throws:**
-- `std::invalid_argument` if method string is not recognized
-
-**Example:**
-```cpp
-request.setMethod(HttpMethodType::METHOD_POST);
-// or
-request.setMethod("POST");
-```
-
----
-
-### `getMethod()`
-
-**Signature:**
-```cpp
-[[nodiscard]] HttpMethodType getMethod() const;
-```
-
-**Description:**
-Retrieves the HTTP method of the request.
-
-**Returns:**
-- `HttpMethodType` enum value
-
-**Example:**
-```cpp
-auto method = request.getMethod();
-if (method == HttpMethodType::METHOD_GET) {
-    std::cout << "This is a GET request\n";
-}
-```
-
----
-
-### `setUri()`
-
-**Signature:**
-```cpp
-auto& setUri(const Uri<char, AuthorityHttp<char>>& uri);
-```
-
-**Description:**
-Sets the URI for the request. Automatically updates the Host header.
-
-**Parameters:**
-- `uri`: Parsed URI object
-
-**Returns:**
-- Reference to self for method chaining
-
-**Example:**
-```cpp
-request.setUri("https://api.example.com/users/123");
-```
-
----
-
-### `getUri()`
-
-**Signature:**
-```cpp
-auto& getUri() const;
-```
-
-**Description:**
-Retrieves the URI of the request.
-
-**Returns:**
-- Const reference to the URI object
-
-**Example:**
-```cpp
-auto uri = request.getUri();
-std::cout << "Host: " << uri.authority.host << "\n";
-```
-
----
-
-### `setHeader()`
-
-**Signature:**
-```cpp
-auto& setHeader(const std::string& key, const std::string& value);
-```
-
-**Description:**
-Sets a single HTTP header. Empty values remove the header.
-
-**Parameters:**
-- `key`: Header name
-- `value`: Header value (empty string removes the header)
-
-**Returns:**
-- Reference to self for method chaining
-
-**Example:**
-```cpp
-request.setHeader("Authorization", "Bearer token123");
-request.setHeader("Content-Type", "application/json");
-request.setHeader("X-Custom-Header", "");  // Removes the header
-```
-
----
-
-### `setHeaders()`
-
-**Signature:**
-```cpp
-auto& setHeaders(const nlohmann::json& headers);
-```
-
-**Description:**
-Sets multiple HTTP headers from a JSON object.
-
-**Parameters:**
-- `headers`: JSON object with header key-value pairs
-
-**Returns:**
-- Reference to self for method chaining
-
-**Example:**
-```cpp
-request.setHeaders({
-    {"Authorization", "Bearer token"},
-    {"Accept", "application/json"},
-    {"User-Agent", "MyApp/1.0"}
-});
-```
-
----
-
-### `getHeaders()`
-
-**Signature:**
-```cpp
-nlohmann::json& getHeaders();
-```
-
-**Description:**
-Retrieves all HTTP headers as a JSON object.
-
-**Returns:**
-- Reference to JSON object containing all headers
-
-**Example:**
-```cpp
-auto& headers = request.getHeaders();
-std::cout << headers.dump(2) << "\n";
-```
-
----
-
-### `setContent()`
-
-**Signature:**
-```cpp
-auto& setContent(const std::string& contentType, const std::string& body);
-auto& setContent(const std::string& body);
-auto& setContent(const nlohmann::json& json);
-auto& setContent(std::shared_ptr<ContentType> content);
-```
-
-**Description:**
-Sets the request body content with optional content type.
-
-**Parameters:**
-- Overload 1: `contentType` (required), `body` (required)
-- Overload 2: `body` (auto-detects content type from headers)
-- Overload 3: `json` (sets content type to "application/json")
-- Overload 4: `content` (shared pointer to ContentType object)
-
-**Returns:**
-- Reference to self for method chaining
-
-**Throws:**
-- `std::invalid_argument` if content type is set but body is empty, or vice versa
-
-**Example:**
-```cpp
-// With explicit content type
-request.setContent("application/json", R"({"name":"John"})");
-
-// With JSON object
-nlohmann::json payload = {{"name", "John"}};
-request.setContent(payload);
-
-// With plain text
-request.setContent("Hello, World!");
-```
-
----
-
-### `getContent()`
-
-**Signature:**
-```cpp
-auto& getContent() const;
-```
-
-**Description:**
-Retrieves the request content object.
-
-**Returns:**
-- Const reference to ContentType object
-
-**Example:**
-```cpp
-auto& content = request.getContent();
-std::cout << "Content-Type: " << content->type << "\n";
-std::cout << "Body: " << content->body << "\n";
-```
-
----
-
-### `getContentBody()`
-
-**Signature:**
-```cpp
-auto& getContentBody() const;
-```
-
-**Description:**
-Retrieves the request body as a string.
-
-**Returns:**
-- Const reference to body string
-
-**Example:**
-```cpp
-auto& body = request.getContentBody();
-std::cout << "Body: " << body << "\n";
-```
-
----
-
-### `encode()`
-
-**Signature:**
-```cpp
-[[nodiscard]] std::string encode() const override;
-```
-
-**Description:**
-Encodes the request to an HTTP-formatted byte stream.
-
-**Returns:**
-- String containing the complete HTTP request (start line, headers, body)
-
-**Example:**
-```cpp
-auto encoded = request.encode();
-std::cout << encoded << "\n";
-```
-
----
-
-## REST Response API
-
-**Source:** [`include/siddiqsoft/private/rest_response.hpp`](include/siddiqsoft/private/rest_response.hpp)
-
-### `statusCode()`
-
-**Signature:**
-```cpp
-auto statusCode() const;
-```
-
-**Description:**
-Retrieves the HTTP status code from the response.
-
-**Returns:**
-- Unsigned integer (e.g., 200, 404, 500)
-
-**Example:**
-```cpp
-auto status = response->statusCode();
-if (status == 200) {
-    std::cout << "Success!\n";
-}
-```
-
----
-
-### `reasonCode()`
-
-**Signature:**
-```cpp
-auto reasonCode() const;
-```
-
-**Description:**
-Retrieves the HTTP reason phrase from the response.
-
-**Returns:**
-- String (e.g., "OK", "Not Found", "Internal Server Error")
-
-**Example:**
-```cpp
-std::cout << "Status: " << response->statusCode() << " " 
-          << response->reasonCode() << "\n";
-```
-
----
-
-### `status()`
-
-**Signature:**
-```cpp
-auto status() const;
-```
-
-**Description:**
-Retrieves both status code and reason phrase as a pair.
-
-**Returns:**
-- `std::pair<unsigned, std::string>` with status code and reason phrase
-
-**Example:**
-```cpp
-auto [code, reason] = response->status();
-std::cout << code << ": " << reason << "\n";
-```
-
----
-
-### `success()`
-
-**Signature:**
 ```cpp
 bool success() const;
-```
-
-**Description:**
-Checks if the response indicates success (status code between 100 and 399).
-
-**Returns:**
-- `true` if status code is in range [100, 399], `false` otherwise
-
-**Example:**
-```cpp
-if (response->success()) {
-    std::cout << "Request succeeded!\n";
-}
-```
-
----
-
-### `setStatus()`
-
-**Signature:**
-```cpp
+auto statusCode() const;
+auto reasonCode() const;
+auto status() const; // std::pair<unsigned, std::string>
 rest_response<>& setStatus(const int code, const std::string& message);
 ```
 
-**Description:**
-Sets the HTTP status code and reason phrase.
+`success()` is true for status codes in the range `100..399`.
 
-**Parameters:**
-- `code`: HTTP status code
-- `message`: Reason phrase
-
-**Returns:**
-- Reference to self for method chaining
-
-**Example:**
-```cpp
-response.setStatus(200, "OK");
-```
-
----
-
-### `getHeaders()`, `setHeader()`, `setHeaders()`
-
-Same as `rest_request` - see [REST Request API](#rest-request-api) section above.
-
----
-
-### `getContent()`, `setContent()`, `getContentBody()`
-
-Same as `rest_request` - see [REST Request API](#rest-request-api) section above.
-
----
-
-### `parse()`
-
-**Signature:**
-```cpp
-[[nodiscard]] static auto parse(std::string& srcBuffer) -> rest_response<char>;
-```
-
-**Description:**
-Parses an HTTP response from a raw byte string.
-
-**Parameters:**
-- `srcBuffer`: String containing the raw HTTP response (modified in-place)
-
-**Returns:**
-- Parsed `rest_response<char>` object
-
-**Throws:**
-- `std::invalid_argument` if the response format is invalid
-
-**Example:**
-```cpp
-std::string raw_response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{...}";
-auto response = rest_response<>::parse(raw_response);
-```
-
----
-
-### `encode()`
-
-**Signature:**
-```cpp
-[[nodiscard]] std::string encode() const override;
-```
-
-**Description:**
-Encodes the response to an HTTP-formatted byte stream.
-
-**Returns:**
-- String containing the complete HTTP response
-
-**Example:**
-```cpp
-auto encoded = response->encode();
-std::cout << encoded << "\n";
-```
-
----
-
-## HTTP Frame Base Class
-
-**Source:** [`include/siddiqsoft/private/http_frame.hpp`](include/siddiqsoft/private/http_frame.hpp)
-
-The `http_frame<CharT>` class provides common functionality for both requests and responses:
-
-- `setProtocol()` / `getProtocol()`: HTTP protocol version (HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3)
-- `setMethod()` / `getMethod()`: HTTP method
-- `setUri()` / `getUri()`: Request URI
-- `setHeader()` / `setHeaders()` / `getHeaders()`: Header management
-- `setContent()` / `getContent()` / `getContentBody()`: Content management
-- `encodeHeaders()`: Encode headers to HTTP format
-- `getHost()`: Get the Host header value
-
----
-
-## Platform-Specific Implementation
-
-### Unix/Linux/macOS Implementation
-
-**Source:** [`include/siddiqsoft/private/restcl_unix.hpp`](include/siddiqsoft/private/restcl_unix.hpp)
-
-#### `HttpRESTClient` Class
-
-The Unix/Linux/macOS implementation uses libcurl for HTTP operations.
-
-**Public Methods:**
-
-- `configure(const nlohmann::json& cfg = {}, basic_callbacktype&& func = {}) -> basic_restclient&`
-  - Configures the client with timeout, SSL verification, and other options
-  - Registers global callback for async operations
-
-- `send(rest_request<>& req) -> std::expected<rest_response<>, int>`
-  - Performs synchronous HTTP request using libcurl
-  - Returns response or POSIX error code
-
-- `sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}) -> basic_restclient&`
-  - Performs asynchronous HTTP request
-  - Invokes callback when response is received
-
-- `static CreateInstance(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {}) -> std::shared_ptr<HttpRESTClient>`
-  - Factory method to create new client instance
-
-**Configuration Options:**
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `userAgent` | string | "siddiqsoft.restcl/2" | User-Agent header |
-| `trace` | boolean | false | Enable verbose libcurl output |
-| `connectTimeout` | integer | 0 | Connection timeout (ms) |
-| `timeout` | integer | 0 | Overall timeout (ms) |
-| `verifyPeer` | integer | 1 | SSL peer verification (1=on, 0=off) |
-| `freshConnect` | boolean | false | Force new connections |
-
-**Example:**
+### parse
 
 ```cpp
-auto client = siddiqsoft::HttpRESTClient::CreateInstance({
-    {"userAgent", "MyApp/1.0"},
-    {"connectTimeout", 3000},
-    {"timeout", 5000},
-    {"verifyPeer", 1}
-});
-
-auto request = "https://api.example.com/users"_GET;
-auto response = client->send(request);
+[[nodiscard]] static auto parse(std::string& srcBuffer)
+    -> siddiqsoft::rest_response<char>;
 ```
 
-#### `LibCurlSingleton` Class
+Parses start line, headers, and body from a raw HTTP response buffer.
 
-Manages global libcurl initialization and connection pooling.
-
-**Public Methods:**
-
-- `static GetInstance() -> std::shared_ptr<LibCurlSingleton>`
-  - Returns singleton instance
-  - Initializes libcurl on first call (thread-safe)
-  - Throws `std::runtime_error` if initialization fails
-
-- `getEasyHandle() -> CurlContextBundlePtr`
-  - Returns a pooled or new libcurl handle
-  - Automatically configures debug callbacks
-  - Handle is returned to pool on destruction
-
-#### `CurlContextBundle` Class
-
-Manages a libcurl handle with automatic resource cleanup.
-
-**Public Methods:**
-
-- `curlHandle() -> CURL*`
-  - Returns the underlying libcurl handle
-
-- `contents() -> std::shared_ptr<ContentType>`
-  - Returns the content object for request/response data
-
-- `abandon()`
-  - Releases the handle without returning to pool
-  - Used for failed operations to prevent reuse
-
-#### `rest_result_error` Struct
-
-Encapsulates libcurl error codes from various APIs.
-
-**Supported Error Types:**
-- `CURLcode`: Easy interface errors
-- `CURLMcode`: Multi interface errors
-- `CURLHcode`: Header API errors
-- `CURLSHcode`: Share interface errors
-- `CURLUcode`: URL API errors
-- `uint32_t`: POSIX error codes
-
-**Public Methods:**
-
-- `to_string() -> std::string`
-  - Returns human-readable error message
-
-- `operator std::string()`
-  - Implicit conversion to string
-
-**Example:**
+### encode
 
 ```cpp
-rest_result_error err(CURLE_COULDNT_RESOLVE_HOST);
-std::string msg = err.to_string();  // "Couldn't resolve host name"
+std::string encode() const override;
 ```
 
-#### Atomic Counters
+Encodes the response as HTTP wire format.
 
-The client tracks various operations for monitoring:
+## Shared HTTP Frame API
 
-- `ioAttempt`: Total I/O attempts
-- `ioAttemptFailed`: Failed I/O attempts
-- `ioConnect`: Successful connections
-- `ioConnectFailed`: Failed connections
-- `ioSend`: Successful sends
-- `ioSendFailed`: Failed sends
-- `ioReadAttempt`: Read attempts
-- `ioRead`: Successful reads
-- `ioReadFailed`: Failed reads
-- `callbackAttempt`: Callback invocations
-- `callbackFailed`: Failed callbacks
-- `callbackCompleted`: Completed callbacks
+**Source:** `include/siddiqsoft/private/http_frame.hpp`
 
----
+Base class:
+
+```cpp
+template <typename CharT = char>
+class http_frame
+```
+
+`rest_request` and `rest_response` inherit these APIs.
+
+### Protocol
+
+```cpp
+auto& setProtocol(const HttpProtocolVersionType&);
+auto& setProtocol(const std::string&);
+auto getProtocol();
+```
+
+### Method
+
+```cpp
+auto& setMethod(const HttpMethodType&);
+auto& setMethod(const std::string&);
+[[nodiscard]] HttpMethodType getMethod() const;
+```
+
+### URI
+
+```cpp
+auto& setUri(const Uri<char, AuthorityHttp<char>>&);
+auto& getUri() const;
+auto getHost() const;
+```
+
+Note: setting URI also updates the `Host` header as `host:port`.
+
+### Headers
+
+```cpp
+auto& setHeaders(const nlohmann::json&);
+auto& setHeader(const std::string& key, const std::string& value);
+auto& getHeader(const std::string& key) const;
+nlohmann::json& getHeaders();
+[[nodiscard]] std::string encodeHeaders() const;
+```
+
+Header removal behavior: passing an empty value to `setHeader` erases that header.
+
+### Content
+
+```cpp
+auto& setContent(const std::string& ctype, const std::string& c);
+auto& setContent(const std::string& src);
+auto& setContent(std::shared_ptr<ContentType> src);
+auto& setContent(const nlohmann::json& c);
+
+auto& getContent() const;
+auto& getContentBody() const;
+[[nodiscard]] auto getContentBodyJSON() const -> nlohmann::json;
+[[nodiscard]] auto encodeContent() const;
+```
+
+Behavior details:
+
+- `setContent(const nlohmann::json&)` applies only for non-empty JSON objects.
+- `setContent(const std::string&)` uses current `Content-Type` header if present, otherwise defaults content type metadata to `application/text`.
+- `getContentBodyJSON()` returns parsed JSON when content type contains `json`; otherwise returns `nullptr` JSON.
+
+## Platform Implementations
+
+### Unix and macOS
+
+**Sources:**
+
+- `include/siddiqsoft/private/restcl_unix.hpp`
+- `include/siddiqsoft/private/libcurl_singleton.hpp`
+
+Client class:
+
+```cpp
+class HttpRESTClient : public basic_restclient<char>
+```
+
+Factory:
+
+```cpp
+[[nodiscard]] static auto CreateInstance(
+    const nlohmann::json& cfg = {},
+    basic_callbacktype&& cb = {}
+);
+```
+
+Implementation notes:
+
+- Uses `LibCurlSingleton` for libcurl lifecycle and handle pooling.
+- Supports sync and async operations.
+- Async callback dispatch is guarded by a mutex to safely access the configured callback.
+
+Additional Unix type:
+
+```cpp
+struct rest_result_error
+```
+
+Wraps several libcurl and POSIX error families and provides `to_string()`.
+
+### Windows
+
+**Source:** `include/siddiqsoft/private/restcl_win.hpp`
+
+Client class:
+
+```cpp
+class WinHttpRESTClient : public basic_restclient<char>
+```
+
+Factory:
+
+```cpp
+[[nodiscard]] static auto CreateInstance(
+    const nlohmann::json& cfg = {},
+    basic_callbacktype&& cb = {}
+) -> std::shared_ptr<WinHttpRESTClient>;
+```
+
+Implementation notes:
+
+- Uses WinHTTP session APIs for request execution.
+- Enables HTTP/2 and decompression during configuration when possible.
+- Supports sync and async operations with callback dispatch through a work pool.
+
+Additional Windows type:
+
+```cpp
+struct rest_result_error
+```
+
+Wraps WinInet/WinHTTP-style error codes and exposes `to_string()`.
 
 ## Error Handling
 
-All IO operations return `std::expected<T, E>` for error handling:
+Synchronous send returns:
 
 ```cpp
-auto response = client->send(request);
+std::expected<rest_response<>, int>
+```
 
-if (response) {
-    // Success - response contains the result
-    std::cout << "Status: " << response->statusCode() << "\n";
+Usage pattern:
+
+```cpp
+auto req  = "https://api.example.com/users"_GET;
+auto resp = client->send(req);
+
+if (resp) {
+    std::cout << resp->statusCode() << "\n";
 } else {
-    // Error - response.error() contains the error code
-    int error_code = response.error();
-    std::cerr << "Error: " << error_code << "\n";
+    std::cerr << "error=" << resp.error() << "\n";
 }
 ```
 
-**Error Codes:**
-- **Windows**: WinHTTP error codes (12001-12175)
-- **Unix/Linux**: POSIX error codes (ECONNRESET, EBUSY, ENETUNREACH, etc.)
+Async send does not return a response directly. Handle both success and failure in the callback.

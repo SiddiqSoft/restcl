@@ -586,7 +586,7 @@ namespace siddiqsoft
         // Test async operation with global callback
         std::atomic_bool callbackInvoked = false;
 
-        auto client                      = GetRESTClient({}, [&](const auto& req, auto resp) {
+        auto client                      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}}, [&](const auto& req, auto resp) {
             callbackInvoked = true;
             callbackInvoked.notify_all();
         });
@@ -605,7 +605,7 @@ namespace siddiqsoft
         std::atomic_bool globalCallbackInvoked  = false;
         std::atomic_bool requestCallbackInvoked = false;
 
-        auto client = GetRESTClient({}, [&](const auto& req, auto resp) { globalCallbackInvoked = true; });
+        auto client = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}}, [&](const auto& req, auto resp) { globalCallbackInvoked = true; });
 
         auto req    = "https://httpbin.org/get"_GET;
         client->sendAsync(std::move(req), [&](const auto& req, auto resp) {

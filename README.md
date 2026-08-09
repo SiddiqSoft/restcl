@@ -52,7 +52,7 @@ int main() {
     
     if (response) {
         std::cout << "Status: " << response->statusCode() << "\n";
-        std::cout << "Body: " << response->body() << "\n";
+        std::cout << "Body: " << response->getContentBody() << "\n";
     } else {
         std::cerr << "Error: " << response.error() << "\n";
     }
@@ -80,13 +80,12 @@ int main() {
         {"email", "john@example.com"}
     };
     
-    request.setBody(payload.dump());
-    request.setHeader("Content-Type", "application/json");
+    request.setContent(payload);
     
     auto response = client->send(request);
     
     if (response) {
-        auto result = json::parse(response->body());
+        auto result = response->getContentBodyJSON();
         std::cout << "Created user: " << result["id"] << "\n";
     }
     
@@ -99,6 +98,7 @@ int main() {
 ```cpp
 #include <siddiqsoft/restcl.hpp>
 #include <atomic>
+#include <thread>
 
 using namespace siddiqsoft::restcl_literals;
 
@@ -108,7 +108,7 @@ int main() {
     
     auto request = "https://api.example.com/data"_GET;
     
-    client->sendAsync(request, [&done](const auto& req, auto response) {
+    client->sendAsync(std::move(request), [&done](auto& req, auto response) {
         if (response) {
             std::cout << "Async response: " << response->statusCode() << "\n";
         } else {
@@ -200,6 +200,10 @@ auto client = siddiqsoft::GetRESTClient({
     {"userAgent", "MyApp/1.0"},    // Custom user agent
     {"trace", false}               // Enable/disable tracing
 });
+
+// Unix/macOS only options:
+// {"verifyPeer", 1}    // set 0 to disable SSL peer verification
+// {"freshConnect", true}
 ```
 
 ### Error Handling
@@ -229,7 +233,7 @@ using json = nlohmann::json;
 // Parse response as JSON
 auto response = client->send(request);
 if (response && response->statusCode() == 200) {
-    auto data = json::parse(response->body());
+    auto data = response->getContentBodyJSON();
     
     // Access JSON data
     std::string name = data["name"];
@@ -269,7 +273,6 @@ restcl/
 ├── CMakePresets.json                 # CMake presets for builds
 ├── .clang-format                     # Code formatting rules
 ├── .clang-tidy                       # Static analysis configuration
-├── best_practices.md                 # Comprehensive development guidelines
 └── azure-pipelines.yml               # CI/CD pipeline
 ```
 
@@ -298,11 +301,14 @@ Extends `http_frame` with response parsing, status codes, and reason phrases.
 | Dependency | Version | Purpose |
 |-----------|---------|---------|
 | nlohmann/json | v3.12.0 | JSON parsing and serialization |
-| SplitUri | v3.0.0 | URI parsing and manipulation |
-| AzureCppUtils | v3.2.5 | Azure-specific utilities |
-| string2map | v2.5.0 | String-to-map conversion utilities |
-| RunOnEnd | v1.4.2 | RAII-based cleanup utilities |
-| asynchrony | v2.1.1 | Asynchronous operation helpers |
+| SplitUri | v3.0.3 | URI parsing and manipulation |
+| AzureCppUtils | v3.2.9 | Azure-specific utilities |
+| string2map | v2.6.1 | String-to-map conversion utilities |
+| RunOnEnd | v1.4.5 | RAII-based cleanup utilities |
+| RWLEnvelope | v1.5.2 | Thread-safe read/write locking envelope |
+| asynchrony | v2.3.1 | Asynchronous operation helpers |
+| arrp | pinned commit `3601cd82...` | Resource pool and guard utilities |
+| ctre | v3.11.0 | Compile-time regular expressions |
 | acw32h | v2.7.4 | Windows-specific C++ wrapper for WinHTTP (Windows only) |
 | CURL | v8.7+ | libcurl for Unix/Linux/macOS |
 
@@ -321,7 +327,7 @@ Extends `http_frame` with response parsing, status codes, and reason phrases.
 - **C++23 Standard**: Required
 - **Visual Studio 2022**: For Windows builds (MSVC)
 - **Clang 18+** or **GCC 13+**: For Unix/Linux builds
-- **Clang on macOS**: With `-fexperimental-library` flag for `std::stop_token` and `std::jthread`
+- **macOS**: Default Apple toolchain or Homebrew LLVM via provided CMake presets
 
 ## Building
 
@@ -341,19 +347,26 @@ Extends `http_frame` with response parsing, status codes, and reason phrases.
 git clone https://github.com/SiddiqSoft/restcl.git
 cd restcl
 
-# Configure with CMake
-cmake --preset default -DRESTCL_BUILD_TESTS=ON
+# List available presets
+cmake --list-presets
+
+# Configure with one of the shipped presets (examples)
+# macOS: Darwin or Darwin-LLVM
+# Linux: Linux-GCC or Linux-Clang
+# Windows: Windows-x64 or Windows-arm64
+cmake --preset Darwin
 
 # Build the project
-cmake --build --preset default
+cmake --build --preset Darwin
 
 # Run tests (optional)
-ctest --preset default
+ctest --preset Darwin
 ```
 
 ### CMake Options
 
-- `RESTCL_BUILD_TESTS`: Enable/disable test suite (default: OFF)
+- `restcl_BUILD_TESTS`: Enable/disable test suite (declared default: OFF)
+- `project-base.json`: Repository presets set `restcl_BUILD_TESTS=ON` by default
 - `CMAKE_BUILD_TYPE`: Debug or Release (default: Release)
 
 ## Testing
@@ -373,14 +386,14 @@ The library includes a comprehensive test suite covering:
 
 ```bash
 # Build with tests enabled
-cmake --preset default -DRESTCL_BUILD_TESTS=ON
-cmake --build --preset default
+cmake --preset Darwin -Drestcl_BUILD_TESTS=ON
+cmake --build --preset Darwin
 
 # Run all tests
-ctest --preset default
+ctest --preset Darwin
 
-# Run specific test
-ctest --preset default -R test_restcl
+# Run a subset of tests by regex
+ctest --preset Darwin -R restcl
 ```
 
 ### Test Coverage
@@ -391,7 +404,7 @@ ctest --preset default -R test_restcl
 
 ## Best Practices
 
-For comprehensive guidance on code style, testing strategies, common patterns, and best practices when working with or extending this library, see [best_practices.md](best_practices.md).
+For comprehensive usage details, signatures, and behavior notes, see [docs/API.md](docs/API.md).
 
 ### Key Principles
 

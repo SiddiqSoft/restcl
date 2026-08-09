@@ -7,6 +7,7 @@
             "description": "Base preset for all project configurations.",
             "cacheVariables": {
                 "restcl_BUILD_TESTS": "ON",
+                "CMAKE_CXX_STANDARD": "23",
                 "CI_BUILDID": "0.0.0"
             },
             "hidden": true

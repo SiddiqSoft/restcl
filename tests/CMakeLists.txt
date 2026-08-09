@@ -3,7 +3,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
 
     add_executable(${TESTPROJ})
 
-    target_compile_features(${TESTPROJ} PRIVATE cxx_std_23)
+    target_compile_features(${TESTPROJ} PRIVATE cxx_std_${CMAKE_CXX_STANDARD})
     target_compile_options( ${TESTPROJ}
                             PRIVATE
                             $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest> )
@@ -51,6 +51,8 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     target_compile_options(${TESTPROJ} PRIVATE  ${DEBUG_COMPILE_FLAGS}  ${COVERAGE_FLAGS} ${OPTIMIZE_FLAGS} ${OTHER_FLAGS} ${ASAN_FLAGS} ${LSAN_FLAGS} ${UBSAN_FLAGS})
     target_link_options(${TESTPROJ} PRIVATE ${DEBUG_LINK_FLAGS}  ${COVERAGE_FLAGS} ${OPTIMIZE_FLAGS} ${OTHER_FLAGS} ${ASAN_FLAGS} ${LSAN_FLAGS} ${UBSAN_FLAGS})
 
+    target_compile_definitions(${TESTPROJ} PRIVATE RESTCL_ENABLE_TEST_HOOKS=1)
+
     if( CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
         message(STATUS "  >> Setting DEBUG macro..")
         target_compile_definitions(${TESTPROJ} PRIVATE DEBUG=1 _DEBUG=1)
@@ -78,8 +80,10 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
             $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
             RunOnEnd::RunOnEnd
             SplitUri::SplitUri
+            arrp::arrp
             string2map::string2map
             asynchrony::asynchrony
+            RWLEnvelope::RWLEnvelope
             AzureCppUtils::AzureCppUtils
             StringHelpers::StringHelpers)
 
