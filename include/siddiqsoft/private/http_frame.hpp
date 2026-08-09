@@ -474,7 +474,11 @@ namespace siddiqsoft
 
         /// @brief Get all headers as JSON object
         /// @return Reference to the headers JSON object
-        nlohmann::json& getHeaders() { return headers; }
+        [[nodiscard]] const nlohmann::json& getHeaders() const { return headers; }
+
+        /// @brief Get all headers as JSON object
+        /// @return Reference to the headers JSON object
+        [[nodiscard]] nlohmann::json& getHeaders() { return headers; }
 
     protected:
         /// @brief Encode headers to HTTP format and append to string
