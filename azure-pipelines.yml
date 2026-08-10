@@ -72,7 +72,7 @@ parameters:
 
   - name: Compilers_Linux
     type: stringList
-    default: [ Clang ]
+    default: [ GCC, Clang ]
     values: [ Clang, GCC ]
     displayName: "Linux compilers to build (Clang, GCC)"
 
