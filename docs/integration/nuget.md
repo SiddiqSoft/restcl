@@ -2,6 +2,12 @@
 
 For Visual Studio C++ projects on Windows, `restcl` is published on [nuget.org](https://www.nuget.org/packages/SiddiqSoft.restcl/).
 
+> **WARNING**
+>
+> Not all dependencies of this package (notable, [CTRE](https://github.com/hanickadot/compile-time-regular-expressions)) have nuget packages.
+> 
+> We provide the restcl as a nuget to get started but we cannot provide a nuget for ctre-- Please consider using cmake/cpm integration!
+
 ---
 
 ## Installation

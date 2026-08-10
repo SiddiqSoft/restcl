@@ -20,6 +20,10 @@ Choose your preferred integration method:
     [View CMake Integration Guide :octicons-arrow-right-24:](cmake.md)
 
 === "NuGet Package"
+    
+    > **DEPRECATED!**
+    >
+    > Not all dependencies used by this project have nuget packages anymore!
 
     Ideal for Visual Studio C++ projects on Windows.
 
