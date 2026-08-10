@@ -1,7 +1,6 @@
 # restcl: A Focused REST Client for Modern C++
 
 <div class="badge-container">
-  <a href="https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml"><img src="https://github.com/SiddiqSoft/restcl/actions/workflows/codeql-analysis.yml/badge.svg" alt="CodeQL"></a>
   <a href="https://dev.azure.com/siddiqsoft/siddiqsoft/_build/latest?definitionId=13&branchName=main"><img src="https://dev.azure.com/siddiqsoft/siddiqsoft/_apis/build/status/SiddiqSoft.restcl?branchName=main" alt="Build Status"></a>
   <a href="https://www.nuget.org/packages/SiddiqSoft.restcl"><img src="https://img.shields.io/nuget/v/SiddiqSoft.restcl" alt="NuGet Version"></a>
   <a href="https://github.com/SiddiqSoft/restcl/tags"><img src="https://img.shields.io/github/v/tag/SiddiqSoft/restcl" alt="GitHub Tag"></a>
