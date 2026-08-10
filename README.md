@@ -130,6 +130,12 @@ int main() {
 
 ### Via NuGet (Windows)
 
+> **WARNING**
+>
+> This package has dependencies that are not satisfied via nuget alone.
+>
+> You're required to obtain the missing package via cmake/cpm-cmake!
+
 ```bash
 nuget install SiddiqSoft.restcl
 ```
