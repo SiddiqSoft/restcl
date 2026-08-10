@@ -1,6 +1,6 @@
 # User-Defined Literals
 
-`restcl` introduces C++20 user-defined literal operators in the `siddiqsoft::restcl_literals` (or `siddiqsoft::literals`) namespace. These literals allow you to construct fully parsed `rest_request` objects directly from string literals.
+`restcl` introduces C++23 user-defined literal operators in the `siddiqsoft::restcl_literals` (or `siddiqsoft::literals`) namespace. These literals allow you to construct fully parsed `rest_request` objects directly from string literals.
 
 ---
 
@@ -36,7 +36,7 @@ void example()
     getReq.headers["User-Agent"] = "restcl-docs-example";
 
     // Create a POST request with query parameters in the URL
-    auto postReq = "https://httpbin.org/post?source=cpp20"_POST;
+    auto postReq = "https://httpbin.org/post?source=cpp23"_POST;
     postReq.setContent({{"message", "Hello from restcl!"}});
 }
 ```

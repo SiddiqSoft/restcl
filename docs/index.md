@@ -7,14 +7,14 @@
   <a href="https://github.com/SiddiqSoft/restcl/tags"><img src="https://img.shields.io/github/v/tag/SiddiqSoft/restcl" alt="GitHub Tag"></a>
 </div>
 
-**`restcl`** is a header-only Modern C++20 REST client library designed with `nlohmann::json` as a first-class API metaphor for interacting with RESTful servers.
+**`restcl`** is a header-only Modern C++23 REST client library designed with `nlohmann::json` as a first-class API metaphor for interacting with RESTful servers.
 
 ---
 
 ## Design Objectives
 
 * **JSON as First-Class Metaphor**: Standard JSON objects represent requests, headers, and payloads for an intuitive, JavaScript-like API.
-* **Modern C++20**: Requires C++20 with support for concepts, user-defined literals, and `std::format`.
+* **Modern C++23**: Requires C++23 with support for concepts, user-defined literals, and `std::format`.
 * **Cross-Platform & Native IO**:
     * **Windows**: Uses native `WinHTTP` library (`WinHttpRESTClient`).
     * **Linux / macOS**: Uses `libcurl` (`HttpRESTClient`).
@@ -116,7 +116,7 @@
 
 | Requirement | Details |
 | :--- | :--- |
-| **Language Standard** | C++20 or higher (`/std:c++latest` on MSVC, `-std=c++20` on Clang/GCC) |
+| **Language Standard** | C++23 or higher (`/std:c++latest` on MSVC, `-std=C++23` on Clang/GCC) |
 | **Dependencies** | [`nlohmann/json`](https://github.com/nlohmann/json), [`SplitUri`](https://github.com/SiddiqSoft/SplitUri), [`azure-cpp-utils`](https://github.com/SiddiqSoft/azure-cpp-utils) |
 | **Platform Support** | Windows (MSVC 2019+), Linux (GCC 11+, Clang 13+), macOS (Apple Clang 13+) |
 

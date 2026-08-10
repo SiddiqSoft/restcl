@@ -25,7 +25,7 @@ Install-Package SiddiqSoft.restcl
 ## Visual Studio Project Setup
 
 1. Open project properties (**Project -> Properties**).
-2. Set **C++ Language Standard** to **Preview - Features from the Latest C++ Working Draft (/std:c++latest)** or **ISO C++20 Standard (/std:c++20)**.
+2. Set **C++ Language Standard** to **Preview - Features from the Latest C++ Working Draft (/std:c++latest)** or **ISO C++23 Standard (/std:C++23)**.
 3. Make sure `nlohmann.json` and required dependencies are restored automatically by NuGet.
 
 ```cpp

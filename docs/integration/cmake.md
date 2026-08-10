@@ -49,7 +49,7 @@ target_link_libraries(MyRestApp PRIVATE siddiqsoft::restcl)
 
 ## Compiler Flags
 
-Ensure C++20 standard support is enabled:
+Ensure C++23 standard support is enabled:
 
 === "MSVC (Windows)"
     ```cmake
@@ -58,5 +58,5 @@ Ensure C++20 standard support is enabled:
 
 === "Clang / GCC (Linux/macOS)"
     ```cmake
-    target_compile_options(MyRestApp PRIVATE -std=c++20)
+    target_compile_options(MyRestApp PRIVATE -std=C++23)
     ```

@@ -72,4 +72,4 @@ if (resp && resp->success()) {
 ```
 
 !!! success "Simplicity First"
-    By using `nlohmann::json`, request construction feels like JavaScript / TypeScript `fetch()` while retaining full C++20 type safety and performance.
+    By using `nlohmann::json`, request construction feels like JavaScript / TypeScript `fetch()` while retaining full C++23 type safety and performance.
