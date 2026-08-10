@@ -51,7 +51,7 @@
         // 2. POST request with custom header and JSON body
         auto req = "https://httpbin.org/post"_POST;
         req.headers["X-Custom-Header"] = "my-header-value";
-        req.setContent({ {"name", "Modern C++"}, {"version", 20} });
+        req.setContent({ {"name", "Modern C++"}, {"version", 23} });
 
         // Synchronous send
         auto postResponse = client->send(req);

@@ -16,7 +16,7 @@
    cmake_minimum_required(VERSION 3.20)
    project(MyRestApp LANGUAGES CXX)
 
-   set(CMAKE_CXX_STANDARD 20)
+   set(CMAKE_CXX_STANDARD 23)
    set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
    # Include restcl
@@ -43,6 +43,22 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(restcl)
 
 target_link_libraries(MyRestApp PRIVATE siddiqsoft::restcl)
+```
+
+or use the [cpm-cmake](https://github.com/cpm-cmake/cpm.cmake):
+
+```cmake
+# download CPM.cmake..
+file(DOWNLOAD https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.42.3/CPM.cmake ${CMAKE_CURRENT_SOURCE_DIR}/pack/CPM.cmake)
+# import the helper into our process..
+include(pack/CPM.cmake)
+
+..
+..
+
+CPMAddPackage("gh:SiddiqSoft/restcl#2.3.8")
+target_link_libraries(${PROJECT_NAME} INTERFACE restcl::restcl)
+
 ```
 
 ---
