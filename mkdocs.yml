@@ -6,9 +6,18 @@ repo_url: https://github.com/SiddiqSoft/restcl
 repo_name: SiddiqSoft/restcl
 edit_uri: edit/main/docs/
 
+hooks:
+  - docs/hooks.py
+
+extra:
+  version: "0.0.0-dev"
+
+
 theme:
   name: material
   language: en
+  logo: assets/Siddiq-Software-Avatar.png
+  favicon: assets/Siddiq-Software-Avatar.png
   palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"

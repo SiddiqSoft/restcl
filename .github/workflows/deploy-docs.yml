@@ -30,6 +30,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3
+        with:
+          versionSpec: '6.x'
+
+      - name: Determine Version
+        uses: gittools/actions/gitversion/execute@v3
+        id: gitversion
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -44,6 +55,8 @@ jobs:
       - name: Build site with MkDocs
         run: |
           mkdocs build --strict
+        env:
+          GITVERSION_SEMVER: ${{ steps.gitversion.outputs.semVer }}
 
       - name: Upload Pages Artifact
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
