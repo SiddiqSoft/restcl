@@ -144,25 +144,26 @@ namespace siddiqsoft
 
         std::println(std::cerr, "{} - Configuring the REST client for GET google.com\n", __func__);
         std::println(std::cerr, "{} - Sending GET request to google.com\n", __func__);
-        wrc->sendAsync("https://www.google.com/"_GET, [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
-            if (resp && resp->success()) {
-                passTest = true;
-                std::print(std::cerr,
-                           "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
-                           __func__,
-                           nlohmann::json(*resp).dump(3));
-            }
-            else if (resp.has_value()) {
-                auto [ec, emsg] = resp->status();
-                passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
-                std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
-            }
-            else {
-                std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
-            }
-            done = true;
-            done.notify_all();
-        });
+        wrc->sendAsync("https://www.google.com/"_GET,
+                       [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+                           if (resp && resp->success()) {
+                               passTest = true;
+                               std::print(std::cerr,
+                                          "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
+                                          __func__,
+                                          nlohmann::json(*resp).dump(3));
+                           }
+                           else if (resp.has_value()) {
+                               auto [ec, emsg] = resp->status();
+                               passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
+                               std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                           }
+                           else {
+                               std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
+                           }
+                           done = true;
+                           done.notify_all();
+                       });
 
         done.wait(false);
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -173,27 +174,28 @@ namespace siddiqsoft
     {
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
-        restcl           wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+        auto             wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         wrc->configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
-                .sendAsync("https://duckduckgo.com"_GET, [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
-                    if (resp && resp->success()) {
-                        passTest = true;
-                        // nlohmann::json doc(*resp);
-                        // std::cerr << "Response\n" << doc.dump(3) << std::endl;
-                    }
-                    else if (resp.has_value()) {
-                        auto [ec, emsg] = resp->status();
-                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
-                        std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
-                    }
-                    else {
-                        passTest = true;
-                        std::print(std::cerr, "{}: failed: du{}\n", __func__, resp.error());
-                    }
-                    done = true;
-                    done.notify_all();
-                });
+                .sendAsync("https://duckduckgo.com"_GET,
+                           [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+                               if (resp && resp->success()) {
+                                   passTest = true;
+                                   // nlohmann::json doc(*resp);
+                                   // std::cerr << "Response\n" << doc.dump(3) << std::endl;
+                               }
+                               else if (resp.has_value()) {
+                                   auto [ec, emsg] = resp->status();
+                                   passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
+                                   std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                               }
+                               else {
+                                   passTest = true;
+                                   std::print(std::cerr, "{}: failed: du{}\n", __func__, resp.error());
+                               }
+                               done = true;
+                               done.notify_all();
+                           });
 
         done.wait(false);
         EXPECT_TRUE(passTest.load());
@@ -203,12 +205,12 @@ namespace siddiqsoft
     {
         std::atomic_bool done     = false;
         std::atomic_int  passTest = 0;
-        restcl wrc = GetRESTClient({{"connectTimeout", 3000},
-                                    {"timeout", 5000},
-                                    {"trace", false},
-                                    {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
-                                    {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
-        auto   postRequest = "https://httpbin.org/post"_POST;
+        auto wrc = GetRESTClient({{"connectTimeout", 3000},
+                                  {"timeout", 5000},
+                                  {"trace", false},
+                                  {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)},
+                                  {"headers", {{"Accept", CONTENT_APPLICATION_JSON}}}});
+        auto postRequest = "https://httpbin.org/post"_POST;
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
@@ -248,8 +250,8 @@ namespace siddiqsoft
         std::atomic_uint passTest   = 0;
 
         try {
-            siddiqsoft::restcl wrc = GetRESTClient();
-            nlohmann::json     myStats {{"Test", "drift-check"}};
+            auto           wrc = GetRESTClient();
+            nlohmann::json myStats {{"Test", "drift-check"}};
 
             auto req = "https://time.akamai.com/?iso"_GET;
             if (auto resp = wrc->send(req); resp->success()) {
@@ -370,8 +372,8 @@ namespace siddiqsoft
 
     TEST_F(Validation, should_throw_for_invalid_start_line)
     {
-        bool                 thrown = false;
-        std::string          source = "HTTP/1.1 twohundred OK\r\n";
+        bool        thrown = false;
+        std::string source = "HTTP/1.1 twohundred OK\r\n";
         {
             auto                 it = source.begin();
             TestableRestResponse resp;

@@ -107,7 +107,7 @@ namespace siddiqsoft
     {
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
-        restcl           wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+        auto             wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         auto optionsRequest       = "https://reqbin.com/echo/post/json"_OPTIONS;
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
@@ -142,7 +142,7 @@ namespace siddiqsoft
     {
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
-        restcl           wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+        auto             wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         auto optionsRequest       = "https://reqbin.com/echo/post/json"_POST;
         optionsRequest.setHeaders({{"From", __func__}}).setContent({{"Hello", "World"}, {"Anyone", "Home"}});
@@ -181,34 +181,33 @@ namespace siddiqsoft
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
 
-        restcl      wrc           = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+        auto        wrc           = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
         std::string responseContentType {};
 
         wrc->sendAsync(rest_request {HttpMethodType::METHOD_POST,
                                      "https://httpbin.org/post"_Uri,
                                      {{"Content-Type", "application/json"}},
-                                     std::format(R"({ "email": "jolly@email.com", "password": "123456", "date": "{:%FT%TZ}" })",
+                                     std::format(R"({{ "email": "jolly@email.com", "password": "123456", "date": "{:%FT%TZ}" }})",
                                                  std::chrono::system_clock::now())},
                        [&passTest, &done, &responseContentType](auto& req, std::expected<rest_response<>, int> resp) {
                            responseContentType = req.getHeaders().value("Content-Type", "");
                            if (resp.has_value() && resp->success()) {
                                passTest = true;
-                               std::cerr << "Response\n" << *resp << std::endl;
+                               std::println(std::cerr, "Response\n{}", *resp);
                            }
                            else if (resp.has_value()) {
                                passTest = true;
-                               std::cerr << "Got HTTP error: " << resp->statusCode() << std::endl;
+                               std::println(std::cerr, "Got HTTP error: {}", resp->statusCode());
                            }
                            else {
                                passTest = true;
-                               std::cerr << "Got IO error: " << resp.error() << std::endl;
+                               std::println(std::cerr, "Got IO error: {}", resp.error());
                            }
                            done = true;
                            done.notify_all();
                        });
 
         done.wait(false);
-        std::cerr << "Checking results..\n";
         EXPECT_EQ("application/json", responseContentType);
         EXPECT_TRUE(passTest.load());
     }
@@ -217,12 +216,10 @@ namespace siddiqsoft
     {
         using namespace siddiqsoft::splituri_literals;
 
-        // https://ptsv2.com/t/buzz2
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
-        // auto auth     = base64encode("aau:paau");
 
-        restcl wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+        auto wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         wrc->configure().sendAsync(
                 rest_request {HttpMethodType::METHOD_POST,
@@ -261,7 +258,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        restcl wrc = GetRESTClient();
+        auto wrc = GetRESTClient();
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
@@ -297,7 +294,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        restcl wrc = GetRESTClient();
+        auto wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         wrc->configure({
                                {"connectTimeout", 3000}, // timeout for the connect phase
@@ -337,7 +334,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        restcl wrc = GetRESTClient();
+        auto wrc = GetRESTClient();
 
         // The endpoint does not support OPTIONS verb. Moreover, it does not listen on port 9090 either.
         wrc->configure({{"connectTimeout", 3000}, {"timeout", 5000}});
@@ -371,7 +368,7 @@ namespace siddiqsoft
         std::atomic_bool passTest = false;
         using namespace siddiqsoft::splituri_literals;
 
-        restcl wrc = GetRESTClient();
+        auto wrc = GetRESTClient();
 
         wrc->configure({
                                {"connectTimeout", 3000}, // timeout for the connect phase
@@ -408,7 +405,7 @@ namespace siddiqsoft
     {
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
-        restcl           wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+        auto             wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         wrc->sendAsync("https://www.google.com/"_GET,
                        [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {

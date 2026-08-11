@@ -297,7 +297,7 @@ namespace siddiqsoft
         EXPECT_FALSE(SessionBinId.empty());
 
         EXPECT_NO_THROW({
-            restcl wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+            auto wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
             wrc->configure(
                     {{"connectTimeout", 3000},
@@ -310,7 +310,7 @@ namespace siddiqsoft
                                      __func__,
                                      passTest.load(),
                                      callbackCounter.load());
-                        
+
                         if (resp.has_value() && resp->success()) {
                             passTest += resp->statusCode() >= 200;
                         }
@@ -365,7 +365,7 @@ namespace siddiqsoft
         EXPECT_FALSE(SessionBinId.empty());
 
         EXPECT_NO_THROW({
-            restcl wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+            auto wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
             wrc->configure({{"connectTimeout", 3000},
                             {"timeout", 5000},
