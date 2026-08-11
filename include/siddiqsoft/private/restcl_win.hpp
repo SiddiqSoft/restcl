@@ -214,7 +214,7 @@ namespace siddiqsoft
 
 
     /// @brief Windows implementation of the basic_restclient
-    class WinHttpRESTClient : public basic_restclient<char>
+    class WinHttpRESTClient final : public basic_restclient<char>
     {
     protected:
         std::string  UserAgent {"siddiqsoft.restcl/2"};

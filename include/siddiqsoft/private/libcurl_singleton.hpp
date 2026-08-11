@@ -47,7 +47,7 @@ namespace siddiqsoft
      *        back to the resource_pool container.
      *
      */
-    class CurlContextBundle
+    class CurlContextBundle final
     {
     public:
         CURL*                        m_handle {};
@@ -108,7 +108,7 @@ namespace siddiqsoft
      *        and cleanup the libcurl global/per-application handles.
      *          https://curl.se/libcurl/c/post-callback.html
      */
-    class LibCurlSingleton
+    class LibCurlSingleton final
     {
     protected:
         arrp::resource_pool<CurlContextBundle> curlHandlePool {[](CurlContextBundle& rsrc) {

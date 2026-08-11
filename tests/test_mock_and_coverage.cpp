@@ -170,7 +170,7 @@ namespace siddiqsoft
     TEST(ContentType_Tests, ParseFromSerializedJson_Valid)
     {
         ContentType ct;
-        ct.parseFromSerializedJson("{\"hello\":\"world\"}");
+        ct.parseFromSerializedJson(R"({"hello":"world"})");
         EXPECT_EQ(CONTENT_APPLICATION_JSON, ct.type);
         EXPECT_FALSE(ct.body.empty());
         EXPECT_EQ(0u, ct.offset);

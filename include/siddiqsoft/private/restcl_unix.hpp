@@ -71,7 +71,7 @@ namespace siddiqsoft
     ///          - CURLSHcode: Share interface errors
     ///          - CURLUcode: URL API errors
     ///          - uint32_t: POSIX error codes
-    struct rest_result_error
+    struct rest_result_error final
     {
         /// @brief Variant holding one of the supported error code types
         std::variant<CURLcode, CURLMcode, CURLHcode, CURLSHcode, CURLUcode, uint32_t> error {};
@@ -130,7 +130,7 @@ namespace siddiqsoft
     };
 
     /// @brief Unix implementation of the basic_restclient
-    class HttpRESTClient : public basic_restclient<char>
+    class HttpRESTClient final : public basic_restclient<char>
     {
     private:
         static const uint32_t             READBUFFERSIZE {8192};
