@@ -81,7 +81,9 @@ nav:
   - Integration:
       - Quick Start: integration/index.md
       - CMake & Submodules: integration/cmake.md
+      - Dependencies Diagram: integration/dependencies.md
       - NuGet Package: integration/nuget.md
+
   - API Reference:
       - Overview: api/index.md
       - GetRESTClient: api/get_rest_client.md
