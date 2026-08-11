@@ -1253,43 +1253,42 @@
 <h1 id="project-dependencies">Project Dependencies<a class="headerlink" href="#project-dependencies" title="Permanent link">&para;</a></h1>
 <p>This document is automatically generated from <code>CMakeLists.txt</code> files for <code>restcl</code>.</p>
 <h2 id="dependency-diagram">Dependency Diagram<a class="headerlink" href="#dependency-diagram" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>graph TD
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    restcl[&quot;restcl::restcl&quot;]
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    subgraph Platform[&quot;Platform-Specific HTTP Backend&quot;]
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        LIBCURL[&quot;libcurl &gt;= 8.7 (Linux / macOS)&quot;]
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        ACW32H[&quot;acw32h 2.7.4 (Windows / MSVC)&quot;]
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    end
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    subgraph Core[&quot;Core Dependencies (via CPM)&quot;]
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        NLOHMANNJSON[&quot;nlohmann_json v3.12.0&quot;]
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        SPLITURI[&quot;SplitUri 3.0.3&quot;]
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        AZURECPPUTILS[&quot;AzureCppUtils 3.2.9&quot;]
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        STRING2MAP[&quot;string2map 2.6.1&quot;]
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        RUNONEND[&quot;RunOnEnd 1.4.5&quot;]
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        RWLENVELOPE[&quot;RWLEnvelope 1.5.3&quot;]
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        ASYNCHRONY[&quot;asynchrony 2.3.3&quot;]
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        ARRP[&quot;arrp 1.2.0&quot;]
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>        CTRE[&quot;ctre v3.11.0&quot;]
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    end
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    subgraph Test[&quot;Test Dependencies (Optional)&quot;]
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>        GOOGLETEST[&quot;googletest v1.17.0&quot;]
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    end
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>    restcl --&gt; LIBCURL
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    restcl --&gt; ACW32H
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    restcl --&gt; NLOHMANNJSON
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    restcl --&gt; SPLITURI
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    restcl --&gt; AZURECPPUTILS
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    restcl --&gt; STRING2MAP
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>    restcl --&gt; RUNONEND
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>    restcl --&gt; RWLENVELOPE
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>    restcl --&gt; ASYNCHRONY
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>    restcl --&gt; ARRP
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>    restcl --&gt; CTRE
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>    restcl -. &quot;BUILD_TESTS=ON&quot; .-&gt; GOOGLETEST
-</span></code></pre></div>
+<pre class="mermaid"><code>graph TD
+    restcl["restcl::restcl"]
+
+    subgraph Platform["Platform-Specific HTTP Backend"]
+        LIBCURL["libcurl &gt;= 8.7 (Linux / macOS)"]
+        ACW32H["acw32h 2.7.4 (Windows / MSVC)"]
+    end
+
+    subgraph Core["Core Dependencies (via CPM)"]
+        NLOHMANNJSON["nlohmann_json v3.12.0"]
+        SPLITURI["SplitUri 3.0.3"]
+        AZURECPPUTILS["AzureCppUtils 3.2.9"]
+        STRING2MAP["string2map 2.6.1"]
+        RUNONEND["RunOnEnd 1.4.5"]
+        RWLENVELOPE["RWLEnvelope 1.5.3"]
+        ASYNCHRONY["asynchrony 2.3.3"]
+        ARRP["arrp 1.2.0"]
+        CTRE["ctre v3.11.0"]
+    end
+
+    subgraph Test["Test Dependencies (Optional)"]
+        GOOGLETEST["googletest v1.17.0"]
+    end
+
+    restcl --&gt; LIBCURL
+    restcl --&gt; ACW32H
+    restcl --&gt; NLOHMANNJSON
+    restcl --&gt; SPLITURI
+    restcl --&gt; AZURECPPUTILS
+    restcl --&gt; STRING2MAP
+    restcl --&gt; RUNONEND
+    restcl --&gt; RWLENVELOPE
+    restcl --&gt; ASYNCHRONY
+    restcl --&gt; ARRP
+    restcl --&gt; CTRE
+    restcl -. "BUILD_TESTS=ON" .-&gt; GOOGLETEST</code></pre>
 <h2 id="dependency-breakdown">Dependency Breakdown<a class="headerlink" href="#dependency-breakdown" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1483,10 +1482,12 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.3.9-7"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.3.10-1"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
       
     
   </body>
