@@ -165,8 +165,9 @@ namespace siddiqsoft
         nlohmann::json largeJson;
 
         for (int i = 0; i < 1000; i++) {
-            auto keyName          = std::format("key_{}", i);
-            largeJson.at(keyName) = std::format("value_{}", i);
+            auto keyName = std::format("key_{}", i);
+            // We have to use the opertator[] to add instead of at() which throws for non-existent keys
+            largeJson[keyName] = std::format("value_{}", i);
         }
 
         EXPECT_NO_THROW({
