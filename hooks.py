@@ -1,5 +1,7 @@
 import os
+import sys
 import subprocess
+from pathlib import Path
 
 def on_config(config, **kwargs):
     """
@@ -26,10 +28,20 @@ def on_config(config, **kwargs):
         except Exception:
             version = "0.0.0-dev"
 
-    # 3. Inject version into MkDocs extra configuration
+    # 3. Automatically regenerate dependencies documentation from CMakeLists.txt
+    try:
+        root_dir = Path(__file__).resolve().parent.parent
+        script_path = root_dir / "scripts" / "generate_dependencies_md.py"
+        if script_path.exists():
+            subprocess.run([sys.executable, str(script_path), "--root", str(root_dir)], check=True)
+    except Exception as e:
+        print(f"[docs/hooks.py] Warning: Failed to generate dependencies.md: {e}")
+
+    # 4. Inject version into MkDocs extra configuration
     if "extra" not in config or config["extra"] is None:
         config["extra"] = {}
     config["extra"]["version"] = version
 
     print(f"[docs/hooks.py] Resolved build version: {version}")
     return config
+
