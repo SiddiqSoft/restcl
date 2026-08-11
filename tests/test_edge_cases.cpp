@@ -165,8 +165,8 @@ namespace siddiqsoft
         nlohmann::json largeJson;
 
         for (int i = 0; i < 1000; i++) {
-            auto keyName       = std::format("key_{}", i);
-            largeJson[keyName] = std::format("value_{}", i);
+            auto keyName          = std::format("key_{}", i);
+            largeJson.at(keyName) = std::format("value_{}", i);
         }
 
         EXPECT_NO_THROW({
@@ -586,12 +586,12 @@ namespace siddiqsoft
         // Test async operation with global callback
         std::atomic_bool callbackInvoked = false;
 
-        auto client                      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}}, [&](const auto& req, auto resp) {
+        auto client = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}}, [&](const auto& req, auto resp) {
             callbackInvoked = true;
             callbackInvoked.notify_all();
         });
 
-        auto req                         = "https://httpbin.org/get"_GET;
+        auto req    = "https://httpbin.org/get"_GET;
         client->sendAsync(std::move(req));
 
         // Wait for callback
@@ -605,9 +605,10 @@ namespace siddiqsoft
         std::atomic_bool globalCallbackInvoked  = false;
         std::atomic_bool requestCallbackInvoked = false;
 
-        auto client = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}}, [&](const auto& req, auto resp) { globalCallbackInvoked = true; });
+        auto client                             = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}},
+                                                                [&](const auto& req, auto resp) { globalCallbackInvoked = true; });
 
-        auto req    = "https://httpbin.org/get"_GET;
+        auto req                                = "https://httpbin.org/get"_GET;
         client->sendAsync(std::move(req), [&](const auto& req, auto resp) {
             requestCallbackInvoked = true;
             requestCallbackInvoked.notify_all();

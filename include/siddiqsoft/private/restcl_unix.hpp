@@ -55,7 +55,7 @@
 
 #include "siddiqsoft/RWLEnvelope.hpp"
 #include "siddiqsoft/simple_pool.hpp"
-#include "siddiqsoft/resource_pool.hpp"
+#include "siddiqsoft/arrp.hpp"
 
 #include "curl/curl.h"
 #include "curl/easy.h"
@@ -572,7 +572,8 @@ namespace siddiqsoft
                     if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDS, req.getContentBody().c_str());
                         rc != CURLE_OK)
                         return rc;
-                    if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, static_cast<long>(reqContent->length));
+                    if (rc = curl_easy_setopt(
+                                (*ctxCurl).curlHandle(), CURLOPT_POSTFIELDSIZE, static_cast<long>(reqContent->length));
                         rc != CURLE_OK)
                         return rc;
                 }
@@ -759,8 +760,10 @@ namespace siddiqsoft
             try {
                 // Fixup the content data..type and length
                 if (!cntnt->body.empty()) {
-                    cntnt->type = resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
-                } else {
+                    cntnt->type =
+                            resp.getHeaders().value("content-type", resp.getHeaders().value(HF_CONTENT_TYPE, CONTENT_TEXT_PLAIN));
+                }
+                else {
                     cntnt->type.clear();
                 }
                 // headers in libcurl are always string values so we'd need to convert them to integer

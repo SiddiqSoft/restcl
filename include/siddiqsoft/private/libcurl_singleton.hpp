@@ -131,9 +131,6 @@ namespace siddiqsoft
 
             std::call_once(_libCurlOnceFlag, []() {
                 if (_singleton = std::shared_ptr<LibCurlSingleton>(new LibCurlSingleton()); _singleton) {
-#if defined(DEBUG0)
-                    std::print(std::cerr, "{} - Onetime initialization!\n", __func__);
-#endif
                     // Perform once-per-application LibCURL initialization logic
                     if (auto rc = curl_global_init(CURL_GLOBAL_ALL); rc == CURLE_OK) {
                         _singleton->isInitialized = true;
@@ -155,19 +152,25 @@ namespace siddiqsoft
                                 }
                                 else if (rc != CURLE_OK) {
                                     curl_easy_cleanup(curlHandle);
+#if defined(DEBUG)
                                     std::println(std::cerr,
                                                  "{} - Setting the debug Callback data..FAILED: {}",
                                                  __func__,
                                                  curl_easy_strerror(rc));
+#endif
                                     throw std::runtime_error(curl_easy_strerror(rc));
                                 }
                             }
                             else {
                                 curl_easy_cleanup(curlHandle);
+#if defined(DEBUG)
                                 std::println(
                                         std::cerr, "{} - Setting the debug Callback..FAILED: {}", __func__, curl_easy_strerror(rc));
+#endif
                                 throw std::runtime_error(curl_easy_strerror(rc));
                             }
+
+                            throw std::runtime_error("Failed to create new CURL handle for pool.");
                         });
                     }
                     else {

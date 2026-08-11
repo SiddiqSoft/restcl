@@ -370,7 +370,7 @@ namespace siddiqsoft
                 throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
-            auto config = _config.snapshot();
+            auto config    = _config.snapshot();
             auto userAgent = config.value("userAgent", "siddiqsoft.restcl/2");
             if (!req.getHeaders().contains("User-Agent")) {
                 req.getHeaders()["User-Agent"] = userAgent;
