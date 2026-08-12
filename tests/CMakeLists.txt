@@ -56,6 +56,10 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
     if( CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
         message(STATUS "  >> Setting DEBUG macro..")
         target_compile_definitions(${TESTPROJ} PRIVATE DEBUG=1 _DEBUG=1)
+        if(${PROJECT_NAME}_DEBUG_TRACE)
+            message(STATUS "  >> Setting DEBUG_TRACE macro..")
+            target_compile_definitions(${TESTPROJ} PRIVATE DEBUG_TRACE=1)
+        endif()
     endif()
 
     # Dependencies

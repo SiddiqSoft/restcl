@@ -229,7 +229,7 @@ namespace siddiqsoft
 
         static int debugCallback(CURL*, curl_infotype type, char* data, size_t sz, void*)
         {
-#if defined(DEBUG0)
+#if defined(DEBUG_TRACE)
             std::println(std::cerr, "{} - {}", std::to_underlying(type), std::string(data, sz));
 #endif
             return 0;

@@ -230,7 +230,7 @@ namespace siddiqsoft
             {
                 content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
 
-#if defined(DEBUG0)
+#if defined(DEBUG_TRACE)
                 std::print(std::cerr,
                            "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
                            __func__,
@@ -247,7 +247,7 @@ namespace siddiqsoft
 
         static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
-#if defined(DEBUG0)
+#if defined(DEBUG_TRACE)
             std::println(std::cerr,
                          "{} - Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
                          __func__,
@@ -277,7 +277,7 @@ namespace siddiqsoft
                     else {
                         content->remainingSize -= dataSizeToCopyToLibCurl;
                     }
-#if defined(DEBUG0)
+#if defined(DEBUG_TRACE)
                     std::print(std::cerr,
                                "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
                                "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
@@ -345,7 +345,7 @@ namespace siddiqsoft
     public:
         ~HttpRESTClient()
         {
-#if defined(DEBUG0)
+#if defined(DEBUG_TRACE)
             std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
 #endif
         }
@@ -403,11 +403,8 @@ namespace siddiqsoft
             CURLcode rc     = CURLcode::CURLE_NOT_BUILT_IN;
             auto     config = _config.snapshot(); // peek at the snapshot of the config to avoid locking for long periods
 
-            // std::print(std::cerr, "{} - Invoked.. ctxCurl:{}\n", __func__, (void*)(*ctxCurl).curlHandle());
-
             if (ctxCurl && ((CURL*)(*ctxCurl).curlHandle()) != NULL) curl_easy_reset((CURL*)(*ctxCurl).curlHandle());
 
-            // std::print(std::cerr, "{} - Configuring options...\n", __func__);
             if (long v = config.value("connectTimeout", 0); v > 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CONNECTTIMEOUT_MS, v); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
@@ -433,8 +430,6 @@ namespace siddiqsoft
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_VERBOSE, 1L); rc != CURLE_OK)
                     std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
             }
-
-            // std::print(std::cerr, "{} - Completed.\n", __func__);
         }
 
 
@@ -457,10 +452,8 @@ namespace siddiqsoft
 
             auto destinationHost = req.getHost();
 
-#if defined(DEBUG0)
-            if (_config.value("trace", false)) {
-                std::println(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
-            }
+#if defined(DEBUG_TRACE)
+            std::println(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
 #endif
 
             if (auto ctxCurl = singletonInstance->getEasyHandle();
@@ -506,7 +499,7 @@ namespace siddiqsoft
                                                    "{} - curl_easy_perform() failed: `{}`\n{}\n",
                                                    __func__,
                                                    curl_easy_strerror(rc),
-                                                   nlohmann::json(req).dump(2));
+                                                   nlohmann::json(req).dump());
                                     }
                                 }
                             }
@@ -522,13 +515,13 @@ namespace siddiqsoft
                                  "{} - some failure `{}`; abandon context !!\n{}\n",
                                  __func__,
                                  curl_easy_strerror(rc),
-                                 nlohmann::json(req).dump(2));
+                                 nlohmann::json(req).dump());
                 }
                 return std::unexpected(rc);
             }
             else {
                 ioAttemptFailed++;
-#if defined(DEBUG)
+#if defined(DEBUG_TRACE)
                 std::println(std::cerr, "{} - getting context failed!\n{}\n", __func__, nlohmann::json(req).dump(2));
 #endif
                 return std::unexpected(ENETUNREACH);
@@ -554,7 +547,7 @@ namespace siddiqsoft
                 return rc;
             }
             else {
-#if defined(DEBUG0)
+#if defined(DEBUG_TRACE)
                 std::println(std::cerr, "{} - Setting writefunction data..............................", __func__);
 #endif
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) {
@@ -683,11 +676,9 @@ namespace siddiqsoft
                     break;
             }
 
-#if defined(DEBUG)
             if (_config.observe([](const auto& d) noexcept { return d.value("trace", false); })) {
                 std::println(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
             }
-#endif
 
             return rc;
         }
@@ -701,10 +692,8 @@ namespace siddiqsoft
                 try {
                     for (auto& [k, v] : req.getHeaders().items()) {
                         if (k == "Content-Length" || k == "content-length") continue;
-#if defined(DEBUG0)
-                        if (_config.value("trace", false)) {
-                            std::print(std::cerr, "{} - Setting the header....{} = {}\n", __func__, k, v.dump());
-                        }
+#if defined(DEBUG_TRACE)
+                        std::println(std::cerr, "{} - Setting the header....{} = {}", __func__, k, v.dump());
 #endif
 
                         if (v.is_string()) {
@@ -779,7 +768,7 @@ namespace siddiqsoft
                 std::print(std::cerr, "{} - Error:{}\n", __func__, ex.what());
             }
 
-#if defined(DEBUG0)
+#if defined(DEBUG_TRACE)
             std::print(std::cerr, "{} - Completed.", __func__);
 #endif
         }
