@@ -78,3 +78,20 @@ Ensure C++23 standard support is enabled:
     ```
 
 ---
+
+## Build Options & Debug Tracing
+
+`restcl` provides a build option `restcl_DEBUG_TRACE` to enable payload trace logging for HTTP requests and responses.
+
+```cmake
+# Enable debug payload tracing in CMake
+set(restcl_DEBUG_TRACE ON CACHE BOOL "" FORCE)
+```
+
+### Options Matrix
+
+| Option | Default | Description |
+| :--- | :--- | :--- |
+| `restcl_BUILD_TESTS` | `OFF` | Build test suite (`BUILD_TESTS`). |
+| `restcl_DEBUG_TRACE` | `OFF` | Enable HTTP verb, header, and payload trace logging to `std::cerr`. |
+

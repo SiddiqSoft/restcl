@@ -371,8 +371,9 @@ ctest --preset Darwin
 
 ### CMake Options
 
-- `restcl_BUILD_TESTS`: Enable/disable test suite (declared default: OFF)
-- `project-base.json`: Repository presets set `restcl_BUILD_TESTS=ON` by default
+- `restcl_BUILD_TESTS`: Enable/disable test suite (default: OFF)
+- `restcl_DEBUG_TRACE`: Enable verbose HTTP request, header, and payload trace logging to `std::cerr` (default: OFF)
+- `project-base.json`: Repository presets set `restcl_BUILD_TESTS=ON` and `restcl_DEBUG_TRACE=ON` for debug builds
 - `CMAKE_BUILD_TYPE`: Debug or Release (default: Release)
 
 ## Testing
