@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug",
+  "command": "/usr/bin/c++ -DDEBUG=1 -DDEBUG_TRACE=1 -D_DEBUG=1 -Dexamples_cosmosprobes_TESTING_MODE=1 -isystem /Users/maas/.cache/.cpmcache/json/b88c/include -isystem /Users/maas/.cache/.cpmcache/restcl/24f8/include -isystem /Users/maas/.cache/.cpmcache/splituri/be1c/include -isystem /Users/maas/.cache/.cpmcache/azurecpputils/fecc/include -isystem /opt/homebrew/include -isystem /Users/maas/.cache/.cpmcache/runonend/d96c/include -isystem /Users/maas/.cache/.cpmcache/stringhelpers/cf71/include -isystem /Users/maas/.cache/.cpmcache/string2map/210a/include -isystem /Users/maas/.cache/.cpmcache/rwlenvelope/29a9/include -isystem /Users/maas/.cache/.cpmcache/asynchrony/faa6/include -isystem /Users/maas/.cache/.cpmcache/rwlcontainer/af87/include -isystem /Users/maas/.cache/.cpmcache/arrp/d6df/include -isystem /Users/maas/.cache/.cpmcache/compile-time-regular-expressions/b98b/include -g -std=c++23 -arch arm64 -fPIE -fcolor-diagnostics -g3 -O0 -g -fsanitize=address -fsanitize=undefined -o CMakeFiles/examples_cosmosprobes.dir/src/probes.cpp.o -c /Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/src/probes.cpp",
+  "file": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/src/probes.cpp",
+  "output": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug/CMakeFiles/examples_cosmosprobes.dir/src/probes.cpp.o"
+},
+{
+  "directory": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug",
+  "command": "/usr/bin/c++ -I/Users/maas/.cache/.cpmcache/googletest/1ace/googlemock/include -I/Users/maas/.cache/.cpmcache/googletest/1ace/googlemock -isystem /Users/maas/.cache/.cpmcache/googletest/1ace/googletest/include -isystem /Users/maas/.cache/.cpmcache/googletest/1ace/googletest -g -std=c++23 -arch arm64 -fPIC -fcolor-diagnostics  -DGTEST_HAS_PTHREAD=1   -o _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o -c /Users/maas/.cache/.cpmcache/googletest/1ace/googlemock/src/gmock-all.cc",
+  "file": "/Users/maas/.cache/.cpmcache/googletest/1ace/googlemock/src/gmock-all.cc",
+  "output": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug/_deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o"
+},
+{
+  "directory": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug",
+  "command": "/usr/bin/c++ -isystem /Users/maas/.cache/.cpmcache/googletest/1ace/googlemock/include -isystem /Users/maas/.cache/.cpmcache/googletest/1ace/googlemock -isystem /Users/maas/.cache/.cpmcache/googletest/1ace/googletest/include -isystem /Users/maas/.cache/.cpmcache/googletest/1ace/googletest -g -std=c++23 -arch arm64 -fPIC -fcolor-diagnostics  -DGTEST_HAS_PTHREAD=1   -o _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o -c /Users/maas/.cache/.cpmcache/googletest/1ace/googlemock/src/gmock_main.cc",
+  "file": "/Users/maas/.cache/.cpmcache/googletest/1ace/googlemock/src/gmock_main.cc",
+  "output": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug/_deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o"
+},
+{
+  "directory": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug",
+  "command": "/usr/bin/c++ -I/Users/maas/.cache/.cpmcache/googletest/1ace/googletest/include -I/Users/maas/.cache/.cpmcache/googletest/1ace/googletest -g -std=c++23 -arch arm64 -fPIC -fcolor-diagnostics  -DGTEST_HAS_PTHREAD=1   -o _deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o -c /Users/maas/.cache/.cpmcache/googletest/1ace/googletest/src/gtest-all.cc",
+  "file": "/Users/maas/.cache/.cpmcache/googletest/1ace/googletest/src/gtest-all.cc",
+  "output": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug/_deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o"
+},
+{
+  "directory": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug",
+  "command": "/usr/bin/c++ -isystem /Users/maas/.cache/.cpmcache/googletest/1ace/googletest/include -isystem /Users/maas/.cache/.cpmcache/googletest/1ace/googletest -g -std=c++23 -arch arm64 -fPIC -fcolor-diagnostics  -DGTEST_HAS_PTHREAD=1   -o _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /Users/maas/.cache/.cpmcache/googletest/1ace/googletest/src/gtest_main.cc",
+  "file": "/Users/maas/.cache/.cpmcache/googletest/1ace/googletest/src/gtest_main.cc",
+  "output": "/Users/maas/source/repos/siddiqsoft/restcl/examples/cosmosprobes/build/Apple-Debug/_deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
+}
+]

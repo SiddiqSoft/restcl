@@ -68,7 +68,7 @@ void handleResponse(const siddiqsoft::rest_response<>& resp)
         if (resp.headers.contains("content-type") &&
             resp.headers["content-type"].get<std::string>().find("application/json") != std::string::npos) {
             nlohmann::json j = nlohmann::json::parse(resp.content->body);
-            std::cout << "Parsed JSON: " << j.dump(2) << std::endl;
+            std::cout << "Parsed JSON: " << j.dump() << std::endl;
         }
     }
 }

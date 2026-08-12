@@ -61,7 +61,7 @@ namespace siddiqsoft
         {
 #if defined(__linux__) || defined(__APPLE__)
 #if defined(DEBUG)
-            std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            std::println(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
 #endif
             myCurlInstance = LibCurlSingleton::GetInstance();
 #endif
@@ -73,7 +73,7 @@ namespace siddiqsoft
     {
         DWORD             cc {12001};
         rest_result_error rre {cc};
-        std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
+        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
         EXPECT_EQ("12001-ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.", rre.to_string());
     }
 #endif
@@ -82,7 +82,7 @@ namespace siddiqsoft
     {
         uint32_t          cc {ECONNRESET};
         rest_result_error rre {cc};
-        std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
+        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
 #if defined(__linux__) || defined(__APPLE__)
         EXPECT_EQ("Connection reset by peer", rre.to_string());
 #elif (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
@@ -95,7 +95,7 @@ namespace siddiqsoft
     {
         uint32_t          cc {909090};
         rest_result_error rre {cc};
-        std::print(std::cerr, "Error code -> {}\n", rest_result_error {cc});
+        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
         // the value returned by unix strerror varies
         // Unknown error: 909090
         // Unknown error 909090
@@ -133,7 +133,7 @@ namespace siddiqsoft
 
         // nlohmann::json doc {r3};
         // std::cerr << "Serialized (encoded): " << r3 << std::endl;
-        // std::cerr << "Serialized (json'd) : " << doc.dump(2) << std::endl;
+        // std::cerr << "Serialized (json'd) : " << doc.dump() << std::endl;
     }
 
     TEST_F(Validation, GET_google_com)
@@ -148,10 +148,10 @@ namespace siddiqsoft
                        [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
                            if (resp && resp->success()) {
                                passTest = true;
-                               std::print(std::cerr,
+                               std::println(std::cerr,
                                           "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
                                           __func__,
-                                          nlohmann::json(*resp).dump(3));
+                                          nlohmann::json(*resp).dump());
                            }
                            else if (resp.has_value()) {
                                auto [ec, emsg] = resp->status();
@@ -182,7 +182,7 @@ namespace siddiqsoft
                                if (resp && resp->success()) {
                                    passTest = true;
                                    // nlohmann::json doc(*resp);
-                                   // std::cerr << "Response\n" << doc.dump(3) << std::endl;
+                                   // std::cerr << "Response\n" << doc.dump() << std::endl;
                                }
                                else if (resp.has_value()) {
                                    auto [ec, emsg] = resp->status();
@@ -191,7 +191,7 @@ namespace siddiqsoft
                                }
                                else {
                                    passTest = true;
-                                   std::print(std::cerr, "{}: failed: du{}\n", __func__, resp.error());
+                                   std::println(std::cerr, "{}: failed: du{}", __func__, resp.error());
                                }
                                done = true;
                                done.notify_all();
@@ -218,19 +218,19 @@ namespace siddiqsoft
             if (resp.has_value() && resp->success()) {
                 passTest = 1;
                 // nlohmann::json doc(*resp);
-                // std::print(std::cerr, "{} - POSITIVE Response\n{}\n", __func__, doc.dump(3));
+                // std::println(std::cerr, "{} - POSITIVE Response\n{}", __func__, doc.dump());
             }
             else if (resp.has_value()) {
                 nlohmann::json doc(*resp);
 
                 auto [ec, emsg] = resp->status();
                 passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400)) ? 1 : -1;
-                std::print(std::cerr, "{} - Got error: {} -- `{}`..\n{}\n", __func__, ec, emsg, doc.dump(2));
-                // std::print(std::cerr, "{} - Got error:\n{}\n", __func__, doc.dump(2));
+                std::println(std::cerr, "{} - Got error: {} -- `{}`..\n{}", __func__, ec, emsg, doc.dump());
+                // std::println(std::cerr, "{} - Got error:\n{}", __func__, doc.dump());
             }
             else {
                 passTest = -1;
-                std::print(std::cerr, "{}: failed:{}\n", __func__, resp.error());
+                std::println(std::cerr, "{}: failed:{}", __func__, resp.error());
             }
             done = true;
             done.notify_all();
@@ -255,7 +255,7 @@ namespace siddiqsoft
 
             auto req = "https://time.akamai.com/?iso"_GET;
             if (auto resp = wrc->send(req); resp->success()) {
-                std::cerr << nlohmann::json(*resp).dump(2) << std::endl;
+                std::cerr << nlohmann::json(*resp).dump() << std::endl;
                 EXPECT_EQ("Akamai/Time Server", resp->getHeader("Server"));
                 // Expect the contents are date time stamp between 18-20 chars.
                 EXPECT_TRUE(resp->getContent()->length > 16);
@@ -271,7 +271,7 @@ namespace siddiqsoft
                 myStats["timeDrift"]       = deltastr;
                 myStats["timeNow"]         = siddiqsoft::DateUtils::ISO8601(timeNow);
 
-                std::print(std::cerr, "{} - Time drift check:\n{}\n", __func__, myStats.dump(3));
+                std::println(std::cerr, "{} - Time drift check:\n{}", __func__, myStats.dump());
 
                 if ((deltaMS > 1500ms) || (deltaMS < -1500ms)) {
                     std::cerr << "  Found drift from clock more than 1500ms" << std::endl;
@@ -279,7 +279,7 @@ namespace siddiqsoft
             }
         }
         catch (const std::exception& ex) {
-            std::print(std::cerr, "Housekeeping exception: {}", ex.what());
+            std::println(std::cerr, "Housekeeping exception: {}", ex.what());
         }
 
         std::this_thread::sleep_for(1000ms);
@@ -293,7 +293,7 @@ namespace siddiqsoft
         std::vector<siddiqsoft::restcl> clients;
         int                             clientIndex {0};
 
-        // std::print(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
+        // std::println(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
             clients.push_back(GetRESTClient({{"trace", false},
                                              {"freshConnect", true},
@@ -308,7 +308,7 @@ namespace siddiqsoft
 
         // Send data over each client (if we mess up the move constructors this will fail)
         std::for_each(clients.begin(), clients.end(), [&](auto& wrc) {
-            /*std::print(std::cerr,
+            /*std::println(std::cerr,
                        "{} - Configuring client {}/{} individually...............\n",
                        __FUNCTION__,
                        clientIndex,

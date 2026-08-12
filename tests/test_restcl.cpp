@@ -62,11 +62,12 @@ namespace siddiqsoft
         void SetUp() override
         {
 #if defined(__linux__) || defined(__APPLE__)
-            std::print(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            std::println(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
             myCurlInstance = LibCurlSingleton::GetInstance();
 #endif
         }
     };
+
 
     TEST_F(TestSends, test1a)
     {
@@ -81,7 +82,7 @@ namespace siddiqsoft
                            [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
                                nlohmann::json doc(req);
 
-                               std::print(std::cerr, "From callback Serialized req: {}\n", doc.dump(2));
+                               std::println(std::cerr, "From callback Serialized req: {}", doc.dump());
                                if (resp && resp->success()) {
                                    passTest = true;
                                    std::cerr << "Response\n" << *resp << std::endl;
@@ -89,7 +90,7 @@ namespace siddiqsoft
                                else if (resp) {
                                    auto [ec, emsg] = resp->status();
                                    passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
-                                   std::println(std::cerr, " test1a - Got error: {} - {}\n", ec, emsg);
+                                   std::println(std::cerr, " test1a - Got error: {} - {}", ec, emsg);
                                }
                                else {
                                    std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
@@ -219,7 +220,7 @@ namespace siddiqsoft
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
 
-        auto wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
+        auto wrc                  = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
         wrc->configure().sendAsync(
                 rest_request {HttpMethodType::METHOD_POST,
@@ -230,7 +231,7 @@ namespace siddiqsoft
                     // The request must be the same as we configured!
                     EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
                     // Checks the implementation of the std::format implementation
-                    std::print(std::cerr, "From callback Wire serialize              : {}\n", req);
+                    std::println(std::cerr, "From callback Wire serialize              : {}", req);
                     if (resp.has_value() && resp->success()) {
                         passTest = true;
                         std::cerr << "Response\n" << *resp << std::endl;
@@ -341,12 +342,12 @@ namespace siddiqsoft
         wrc->sendAsync("https://httpbin.org:9090/get"_OPTIONS,
                        [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
                            if (resp.has_value() && resp->success()) {
-                               std::cerr << "Response\n" << nlohmann::json(*resp).dump(2) << std::endl;
+                               std::cerr << "Response\n" << nlohmann::json(*resp).dump() << std::endl;
                            }
                            else if (resp.has_value()) {
                                auto [ec, emsg] = resp->status();
                                passTest        = ((ec == 12002) || (ec == 12029) || (ec == 403));
-                               std::print(std::cerr, "ec: {}  Response\n{}\n", ec, nlohmann::json(*resp).dump(2));
+                               std::println(std::cerr, "ec: {}  Response\n{}", ec, nlohmann::json(*resp).dump());
                            }
                            else {
                                // We MUST get a connection failure; the site does not exist!
@@ -385,7 +386,7 @@ namespace siddiqsoft
                                    passTest        = ec == 405 || ec == 403;
                                    // This is a work-around for google which sometimes refuses to send the Reason Phrase!
                                    if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
-                                   std::print(std::cerr, "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}\n", ec, emsg, *resp);
+                                   std::println(std::cerr, "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}", ec, emsg, *resp);
                                }
                                else {
                                    // We MUST get a connection failure; the site does not exist!
@@ -797,8 +798,8 @@ namespace siddiqsoft
                                if (resp.has_value()) {
                                    passTest++;
                                    if (!resp->success()) {
-                                       std::print(std::cerr,
-                                                  "{} Threads::test_1 - HTTP {} for {} -- {}\n",
+                                       std::println(std::cerr,
+                                                  "{} Threads::test_1 - HTTP {} for {} -- {}",
                                                   __func__,
                                                   resp->statusCode(),
                                                   req.getUri().authority.host,
@@ -809,8 +810,8 @@ namespace siddiqsoft
                                    // IO error (connection refused, timeout, etc.) still counts
                                    // as a completed request for the stress test.
                                    passTest++;
-                                   std::print(std::cerr,
-                                              "{} Threads::test_1 - IO error: {} for {}\n",
+                                   std::println(std::cerr,
+                                              "{} Threads::test_1 - IO error: {} for {}",
                                               __func__,
                                               resp.error(),
                                               req.getUri().authority.host);
@@ -834,8 +835,8 @@ namespace siddiqsoft
             do {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
 
-                std::print(std::cerr,
-                           "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}\n",
+                std::println(std::cerr,
+                           "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
                            __func__,
                            ITER_COUNT,
                            passTest.load(),

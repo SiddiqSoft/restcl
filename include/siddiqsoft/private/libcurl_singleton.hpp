@@ -175,14 +175,14 @@ namespace siddiqsoft
                     }
                     else {
 #if defined(DEBUG)
-                        std::print(std::cerr, "{} - Initialize failed! {}\n", __func__, curl_easy_strerror(rc));
+                        std::println(std::cerr, "{} - Initialize failed! {}", __func__, curl_easy_strerror(rc));
 #endif
                         throw std::runtime_error(curl_easy_strerror(rc));
                     }
                 }
                 else {
 #if defined(DEBUG)
-                    std::print(std::cerr, "{} - Initialize instance failed!\n", __func__);
+                    std::println(std::cerr, "{} - Initialize instance failed!\n", __func__);
 #endif
                 }
             });
@@ -214,13 +214,13 @@ namespace siddiqsoft
                     return curlHandlePool.try_borrow_create();
                 }
 
-                std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}\n", __func__, curlHandlePool.size());
+                std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}", __func__, curlHandlePool.size());
             }
             catch (std::runtime_error& re) {
-                std::print(std::cerr, "{} - Failed existing BUNDLE from pool. {}\n", __func__, re.what());
+                std::println(std::cerr, "{} - Failed existing BUNDLE from pool. {}", __func__, re.what());
             }
             catch (...) {
-                std::print(std::cerr, "{} - Failed existing BUNDLE from pool. unknown error\n", __func__);
+                std::println(std::cerr, "{} - Failed existing BUNDLE from pool. unknown error\n", __func__);
             }
 
             return curlHandlePool.try_borrow_create();

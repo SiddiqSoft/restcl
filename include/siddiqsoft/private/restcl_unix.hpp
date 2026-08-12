@@ -198,16 +198,16 @@ namespace siddiqsoft
             }
             catch (std::system_error& se) {
                 // Failed; dispatch anyways and let the client figure out the issue.
-                std::print(std::cerr,
-                           "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
+                std::println(std::cerr,
+                           "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}",
                            callbackAttempt.load(),
                            se.what());
                 dispatchCallback(arg.callback, arg.request, std::unexpected<int>(se.code().value()));
             }
             catch (std::exception& ex) {
                 callbackFailed++;
-                std::print(std::cerr,
-                           "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}\n",
+                std::println(std::cerr,
+                           "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}",
                            callbackAttempt.load(),
                            ex.what());
             }
@@ -231,7 +231,7 @@ namespace siddiqsoft
                 content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
 
 #if defined(DEBUG_TRACE)
-                std::print(std::cerr,
+                std::println(std::cerr,
                            "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
                            __func__,
                            size,
@@ -278,9 +278,9 @@ namespace siddiqsoft
                         content->remainingSize -= dataSizeToCopyToLibCurl;
                     }
 #if defined(DEBUG_TRACE)
-                    std::print(std::cerr,
+                    std::println(std::cerr,
                                "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
-                               "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}\n",
+                               "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}",
                                __func__,
                                size,
                                nmemb,
@@ -345,8 +345,8 @@ namespace siddiqsoft
     public:
         ~HttpRESTClient()
         {
-#if defined(DEBUG_TRACE)
-            std::print(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump(2));
+#if defined(DEBUG_TRACE_EXTRA)
+            std::println(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump());
 #endif
         }
 
@@ -407,28 +407,28 @@ namespace siddiqsoft
 
             if (long v = config.value("connectTimeout", 0); v > 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CONNECTTIMEOUT_MS, v); rc != CURLE_OK)
-                    std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
+                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
             }
 
             if (long v = config.value("timeout", 0); v > 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
-                    std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
+                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
             }
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
             if (long v = config.value("verifyPeer", 1); v == 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
-                    std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
+                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
             }
 
             if (config.value("freshConnect", false)) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_FRESH_CONNECT, 1L); rc != CURLE_OK)
-                    std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
+                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
             }
 
             if (config.value("trace", false)) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_VERBOSE, 1L); rc != CURLE_OK)
-                    std::print(std::cerr, "{} - Error: {}\n", __func__, curl_easy_strerror(rc));
+                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
             }
         }
 
@@ -445,7 +445,7 @@ namespace siddiqsoft
 
             if (!isInitialized) {
 #if defined(DEBUG)
-                std::println(std::cerr, "{} - Not INITIALIZED for `{}` Uri: {}\n", __func__, req.getMethod(), req.getUri());
+                std::println(std::cerr, "{} - Not INITIALIZED for `{}` Uri: {}", __func__, req.getMethod(), req.getUri());
 #endif
                 return std::unexpected(EBUSY);
             }
@@ -453,7 +453,7 @@ namespace siddiqsoft
             auto destinationHost = req.getHost();
 
 #if defined(DEBUG_TRACE)
-            std::println(std::cerr, "{} - Uri: {}\n{}\n", __func__, req.getUri(), nlohmann::json(req).dump(3));
+            std::println(std::cerr, "{} - Uri: {}\n{}", __func__, req.getUri(), nlohmann::json(req).dump());
 #endif
 
             if (auto ctxCurl = singletonInstance->getEasyHandle();
@@ -495,8 +495,8 @@ namespace siddiqsoft
                                 else {
                                     ioSendFailed++;
                                     if (config.value("trace", false)) {
-                                        std::print(std::cerr,
-                                                   "{} - curl_easy_perform() failed: `{}`\n{}\n",
+                                        std::println(std::cerr,
+                                                   "{} - curl_easy_perform() failed: `{}`\n{}",
                                                    __func__,
                                                    curl_easy_strerror(rc),
                                                    nlohmann::json(req).dump());
@@ -512,7 +512,7 @@ namespace siddiqsoft
                 ctxCurl.invalidate();
                 if (config.value("trace", false)) {
                     std::println(std::cerr,
-                                 "{} - some failure `{}`; abandon context !!\n{}\n",
+                                 "{} - some failure `{}`; abandon context !!\n{}",
                                  __func__,
                                  curl_easy_strerror(rc),
                                  nlohmann::json(req).dump());
@@ -522,7 +522,7 @@ namespace siddiqsoft
             else {
                 ioAttemptFailed++;
 #if defined(DEBUG_TRACE)
-                std::println(std::cerr, "{} - getting context failed!\n{}\n", __func__, nlohmann::json(req).dump(2));
+                std::println(std::cerr, "{} - getting context failed!\n{}", __func__, nlohmann::json(req).dump());
 #endif
                 return std::unexpected(ENETUNREACH);
             }
@@ -765,11 +765,11 @@ namespace siddiqsoft
                 resp.setContent(cntnt);
             }
             catch (std::exception& ex) {
-                std::print(std::cerr, "{} - Error:{}\n", __func__, ex.what());
+                std::println(std::cerr, "{} - Error:{}", __func__, ex.what());
             }
 
 #if defined(DEBUG_TRACE)
-            std::print(std::cerr, "{} - Completed.", __func__);
+            std::println(std::cerr, "{} - Completed.", __func__);
 #endif
         }
 
@@ -802,7 +802,7 @@ namespace siddiqsoft
 
 #if defined(DEBUG)
             if (rc != CURLE_OK) {
-                std::print(std::cerr,
+                std::println(std::cerr,
                            "{} - rc:{}  sc:{}  content-length:{}",
                            __func__,
                            curl_easy_strerror(rc),
@@ -849,7 +849,7 @@ namespace siddiqsoft
     {
         nlohmann::json doc(src);
 
-        os << doc.dump(3);
+        os << doc.dump();
         return os;
     }
 
@@ -872,7 +872,7 @@ struct std::formatter<siddiqsoft::HttpRESTClient> : std::formatter<std::string>
     auto format(const siddiqsoft::HttpRESTClient& sv, FC& ctx) const
     {
         nlohmann::json doc {sv};
-        return std::formatter<std::string>::format(doc.dump(3), ctx);
+        return std::formatter<std::string>::format(doc.dump(), ctx);
     }
 };
 
@@ -892,7 +892,7 @@ struct std::formatter<std::expected<siddiqsoft::rest_response<char>, int>> : std
     auto format(const std::expected<siddiqsoft::rest_response<char>, int>& resp, auto& ctx) const
     {
         if (resp.has_value()) {
-            return std::format_to(ctx.out(), "{}", nlohmann::json(*resp).dump(3));
+            return std::format_to(ctx.out(), "{}", nlohmann::json(*resp).dump());
         }
         else {
             return std::format_to(ctx.out(), "IO error: {}", resp.error());
