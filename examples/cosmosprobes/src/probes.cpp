@@ -24,8 +24,11 @@ int main(int argc, char** argv)
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
-                        {"trace", true}});
-        auto req = siddiqsoft::rest_request("https://lws2.siddiq.org:8081/"_GET);
+                        {"trace", true},
+                        {"verifyPeer", 0},
+                        {"verifyHost", 0}});
+
+        auto req  = siddiqsoft::rest_request("https://localhost:8081/alive"_GET);
         auto resp = wrc->send(req);
         if (resp && resp->success()) {
             std::println(std::cerr, "  - Got Valid Response ------ \n{}", *resp);
@@ -38,10 +41,6 @@ int main(int argc, char** argv)
             std::println(std::cerr, "  - Got error: `{}` -- `{}`", resp.error(), strerror(resp.error()));
         }
 
-        // done = true;
-        // done.notify_all();
-
-        // done.wait(false);
         return 0;
     }
     else {
