@@ -9,7 +9,7 @@
 
 #define DEBUG_TRACE 1
 #include "nlohmann/json.hpp"
-#include "../../../include/siddiqsoft/restcl.hpp"
+#include "siddiqsoft/restcl.hpp"
 
 
 int main(int argc, char** argv)
@@ -38,7 +38,7 @@ int main(int argc, char** argv)
             std::println(std::cerr, "  - Got response error: {} - {}", ec, emsg);
         }
         else {
-            std::println(std::cerr, "  - Got error: `{}` -- `{}`", resp.error(), strerror(resp.error()));
+            std::println(std::cerr, "  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(resp.error()));
         }
 
         return 0;
