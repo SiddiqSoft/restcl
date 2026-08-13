@@ -108,7 +108,6 @@ target_link_options(${PROJECT_NAME} PRIVATE ${DEBUG_LINK_FLAGS}  ${COVERAGE_FLAG
 if( CMAKE_BUILD_TYPE MATCHES [Dd][Ee][Bb][Uu][Gg])
     message(STATUS "  >> Setting DEBUG macro..")
     target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG=1 _DEBUG=1)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_TRACE=1)
 endif()
 
 # Our tests depend on this preprocessor definition during CI/test mode to enable

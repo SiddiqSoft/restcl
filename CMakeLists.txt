@@ -77,7 +77,7 @@ CPMAddPackage("gh:SiddiqSoft/string2map#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.3.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
-CPMAddPackage("gh:SiddiqSoft/arrp#1.2.0")
+CPMAddPackage("gh:SiddiqSoft/arrp#1.2.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE arrp::arrp)
 
 

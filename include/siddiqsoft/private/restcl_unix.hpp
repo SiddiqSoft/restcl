@@ -421,19 +421,16 @@ namespace siddiqsoft
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
             if (long v = config.value("verifyPeer", 1); v == 0) {
-                std::println(std::cerr, "{} - Attempt to set `verifyPeer` --> {}", __func__, v);
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
                     std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
             }
 
             if (long v = config.value("verifyHost", 1); v == 0) {
-                std::println(std::cerr, "{} - Attempt to set `verifyHost` --> {}", __func__, v);
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSL_VERIFYHOST, v); rc != CURLE_OK)
                     std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
             }
 
             if (config.value("freshConnect", false)) {
-                std::println(std::cerr, "{} - Attempt to set `freshConnect` --> {}", __func__, true);
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_FRESH_CONNECT, 1L); rc != CURLE_OK)
                     std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
             }

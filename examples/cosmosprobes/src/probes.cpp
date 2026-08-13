@@ -7,7 +7,6 @@
 #include <cstring>
 #include <iostream>
 
-#define DEBUG_TRACE 1
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/restcl.hpp"
 
@@ -24,11 +23,9 @@ int main(int argc, char** argv)
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
-                        {"trace", true},
-                        {"verifyPeer", 0},
-                        {"verifyHost", 0}});
+                        {"trace", false}});
 
-        auto req  = siddiqsoft::rest_request("https://localhost:8081/alive"_GET);
+        auto req  = siddiqsoft::rest_request("http://localhost:8080/ready"_GET);
         auto resp = wrc->send(req);
         if (resp && resp->success()) {
             std::println(std::cerr, "  - Got Valid Response ------ \n{}", *resp);
@@ -38,7 +35,7 @@ int main(int argc, char** argv)
             std::println(std::cerr, "  - Got response error: {} - {}", ec, emsg);
         }
         else {
-            std::println(std::cerr, "  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(resp.error()));
+            std::println(std::cerr, "  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(static_cast<CURLcode>(resp.error())));
         }
 
         return 0;
