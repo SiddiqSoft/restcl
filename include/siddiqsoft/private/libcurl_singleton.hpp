@@ -115,7 +115,9 @@ namespace siddiqsoft
             // This method is invoked for each resource that is invalidated
             // or about to be cleaned up.
             if (auto* handle = rsrc.curlHandle(); handle != nullptr) {
+#if defined(DEBUG_TRACE)
                 std::println(" - Pool cleanup handler - cleanup curl handle:{}", static_cast<void*>(handle));
+#endif
                 rsrc.cleanup();
             }
         }};
