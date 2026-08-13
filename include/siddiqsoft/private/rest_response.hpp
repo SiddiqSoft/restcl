@@ -138,7 +138,7 @@ namespace siddiqsoft
             }
             catch (std::exception& ex) {
 #if defined(DEBUG)
-                std::print(std::cerr, "{} - {} : {}..ex:{}...........\n", __func__, key, value, ex.what());
+                std::println(std::cerr, "{} - {} : {}..ex:{}...........\n", __func__, key, value, ex.what());
 #endif
                 throw;
             }
@@ -270,7 +270,7 @@ namespace siddiqsoft
                 }
             }
             catch (std::exception& ex) {
-                std::print(std::cerr, "parse - while processing frame (ll:{})\n{}\n", lastLine, srcBuffer);
+                std::println(std::cerr, "parse - while processing frame (ll:{})\n{}", lastLine, srcBuffer);
                 throw;
             }
 

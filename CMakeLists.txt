@@ -13,6 +13,18 @@ cmake_minimum_required(VERSION 3.29)
 # Figures out the value ${CURRENT_PROJECT_VERSION} and therefore the ${PROJECT_VERSION}
 # Brings in the CPM module into pack/CPM.make
 include(pack/CMakeCommonHelpers.cmake)
+if(WIN32)
+    if(DEFINED ENV{LOCALAPPDATA})
+        set(CPM_SOURCE_CACHE "$ENV{LOCALAPPDATA}/CPM/.cpmcache")
+    elseif(DEFINED ENV{USERPROFILE})
+        set(CPM_SOURCE_CACHE "$ENV{USERPROFILE}/AppData/Local/CPM/.cpmcache")
+    else()
+        set(CPM_SOURCE_CACHE "${CMAKE_BINARY_DIR}/.cpmcache")
+    endif()
+else()
+    set(CPM_SOURCE_CACHE "$ENV{HOME}/.cache/.cpmcache")
+endif()
+set(CPM_SOURCE_CACHE ${CPM_SOURCE_CACHE} CACHE PATH "CPM source cache")
 
 # ______________________
 # Project Metadata block
@@ -66,22 +78,19 @@ endif()
 
 CPMAddPackage("gh:nlohmann/json#v3.12.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
+CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
+target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
+
 CPMAddPackage("gh:SiddiqSoft/SplitUri#3.0.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
 CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.3.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
 CPMAddPackage("gh:SiddiqSoft/string2map#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
-CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.5")
-target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
-CPMAddPackage("gh:SiddiqSoft/RWLEnvelope#1.5.3")
-target_link_libraries(${PROJECT_NAME} INTERFACE RWLEnvelope::RWLEnvelope)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.3.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
-CPMAddPackage("gh:SiddiqSoft/arrp#1.2.0")
+CPMAddPackage("gh:SiddiqSoft/arrp#1.2.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE arrp::arrp)
-CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
-target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
 
 
 # ____________________________________

@@ -27,6 +27,7 @@ lib/
 site/
 .venv/
 **/.DS_Store
+**/build/**
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -381,3 +382,4 @@ build/**
 /test/validation_tests/test.nativecodeanalysis.xml
 *.filters
 restcl.slnx
+**/build/

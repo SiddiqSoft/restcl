@@ -311,7 +311,7 @@ namespace siddiqsoft
                                               sizeof(enableHTTP2Flag)))
                         {
 #ifdef _DEBUG
-                            std::print(std::cerr, "{} Failed set HTTP/2 flag; err:{}\n", __func__, GetLastError());
+                            std::println(std::cerr, "{} Failed set HTTP/2 flag; err:{}", __func__, GetLastError());
 #endif
                         }
 
@@ -320,7 +320,7 @@ namespace siddiqsoft
                                     newSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression)))
                         {
 #ifdef _DEBUG
-                            std::print(std::cerr, "{} Failed set decompression flag; err:{}\n", __func__, GetLastError());
+                            std::println(std::cerr, "{} Failed set decompression flag; err:{}", __func__, GetLastError());
 #endif
                         }
                     }
@@ -618,7 +618,7 @@ namespace siddiqsoft
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
 #if defined(DEBUG) || defined(_DEBUG)
-            std::print(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}\n", __FUNCTION__, rcl->id);
+            std::println(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
 #endif
             return rcl;
         }

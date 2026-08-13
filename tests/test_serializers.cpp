@@ -59,7 +59,7 @@ namespace siddiqsoft
         // nlohmann::json doc2 {std::move(srt)};
         nlohmann::json doc2 = srt;
         // Checks the implementation of the json implementation
-        std::cerr << "Serialized json: " << doc2.dump(3) << std::endl;
+        std::cerr << "Serialized json: " << doc2.dump() << std::endl;
         //});
     }
 
@@ -78,6 +78,6 @@ namespace siddiqsoft
         auto srt = "https://www.siddiqsoft.com/"_GET;
 
         // Checks the implementation of the std::formatter implementation
-        std::print(std::cerr, "Wire serialize              : {}\n", srt);
+        std::println(std::cerr, "Wire serialize              : {}", srt);
     }
 } // namespace siddiqsoft

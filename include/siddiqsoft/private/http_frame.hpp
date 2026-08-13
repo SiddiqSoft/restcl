@@ -580,7 +580,7 @@ namespace siddiqsoft
             }
             catch (std::exception& e) {
 #if defined(DEBUG)
-                std::print(std::cerr, "{} - Exception: {}\n", __func__, e.what());
+                std::println(std::cerr, "{} - Exception: {}", __func__, e.what());
 #endif
             }
             return *this;
@@ -703,7 +703,7 @@ struct std::formatter<siddiqsoft::ContentType> : std::formatter<std::string>
     auto format(const siddiqsoft::ContentType& cntnt, std::format_context& ctx) const
     {
         return std::format_to(ctx.out(),
-                              "Content-Type:- type:{}\nlength:{}\noffset:{}\nremainingSize:{}\nbody:{}\n",
+                              "Content-Type:- type:{}\nlength:{}\noffset:{}\nremainingSize:{}\nbody:{}",
                               cntnt.type,
                               cntnt.length,
                               cntnt.offset,

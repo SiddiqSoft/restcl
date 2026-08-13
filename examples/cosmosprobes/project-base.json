@@ -1,0 +1,17 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "Project-Base",
+            "displayName": "Project Base",
+            "description": "Base preset for all project configurations.",
+            "cacheVariables": {
+                "CMAKE_PROJECT_NAME": "examples_cosmosprobes",
+                "CMAKE_PROJECT_DESCRIPTION": "cosmosprobes example",
+                "CMAKE_CXX_STANDARD": "23",
+                "CI_BUILDID": "0.0.0"
+            },
+            "hidden": true
+        }
+    ]
+}
