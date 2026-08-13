@@ -404,7 +404,7 @@ namespace siddiqsoft
             auto     config = _config.snapshot(); // peek at the snapshot of the config to avoid locking for long periods
 
 #if defined(DEBUG_TRACE)
-            std::println(std::cerr, "{} - Preparing context for request to: {}", __func__, req.getUri(), config.dump());
+            std::println(std::cerr, "{} - Preparing context: {}", __func__, config.dump());
 #endif
 
             if (ctxCurl && ((CURL*)(*ctxCurl).curlHandle()) != NULL) curl_easy_reset((CURL*)(*ctxCurl).curlHandle());

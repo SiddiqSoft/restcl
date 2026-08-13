@@ -7,9 +7,9 @@
 #include <cstring>
 #include <iostream>
 
-
+#define DEBUG_TRACE 1
 #include "nlohmann/json.hpp"
-#include "siddiqsoft/restcl.hpp"
+#include "../../../include/siddiqsoft/restcl.hpp"
 
 
 int main(int argc, char** argv)

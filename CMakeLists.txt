@@ -66,22 +66,19 @@ endif()
 
 CPMAddPackage("gh:nlohmann/json#v3.12.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
+CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
+target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
+
 CPMAddPackage("gh:SiddiqSoft/SplitUri#3.0.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
 CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.3.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE AzureCppUtils::AzureCppUtils)
 CPMAddPackage("gh:SiddiqSoft/string2map#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
-CPMAddPackage("gh:SiddiqSoft/RunOnEnd#1.4.5")
-target_link_libraries(${PROJECT_NAME} INTERFACE RunOnEnd::RunOnEnd)
-CPMAddPackage("gh:SiddiqSoft/RWLEnvelope#1.5.3")
-target_link_libraries(${PROJECT_NAME} INTERFACE RWLEnvelope::RWLEnvelope)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.3.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 CPMAddPackage("gh:SiddiqSoft/arrp#1.2.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE arrp::arrp)
-CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
-target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
 
 
 # ____________________________________
