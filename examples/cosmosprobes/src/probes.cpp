@@ -25,6 +25,7 @@ int main(int argc, char** argv)
                         {"timeout", 5000},        // timeout for the overall IO phase
                         {"trace", false}});
 
+        // The port 8080 is for checking the health of the service.
         auto req  = siddiqsoft::rest_request("http://localhost:8080/ready"_GET);
         auto resp = wrc->send(req);
         if (resp && resp->success()) {

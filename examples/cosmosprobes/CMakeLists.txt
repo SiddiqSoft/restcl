@@ -139,7 +139,7 @@ endif()
 CPMAddPackage("gh:google/googletest#v1.17.0")
 CPMAddPackage("gh:nlohmann/json#v3.12.0")
 
-CPMAddPackage("gh:siddiqsoft/restcl#552ac999b529231e381d97b3a6fe151e91f88b2a")
+CPMAddPackage("gh:siddiqsoft/restcl#da5a435ef9138869efbd73e7c21b394f574fb5e4")
 
 target_sources(${PROJECT_NAME}
                 PRIVATE
