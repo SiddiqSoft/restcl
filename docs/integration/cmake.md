@@ -95,3 +95,47 @@ set(restcl_DEBUG_TRACE ON CACHE BOOL "" FORCE)
 | `restcl_BUILD_TESTS` | `OFF` | Build test suite (`BUILD_TESTS`). |
 | `restcl_DEBUG_TRACE` | `OFF` | Enable HTTP verb, header, and payload trace logging to `std::cerr`. |
 
+---
+
+## CPM Dependency Cache
+
+`restcl` configures `CPM_SOURCE_CACHE` by default to avoid re-downloading dependencies during clean builds:
+
+* **Windows**: `%LOCALAPPDATA%\CPM\.cpmcache` or `%USERPROFILE%\AppData\Local\CPM\.cpmcache`
+* **Linux / macOS**: `$HOME/.cache/.cpmcache`
+* **Fallback**: `${CMAKE_BINARY_DIR}/.cpmcache`
+
+You can override `CPM_SOURCE_CACHE` by defining it before building or in CMake command arguments:
+
+```bash
+cmake -B build -DCPM_SOURCE_CACHE=/custom/cache/path
+```
+
+---
+
+## Building & Running Tests
+
+To build and run the test suite:
+
+```bash
+# Configure with test suite enabled
+cmake --preset Darwin -Drestcl_BUILD_TESTS=ON
+
+# Build the tests
+cmake --build --preset Darwin
+
+# Run tests via ctest
+ctest --preset Darwin
+```
+
+### Test Categories
+
+* **Unit Tests** (`test_validation.cpp`): Request and response validation, header serialization, error states.
+* **Core Functionality** (`test_restcl.cpp`): Synchronous and asynchronous operations, HTTP verbs, client configuration.
+* **Serialization** (`test_serializers.cpp`): JSON body encoding and decoding.
+* **Integration Tests** (`test_postbin.cpp`): Network IO and live service response handling.
+* **Platform Helpers** (`test_libcurl_helpers.cpp`): `libcurl` singleton and callback wrappers.
+* **Coverage & Mocks** (`test_mock_and_coverage.cpp`): AddressSanitizer and code coverage validation.
+
+
+

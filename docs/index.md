@@ -127,3 +127,4 @@
 - [**Features**](features/index.md): Discover user-defined literals, async callbacks, and the JSON API metaphor.
 - [**Integration**](integration/index.md): Guides for CMake, git submodules, and NuGet package integration.
 - [**API Reference**](api/index.md): Detailed API documentation for `GetRESTClient`, request/response models, and client interfaces.
+- [**Examples**](examples/index.md): Sample applications including the `Cosmos Probes` health-check probe.

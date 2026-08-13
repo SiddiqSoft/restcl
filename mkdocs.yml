@@ -100,4 +100,7 @@ nav:
       - rest_request: api/rest_request.md
       - rest_response: api/rest_response.md
       - restcl_literals: api/restcl_literals.md
+  - Examples:
+      - Overview: examples/index.md
+      - Cosmos Probes: examples/cosmosprobes.md
   - License: license.md
