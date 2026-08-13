@@ -313,6 +313,26 @@
   
   
   
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../examples/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
     <li class="md-tabs__item">
       <a href="../../license/" class="md-tabs__link">
         
@@ -1113,6 +1133,123 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/cosmosprobes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cosmos Probes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../license/" class="md-nav__link">
         
@@ -1263,14 +1400,12 @@
 
     subgraph Core["Core Dependencies (via CPM)"]
         NLOHMANNJSON["nlohmann_json v3.12.0"]
+        CTRE["ctre v3.11.0"]
         SPLITURI["SplitUri 3.0.3"]
         AZURECPPUTILS["AzureCppUtils 3.3.0"]
         STRING2MAP["string2map 2.6.1"]
-        RUNONEND["RunOnEnd 1.4.5"]
-        RWLENVELOPE["RWLEnvelope 1.5.3"]
         ASYNCHRONY["asynchrony 2.3.3"]
-        ARRP["arrp 1.2.0"]
-        CTRE["ctre v3.11.0"]
+        ARRP["arrp 1.2.1"]
     end
 
     subgraph Test["Test Dependencies (Optional)"]
@@ -1280,14 +1415,12 @@
     restcl --&gt; LIBCURL
     restcl --&gt; ACW32H
     restcl --&gt; NLOHMANNJSON
+    restcl --&gt; CTRE
     restcl --&gt; SPLITURI
     restcl --&gt; AZURECPPUTILS
     restcl --&gt; STRING2MAP
-    restcl --&gt; RUNONEND
-    restcl --&gt; RWLENVELOPE
     restcl --&gt; ASYNCHRONY
     restcl --&gt; ARRP
-    restcl --&gt; CTRE
     restcl -. "BUILD_TESTS=ON" .-&gt; GOOGLETEST</code></pre>
 <h2 id="dependency-breakdown">Dependency Breakdown<a class="headerlink" href="#dependency-breakdown" title="Permanent link">&para;</a></h2>
 <table>
@@ -1323,6 +1456,13 @@
 <td style="text-align: left;">All Platforms (<code>INTERFACE</code>)</td>
 </tr>
 <tr>
+<td style="text-align: left;"><strong>ctre</strong></td>
+<td style="text-align: left;"><a href="https://github.com/hanickadot/compile-time-regular-expressions"><code>hanickadot/compile-time-regular-expressions</code></a></td>
+<td style="text-align: left;">v3.11.0</td>
+<td style="text-align: left;"><code>CPM</code></td>
+<td style="text-align: left;">All Platforms (<code>INTERFACE</code>)</td>
+</tr>
+<tr>
 <td style="text-align: left;"><strong>SplitUri</strong></td>
 <td style="text-align: left;"><a href="https://github.com/SiddiqSoft/SplitUri"><code>SiddiqSoft/SplitUri</code></a></td>
 <td style="text-align: left;">3.0.3</td>
@@ -1344,20 +1484,6 @@
 <td style="text-align: left;">All Platforms (<code>INTERFACE</code>)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>RunOnEnd</strong></td>
-<td style="text-align: left;"><a href="https://github.com/SiddiqSoft/RunOnEnd"><code>SiddiqSoft/RunOnEnd</code></a></td>
-<td style="text-align: left;">1.4.5</td>
-<td style="text-align: left;"><code>CPM</code></td>
-<td style="text-align: left;">All Platforms (<code>INTERFACE</code>)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>RWLEnvelope</strong></td>
-<td style="text-align: left;"><a href="https://github.com/SiddiqSoft/RWLEnvelope"><code>SiddiqSoft/RWLEnvelope</code></a></td>
-<td style="text-align: left;">1.5.3</td>
-<td style="text-align: left;"><code>CPM</code></td>
-<td style="text-align: left;">All Platforms (<code>INTERFACE</code>)</td>
-</tr>
-<tr>
 <td style="text-align: left;"><strong>asynchrony</strong></td>
 <td style="text-align: left;"><a href="https://github.com/SiddiqSoft/asynchrony"><code>SiddiqSoft/asynchrony</code></a></td>
 <td style="text-align: left;">2.3.3</td>
@@ -1367,14 +1493,7 @@
 <tr>
 <td style="text-align: left;"><strong>arrp</strong></td>
 <td style="text-align: left;"><a href="https://github.com/SiddiqSoft/arrp"><code>SiddiqSoft/arrp</code></a></td>
-<td style="text-align: left;">1.2.0</td>
-<td style="text-align: left;"><code>CPM</code></td>
-<td style="text-align: left;">All Platforms (<code>INTERFACE</code>)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>ctre</strong></td>
-<td style="text-align: left;"><a href="https://github.com/hanickadot/compile-time-regular-expressions"><code>hanickadot/compile-time-regular-expressions</code></a></td>
-<td style="text-align: left;">v3.11.0</td>
+<td style="text-align: left;">1.2.1</td>
 <td style="text-align: left;"><code>CPM</code></td>
 <td style="text-align: left;">All Platforms (<code>INTERFACE</code>)</td>
 </tr>
@@ -1482,7 +1601,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.3.12-2"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.3.13-2"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

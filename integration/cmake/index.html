@@ -313,6 +313,26 @@
   
   
   
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../examples/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
     <li class="md-tabs__item">
       <a href="../../license/" class="md-tabs__link">
         
@@ -789,6 +809,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cpm-dependency-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPM Dependency Cache
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building &amp; Running Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building &amp; Running Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Categories
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1152,6 +1211,123 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/cosmosprobes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cosmos Probes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../license/" class="md-nav__link">
         
@@ -1249,6 +1425,45 @@
     <span class="md-ellipsis">
       
         Options Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpm-dependency-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPM Dependency Cache
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building &amp; Running Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building &amp; Running Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Categories
       
     </span>
   </a>
@@ -1423,6 +1638,38 @@
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="cpm-dependency-cache">CPM Dependency Cache<a class="headerlink" href="#cpm-dependency-cache" title="Permanent link">&para;</a></h2>
+<p><code>restcl</code> configures <code>CPM_SOURCE_CACHE</code> by default to avoid re-downloading dependencies during clean builds:</p>
+<ul>
+<li><strong>Windows</strong>: <code>%LOCALAPPDATA%\CPM\.cpmcache</code> or <code>%USERPROFILE%\AppData\Local\CPM\.cpmcache</code></li>
+<li><strong>Linux / macOS</strong>: <code>$HOME/.cache/.cpmcache</code></li>
+<li><strong>Fallback</strong>: <code>${CMAKE_BINARY_DIR}/.cpmcache</code></li>
+</ul>
+<p>You can override <code>CPM_SOURCE_CACHE</code> by defining it before building or in CMake command arguments:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>cmake<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span>-DCPM_SOURCE_CACHE<span class="o">=</span>/custom/cache/path
+</span></code></pre></div>
+<hr />
+<h2 id="building-running-tests">Building &amp; Running Tests<a class="headerlink" href="#building-running-tests" title="Permanent link">&para;</a></h2>
+<p>To build and run the test suite:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Configure with test suite enabled</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>cmake<span class="w"> </span>--preset<span class="w"> </span>Darwin<span class="w"> </span>-Drestcl_BUILD_TESTS<span class="o">=</span>ON
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># Build the tests</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>cmake<span class="w"> </span>--build<span class="w"> </span>--preset<span class="w"> </span>Darwin
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># Run tests via ctest</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>ctest<span class="w"> </span>--preset<span class="w"> </span>Darwin
+</span></code></pre></div>
+<h3 id="test-categories">Test Categories<a class="headerlink" href="#test-categories" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Unit Tests</strong> (<code>test_validation.cpp</code>): Request and response validation, header serialization, error states.</li>
+<li><strong>Core Functionality</strong> (<code>test_restcl.cpp</code>): Synchronous and asynchronous operations, HTTP verbs, client configuration.</li>
+<li><strong>Serialization</strong> (<code>test_serializers.cpp</code>): JSON body encoding and decoding.</li>
+<li><strong>Integration Tests</strong> (<code>test_postbin.cpp</code>): Network IO and live service response handling.</li>
+<li><strong>Platform Helpers</strong> (<code>test_libcurl_helpers.cpp</code>): <code>libcurl</code> singleton and callback wrappers.</li>
+<li><strong>Coverage &amp; Mocks</strong> (<code>test_mock_and_coverage.cpp</code>): AddressSanitizer and code coverage validation.</li>
+</ul>
 
 
 
@@ -1518,7 +1765,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.3.12-2"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.3.13-2"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
