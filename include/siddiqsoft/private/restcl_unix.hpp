@@ -63,7 +63,7 @@
 
 namespace siddiqsoft
 {
-    static siddiqsoft::ScopeTrace Log {"restcl_unix"};
+    static siddiqsoft::ScopeTrace Log("restcl_unix");
 
     /// @brief Encapsulates libcurl error codes from various libcurl APIs
     /// @details Provides unified error handling for different libcurl error types:

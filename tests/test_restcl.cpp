@@ -77,31 +77,32 @@ namespace siddiqsoft
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
         auto             wrc      = GetRESTClient();
-        auto             sl       = Log.nest("test1a", siddiqsoft::LogLevel::trace);
+        auto             sl0      = Log.nest("test1a", siddiqsoft::LogLevel::trace);
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
                         {"trace", false}})
-                .sendAsync("https://www.siddiqsoft.com/"_GET,
-                           [&](const auto& req, std::expected<rest_response<>, int> resp) {
-                               nlohmann::json doc(req);
+                .sendAsync("https://www.siddiqsoft.com/"_GET, [&](const auto& req, std::expected<rest_response<>, int> resp) {
+                    auto sl = sl0.nest("callback", siddiqsoft::LogLevel::trace);
 
-                               sl.log<siddiqsoft::LogLevel::debug>("From callback Serialized req: {}", doc.dump());
-                               if (resp && resp->success()) {
-                                   passTest = true;
-                                   sl.log<siddiqsoft::LogLevel::trace>("Response\n{}", *resp);
-                               }
-                               else if (resp) {
-                                   auto [ec, emsg] = resp->status();
-                                   passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
-                                   sl.log<siddiqsoft::LogLevel::trace>(" test1a - Got error: {} - {}", ec, emsg);
-                               }
-                               else {
-                                   std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
-                               }
-                               done = true;
-                               done.notify_all();
-                           });
+                    nlohmann::json doc(req);
+
+                    sl.log<siddiqsoft::LogLevel::trace>("From callback Serialized req: {}", doc.dump());
+                    if (resp && resp->success()) {
+                        passTest = true;
+                        sl.log<siddiqsoft::LogLevel::trace>("Response\n{}", *resp);
+                    }
+                    else if (resp) {
+                        auto [ec, emsg] = resp->status();
+                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
+                        sl.log<siddiqsoft::LogLevel::trace>(" test1a - Got error: {} - {}", ec, emsg);
+                    }
+                    else {
+                        sl.log<siddiqsoft::LogLevel::warning>("Got error: {} -- {}", resp.error(), strerror(resp.error()));
+                    }
+                    done = true;
+                    done.notify_all();
+                });
 
         done.wait(false);
         EXPECT_TRUE(passTest.load());

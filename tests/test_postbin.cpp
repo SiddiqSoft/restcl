@@ -52,7 +52,8 @@ namespace siddiqsoft
 
     class PostBin : public ::testing::Test
     {
-        // std::shared_ptr<LibCurlSingleton> myCurlInstance;
+    public:
+        siddiqsoft::ScopeTrace sl {"test_postbin", siddiqsoft::LogLevel::trace};
 
     protected:
         void SetUp() override
@@ -299,36 +300,36 @@ namespace siddiqsoft
         EXPECT_NO_THROW({
             auto wrc = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
-            wrc->configure(
-                    {{"connectTimeout", 3000},
-                     {"timeout", 5000},
-                     {"freshConnect", true},
-                     {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
-                    [&](const auto& req, std::expected<rest_response<>, int> resp) {
-                        callbackCounter++;
-                        std::println("{} - Callback; passTest:{}; callbackCounter:{}",
-                                     __func__,
-                                     passTest.load(),
-                                     callbackCounter.load());
+            wrc->configure({{"connectTimeout", 3000},
+                            {"timeout", 5000},
+                            {"freshConnect", true},
+                            {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
+                           [&](const auto& req, std::expected<rest_response<>, int> resp) {
+                               callbackCounter++;
+                               std::println("{} - Callback; passTest:{}; callbackCounter:{}",
+                                            __func__,
+                                            passTest.load(),
+                                            callbackCounter.load());
 
-                        if (resp.has_value() && resp->success()) {
-                            passTest += resp->statusCode() >= 200;
-                        }
-                        else if (resp.has_value()) {
-                            passTest += resp->statusCode() != 0;
-                            std::println(std::cerr,
-                                       "{} Threads::test_1 - Got error: {} for {} -- {}",
-                                       __func__,
-                                       resp->statusCode(),
-                                       req.getUri().authority.host,
-                                       resp->reasonCode());
-                        }
-                        else {
-                            passTest++;
-                            std::println(std::cerr, "{} Threads::test_1 - Unknown error! passTest:{}", __func__, passTest.load());
-                        }
-                        passTest.notify_all();
-                    });
+                               if (resp.has_value() && resp->success()) {
+                                   passTest += resp->statusCode() >= 200;
+                               }
+                               else if (resp.has_value()) {
+                                   passTest += resp->statusCode() != 0;
+                                   std::println(std::cerr,
+                                                "{} Threads::test_1 - Got error: {} for {} -- {}",
+                                                __func__,
+                                                resp->statusCode(),
+                                                req.getUri().authority.host,
+                                                resp->reasonCode());
+                               }
+                               else {
+                                   passTest++;
+                                   std::println(
+                                           std::cerr, "{} Threads::test_1 - Unknown error! passTest:{}", __func__, passTest.load());
+                               }
+                               passTest.notify_all();
+                           });
 
 
             wrc->sendAsync(
@@ -340,11 +341,11 @@ namespace siddiqsoft
                 std::this_thread::sleep_for(std::chrono::seconds(1));
 
                 std::println(std::cerr,
-                           "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
-                           __func__,
-                           ITER_COUNT,
-                           passTest.load(),
-                           callbackCounter.load());
+                             "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
+                             __func__,
+                             ITER_COUNT,
+                             passTest.load(),
+                             callbackCounter.load());
 
                 if (ITER_COUNT == passTest.load()) break;
             } while (limitCount--);
@@ -411,11 +412,11 @@ namespace siddiqsoft
                 std::this_thread::sleep_for(std::chrono::seconds(1));
 
                 std::println(std::cerr,
-                           "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
-                           __func__,
-                           ITER_COUNT,
-                           passTest.load(),
-                           callbackCounter.load());
+                             "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
+                             __func__,
+                             ITER_COUNT,
+                             passTest.load(),
+                             callbackCounter.load());
 
                 if (ITER_COUNT == passTest.load()) break;
             } while (limitCount--);
