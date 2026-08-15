@@ -11,14 +11,14 @@
 #include "siddiqsoft/ScopeTrace.hpp"
 #include "siddiqsoft/restcl.hpp"
 
-siddiqsoft::ScopeTrace g_scopeTrace;
+siddiqsoft::ScopeTrace Log{"cosmosprobes", siddiqsoft::LogLevel::trace};
 
 int main(int argc, char** argv)
 {
     using namespace siddiqsoft::restcl_literals;
 
     std::atomic_bool done = false;
-    g_ScopeTrace.msg("{} - Init the CurlLib singleton.\n", __func__);
+    Log.info("{} - Init the CurlLib singleton.\n", __func__);
     auto myCurlInstance = siddiqsoft::LibCurlSingleton::GetInstance();
     if (myCurlInstance) {
         auto wrc = siddiqsoft::GetRESTClient();
@@ -31,20 +31,20 @@ int main(int argc, char** argv)
         auto req  = siddiqsoft::rest_request("http://localhost:8080/ready"_GET);
         auto resp = wrc->send(req);
         if (resp && resp->success()) {
-            g_ScopeTrace.msg("  - Got Valid Response ------ \n{}", *resp);
+            Log.trace("  - Got Valid Response ------ \n{}", *resp);
         }
         else if (resp) {
             auto [ec, emsg] = resp->status();
-            g_ScopeTrace.msg("  - Got response error: {} - {}", ec, emsg);
+            Log.info("  - Got response error: {} - {}", ec, emsg);
         }
         else {
-            g_ScopeTrace.msg("  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(static_cast<CURLcode>(resp.error())));
+            Log.warn("  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(static_cast<CURLcode>(resp.error())));
         }
 
         return 0;
     }
     else {
-        g_ScopeTrace.msg("{} - Failed to get CurlLib singleton instance!", __func__);
+        Log.info("Failed to get CurlLib singleton instance!");
         return 1;
     }
 }
