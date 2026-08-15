@@ -62,10 +62,13 @@ namespace siddiqsoft
         void SetUp() override
         {
 #if defined(__linux__) || defined(__APPLE__)
-            std::println(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            Log.debug("Init the CurlLib singleton.");
             myCurlInstance = LibCurlSingleton::GetInstance();
 #endif
         }
+
+    public:
+        siddiqsoft::ScopeTrace Log {"TestSends"};
     };
 
 
@@ -74,23 +77,24 @@ namespace siddiqsoft
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
         auto             wrc      = GetRESTClient();
+        auto             sl       = Log.nest("test1a", siddiqsoft::LogLevel::trace);
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
                         {"trace", false}})
                 .sendAsync("https://www.siddiqsoft.com/"_GET,
-                           [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+                           [&](const auto& req, std::expected<rest_response<>, int> resp) {
                                nlohmann::json doc(req);
 
-                               std::println(std::cerr, "From callback Serialized req: {}", doc.dump());
+                               sl.log<siddiqsoft::LogLevel::debug>("From callback Serialized req: {}", doc.dump());
                                if (resp && resp->success()) {
                                    passTest = true;
-                                   std::cerr << "Response\n" << *resp << std::endl;
+                                   sl.log<siddiqsoft::LogLevel::trace>("Response\n{}", *resp);
                                }
                                else if (resp) {
                                    auto [ec, emsg] = resp->status();
                                    passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
-                                   std::println(std::cerr, " test1a - Got error: {} - {}", ec, emsg);
+                                   sl.log<siddiqsoft::LogLevel::trace>(" test1a - Got error: {} - {}", ec, emsg);
                                }
                                else {
                                    std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
@@ -799,11 +803,11 @@ namespace siddiqsoft
                                    passTest++;
                                    if (!resp->success()) {
                                        std::println(std::cerr,
-                                                  "{} Threads::test_1 - HTTP {} for {} -- {}",
-                                                  __func__,
-                                                  resp->statusCode(),
-                                                  req.getUri().authority.host,
-                                                  resp->reasonCode());
+                                                    "{} Threads::test_1 - HTTP {} for {} -- {}",
+                                                    __func__,
+                                                    resp->statusCode(),
+                                                    req.getUri().authority.host,
+                                                    resp->reasonCode());
                                    }
                                }
                                else {
@@ -811,10 +815,10 @@ namespace siddiqsoft
                                    // as a completed request for the stress test.
                                    passTest++;
                                    std::println(std::cerr,
-                                              "{} Threads::test_1 - IO error: {} for {}",
-                                              __func__,
-                                              resp.error(),
-                                              req.getUri().authority.host);
+                                                "{} Threads::test_1 - IO error: {} for {}",
+                                                __func__,
+                                                resp.error(),
+                                                req.getUri().authority.host);
                                }
                                passTest.notify_all();
                            });
@@ -836,11 +840,11 @@ namespace siddiqsoft
                 std::this_thread::sleep_for(std::chrono::seconds(1));
 
                 std::println(std::cerr,
-                           "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
-                           __func__,
-                           ITER_COUNT,
-                           passTest.load(),
-                           callbackCounter.load());
+                             "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
+                             __func__,
+                             ITER_COUNT,
+                             passTest.load(),
+                             callbackCounter.load());
 
                 if (ITER_COUNT == passTest.load()) break;
             } while (limitCount--);

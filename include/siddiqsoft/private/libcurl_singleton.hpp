@@ -28,12 +28,12 @@
 #include <mutex>
 #include <thread>
 #include <utility>
-#include <stdio.h>
 #include <exception>
 
 #include "curl/curl.h"
 #include "curl/easy.h"
 
+#include "siddiqsoft/ScopeTrace.hpp"
 #include "siddiqsoft/arrp.hpp"
 
 #include "http_frame.hpp"
@@ -41,6 +41,8 @@
 
 namespace siddiqsoft
 {
+    static ScopeTrace g_lct; // libcurl_trace
+
     /**
      * @brief Groups together the pooled CURL* and the ContentType object
      *        with the ability to on destruction return the CURL shared_ptr
@@ -115,9 +117,7 @@ namespace siddiqsoft
             // This method is invoked for each resource that is invalidated
             // or about to be cleaned up.
             if (auto* handle = rsrc.curlHandle(); handle != nullptr) {
-#if defined(DEBUG_TRACE)
-                std::println(" - Pool cleanup handler - cleanup curl handle:{}", static_cast<void*>(handle));
-#endif
+                g_lct.trace(" - Pool cleanup handler - cleanup curl handle:{}", static_cast<void*>(handle));
                 rsrc.cleanup();
             }
         }};
