@@ -49,12 +49,10 @@ namespace siddiqsoft
 {
     static std::string SessionBinId {};
 
+        auto sl = Log.nest("test_postbin", siddiqsoft::LogLevel::trace);
 
     class PostBin : public ::testing::Test
     {
-    public:
-        siddiqsoft::ScopeTrace sl {"test_postbin", siddiqsoft::LogLevel::trace};
-
     protected:
         void SetUp() override
         {

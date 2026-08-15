@@ -31,6 +31,7 @@
 
 #include "nlohmann/json.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
+#include "siddiqsoft/ScopeTrace.hpp"
 #include "siddiqsoft/RunOnEnd.hpp"
 
 namespace siddiqsoft
@@ -66,9 +67,6 @@ namespace siddiqsoft
             myCurlInstance = LibCurlSingleton::GetInstance();
 #endif
         }
-
-    public:
-        siddiqsoft::ScopeTrace Log {"TestSends"};
     };
 
 

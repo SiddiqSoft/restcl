@@ -63,7 +63,7 @@
 
 namespace siddiqsoft
 {
-    static siddiqsoft::ScopeTrace Log("restcl_unix");
+    static auto& Log = siddiqsoft::ScopeTrace::CreateInstance("restcl_unix");
 
     /// @brief Encapsulates libcurl error codes from various libcurl APIs
     /// @details Provides unified error handling for different libcurl error types:
@@ -756,8 +756,8 @@ namespace siddiqsoft
 
         void extractStartLine(CurlContextBundlePtr& ctxCurl, rest_response<>& dest)
         {
-            CURLcode rc {CURLE_OK};
-            long     sc {0};
+            CURLcode          rc {CURLE_OK};
+            long              sc {0};
             thread_local auto sl = Log.nest(__func__);
 
             if (rc = curl_easy_getinfo((*ctxCurl).curlHandle(), CURLINFO_RESPONSE_CODE, &sc); rc == CURLE_OK) {

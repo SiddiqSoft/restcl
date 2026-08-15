@@ -41,7 +41,7 @@
 
 namespace siddiqsoft
 {
-    static ScopeTrace g_lct; // libcurl_trace
+    static auto g_lct = siddiqsoft::ScopeTrace::CreateInstance().nest("libcurl_trace"); // libcurl_trace
 
     /**
      * @brief Groups together the pooled CURL* and the ContentType object
@@ -89,6 +89,7 @@ namespace siddiqsoft
 
         void abandon()
         {
+            g_lct.trace("Abandoning CURL handle:{}", static_cast<void*>(m_handle));
             cleanup();
             _contents.reset();
         }
@@ -154,38 +155,27 @@ namespace siddiqsoft
                                 }
                                 else if (rc != CURLE_OK) {
                                     curl_easy_cleanup(curlHandle);
-#if defined(DEBUG)
-                                    std::println(std::cerr,
-                                                 "{} - Setting the debug Callback data..FAILED: {}",
-                                                 __func__,
-                                                 curl_easy_strerror(rc));
-#endif
-                                    throw std::runtime_error(curl_easy_strerror(rc));
+
+                                    g_lct.err_throw<std::runtime_error>("Setting the debug Callback _data_ ..FAILED: {}",
+                                                                        curl_easy_strerror(rc));
                                 }
                             }
                             else {
                                 curl_easy_cleanup(curlHandle);
-#if defined(DEBUG)
-                                std::println(
-                                        std::cerr, "{} - Setting the debug Callback..FAILED: {}", __func__, curl_easy_strerror(rc));
-#endif
-                                throw std::runtime_error(curl_easy_strerror(rc));
+
+                                g_lct.err_throw<std::runtime_error>("Setting the debug Callback..FAILED: {}",
+                                                                    curl_easy_strerror(rc));
                             }
 
-                            throw std::runtime_error("Failed to create new CURL handle for pool.");
+                            g_lct.err_throw<std::runtime_error>("Failed to create new CURL handle for pool.");
                         });
                     }
                     else {
-#if defined(DEBUG)
-                        std::println(std::cerr, "{} - Initialize failed! {}", __func__, curl_easy_strerror(rc));
-#endif
-                        throw std::runtime_error(curl_easy_strerror(rc));
+                        g_lct.err_throw<std::runtime_error>("Initialization failed: {}", curl_easy_strerror(rc));
                     }
                 }
                 else {
-#if defined(DEBUG)
-                    std::println(std::cerr, "{} - Initialize instance failed!\n", __func__);
-#endif
+                    g_lct.err("Initialize instance failed!");
                 }
             });
 
@@ -216,13 +206,13 @@ namespace siddiqsoft
                     return curlHandlePool.try_borrow_create();
                 }
 
-                std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}", __func__, curlHandlePool.size());
+                g_lct.err("NOT INITIALIZED!! Capacity: {}", curlHandlePool.size());
             }
             catch (std::runtime_error& re) {
-                std::println(std::cerr, "{} - Failed existing BUNDLE from pool. {}", __func__, re.what());
+                g_lct.exp(re, "Failed existing BUNDLE from pool.");
             }
             catch (...) {
-                std::println(std::cerr, "{} - Failed existing BUNDLE from pool. unknown error\n", __func__);
+                g_lct.err("Failed existing BUNDLE from pool. unknown error");
             }
 
             return curlHandlePool.try_borrow_create();
@@ -231,9 +221,8 @@ namespace siddiqsoft
 
         static int debugCallback(CURL*, curl_infotype type, char* data, size_t sz, void*)
         {
-#if defined(DEBUG_TRACE)
-            std::println(std::cerr, "{} - {}", std::to_underlying(type), std::string(data, sz));
-#endif
+            g_lct.trace("{} - {}", std::to_underlying(type), std::string(data, sz));
+
             return 0;
         }
 
