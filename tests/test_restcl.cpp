@@ -306,23 +306,23 @@ namespace siddiqsoft
                        })
                 .sendAsync("https://localhost:65535/"_GET,
                            [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+                               auto sl = siddiqsoft::ScopeTrace::GetInstance().sub_scope("test_restcl", siddiqsoft::LogLevel::trace);
                                nlohmann::json doc(req);
 
                                // Checks the implementation of the json implementation
                                // std::cerr << "From callback Serialized json: " << req << std::endl;
                                if (resp.has_value() && resp->success()) {
-                                   std::cerr << "Response\n" << *resp << std::endl;
+                                   sl.trace( "Response\n{}", *resp);
                                }
                                else if (resp.has_value()) {
                                    auto [ec, emsg] = resp->status();
                                    passTest        = ec == 12029;
-                                   // std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                                   sl.warn( "Got error: {} -- {}", ec, emsg);
                                }
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                   //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                   sl.warn( "passTest: {}  Got error: {} -- {}", passTest.load(), resp.error(), curl_easy_strerror((CURLcode)resp.error()));
                                }
                                done = true;
                                done.notify_all();
