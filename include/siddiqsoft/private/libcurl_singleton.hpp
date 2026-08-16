@@ -41,7 +41,7 @@
 
 namespace siddiqsoft
 {
-    static auto g_lct = siddiqsoft::ScopeTrace::GetInstance().sub_scope("libcurl_trace"); // libcurl_trace
+    static auto g_lct = gRCL.sub_scope("libcurl_trace"); // libcurl_trace
 
     /**
      * @brief Groups together the pooled CURL* and the ContentType object

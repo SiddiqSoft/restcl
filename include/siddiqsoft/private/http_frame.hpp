@@ -39,6 +39,7 @@
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/date-utils.hpp"
+#include "siddiqsoft/ScopeTrace.hpp"
 
 
 namespace siddiqsoft
@@ -579,9 +580,7 @@ namespace siddiqsoft
                 content.swap(src);
             }
             catch (std::exception& e) {
-#if defined(DEBUG)
-                std::println(std::cerr, "{} - Exception: {}", __func__, e.what());
-#endif
+                gRCL.sub_scope("http_frame").exp(e, "{} - Exception", __func__);
             }
             return *this;
         }

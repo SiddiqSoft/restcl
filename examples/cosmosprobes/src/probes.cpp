@@ -11,7 +11,7 @@
 #include "siddiqsoft/ScopeTrace.hpp"
 #include "siddiqsoft/restcl.hpp"
 
-static auto& Log = siddiqsoft::ScopeTrace::GetInstance("cosmosprobes", siddiqsoft::LogLevel::trace);
+static auto Log = siddiqsoft::gRCL.sub_scope("cosmosprobes", siddiqsoft::LogLevel::trace);
 
 int main(int argc, char** argv)
 {

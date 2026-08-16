@@ -17,6 +17,15 @@
 #include <functional>
 #include <expected>
 
+#include "siddiqsoft/ScopeTrace.hpp"
+
+namespace siddiqsoft
+{
+    /// @brief Global ScopeTrace singleton instance for restcl
+    /// @note Default log level is set to error. Adjust as needed for debugging.
+    static auto& gRCL = siddiqsoft::ScopeTrace::GetInstance("restcl", siddiqsoft::LogLevel::error);
+}
+
 #include "http_frame.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"

@@ -56,7 +56,7 @@ namespace siddiqsoft
     protected:
         void SetUp() override
         {
-            // std::println(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            // sl.trace("{} - Init the CurlLib singleton.\n", __func__);
             //  configure
             //  start
             //  get a context object
@@ -110,7 +110,7 @@ namespace siddiqsoft
                               {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
             req.setContent(d);
             if (auto ret = wrc->send(req); ret.has_value()) {
-                std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump());
+                sl.trace("{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump());
                 if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
                     return doc;
                 }
@@ -181,9 +181,9 @@ namespace siddiqsoft
                           {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
-            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump());
+            sl.trace("{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump());
             if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
-                std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump());
+                sl.trace("{} - Response:\n{}", __func__, doc.dump());
                 EXPECT_EQ(1, doc.at("userId"));
             }
         }
@@ -200,11 +200,11 @@ namespace siddiqsoft
                           {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
-            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump());
+            sl.trace("{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump());
             if (auto doc = ret->getContentBodyJSON(); !doc.empty() && !doc.is_null()) {
-                // std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump());
+                // sl.trace("{} - Response:\n{}", __func__, doc.dump());
                 EXPECT_TRUE(doc.is_array());
-                std::println(std::cerr, "{} - Array Size: {}", __func__, doc.size());
+                sl.trace("{} - Array Size: {}", __func__, doc.size());
                 EXPECT_TRUE(doc.size() > 1);
             }
         }
@@ -214,7 +214,7 @@ namespace siddiqsoft
     {
         auto doc = PostBin::createResource(
                 {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
-        std::println(std::cerr, "{} - Response:\n{}", __func__, doc.dump());
+        sl.trace("{} - Response:\n{}", __func__, doc.dump());
         EXPECT_EQ(1, doc.at("userId"));
         EXPECT_EQ(__func__, doc.at("source"));
     }
@@ -224,7 +224,7 @@ namespace siddiqsoft
     {
         auto doc = PostBin::createResource(
                 {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
-        std::println(std::cerr,
+        sl.trace(
                      "{} - Create'd Response:\n{}\n\n-------------------------------------------------------------",
                      __func__,
                      doc.dump());
@@ -233,7 +233,7 @@ namespace siddiqsoft
 
         auto docUpdated = PostBin::updateResource("1", doc);
         EXPECT_TRUE(docUpdated.is_object());
-        std::println(std::cerr, "{} - Update'd Response:\n{}", __func__, docUpdated.dump());
+        sl.trace("{} - Update'd Response:\n{}", __func__, docUpdated.dump());
         EXPECT_EQ(doc.at("index"), docUpdated.at("index"));
         EXPECT_EQ(__func__, docUpdated.at("source"));
     }
@@ -242,14 +242,14 @@ namespace siddiqsoft
     {
         auto doc = PostBin::createResource(
                 {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
-        std::println(std::cerr, "{} - Create'd Response:\n{}", __func__, doc.dump());
+        sl.trace("{} - Create'd Response:\n{}", __func__, doc.dump());
         EXPECT_EQ(1, doc.at("userId"));
         EXPECT_EQ(__func__, doc.at("source"));
 
         doc["source"]   = "New Source Name";
         auto docUpdated = PostBin::patchResource(doc.at("id").dump(), doc);
         EXPECT_TRUE(docUpdated.is_object());
-        std::println(std::cerr, "{} - Update'd Response:\n{}", __func__, docUpdated.dump());
+        sl.trace("{} - Update'd Response:\n{}", __func__, docUpdated.dump());
         EXPECT_EQ(1, docUpdated.at("userId"));
         EXPECT_EQ("New Source Name", docUpdated.at("source"));
     }
@@ -258,7 +258,7 @@ namespace siddiqsoft
     {
         auto doc = PostBin::createResource(
                 {{"id", 1}, {"title", "foo"}, {"body", "foobar"}, {"userId", 1}, {"source", __func__}, {"index", __COUNTER__}});
-        std::println(std::cerr, "{} - Create'd Response:\n{}", __func__, doc.dump());
+        sl.trace("{} - Create'd Response:\n{}", __func__, doc.dump());
         EXPECT_EQ(1, doc.at("userId"));
         EXPECT_EQ(__func__, doc.at("source"));
 
@@ -270,9 +270,9 @@ namespace siddiqsoft
                           {{HF_ACCEPT, CONTENT_APPLICATION_JSON}, {HF_CONTENT_TYPE, CONTENT_APPLICATION_JSON}}};
 
         if (auto ret = wrc->send(req); ret.has_value()) {
-            std::println(std::cerr, "{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump());
+            sl.trace("{} - Raw response:\n{}", __func__, nlohmann::json(*ret).dump());
             if (ret.has_value()) {
-                std::println(std::cerr, "{} - StatusCode:{}", __func__, (*ret).statusCode());
+                sl.trace("{} - StatusCode:{}", __func__, (*ret).statusCode());
                 EXPECT_EQ(200, ret->statusCode()) << ret.error();
             }
             else {
@@ -280,7 +280,7 @@ namespace siddiqsoft
             }
         }
         else if (ret.has_value()) {
-            std::println(std::cerr, "{} - StatusCode:{}", __func__, (*ret).statusCode());
+            sl.trace("{} - StatusCode:{}", __func__, (*ret).statusCode());
             EXPECT_EQ(200, ret->statusCode()) << ret.error();
         }
     }
@@ -304,7 +304,7 @@ namespace siddiqsoft
                             {"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __FUNCTION__)}},
                            [&](const auto& req, std::expected<rest_response<>, int> resp) {
                                callbackCounter++;
-                               std::println("{} - Callback; passTest:{}; callbackCounter:{}",
+                               sl.trace("{} - Callback; passTest:{}; callbackCounter:{}",
                                             __func__,
                                             passTest.load(),
                                             callbackCounter.load());
@@ -314,7 +314,7 @@ namespace siddiqsoft
                                }
                                else if (resp.has_value()) {
                                    passTest += resp->statusCode() != 0;
-                                   std::println(std::cerr,
+                                   sl.err(
                                                 "{} Threads::test_1 - Got error: {} for {} -- {}",
                                                 __func__,
                                                 resp->statusCode(),
@@ -323,8 +323,8 @@ namespace siddiqsoft
                                }
                                else {
                                    passTest++;
-                                   std::println(
-                                           std::cerr, "{} Threads::test_1 - Unknown error! passTest:{}", __func__, passTest.load());
+                                   sl.err(
+                                           "{} Threads::test_1 - Unknown error! passTest:{}", __func__, passTest.load());
                                }
                                passTest.notify_all();
                            });
@@ -338,7 +338,7 @@ namespace siddiqsoft
             do {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
 
-                std::println(std::cerr,
+                sl.trace(
                              "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
                              __func__,
                              ITER_COUNT,
@@ -381,7 +381,7 @@ namespace siddiqsoft
                                }
                                else {
                                    passTest++;
-                                   std::println(std::cerr, "{} Threads::test_1 - Unknown error!\n", __func__);
+                                   sl.err("{} Threads::test_1 - Unknown error!\n", __func__);
                                }
                                passTest.notify_all();
                            });
@@ -409,7 +409,7 @@ namespace siddiqsoft
             do {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
 
-                std::println(std::cerr,
+                sl.trace(
                              "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
                              __func__,
                              ITER_COUNT,

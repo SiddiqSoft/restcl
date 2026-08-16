@@ -12,6 +12,7 @@
 
 namespace siddiqsoft
 {
+
     TEST(libcurl_helpers, test_init)
     {
         // configure
@@ -33,7 +34,7 @@ namespace siddiqsoft
     {
         CURLcode          cc {CURLE_ABORTED_BY_CALLBACK};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
         EXPECT_EQ("Operation was aborted by an application callback", rre.to_string());
     }
 
@@ -41,7 +42,7 @@ namespace siddiqsoft
     {
         CURLMcode         cc {CURLM_CALL_MULTI_SOCKET};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
         EXPECT_EQ("Please call curl_multi_perform() soon", rre.to_string());
     }
 
@@ -49,7 +50,7 @@ namespace siddiqsoft
     {
         CURLHcode         cc {CURLHE_MISSING};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
         EXPECT_EQ("No such header exists.", rre.to_string());
     }
 
@@ -57,7 +58,7 @@ namespace siddiqsoft
     {
         CURLSHcode        cc {CURLSHE_BAD_OPTION};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
         EXPECT_EQ("Unknown share option", rre.to_string());
     }
 
@@ -66,7 +67,7 @@ namespace siddiqsoft
     {
         CURLUcode         cc {CURLUE_BAD_FILE_URL};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
         EXPECT_EQ("Bad file:// URL", rre.to_string());
     }
 
@@ -74,7 +75,7 @@ namespace siddiqsoft
     {
         uint32_t          cc {EXIT_FAILURE};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
         EXPECT_EQ("Operation not permitted", rre.to_string());
     }
 

@@ -42,9 +42,9 @@
 
 #include "nlohmann/json.hpp"
 
+#include "basic_restclient.hpp"
 #include "http_frame.hpp"
 #include "rest_response.hpp"
-#include "basic_restclient.hpp"
 #include "libcurl_singleton.hpp"
 #include "rest_request.hpp"
 
@@ -63,7 +63,7 @@
 
 namespace siddiqsoft
 {
-    static auto& Log = siddiqsoft::ScopeTrace::GetInstance("restcl_unix");
+    static auto Log = gRCL.sub_scope("restcl_unix");
 
     /// @brief Encapsulates libcurl error codes from various libcurl APIs
     /// @details Provides unified error handling for different libcurl error types:
@@ -483,13 +483,10 @@ namespace siddiqsoft
                                 }
                                 else {
                                     ioSendFailed++;
-                                    if (config.value("trace", false)) {
-                                        std::println(std::cerr,
-                                                     "{} - curl_easy_perform() failed: `{}`\n{}",
-                                                     __func__,
-                                                     curl_easy_strerror(rc),
-                                                     nlohmann::json(req).dump());
-                                    }
+                                    Log.err("{} - curl_easy_perform() failed: `{}`\n{}",
+                                            __func__,
+                                            curl_easy_strerror(rc),
+                                            nlohmann::json(req).dump());
                                 }
                             }
                         }

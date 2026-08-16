@@ -41,7 +41,7 @@ void runAsyncRequest()
             std::cout << "HTTP Status: " << resp.statusCode() << std::endl;
             std::cout << "Body: " << resp.content->body << std::endl;
         } else {
-            std::cerr << "Error code: " << result.error() << std::endl;
+            Log.err("Error code: {}", result.error());
         }
     });
 }

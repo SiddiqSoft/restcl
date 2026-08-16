@@ -50,16 +50,16 @@ namespace siddiqsoft
     TEST(Serializers, test_GET)
     {
         auto srt = "https://www.siddiqsoft.com/"_GET;
-        std::cerr << "Going to check if we can dump.." << std::endl;
+        Log.trace("Going to check if we can dump..");
 
-        std::cerr << srt << std::endl;
+        Log.trace("{}", srt);
 
         // EXPECT_NO_THROW({
         //  nlohmann::json doc(srt);
         // nlohmann::json doc2 {std::move(srt)};
         nlohmann::json doc2 = srt;
         // Checks the implementation of the json implementation
-        std::cerr << "Serialized json: " << doc2.dump() << std::endl;
+        Log.trace("Serialized json: {}", doc2.dump());
         //});
     }
 
@@ -69,7 +69,7 @@ namespace siddiqsoft
         auto srt = "https://www.siddiqsoft.com/"_GET;
 
         // Checks the implementation of the encode() implementation
-        std::cerr << "Wire serialize              : " << srt.encode() << std::endl;
+        Log.trace("Wire serialize              : {}", srt.encode());
     }
 
 
@@ -78,6 +78,6 @@ namespace siddiqsoft
         auto srt = "https://www.siddiqsoft.com/"_GET;
 
         // Checks the implementation of the std::formatter implementation
-        std::println(std::cerr, "Wire serialize              : {}", srt);
+        Log.trace("Wire serialize              : {}", srt);
     }
 } // namespace siddiqsoft

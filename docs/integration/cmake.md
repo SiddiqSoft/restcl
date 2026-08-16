@@ -93,7 +93,7 @@ set(restcl_DEBUG_TRACE ON CACHE BOOL "" FORCE)
 | Option | Default | Description |
 | :--- | :--- | :--- |
 | `restcl_BUILD_TESTS` | `OFF` | Build test suite (`BUILD_TESTS`). |
-| `restcl_DEBUG_TRACE` | `OFF` | Enable HTTP verb, header, and payload trace logging to `std::cerr`. |
+| `restcl_DEBUG_TRACE` | `OFF` | Enable HTTP verb, header, and payload trace logging via `ScopeTrace`. |
 
 ---
 
