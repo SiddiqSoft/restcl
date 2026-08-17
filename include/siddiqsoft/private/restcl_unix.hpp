@@ -406,15 +406,21 @@ namespace siddiqsoft
                     sl.err("Error: {}", curl_easy_strerror(rc));
             }
 
-            if (long v = config.value("useTLSv1_2", true); v == true) {
-                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2); rc != CURLE_OK)
-                    sl.warn("Failed setting TLSv1_2 version: {}", curl_easy_strerror(rc));
-            } //CURL_SSLVERSION_TLSv1_2
-
+            // Only one protocol can be set at a time.
+            // Prioritize TLSv1_3 over TLSv1_2 and TLSv1_1 if multiple are set to true.
+            // If none are set, libcurl will use the default.
             if (long v = config.value("useTLSv1_3", true); v == true) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_3); rc != CURLE_OK)
                     sl.warn("Failed setting TLSv1_3 version: {}", curl_easy_strerror(rc));
-            } //CURL_SSLVERSION_TLSv1_3
+            } // CURL_SSLVERSION_TLSv1_3
+            else if (long v = config.value("useTLSv1_2", true); v == true) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2); rc != CURLE_OK)
+                    sl.warn("Failed setting TLSv1_2 version: {}", curl_easy_strerror(rc));
+            } // CURL_SSLVERSION_TLSv1_2
+            else if (long v = config.value("useTLSv1_1", true); v == true) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1); rc != CURLE_OK)
+                    sl.warn("Failed setting TLSv1_1 version: {}", curl_easy_strerror(rc));
+            } // CURL_SSLVERSION_TLSv1_1
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
             if (long v = config.value("verifyPeer", 1); v == 0) {
