@@ -8,7 +8,7 @@ Namespace: `siddiqsoft`
 ## Signature
 
 ```cpp
-[[nodiscard]] static auto GetRESTClient(
+[[nodiscard]] inline auto GetRESTClient(
     const nlohmann::json& cfg = {},
     basic_callbacktype&& cb = {}
 );
@@ -39,6 +39,9 @@ Creates and returns a shared pointer to a platform-specific REST client instance
 | `"timeout"` | `int` | `0` | Total request timeout in milliseconds. |
 | `"verifyPeer"` | `int` | `1` | SSL peer verification enabled (1) or disabled (0). |
 | `"freshConnect"` | `bool` | `false` | Force fresh connection for each request. |
+| `"useTLSv1_3"` | `bool` | `false` | Force TLS 1.3 protocol version (Unix/Linux/macOS). |
+| `"useTLSv1_2"` | `bool` | `false` | Force TLS 1.2 protocol version (Unix/Linux/macOS). |
+| `"useTLSv1_1"` | `bool` | `false` | Force TLS 1.1 protocol version (Unix/Linux/macOS). |
 
 ---
 

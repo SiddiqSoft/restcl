@@ -49,6 +49,9 @@ namespace siddiqsoft
      *            - "timeout": Overall request timeout in milliseconds (default: 0)
      *            - "verifyPeer": SSL peer verification (default: 1)
      *            - "freshConnect": Force new connections (default: false)
+     *            - "useTLSv1_3": Force TLS 1.3 protocol version (default: false)
+     *            - "useTLSv1_2": Force TLS 1.2 protocol version (default: false)
+     *            - "useTLSv1_1": Force TLS 1.1 protocol version (default: false)
      *
      * @param cb Optional global callback for async operations. Can be overridden per-request.
      *           Signature: void(rest_request<>&, std::expected<rest_response<>, int>)
