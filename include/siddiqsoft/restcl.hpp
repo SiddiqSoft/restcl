@@ -63,7 +63,7 @@ namespace siddiqsoft
      * @see rest_request for request building
      * @see rest_response for response handling
      */
-    [[nodiscard]] static auto GetRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+    [[nodiscard]] inline auto GetRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
     {
 #if defined(__linux__) || defined(__APPLE__)
         return HttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype>(cb));
