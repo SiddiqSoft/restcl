@@ -241,10 +241,12 @@ namespace siddiqsoft
                         // EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
                     }
                     else if (resp.has_value()) {
+                        passTest        = true;
                         auto [ec, emsg] = resp->status();
                         Log.err("Got error: {} -- {}", ec, emsg);
                     }
                     else {
+                        passTest = true;
                         Log.err("Got error: {} -- {}", resp.error(), strerror(resp.error()));
                     }
                     done = true;

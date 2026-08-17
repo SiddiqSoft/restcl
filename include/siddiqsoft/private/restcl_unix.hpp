@@ -409,15 +409,15 @@ namespace siddiqsoft
             // Only one protocol can be set at a time.
             // Prioritize TLSv1_3 over TLSv1_2 and TLSv1_1 if multiple are set to true.
             // If none are set, libcurl will use the default.
-            if (long v = config.value("useTLSv1_3", true); v == true) {
+            if (long v = config.value("useTLSv1_3", false); v == true) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_3); rc != CURLE_OK)
                     sl.warn("Failed setting TLSv1_3 version: {}", curl_easy_strerror(rc));
             } // CURL_SSLVERSION_TLSv1_3
-            else if (long v = config.value("useTLSv1_2", true); v == true) {
+            else if (long v = config.value("useTLSv1_2", false); v == true) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2); rc != CURLE_OK)
                     sl.warn("Failed setting TLSv1_2 version: {}", curl_easy_strerror(rc));
             } // CURL_SSLVERSION_TLSv1_2
-            else if (long v = config.value("useTLSv1_1", true); v == true) {
+            else if (long v = config.value("useTLSv1_1", false); v == true) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1); rc != CURLE_OK)
                     sl.warn("Failed setting TLSv1_1 version: {}", curl_easy_strerror(rc));
             } // CURL_SSLVERSION_TLSv1_1
@@ -455,6 +455,7 @@ namespace siddiqsoft
             rest_response<> resp {};
             CURLcode        rc {};
             auto            sl = Log.sub_scope(__func__);
+            char            curl_error_buffer[CURL_ERROR_SIZE] {};
 
             if (!isInitialized) {
                 sl.err("Not INITIALIZED for `{}` Uri: {}", req.getMethod(), req.getUri());
@@ -475,6 +476,12 @@ namespace siddiqsoft
 
                 // Configures the context with options such as timeout, connectionTimeout, verbose, freshConnect..
                 prepareContext(ctxCurl);
+
+                // Set the error buffer for libcurl to write any error messages into
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_ERRORBUFFER, curl_error_buffer); rc != CURLE_OK) {
+                    sl.err("Failed setting error buffer: {}", curl_easy_strerror(rc));
+                }
+
                 // Set User-Agent
                 // Use the one present in the request..
                 // otherwise use the one configured in the config
@@ -503,10 +510,10 @@ namespace siddiqsoft
                                 }
                                 else {
                                     ioSendFailed++;
-                                    Log.err("{} - curl_easy_perform() failed: `{}`\n{}",
-                                            __func__,
-                                            curl_easy_strerror(rc),
-                                            nlohmann::json(req).dump());
+                                    sl.err("- curl_easy_perform() failed: `{}`:`{}`\n{}",
+                                           curl_easy_strerror(rc),
+                                           curl_error_buffer,
+                                           nlohmann::json(req).dump());
                                 }
                             }
                         }
@@ -796,7 +803,10 @@ namespace siddiqsoft
             }
 
             if (rc != CURLE_OK) {
-                sl.trace("extractStartLine failure - rc:{}  sc:{}  content-length:{}", curl_easy_strerror(rc), sc, dest.getContent()->length);
+                sl.trace("extractStartLine failure - rc:{}  sc:{}  content-length:{}",
+                         curl_easy_strerror(rc),
+                         sc,
+                         dest.getContent()->length);
             }
         }
 
