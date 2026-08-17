@@ -234,7 +234,7 @@ namespace siddiqsoft
                     // The request must be the same as we configured!
                     EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
                     // Checks the implementation of the std::format implementation
-                    Log.trace("From callback Wire serialize              : {}", req);
+                    Log.trace("From callback Wire serialize\n{}", req);
                     if (resp.has_value() && resp->success()) {
                         passTest = true;
                         Log.trace("Response\n{}", *resp);
