@@ -92,11 +92,11 @@ CPMAddPackage("gh:SiddiqSoft/string2map#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.3.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
-CPMAddPackage("gh:SiddiqSoft/arrp#1.2.1")
+CPMAddPackage("gh:SiddiqSoft/arrp#1.2.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE arrp::arrp)
 
 if(${PROJECT_NAME}_DEBUG_TRACE)
-    target_compile_definitions(${PROJECT_NAME} INTERFACE restcl_DEBUG_TRACE=1)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE ${PROJECT_NAME}_DEBUG_TRACE=1)
 endif()
 
 # ____________________________________
