@@ -405,10 +405,16 @@ namespace siddiqsoft
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
                     sl.err("Error: {}", curl_easy_strerror(rc));
             }
-            // Force the TLS to the miniumm version of TLS 1.2 for security reasons. This is a good practice to avoid using older,
-            // insecure versions of TLS.
-            if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2); rc != CURLE_OK)
-                sl.warn("Failed setting TLS version: {}", curl_easy_strerror(rc));
+
+            if (long v = config.value("useTLSv1_2", true); v == true) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2); rc != CURLE_OK)
+                    sl.warn("Failed setting TLSv1_2 version: {}", curl_easy_strerror(rc));
+            } //CURL_SSLVERSION_TLSv1_2
+
+            if (long v = config.value("useTLSv1_3", true); v == true) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_3); rc != CURLE_OK)
+                    sl.warn("Failed setting TLSv1_3 version: {}", curl_easy_strerror(rc));
+            } //CURL_SSLVERSION_TLSv1_3
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
             if (long v = config.value("verifyPeer", 1); v == 0) {
