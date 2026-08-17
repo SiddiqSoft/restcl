@@ -95,6 +95,9 @@ target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
 CPMAddPackage("gh:SiddiqSoft/arrp#1.2.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE arrp::arrp)
 
+if(${PROJECT_NAME}_DEBUG_TRACE)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE restcl_DEBUG_TRACE=1)
+endif()
 
 # ____________________________________
 # Testing

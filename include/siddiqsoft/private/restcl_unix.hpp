@@ -345,6 +345,10 @@ namespace siddiqsoft
             if (!cfg.is_null() && !cfg.empty())
                 _config.mutate([](auto& container, const auto& cfg) noexcept { container.update(cfg); }, cfg);
 
+            auto isTraceEnabled = _config.observe([](const auto& d) noexcept { return d.value("trace", false); });
+            gRCL.set_level(isTraceEnabled ? LogLevel::trace : LogLevel::error);
+            Log.set_level(isTraceEnabled ? LogLevel::trace : LogLevel::error);
+
             if (func) {
                 std::scoped_lock lock(callbackMutex);
                 _callback = std::move(func);
