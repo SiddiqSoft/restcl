@@ -83,6 +83,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
             $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:CURL::libcurl>
             $<$<CXX_COMPILER_ID:MSVC>:acw32h::acw32h>
             RunOnEnd::RunOnEnd
+            ScopeTrace::ScopeTrace
             SplitUri::SplitUri
             arrp::arrp
             string2map::string2map

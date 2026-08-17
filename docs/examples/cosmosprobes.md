@@ -32,12 +32,14 @@ Below is the complete implementation from `examples/cosmosprobes/src/probes.cpp`
 #include "siddiqsoft/restcl.hpp"
 
 
+static auto Log = siddiqsoft::gRCL.sub_scope("cosmosprobes", siddiqsoft::LogLevel::trace);
+
 int main(int argc, char** argv)
 {
     using namespace siddiqsoft::restcl_literals;
 
     std::atomic_bool done = false;
-    std::println(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+    Log.info("{} - Init the CurlLib singleton.\n", __func__);
     auto myCurlInstance = siddiqsoft::LibCurlSingleton::GetInstance();
     if (myCurlInstance) {
         auto wrc = siddiqsoft::GetRESTClient();
@@ -50,20 +52,20 @@ int main(int argc, char** argv)
         auto req  = siddiqsoft::rest_request("http://localhost:8080/ready"_GET);
         auto resp = wrc->send(req);
         if (resp && resp->success()) {
-            std::println(std::cerr, "  - Got Valid Response ------ \n{}", *resp);
+            Log.trace("  - Got Valid Response ------ \n{}", *resp);
         }
         else if (resp) {
             auto [ec, emsg] = resp->status();
-            std::println(std::cerr, "  - Got response error: {} - {}", ec, emsg);
+            Log.info("  - Got response error: {} - {}", ec, emsg);
         }
         else {
-            std::println(std::cerr, "  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(static_cast<CURLcode>(resp.error())));
+            Log.warn("  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(static_cast<CURLcode>(resp.error())));
         }
 
         return 0;
     }
     else {
-        std::println(std::cerr, "{} - Failed to get CurlLib singleton instance!", __func__);
+        Log.info("Failed to get CurlLib singleton instance!");
         return 1;
     }
 }
@@ -99,7 +101,7 @@ The `_GET` literal parses the URI string and returns a pre-populated `rest_reque
 ```cpp
 auto resp = wrc->send(req);
 if (resp && resp->success()) {
-    std::println(std::cerr, "  - Got Valid Response ------ \n{}", *resp);
+    Log.trace("  - Got Valid Response ------ \n{}", *resp);
 }
 ```
 `wrc->send()` executes the request synchronously and returns a `std::expected<rest_response<>, int>`.

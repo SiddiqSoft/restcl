@@ -45,6 +45,7 @@
 #include "siddiqsoft/SplitUri.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
 
+#include "siddiqsoft/ScopeTrace.hpp"
 #include "gtest/gtest.h"
 
 namespace siddiqsoft
@@ -61,7 +62,7 @@ namespace siddiqsoft
         {
 #if defined(__linux__) || defined(__APPLE__)
 #if defined(DEBUG)
-            std::println(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            Log.trace("{} - Init the CurlLib singleton.\n", __func__);
 #endif
             myCurlInstance = LibCurlSingleton::GetInstance();
 #endif
@@ -73,7 +74,7 @@ namespace siddiqsoft
     {
         DWORD             cc {12001};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
         EXPECT_EQ("12001-ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.", rre.to_string());
     }
 #endif
@@ -82,7 +83,7 @@ namespace siddiqsoft
     {
         uint32_t          cc {ECONNRESET};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
 #if defined(__linux__) || defined(__APPLE__)
         EXPECT_EQ("Connection reset by peer", rre.to_string());
 #elif (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
@@ -95,7 +96,7 @@ namespace siddiqsoft
     {
         uint32_t          cc {909090};
         rest_result_error rre {cc};
-        std::println(std::cerr, "Error code -> {}", rest_result_error {cc});
+        Log.trace("Error code -> {}", rest_result_error {cc});
         // the value returned by unix strerror varies
         // Unknown error: 909090
         // Unknown error 909090
@@ -132,8 +133,8 @@ namespace siddiqsoft
         EXPECT_EQ("source=Validation::restrequest_checks&param=r3", r3.getUri().queryPart);
 
         // nlohmann::json doc {r3};
-        // std::cerr << "Serialized (encoded): " << r3 << std::endl;
-        // std::cerr << "Serialized (json'd) : " << doc.dump() << std::endl;
+        // Log.trace("Serialized (encoded): {}", r3);
+        // Log.trace("Serialized (json'd) : {}", doc.dump());
     }
 
     TEST_F(Validation, GET_google_com)
@@ -142,13 +143,13 @@ namespace siddiqsoft
         auto passTest = std::atomic_bool {false};
         auto wrc      = GetRESTClient({{"connectTimeout", 3000}, {"timeout", 5000}});
 
-        std::println(std::cerr, "{} - Configuring the REST client for GET google.com\n", __func__);
-        std::println(std::cerr, "{} - Sending GET request to google.com\n", __func__);
+        Log.trace("{} - Configuring the REST client for GET google.com\n", __func__);
+        Log.trace("{} - Sending GET request to google.com\n", __func__);
         wrc->sendAsync("https://www.google.com/"_GET,
                        [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
                            if (resp && resp->success()) {
                                passTest = true;
-                               std::println(std::cerr,
+                               Log.trace(
                                           "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
                                           __func__,
                                           nlohmann::json(*resp).dump());
@@ -156,10 +157,10 @@ namespace siddiqsoft
                            else if (resp.has_value()) {
                                auto [ec, emsg] = resp->status();
                                passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
-                               std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                               Log.err("Got error: {} -- `{}`..", ec, emsg);
                            }
                            else {
-                               std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
+                               Log.err("Got error: {} -- {}", resp.error(), strerror(resp.error()));
                            }
                            done = true;
                            done.notify_all();
@@ -182,16 +183,16 @@ namespace siddiqsoft
                                if (resp && resp->success()) {
                                    passTest = true;
                                    // nlohmann::json doc(*resp);
-                                   // std::cerr << "Response\n" << doc.dump() << std::endl;
+                                   // Log.trace("Response\n{}", doc.dump());
                                }
                                else if (resp.has_value()) {
                                    auto [ec, emsg] = resp->status();
                                    passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400));
-                                   std::cerr << "Got error: " << ec << " -- `" << emsg << "`.." << std::endl;
+                                   Log.err("Got error: {} -- `{}`..", ec, emsg);
                                }
                                else {
                                    passTest = true;
-                                   std::println(std::cerr, "{}: failed: du{}", __func__, resp.error());
+                                   Log.err("{}: failed: du{}", __func__, resp.error());
                                }
                                done = true;
                                done.notify_all();
@@ -218,19 +219,19 @@ namespace siddiqsoft
             if (resp.has_value() && resp->success()) {
                 passTest = 1;
                 // nlohmann::json doc(*resp);
-                // std::println(std::cerr, "{} - POSITIVE Response\n{}", __func__, doc.dump());
+                // Log.trace("{} - POSITIVE Response\n{}", __func__, doc.dump());
             }
             else if (resp.has_value()) {
                 nlohmann::json doc(*resp);
 
                 auto [ec, emsg] = resp->status();
                 passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400)) ? 1 : -1;
-                std::println(std::cerr, "{} - Got error: {} -- `{}`..\n{}", __func__, ec, emsg, doc.dump());
-                // std::println(std::cerr, "{} - Got error:\n{}", __func__, doc.dump());
+                Log.err("{} - Got error: {} -- `{}`..\n{}", __func__, ec, emsg, doc.dump());
+                // Log.err("{} - Got error:\n{}", __func__, doc.dump());
             }
             else {
                 passTest = -1;
-                std::println(std::cerr, "{}: failed:{}", __func__, resp.error());
+                Log.err("{}: failed:{}", __func__, resp.error());
             }
             done = true;
             done.notify_all();
@@ -255,7 +256,7 @@ namespace siddiqsoft
 
             auto req = "https://time.akamai.com/?iso"_GET;
             if (auto resp = wrc->send(req); resp->success()) {
-                std::cerr << nlohmann::json(*resp).dump() << std::endl;
+                Log.trace("{}", nlohmann::json(*resp).dump());
                 EXPECT_EQ("Akamai/Time Server", resp->getHeader("Server"));
                 // Expect the contents are date time stamp between 18-20 chars.
                 EXPECT_TRUE(resp->getContent()->length > 16);
@@ -271,15 +272,15 @@ namespace siddiqsoft
                 myStats["timeDrift"]       = deltastr;
                 myStats["timeNow"]         = siddiqsoft::DateUtils::ISO8601(timeNow);
 
-                std::println(std::cerr, "{} - Time drift check:\n{}", __func__, myStats.dump());
+                Log.trace("{} - Time drift check:\n{}", __func__, myStats.dump());
 
                 if ((deltaMS > 1500ms) || (deltaMS < -1500ms)) {
-                    std::cerr << "  Found drift from clock more than 1500ms" << std::endl;
+                    Log.warn("  Found drift from clock more than 1500ms");
                 }
             }
         }
         catch (const std::exception& ex) {
-            std::println(std::cerr, "Housekeeping exception: {}", ex.what());
+            Log.exp(ex, "Housekeeping exception");
         }
 
         std::this_thread::sleep_for(1000ms);
@@ -293,7 +294,7 @@ namespace siddiqsoft
         std::vector<siddiqsoft::restcl> clients;
         int                             clientIndex {0};
 
-        // std::println(std::cerr, "{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
+        // Log.trace("{} - Adding {} clients to vector...............\n", __FUNCTION__, CLIENT_COUNT);
         for (auto i = 0; i < CLIENT_COUNT; i++) {
             clients.push_back(GetRESTClient({{"trace", false},
                                              {"freshConnect", true},
@@ -308,7 +309,7 @@ namespace siddiqsoft
 
         // Send data over each client (if we mess up the move constructors this will fail)
         std::for_each(clients.begin(), clients.end(), [&](auto& wrc) {
-            /*std::println(std::cerr,
+            /*Log.trace(
                        "{} - Configuring client {}/{} individually...............\n",
                        __FUNCTION__,
                        clientIndex,
@@ -322,7 +323,7 @@ namespace siddiqsoft
                 else {
                     auto [ec, emsg] = resp->status();
                     passTest++;
-                    std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                    Log.err("Got error: {} -- {}", ec, emsg);
                 }
             });
         });
@@ -385,10 +386,10 @@ namespace siddiqsoft
                 thrown = true;
             }
             catch (const std::exception& ex) {
-                std::cerr << "Unexpected exception: " << ex.what() << std::endl;
+                Log.exp(ex, "Unexpected exception");
             }
             catch (...) {
-                std::println(std::cerr, "{} - Generic exception!", __func__);
+                Log.err("{} - Generic exception!", __func__);
             }
         }
 
@@ -409,7 +410,7 @@ namespace siddiqsoft
             thrown = true;
         }
         catch (const std::exception& ex) {
-            std::cerr << "Unexpected exception: " << ex.what() << std::endl;
+            Log.exp(ex, "Unexpected exception");
         }
 
         EXPECT_TRUE(thrown);

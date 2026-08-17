@@ -8,15 +8,17 @@
 #include <iostream>
 
 #include "nlohmann/json.hpp"
+#include "siddiqsoft/ScopeTrace.hpp"
 #include "siddiqsoft/restcl.hpp"
 
+static auto probeLog = siddiqsoft::gRCL.sub_scope("cosmosprobes", siddiqsoft::LogLevel::trace);
 
 int main(int argc, char** argv)
 {
     using namespace siddiqsoft::restcl_literals;
 
     std::atomic_bool done = false;
-    std::println(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+    probeLog.info("{} - Init the CurlLib singleton.\n", __func__);
     auto myCurlInstance = siddiqsoft::LibCurlSingleton::GetInstance();
     if (myCurlInstance) {
         auto wrc = siddiqsoft::GetRESTClient();
@@ -29,20 +31,20 @@ int main(int argc, char** argv)
         auto req  = siddiqsoft::rest_request("http://localhost:8080/ready"_GET);
         auto resp = wrc->send(req);
         if (resp && resp->success()) {
-            std::println(std::cerr, "  - Got Valid Response ------ \n{}", *resp);
+            probeLog.trace("  - Got Valid Response ------ \n{}", *resp);
         }
         else if (resp) {
             auto [ec, emsg] = resp->status();
-            std::println(std::cerr, "  - Got response error: {} - {}", ec, emsg);
+            probeLog.warn("  - Got response error: {} - {}", ec, emsg);
         }
         else {
-            std::println(std::cerr, "  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(static_cast<CURLcode>(resp.error())));
+            probeLog.warn("  - Got error: `{}` -- `{}`", resp.error(), curl_easy_strerror(static_cast<CURLcode>(resp.error())));
         }
 
         return 0;
     }
     else {
-        std::println(std::cerr, "{} - Failed to get CurlLib singleton instance!", __func__);
+        probeLog.info("Failed to get CurlLib singleton instance!");
         return 1;
     }
 }

@@ -111,63 +111,63 @@ namespace siddiqsoft
 
     namespace restcl_literals
     {
-        [[nodiscard]] static rest_request<char> operator""_GET(const char* url, size_t sz)
+        [[nodiscard]] inline rest_request<char> operator""_GET(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_GET).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request<char> operator""_HEAD(const char* url, size_t sz)
+        [[nodiscard]] inline rest_request<char> operator""_HEAD(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_HEAD).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request<char> operator""_POST(const char* url, size_t sz)
+        [[nodiscard]] inline rest_request<char> operator""_POST(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_POST).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request<char> operator""_PUT(const char* url, size_t sz)
+        [[nodiscard]] inline rest_request<char> operator""_PUT(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_PUT).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request<char> operator""_DELETE(const char* url, size_t sz)
+        [[nodiscard]] inline rest_request<char> operator""_DELETE(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_DELETE).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request<char> operator""_CONNECT(const char* url, size_t sz)
+        [[nodiscard]] inline rest_request<char> operator""_CONNECT(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_CONNECT).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static auto operator""_OPTIONS(const char* url, size_t sz)
+        [[nodiscard]] inline auto operator""_OPTIONS(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_OPTIONS).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request<char> operator""_TRACE(const char* url, size_t sz)
+        [[nodiscard]] inline rest_request<char> operator""_TRACE(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_TRACE).setUri(std::string {url, sz});
             return rr;
         }
 
-        [[nodiscard]] static rest_request<char> operator""_PATCH(const char* url, size_t sz)
+        [[nodiscard]] inline rest_request<char> operator""_PATCH(const char* url, size_t sz)
         {
             rest_request<char> rr;
             rr.setMethod(HttpMethodType::METHOD_PATCH).setUri(std::string {url, sz});

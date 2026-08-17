@@ -31,6 +31,7 @@
 
 #include "nlohmann/json.hpp"
 #include "../include/siddiqsoft/restcl.hpp"
+#include "siddiqsoft/ScopeTrace.hpp"
 #include "siddiqsoft/RunOnEnd.hpp"
 
 namespace siddiqsoft
@@ -62,7 +63,7 @@ namespace siddiqsoft
         void SetUp() override
         {
 #if defined(__linux__) || defined(__APPLE__)
-            std::println(std::cerr, "{} - Init the CurlLib singleton.\n", __func__);
+            Log.debug("Init the CurlLib singleton.");
             myCurlInstance = LibCurlSingleton::GetInstance();
 #endif
         }
@@ -74,37 +75,39 @@ namespace siddiqsoft
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
         auto             wrc      = GetRESTClient();
+        auto             sl0      = Log.sub_scope("test1a", siddiqsoft::LogLevel::trace);
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
                         {"trace", false}})
-                .sendAsync("https://www.siddiqsoft.com/"_GET,
-                           [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
-                               nlohmann::json doc(req);
+                .sendAsync("https://www.siddiqsoft.com/"_GET, [&](const auto& req, std::expected<rest_response<>, int> resp) {
+                    auto sl = sl0.sub_scope("callback", siddiqsoft::LogLevel::trace);
 
-                               std::println(std::cerr, "From callback Serialized req: {}", doc.dump());
-                               if (resp && resp->success()) {
-                                   passTest = true;
-                                   std::cerr << "Response\n" << *resp << std::endl;
-                               }
-                               else if (resp) {
-                                   auto [ec, emsg] = resp->status();
-                                   passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
-                                   std::println(std::cerr, " test1a - Got error: {} - {}", ec, emsg);
-                               }
-                               else {
-                                   std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
-                               }
-                               done = true;
-                               done.notify_all();
-                           });
+                    nlohmann::json doc(req);
+
+                    sl.log<siddiqsoft::LogLevel::trace>("From callback Serialized req: {}", doc.dump());
+                    if (resp && resp->success()) {
+                        passTest = true;
+                        sl.log<siddiqsoft::LogLevel::trace>("Response\n{}", *resp);
+                    }
+                    else if (resp) {
+                        auto [ec, emsg] = resp->status();
+                        passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400) || (ec == 302));
+                        sl.log<siddiqsoft::LogLevel::trace>(" test1a - Got error: {} - {}", ec, emsg);
+                    }
+                    else {
+                        sl.log<siddiqsoft::LogLevel::warning>("Got error: {} -- {}", resp.error(), strerror(resp.error()));
+                    }
+                    done = true;
+                    done.notify_all();
+                });
 
         done.wait(false);
         EXPECT_TRUE(passTest.load());
     }
 
 
-    TEST_F(TestSends, test2a_OPTIONS)
+    TEST_F(TestSends, test1a_OPTIONS)
     {
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
@@ -115,17 +118,17 @@ namespace siddiqsoft
 
         wrc->sendAsync(std::move(optionsRequest), [&passTest, &done](auto& req, std::expected<rest_response<>, int> resp) {
             // Checks the implementation of the encode() implementation
-            // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+            // Log.trace("From callback Wire serialize              : {}", req.encode());
             if (passTest = resp ? resp->success() : false; passTest.load()) {
-                std::cerr << "Response\n" << *resp << std::endl;
+                Log.trace("Response\n{}", *resp);
             }
             else if (resp && resp.has_value()) {
                 auto [ec, emsg] = resp->status();
-                std::cerr << "Got HTTP error: " << ec << std::endl;
+                Log.err("Got HTTP error: {}", ec);
                 passTest = true;
             }
             else if (!resp.has_value()) {
-                std::cerr << "Got IO error: " << resp.error() << strerror(resp.error()) << std::endl;
+                Log.err("Got IO error: {}{}", resp.error(), strerror(resp.error()));
                 // Technically we were successfull in our IO.
                 passTest = true;
             }
@@ -134,7 +137,7 @@ namespace siddiqsoft
         });
 
         done.wait(false);
-        std::cerr << "Checking results..\n";
+        Log.trace("Checking results..");
         EXPECT_TRUE(passTest.load());
     }
 
@@ -151,17 +154,17 @@ namespace siddiqsoft
         wrc->configure().sendAsync(std::move(optionsRequest),
                                    [&passTest, &done](auto& req, std::expected<rest_response<>, int> resp) {
                                        // Checks the implementation of the encode() implementation
-                                       // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+                                       // Log.trace("From callback Wire serialize              : {}", req.encode());
                                        if (passTest = resp ? resp->success() : false; passTest.load()) {
-                                           std::cerr << "Response\n" << *resp << std::endl;
+                                           Log.trace("Response\n{}", *resp);
                                        }
                                        else if (resp && resp.has_value()) {
                                            passTest        = true;
                                            auto [ec, emsg] = resp->status();
-                                           std::cerr << "Got HTTP error: " << ec << std::endl;
+                                           Log.err("Got HTTP error: {}", ec);
                                        }
                                        else if (!resp.has_value()) {
-                                           std::cerr << "Got IO error: " << resp.error() << strerror(resp.error()) << std::endl;
+                                           Log.err("Got IO error: {}{}", resp.error(), strerror(resp.error()));
 
                                            // Technically we were successfull in our IO.
                                            passTest = true;
@@ -171,7 +174,7 @@ namespace siddiqsoft
                                    });
 
         done.wait(false);
-        std::cerr << "Checking results..\n";
+        Log.trace("Checking results..");
         EXPECT_TRUE(passTest.load());
     }
 
@@ -194,15 +197,15 @@ namespace siddiqsoft
                            responseContentType = req.getHeaders().value("Content-Type", "");
                            if (resp.has_value() && resp->success()) {
                                passTest = true;
-                               std::println(std::cerr, "Response\n{}", *resp);
+                               Log.trace("Response\n{}", *resp);
                            }
                            else if (resp.has_value()) {
                                passTest = true;
-                               std::println(std::cerr, "Got HTTP error: {}", resp->statusCode());
+                               Log.err("Got HTTP error: {}", resp->statusCode());
                            }
                            else {
                                passTest = true;
-                               std::println(std::cerr, "Got IO error: {}", resp.error());
+                               Log.err("Got IO error: {}", resp.error());
                            }
                            done = true;
                            done.notify_all();
@@ -231,18 +234,20 @@ namespace siddiqsoft
                     // The request must be the same as we configured!
                     EXPECT_EQ("application/json+custom", req.getHeaders().value("Content-Type", ""));
                     // Checks the implementation of the std::format implementation
-                    std::println(std::cerr, "From callback Wire serialize              : {}", req);
+                    Log.trace("From callback Wire serialize\n{}", req);
                     if (resp.has_value() && resp->success()) {
                         passTest = true;
-                        std::cerr << "Response\n" << *resp << std::endl;
+                        Log.trace("Response\n{}", *resp);
                         // EXPECT_EQ("application/json+custom", resp->getHeaders().value("Content-Type", ""));
                     }
                     else if (resp.has_value()) {
+                        passTest        = true;
                         auto [ec, emsg] = resp->status();
-                        std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                        Log.err("Got error: {} -- {}", ec, emsg);
                     }
                     else {
-                        std::cerr << "Got error: " << resp.error() << " -- " << strerror(resp.error()) << std::endl;
+                        passTest = true;
+                        Log.err("Got error: {} -- {}", resp.error(), strerror(resp.error()));
                     }
                     done = true;
                     done.notify_all();
@@ -268,18 +273,17 @@ namespace siddiqsoft
                            [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
                                if (resp.has_value() && resp->success()) {
                                    passTest = true;
-                                   std::cerr << "Response\n" << *resp << std::endl;
+                                   Log.trace("Response\n{}", *resp);
                                }
                                else if (resp.has_value()) {
                                    auto [ec, emsg] = resp->status();
                                    passTest        = ((ec == 12002) || (ec == 12029));
-                                   std::cerr << "passTest: " << passTest << "  Got error: " << ec << " --" << emsg << std::endl;
+                                   Log.err("passTest: {}  Got error: {} --{}", passTest.load(), ec, emsg);
                                }
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                   //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                   // Log.err("passTest: {}  Got error: {} --{}", passTest.load(), resp.error(), curl_easy_strerror((CURLcode)resp.error()));
                                }
                                done = true;
                                done.notify_all();
@@ -303,23 +307,23 @@ namespace siddiqsoft
                        })
                 .sendAsync("https://localhost:65535/"_GET,
                            [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+                               auto sl = gRCL.sub_scope("test_restcl", siddiqsoft::LogLevel::trace);
                                nlohmann::json doc(req);
 
                                // Checks the implementation of the json implementation
-                               // std::cerr << "From callback Serialized json: " << req << std::endl;
+                               Log.trace("From callback Serialized json: {}", req);
                                if (resp.has_value() && resp->success()) {
-                                   std::cerr << "Response\n" << *resp << std::endl;
+                                   sl.trace( "Response\n{}", *resp);
                                }
                                else if (resp.has_value()) {
                                    auto [ec, emsg] = resp->status();
                                    passTest        = ec == 12029;
-                                   // std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                                   sl.warn( "Got error: {} -- {}", ec, emsg);
                                }
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                   //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                   sl.warn( "passTest: {}  Got error: {} -- {}", passTest.load(), resp.error(), curl_easy_strerror((CURLcode)resp.error()));
                                }
                                done = true;
                                done.notify_all();
@@ -342,18 +346,17 @@ namespace siddiqsoft
         wrc->sendAsync("https://httpbin.org:9090/get"_OPTIONS,
                        [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
                            if (resp.has_value() && resp->success()) {
-                               std::cerr << "Response\n" << nlohmann::json(*resp).dump() << std::endl;
+                               Log.trace("Response\n{}", nlohmann::json(*resp).dump());
                            }
                            else if (resp.has_value()) {
                                auto [ec, emsg] = resp->status();
                                passTest        = ((ec == 12002) || (ec == 12029) || (ec == 403));
-                               std::println(std::cerr, "ec: {}  Response\n{}", ec, nlohmann::json(*resp).dump());
+                               Log.err("ec: {}  Response\n{}", ec, nlohmann::json(*resp).dump());
                            }
                            else {
                                // We MUST get a connection failure; the site does not exist!
                                passTest = true;
-                               // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                               //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                               // Log.err("passTest: {}  Got error: {} --{}", passTest.load(), resp.error(), curl_easy_strerror((CURLcode)resp.error()));
                            }
                            done = true;
                            done.notify_all();
@@ -377,22 +380,21 @@ namespace siddiqsoft
                        })
                 .sendAsync("https://google.com/"_OPTIONS,
                            [&passTest, &done](const auto& req, std::expected<rest_response<char>, int> resp) {
-                               // std::cerr << "From callback Wire serialize              : " << req.encode() << std::endl;
+                               // Log.trace("From callback Wire serialize              : {}", req.encode());
                                if (resp.has_value() && resp->success()) {
-                                   std::println(std::cerr, "{} - Response\n{}", __func__, *resp);
+                                   Log.trace("{} - Response\n{}", __func__, *resp);
                                }
                                else if (resp.has_value()) {
                                    auto [ec, emsg] = resp->status();
                                    passTest        = ec == 405 || ec == 403;
                                    // This is a work-around for google which sometimes refuses to send the Reason Phrase!
                                    if (!emsg.empty()) passTest = passTest && (emsg == "Method Not Allowed");
-                                   std::println(std::cerr, "Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}", ec, emsg, *resp);
+                                   Log.err("Fails_2a_InvalidVerb - Got error: [{} : {}]\n{}", ec, emsg, *resp);
                                }
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                                   //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                                   // Log.err("passTest: {}  Got error: {} --{}", passTest.load(), resp.error(), curl_easy_strerror((CURLcode)resp.error()));
                                }
                                done = true;
                                done.notify_all();
@@ -410,20 +412,19 @@ namespace siddiqsoft
 
         wrc->sendAsync("https://www.google.com/"_GET,
                        [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
-                           // std::cerr << "From callback Serialized json: " << req << std::endl;
+                           // Log.trace("From callback Serialized json: {}", req);
                            if (resp.has_value() && resp->success()) {
                                passTest = resp->statusCode() == 200;
-                               // std::cerr << "Response\n"<< *resp << std::endl;
+                               // Log.trace("Response\n{}", *resp);
                            }
                            else if (resp.has_value()) {
                                auto [ec, emsg] = resp->status();
-                               std::cerr << "Got error: " << ec << " -- " << emsg << std::endl;
+                               Log.err("Got error: {} -- {}", ec, emsg);
                            }
                            else {
                                // We MUST get a connection failure; the site does not exist!
                                passTest = true;
-                               // std::cerr << "passTest: " << passTest << "  Got error: " << resp.error() << " --"
-                               //           << curl_easy_strerror((CURLcode)resp.error()) << std::endl;
+                               // Log.err("passTest: {}  Got error: {} --{}", passTest.load(), resp.error(), curl_easy_strerror((CURLcode)resp.error()));
                            }
                            done = true;
                            done.notify_all();
@@ -798,23 +799,21 @@ namespace siddiqsoft
                                if (resp.has_value()) {
                                    passTest++;
                                    if (!resp->success()) {
-                                       std::println(std::cerr,
-                                                  "{} Threads::test_1 - HTTP {} for {} -- {}",
-                                                  __func__,
-                                                  resp->statusCode(),
-                                                  req.getUri().authority.host,
-                                                  resp->reasonCode());
+                                       Log.err("{} Threads::test_1 - HTTP {} for {} -- {}",
+                                                    __func__,
+                                                    resp->statusCode(),
+                                                    req.getUri().authority.host,
+                                                    resp->reasonCode());
                                    }
                                }
                                else {
                                    // IO error (connection refused, timeout, etc.) still counts
                                    // as a completed request for the stress test.
                                    passTest++;
-                                   std::println(std::cerr,
-                                              "{} Threads::test_1 - IO error: {} for {}",
-                                              __func__,
-                                              resp.error(),
-                                              req.getUri().authority.host);
+                                   Log.err("{} Threads::test_1 - IO error: {} for {}",
+                                                __func__,
+                                                resp.error(),
+                                                req.getUri().authority.host);
                                }
                                passTest.notify_all();
                            });
@@ -835,12 +834,11 @@ namespace siddiqsoft
             do {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
 
-                std::println(std::cerr,
-                           "{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
-                           __func__,
-                           ITER_COUNT,
-                           passTest.load(),
-                           callbackCounter.load());
+                Log.trace("{} - Wrapup; ITER_COUNT: {}; passTest:{}; callbackCounter:{}",
+                             __func__,
+                             ITER_COUNT,
+                             passTest.load(),
+                             callbackCounter.load());
 
                 if (ITER_COUNT == passTest.load()) break;
             } while (limitCount--);

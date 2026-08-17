@@ -28,12 +28,12 @@
 #include <mutex>
 #include <thread>
 #include <utility>
-#include <stdio.h>
 #include <exception>
 
 #include "curl/curl.h"
 #include "curl/easy.h"
 
+#include "siddiqsoft/ScopeTrace.hpp"
 #include "siddiqsoft/arrp.hpp"
 
 #include "http_frame.hpp"
@@ -41,6 +41,8 @@
 
 namespace siddiqsoft
 {
+    static auto g_lct = gRCL.sub_scope("libcurl_trace"); // libcurl_trace
+
     /**
      * @brief Groups together the pooled CURL* and the ContentType object
      *        with the ability to on destruction return the CURL shared_ptr
@@ -87,6 +89,7 @@ namespace siddiqsoft
 
         void abandon()
         {
+            g_lct.trace("Abandoning CURL handle:{}", static_cast<void*>(m_handle));
             cleanup();
             _contents.reset();
         }
@@ -115,9 +118,7 @@ namespace siddiqsoft
             // This method is invoked for each resource that is invalidated
             // or about to be cleaned up.
             if (auto* handle = rsrc.curlHandle(); handle != nullptr) {
-#if defined(DEBUG_TRACE)
-                std::println(" - Pool cleanup handler - cleanup curl handle:{}", static_cast<void*>(handle));
-#endif
+                g_lct.trace(" - Pool cleanup handler - cleanup curl handle:{}", static_cast<void*>(handle));
                 rsrc.cleanup();
             }
         }};
@@ -154,38 +155,28 @@ namespace siddiqsoft
                                 }
                                 else if (rc != CURLE_OK) {
                                     curl_easy_cleanup(curlHandle);
-#if defined(DEBUG)
-                                    std::println(std::cerr,
-                                                 "{} - Setting the debug Callback data..FAILED: {}",
-                                                 __func__,
-                                                 curl_easy_strerror(rc));
-#endif
-                                    throw std::runtime_error(curl_easy_strerror(rc));
+
+                                    g_lct.err_throw<std::runtime_error>("Setting the debug Callback _data_ ..FAILED: {}",
+                                                                        curl_easy_strerror(rc));
                                 }
                             }
                             else {
                                 curl_easy_cleanup(curlHandle);
-#if defined(DEBUG)
-                                std::println(
-                                        std::cerr, "{} - Setting the debug Callback..FAILED: {}", __func__, curl_easy_strerror(rc));
-#endif
-                                throw std::runtime_error(curl_easy_strerror(rc));
+
+                                g_lct.err_throw<std::runtime_error>("Setting the debug Callback..FAILED: {}",
+                                                                    curl_easy_strerror(rc));
                             }
 
-                            throw std::runtime_error("Failed to create new CURL handle for pool.");
+                            // throws here; no need to return anything
+                            g_lct.err_throw<std::runtime_error>("Failed to create new CURL handle for pool.");
                         });
                     }
                     else {
-#if defined(DEBUG)
-                        std::println(std::cerr, "{} - Initialize failed! {}", __func__, curl_easy_strerror(rc));
-#endif
-                        throw std::runtime_error(curl_easy_strerror(rc));
+                        g_lct.err_throw<std::runtime_error>("Initialization failed: {}", curl_easy_strerror(rc));
                     }
                 }
                 else {
-#if defined(DEBUG)
-                    std::println(std::cerr, "{} - Initialize instance failed!\n", __func__);
-#endif
+                    g_lct.err("Initialize instance failed!");
                 }
             });
 
@@ -216,13 +207,13 @@ namespace siddiqsoft
                     return curlHandlePool.try_borrow_create();
                 }
 
-                std::println(std::cerr, "{} - NOT INITIALIZED!! Capacity:{}", __func__, curlHandlePool.size());
+                g_lct.err("NOT INITIALIZED!! Capacity: {}", curlHandlePool.size());
             }
             catch (std::runtime_error& re) {
-                std::println(std::cerr, "{} - Failed existing BUNDLE from pool. {}", __func__, re.what());
+                g_lct.exp(re, "Failed existing BUNDLE from pool.");
             }
             catch (...) {
-                std::println(std::cerr, "{} - Failed existing BUNDLE from pool. unknown error\n", __func__);
+                g_lct.err("Failed existing BUNDLE from pool. unknown error");
             }
 
             return curlHandlePool.try_borrow_create();
@@ -231,9 +222,8 @@ namespace siddiqsoft
 
         static int debugCallback(CURL*, curl_infotype type, char* data, size_t sz, void*)
         {
-#if defined(DEBUG_TRACE)
-            std::println(std::cerr, "{} - {}", std::to_underlying(type), std::string(data, sz));
-#endif
+            g_lct.trace("{} - {}", std::to_underlying(type), std::string(data, sz));
+
             return 0;
         }
 

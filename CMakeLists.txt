@@ -81,6 +81,9 @@ target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
 CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
 
+CPMAddPackage("gh:SiddiqSoft/ScopeTrace#0.50.1")
+target_link_libraries(${PROJECT_NAME} INTERFACE ScopeTrace::ScopeTrace)
+
 CPMAddPackage("gh:SiddiqSoft/SplitUri#3.0.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE SplitUri::SplitUri)
 CPMAddPackage("gh:SiddiqSoft/AzureCppUtils#3.3.0")
@@ -89,9 +92,12 @@ CPMAddPackage("gh:SiddiqSoft/string2map#2.6.1")
 target_link_libraries(${PROJECT_NAME} INTERFACE string2map::string2map)
 CPMAddPackage("gh:SiddiqSoft/asynchrony#2.3.3")
 target_link_libraries(${PROJECT_NAME} INTERFACE asynchrony::asynchrony)
-CPMAddPackage("gh:SiddiqSoft/arrp#1.2.1")
+CPMAddPackage("gh:SiddiqSoft/arrp#1.2.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE arrp::arrp)
 
+if(${PROJECT_NAME}_DEBUG_TRACE)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE ${PROJECT_NAME}_DEBUG_TRACE=1)
+endif()
 
 # ____________________________________
 # Testing

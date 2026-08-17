@@ -45,8 +45,8 @@
 #define JSON_BRACE_INIT_COPY_SEMANTICS 1
 #include "nlohmann/json.hpp"
 
-#include "http_frame.hpp"
 #include "basic_restclient.hpp"
+#include "http_frame.hpp"
 #include "rest_request.hpp"
 #include "rest_response.hpp"
 
@@ -56,9 +56,11 @@
 
 #include "siddiqsoft/RWLEnvelope.hpp"
 #include "siddiqsoft/simple_pool.hpp"
+#include "siddiqsoft/ScopeTrace.hpp"
 
 namespace siddiqsoft
 {
+    static auto Log = gRCL.sub_scope("restcl_win");
 #pragma region WinInet error code map
     static std::map<uint32_t, std::string_view> WinInetErrorCodes {
             {12001, std::string_view("ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.")},
@@ -310,18 +312,14 @@ namespace siddiqsoft
                                               (LPVOID)&enableHTTP2Flag,
                                               sizeof(enableHTTP2Flag)))
                         {
-#ifdef _DEBUG
-                            std::println(std::cerr, "{} Failed set HTTP/2 flag; err:{}", __func__, GetLastError());
-#endif
+                            Log.err("{} Failed set HTTP/2 flag; err:{}", __func__, GetLastError());
                         }
 
                         // Enable decompression
                         if (!WinHttpSetOption(
                                     newSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression)))
                         {
-#ifdef _DEBUG
-                            std::println(std::cerr, "{} Failed set decompression flag; err:{}", __func__, GetLastError());
-#endif
+                            Log.err("{} Failed set decompression flag; err:{}", __func__, GetLastError());
                         }
                     }
                 }
@@ -617,9 +615,8 @@ namespace siddiqsoft
                 -> std::shared_ptr<WinHttpRESTClient>
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
-#if defined(DEBUG) || defined(_DEBUG)
-            std::println(std::cerr, "{} - New WinHttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
-#endif
+
+            Log.debug("{} - New WinHttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
             return rcl;
         }
     };

@@ -49,6 +49,9 @@ namespace siddiqsoft
      *            - "timeout": Overall request timeout in milliseconds (default: 0)
      *            - "verifyPeer": SSL peer verification (default: 1)
      *            - "freshConnect": Force new connections (default: false)
+     *            - "useTLSv1_3": Force TLS 1.3 protocol version (default: false)
+     *            - "useTLSv1_2": Force TLS 1.2 protocol version (default: false)
+     *            - "useTLSv1_1": Force TLS 1.1 protocol version (default: false)
      *
      * @param cb Optional global callback for async operations. Can be overridden per-request.
      *           Signature: void(rest_request<>&, std::expected<rest_response<>, int>)
@@ -63,12 +66,12 @@ namespace siddiqsoft
      * @see rest_request for request building
      * @see rest_response for response handling
      */
-    [[nodiscard]] static auto GetRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
+    [[nodiscard]] inline auto GetRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
     {
 #if defined(__linux__) || defined(__APPLE__)
-        return HttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype&&>(cb));
+        return HttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype>(cb));
 #elif (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
-        return WinHttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype&&>(cb));
+        return WinHttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype>(cb));
 #else
 #error "Platform not supported"
 #endif

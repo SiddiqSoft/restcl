@@ -25,6 +25,7 @@
 #include "nlohmann/json.hpp"
 #include "siddiqsoft/SplitUri.hpp"
 #include "siddiqsoft/date-utils.hpp"
+#include "siddiqsoft/ScopeTrace.hpp"
 
 #include "http_frame.hpp"
 
@@ -137,9 +138,7 @@ namespace siddiqsoft
                 }
             }
             catch (std::exception& ex) {
-#if defined(DEBUG)
-                std::println(std::cerr, "{} - {} : {}..ex:{}...........\n", __func__, key, value, ex.what());
-#endif
+                gRCL.sub_scope("rest_response").exp(ex, "{} - {} : {}", __func__, key, value);
                 throw;
             }
 
@@ -270,7 +269,7 @@ namespace siddiqsoft
                 }
             }
             catch (std::exception& ex) {
-                std::println(std::cerr, "parse - while processing frame (ll:{})\n{}", lastLine, srcBuffer);
+                gRCL.sub_scope("rest_response").exp(ex, "parse - while processing frame (ll:{})\n{}", lastLine, srcBuffer);
                 throw;
             }
 

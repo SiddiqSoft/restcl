@@ -42,9 +42,9 @@
 
 #include "nlohmann/json.hpp"
 
+#include "basic_restclient.hpp"
 #include "http_frame.hpp"
 #include "rest_response.hpp"
-#include "basic_restclient.hpp"
 #include "libcurl_singleton.hpp"
 #include "rest_request.hpp"
 
@@ -63,6 +63,8 @@
 
 namespace siddiqsoft
 {
+    static auto Log = gRCL.sub_scope("restcl_unix");
+
     /// @brief Encapsulates libcurl error codes from various libcurl APIs
     /// @details Provides unified error handling for different libcurl error types:
     ///          - CURLcode: Easy interface errors
@@ -189,6 +191,8 @@ namespace siddiqsoft
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
+            thread_local auto sl = Log.sub_scope("simple_pool/lambda");
+
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
             // method completes the lifetime of the object ends;
@@ -198,18 +202,12 @@ namespace siddiqsoft
             }
             catch (std::system_error& se) {
                 // Failed; dispatch anyways and let the client figure out the issue.
-                std::println(std::cerr,
-                             "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}",
-                             callbackAttempt.load(),
-                             se.what());
+                sl.exp(se, "processing {} pool handler \\033[48;5;1m", callbackAttempt.load());
                 dispatchCallback(arg.callback, arg.request, std::unexpected<int>(se.code().value()));
             }
             catch (std::exception& ex) {
                 callbackFailed++;
-                std::println(std::cerr,
-                             "simple_pool - processing {} pool handler \\033[48;5;1m got exception: {}",
-                             callbackAttempt.load(),
-                             ex.what());
+                sl.exp(ex, "processing {} pool handler \\033[48;5;1m", callbackAttempt.load());
             }
         }};
 
@@ -225,19 +223,14 @@ namespace siddiqsoft
          */
         static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
+            thread_local auto sl = Log.sub_scope(__func__);
+
             if (ContentType* content {reinterpret_cast<ContentType*>(contentPtr)};
                 contents && (contentPtr != nullptr) && (size > 0))
             {
                 content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
 
-#if defined(DEBUG_TRACE)
-                std::println(std::cerr,
-                             "{} - Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n",
-                             __func__,
-                             size,
-                             nmemb,
-                             size * nmemb);
-#endif
+                sl.trace("Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n", size, nmemb, size * nmemb);
                 return size * nmemb;
             }
 
@@ -247,15 +240,13 @@ namespace siddiqsoft
 
         static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
-#if defined(DEBUG_TRACE)
-            std::println(std::cerr,
-                         "{} - Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
-                         __func__,
-                         static_cast<void*>(libCurlBuffer),
-                         size,
-                         nmemb,
-                         contentPtr);
-#endif
+            thread_local auto sl = Log.sub_scope(__func__);
+
+            sl.trace("Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
+                     static_cast<void*>(libCurlBuffer),
+                     size,
+                     nmemb,
+                     contentPtr);
 
             if (ContentType* content {reinterpret_cast<ContentType*>(contentPtr)};
                 (libCurlBuffer != nullptr) && (contentPtr != nullptr) && (size > 0))
@@ -277,18 +268,15 @@ namespace siddiqsoft
                     else {
                         content->remainingSize -= dataSizeToCopyToLibCurl;
                     }
-#if defined(DEBUG_TRACE)
-                    std::println(std::cerr,
-                                 "{} - Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
-                                 "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}",
-                                 __func__,
-                                 size,
-                                 nmemb,
-                                 sizeToSendToLibCurlBuffer,
-                                 content->remainingSize,
-                                 content->offset,
-                                 dataSizeToCopyToLibCurl);
-#endif
+
+                    sl.trace("Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
+                             "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}",
+                             size,
+                             nmemb,
+                             sizeToSendToLibCurlBuffer,
+                             content->remainingSize,
+                             content->offset,
+                             dataSizeToCopyToLibCurl);
 
                     return dataSizeToCopyToLibCurl;
                 }
@@ -343,12 +331,7 @@ namespace siddiqsoft
         }
 
     public:
-        ~HttpRESTClient()
-        {
-#if defined(DEBUG_TRACE_EXTRA)
-            std::println(std::cerr, "{} - Cleanup:\n{}", __func__, nlohmann::json(*this).dump());
-#endif
-        }
+        ~HttpRESTClient() { Log.sub_scope(__func__).trace("Cleanup:\n{}", nlohmann::json(*this).dump()); }
 
         /**
          * @brief Performs ONETIME configuration of the underlying provider (LibCURL)
@@ -361,6 +344,10 @@ namespace siddiqsoft
         {
             if (!cfg.is_null() && !cfg.empty())
                 _config.mutate([](auto& container, const auto& cfg) noexcept { container.update(cfg); }, cfg);
+
+            auto isTraceEnabled = _config.observe([](const auto& d) noexcept { return d.value("trace", false); });
+            gRCL.set_level(isTraceEnabled ? LogLevel::trace : LogLevel::error);
+            Log.set_level(isTraceEnabled ? LogLevel::trace : LogLevel::error);
 
             if (func) {
                 std::scoped_lock lock(callbackMutex);
@@ -375,7 +362,8 @@ namespace siddiqsoft
         /// @param callback The method will be async and there will not be a response object returned
         basic_restclient& sendAsync(rest_request<>&& req, basic_callbacktype&& callback = {}) override
         {
-            if (!isInitialized.load(std::memory_order_acquire)) throw std::runtime_error("Initialization failed/incomplete!");
+            if (!isInitialized.load(std::memory_order_acquire))
+                Log.err_throw<std::runtime_error>("Initialization failed/incomplete!");
 
             basic_callbacktype callbackToUse;
             {
@@ -389,8 +377,8 @@ namespace siddiqsoft
             }
 
             if (!callbackToUse)
-                throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
-                                            "configure() or provide callback at point of invocation.");
+                Log.err_throw<std::invalid_argument>("Async operation requires you to handle the response; register callback via "
+                                                     "configure() or provide callback at point of invocation.");
 
             pool.queue(RestPoolArgsType {std::move(req), std::move(callbackToUse)});
 
@@ -400,44 +388,59 @@ namespace siddiqsoft
 
         void prepareContext(CurlContextBundlePtr& ctxCurl)
         {
-            CURLcode rc     = CURLcode::CURLE_NOT_BUILT_IN;
-            auto     config = _config.snapshot(); // peek at the snapshot of the config to avoid locking for long periods
+            CURLcode          rc     = CURLcode::CURLE_NOT_BUILT_IN;
+            auto              config = _config.snapshot(); // peek at the snapshot of the config to avoid locking for long periods
+            thread_local auto sl     = Log.sub_scope(__func__);
 
-#if defined(DEBUG_TRACE)
-            std::println(std::cerr, "{} - Preparing context: {}", __func__, config.dump());
-#endif
+            sl.trace("Preparing context: {}", config.dump());
 
             if (ctxCurl && ((CURL*)(*ctxCurl).curlHandle()) != NULL) curl_easy_reset((CURL*)(*ctxCurl).curlHandle());
 
             if (long v = config.value("connectTimeout", 0); v > 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CONNECTTIMEOUT_MS, v); rc != CURLE_OK)
-                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
+                    sl.err("Error: {}", curl_easy_strerror(rc));
             }
 
             if (long v = config.value("timeout", 0); v > 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
-                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
+                    sl.err("Error: {}", curl_easy_strerror(rc));
             }
+
+            // Only one protocol can be set at a time.
+            // Prioritize TLSv1_3 over TLSv1_2 and TLSv1_1 if multiple are set to true.
+            // If none are set, libcurl will use the default.
+            if (long v = config.value("useTLSv1_3", false); v == true) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_3); rc != CURLE_OK)
+                    sl.warn("Failed setting TLSv1_3 version: {}", curl_easy_strerror(rc));
+            } // CURL_SSLVERSION_TLSv1_3
+            else if (long v = config.value("useTLSv1_2", false); v == true) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2); rc != CURLE_OK)
+                    sl.warn("Failed setting TLSv1_2 version: {}", curl_easy_strerror(rc));
+            } // CURL_SSLVERSION_TLSv1_2
+            else if (long v = config.value("useTLSv1_1", false); v == true) {
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1); rc != CURLE_OK)
+                    sl.warn("Failed setting TLSv1_1 version: {}", curl_easy_strerror(rc));
+            } // CURL_SSLVERSION_TLSv1_1
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
             if (long v = config.value("verifyPeer", 1); v == 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
-                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
+                    sl.warn("Error: {}", curl_easy_strerror(rc));
             }
 
             if (long v = config.value("verifyHost", 1); v == 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSL_VERIFYHOST, v); rc != CURLE_OK)
-                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
+                    sl.warn("Error: {}", curl_easy_strerror(rc));
             }
 
             if (config.value("freshConnect", false)) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_FRESH_CONNECT, 1L); rc != CURLE_OK)
-                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
+                    sl.warn("Error: {}", curl_easy_strerror(rc));
             }
 
             if (config.value("trace", false)) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_VERBOSE, 1L); rc != CURLE_OK)
-                    std::println(std::cerr, "{} - Error: {}", __func__, curl_easy_strerror(rc));
+                    sl.warn("Failed setting the trace option: {}", curl_easy_strerror(rc));
             }
         }
 
@@ -451,19 +454,17 @@ namespace siddiqsoft
 
             rest_response<> resp {};
             CURLcode        rc {};
+            auto            sl = Log.sub_scope(__func__);
+            char            curl_error_buffer[CURL_ERROR_SIZE] {};
 
             if (!isInitialized) {
-#if defined(DEBUG)
-                std::println(std::cerr, "{} - Not INITIALIZED for `{}` Uri: {}", __func__, req.getMethod(), req.getUri());
-#endif
+                sl.err("Not INITIALIZED for `{}` Uri: {}", req.getMethod(), req.getUri());
                 return std::unexpected(EBUSY);
             }
 
             auto destinationHost = req.getHost();
 
-#if defined(DEBUG_TRACE)
-            std::println(std::cerr, "{} - Uri: {}\n{}", __func__, req.getUri(), nlohmann::json(req).dump());
-#endif
+            sl.trace("Uri: {}\n{}", req.getUri(), nlohmann::json(req).dump());
 
             if (auto ctxCurl = singletonInstance->getEasyHandle();
                 ((CURL*)(*ctxCurl).curlHandle() != nullptr) && !destinationHost.empty())
@@ -475,6 +476,12 @@ namespace siddiqsoft
 
                 // Configures the context with options such as timeout, connectionTimeout, verbose, freshConnect..
                 prepareContext(ctxCurl);
+
+                // Set the error buffer for libcurl to write any error messages into
+                if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_ERRORBUFFER, curl_error_buffer); rc != CURLE_OK) {
+                    sl.err("Failed setting error buffer: {}", curl_easy_strerror(rc));
+                }
+
                 // Set User-Agent
                 // Use the one present in the request..
                 // otherwise use the one configured in the config
@@ -503,13 +510,10 @@ namespace siddiqsoft
                                 }
                                 else {
                                     ioSendFailed++;
-                                    if (config.value("trace", false)) {
-                                        std::println(std::cerr,
-                                                     "{} - curl_easy_perform() failed: `{}`\n{}",
-                                                     __func__,
-                                                     curl_easy_strerror(rc),
-                                                     nlohmann::json(req).dump());
-                                    }
+                                    sl.err("- curl_easy_perform() failed: `{}`:`{}`\n{}",
+                                           curl_easy_strerror(rc),
+                                           curl_error_buffer,
+                                           nlohmann::json(req).dump());
                                 }
                             }
                         }
@@ -520,30 +524,26 @@ namespace siddiqsoft
                 // Invalidate so we do not re-use a failed resource!
                 ctxCurl.invalidate();
                 if (config.value("trace", false)) {
-                    std::println(std::cerr,
-                                 "{} - some failure `{}`; abandon context !!\n{}",
-                                 __func__,
-                                 curl_easy_strerror(rc),
-                                 nlohmann::json(req).dump());
+                    sl.err("some failure `{}`; abandon context !!\n{}", curl_easy_strerror(rc), nlohmann::json(req).dump());
                 }
                 return std::unexpected(rc);
             }
             else {
                 ioAttemptFailed++;
-#if defined(DEBUG_TRACE)
-                std::println(std::cerr, "{} - getting context failed!\n{}", __func__, nlohmann::json(req).dump());
-#endif
+
+                sl.trace("getting context failed!\n{}", nlohmann::json(req).dump());
                 return std::unexpected(ENETUNREACH);
             }
 
-            std::println(std::cerr, "{} - Fall-through failure!\n", __func__);
+            sl.err("Fall-through failure!");
             return std::unexpected(ENOTRECOVERABLE);
         }
 
 
         CURLcode prepareIOHandlers(CurlContextBundlePtr& ctxCurl, rest_request<>& req, std::shared_ptr<ContentType> cntnts)
         {
-            CURLcode rc {CURLE_OK};
+            CURLcode          rc {CURLE_OK};
+            thread_local auto sl = Log.sub_scope(__func__);
 
             if (!cntnts) {
                 cntnts = std::make_shared<ContentType>();
@@ -552,15 +552,12 @@ namespace siddiqsoft
 
             // Setup the CURL library for callback for the *response* from the remote!
             if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_WRITEFUNCTION, onReceiveCallback); rc != CURLE_OK) {
-                std::println(std::cerr, "{} - Failed setting writefunction! rc:{}", __func__, curl_easy_strerror(rc));
+                sl.err("Failed setting writefunction! rc:{}", curl_easy_strerror(rc));
                 return rc;
             }
             else {
-#if defined(DEBUG_TRACE)
-                std::println(std::cerr, "{} - Setting writefunction data..............................", __func__);
-#endif
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) {
-                    std::println(std::cerr, "{} - Failed setting writefunction data! rc:{}", __func__, curl_easy_strerror(rc));
+                    sl.err("Failed setting writefunction data! rc:{}", curl_easy_strerror(rc));
                     return rc;
                 }
             }
@@ -605,7 +602,8 @@ namespace siddiqsoft
          */
         CURLcode prepareStartLine(CurlContextBundlePtr& ctxCurl, rest_request<>& req)
         {
-            CURLcode rc {CURLE_OK};
+            CURLcode          rc {CURLE_OK};
+            thread_local auto sl = Log.sub_scope(__func__);
 
             // Set the protocol..
             switch (req.getProtocol()) {
@@ -624,11 +622,7 @@ namespace siddiqsoft
 
             // Set the URL..
             if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_URL, req.getUri().string().c_str()); rc != CURLE_OK) {
-                std::println(std::cerr,
-                             "{} - url set failed Uri: {}  Failed: {}",
-                             __func__,
-                             req.getUri().string(),
-                             curl_easy_strerror(rc));
+                sl.err("url set failed Uri: {}  Failed: {}", req.getUri().string(), curl_easy_strerror(rc));
             }
 
             // Disable Expect: header by default for all requests unless user provided one
@@ -680,13 +674,7 @@ namespace siddiqsoft
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_NOBODY, 0L);
                     curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_CUSTOMREQUEST, nullptr);
                     break;
-                default:
-                    std::println(std::cerr, "{} - {} to {} UNSUPPORTED verb!", __func__, req.getMethod(), req.getHost());
-                    break;
-            }
-
-            if (_config.observe([](const auto& d) noexcept { return d.value("trace", false); })) {
-                std::println(std::cerr, "{} - {} to {} Completed.", __func__, req.getMethod(), req.getHost());
+                default: sl.err("UNSUPPORTED verb: {} to {}", req.getMethod(), req.getHost()); break;
             }
 
             return rc;
@@ -694,16 +682,16 @@ namespace siddiqsoft
 
         auto prepareCurlHeaders(CurlContextBundlePtr& ctxCurl, rest_request<>& req) -> std::shared_ptr<struct curl_slist>
         {
-            CURLcode rc = CURLE_NOT_BUILT_IN;
+            CURLcode          rc = CURLE_NOT_BUILT_IN;
+            thread_local auto sl = Log.sub_scope(__func__);
 
             // Always capture the structure to ensure we do not lose track and cleanup as and when needed
             if (auto curlHeaders = curl_slist_append(NULL, "X-restcl-v2:"); curlHeaders != NULL) {
                 try {
                     for (auto& [k, v] : req.getHeaders().items()) {
                         if (k == "Content-Length" || k == "content-length") continue;
-#if defined(DEBUG_TRACE)
-                        std::println(std::cerr, "{} - Setting the header....{} = {}", __func__, k, v.dump());
-#endif
+
+                        sl.trace("Setting the header....{} = {}", k, v.dump());
 
                         if (v.is_string()) {
                             if (auto val = v.get<std::string>(); !val.empty() && (val.length() > 0)) {
@@ -737,7 +725,11 @@ namespace siddiqsoft
                         }
                     }
                 }
+                catch (std::exception& ex) {
+                    sl.exp(ex, "Exception while preparing headers for request: {}", req.getUri().string());
+                }
                 catch (...) {
+                    sl.err("Unknown Exception while preparing headers for request: {}", req.getUri().string());
                 }
 
                 if (curlHeaders != NULL) {
@@ -755,6 +747,8 @@ namespace siddiqsoft
 
         void extractContents(std::shared_ptr<ContentType> cntnt, rest_response<>& resp)
         {
+            thread_local auto sl = Log.sub_scope(__func__);
+
             try {
                 // Fixup the content data..type and length
                 if (!cntnt->body.empty()) {
@@ -774,19 +768,18 @@ namespace siddiqsoft
                 resp.setContent(cntnt);
             }
             catch (std::exception& ex) {
-                std::println(std::cerr, "{} - Error:{}", __func__, ex.what());
+                sl.exp(ex, "Got exception.");
             }
 
-#if defined(DEBUG_TRACE)
-            std::println(std::cerr, "{} - Completed.", __func__);
-#endif
+            sl.trace("Completed.");
         }
 
 
         void extractStartLine(CurlContextBundlePtr& ctxCurl, rest_response<>& dest)
         {
-            CURLcode rc {CURLE_OK};
-            long     sc {0};
+            CURLcode          rc {CURLE_OK};
+            long              sc {0};
+            thread_local auto sl = Log.sub_scope(__func__);
 
             if (rc = curl_easy_getinfo((*ctxCurl).curlHandle(), CURLINFO_RESPONSE_CODE, &sc); rc == CURLE_OK) {
                 long vc {0};
@@ -809,16 +802,12 @@ namespace siddiqsoft
                 }
             }
 
-#if defined(DEBUG)
             if (rc != CURLE_OK) {
-                std::println(std::cerr,
-                             "{} - rc:{}  sc:{}  content-length:{}",
-                             __func__,
-                             curl_easy_strerror(rc),
-                             sc,
-                             dest.getContent()->length);
+                sl.trace("extractStartLine failure - rc:{}  sc:{}  content-length:{}",
+                         curl_easy_strerror(rc),
+                         sc,
+                         dest.getContent()->length);
             }
-#endif
         }
 
         /// @brief Serializer to ostream for RESResponseType
