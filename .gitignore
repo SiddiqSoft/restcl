@@ -26,6 +26,7 @@ lib/
 **/*.profraw
 site/
 .venv/
+/dependencies.md
 **/.DS_Store
 **/build/**
 
