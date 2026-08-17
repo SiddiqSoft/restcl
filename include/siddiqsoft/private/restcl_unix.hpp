@@ -405,26 +405,30 @@ namespace siddiqsoft
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_TIMEOUT_MS, v); rc != CURLE_OK)
                     sl.err("Error: {}", curl_easy_strerror(rc));
             }
+            // Force the TLS to the miniumm version of TLS 1.2 for security reasons. This is a good practice to avoid using older,
+            // insecure versions of TLS.
+            if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2); rc != CURLE_OK)
+                sl.warn("Failed setting TLS version: {}", curl_easy_strerror(rc));
 
             // Set iff we're asked to disable the peer verification. Default we leave it as-is (enabled.)
             if (long v = config.value("verifyPeer", 1); v == 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSL_VERIFYPEER, v); rc != CURLE_OK)
-                    sl.err("Error: {}", curl_easy_strerror(rc));
+                    sl.warn("Error: {}", curl_easy_strerror(rc));
             }
 
             if (long v = config.value("verifyHost", 1); v == 0) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_SSL_VERIFYHOST, v); rc != CURLE_OK)
-                    sl.err("Error: {}", curl_easy_strerror(rc));
+                    sl.warn("Error: {}", curl_easy_strerror(rc));
             }
 
             if (config.value("freshConnect", false)) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_FRESH_CONNECT, 1L); rc != CURLE_OK)
-                    sl.err("Error: {}", curl_easy_strerror(rc));
+                    sl.warn("Error: {}", curl_easy_strerror(rc));
             }
 
             if (config.value("trace", false)) {
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_VERBOSE, 1L); rc != CURLE_OK)
-                    sl.err("Error: {}", curl_easy_strerror(rc));
+                    sl.warn("Failed setting the trace option: {}", curl_easy_strerror(rc));
             }
         }
 
