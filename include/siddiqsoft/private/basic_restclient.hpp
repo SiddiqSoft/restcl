@@ -25,6 +25,8 @@ namespace siddiqsoft
 /// @note Default log level is set to error. Adjust as needed for debugging.
 #if defined(restcl_DEBUG_TRACE)
     static auto& gRCL = siddiqsoft::ScopeTrace::GetInstance("restcl", siddiqsoft::LogLevel::trace);
+#elif defined(DEBUG)
+    static auto& gRCL = siddiqsoft::ScopeTrace::GetInstance("restcl", siddiqsoft::LogLevel::debug);
 #else
     static auto& gRCL = siddiqsoft::ScopeTrace::GetInstance("restcl", siddiqsoft::LogLevel::error);
 #endif
