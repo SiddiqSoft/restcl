@@ -577,7 +577,7 @@ namespace siddiqsoft
         auto& setContent(std::shared_ptr<ContentType> src)
         {
             try {
-                content.swap(src);
+                content = std::move(src);
             }
             catch (std::exception& e) {
                 gRCL.sub_scope("http_frame").exp(e, "{} - Exception", __func__);
