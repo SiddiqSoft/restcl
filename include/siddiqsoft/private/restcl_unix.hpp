@@ -190,7 +190,7 @@ namespace siddiqsoft
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
-            thread_local auto sl = Log.sub_scope("simple_pool/lambda");
+            auto sl = Log.sub_scope(std::format("{}:{}", "simple_pool/lambda", __LINE__));
 
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
@@ -222,7 +222,7 @@ namespace siddiqsoft
          */
         static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
-            thread_local auto sl = Log.sub_scope(__func__);
+            auto sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
 
             if (ContentType* content {reinterpret_cast<ContentType*>(contentPtr)};
                 contents && (contentPtr != nullptr) && (size > 0))
@@ -239,7 +239,7 @@ namespace siddiqsoft
 
         static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
-            thread_local auto sl = Log.sub_scope(__func__);
+            auto sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
 
             sl.trace("Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
                      static_cast<void*>(libCurlBuffer),
@@ -330,7 +330,7 @@ namespace siddiqsoft
         }
 
     public:
-        ~HttpRESTClient() { Log.sub_scope(__func__).trace("Cleanup:\n{}", nlohmann::json(*this).dump()); }
+        ~HttpRESTClient() { Log.sub_scope(std::format("{}:{}", __func__, __LINE__)).trace("Cleanup:\n{}", nlohmann::json(*this).dump()); }
 
         /**
          * @brief Performs ONETIME configuration of the underlying provider (LibCURL)
@@ -387,9 +387,9 @@ namespace siddiqsoft
 
         void prepareContext(CurlContextBundlePtr& ctxCurl)
         {
-            CURLcode          rc     = CURLcode::CURLE_NOT_BUILT_IN;
-            auto              config = _config.snapshot(); // peek at the snapshot of the config to avoid locking for long periods
-            thread_local auto sl     = Log.sub_scope(__func__);
+            CURLcode rc     = CURLcode::CURLE_NOT_BUILT_IN;
+            auto     config = _config.snapshot(); // peek at the snapshot of the config to avoid locking for long periods
+            auto     sl     = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
 
             sl.trace("Preparing context: {}", config.dump());
 
@@ -453,7 +453,7 @@ namespace siddiqsoft
 
             rest_response<> resp {};
             CURLcode        rc {};
-            auto            sl = Log.sub_scope(__func__);
+            auto            sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
             char            curl_error_buffer[CURL_ERROR_SIZE] {};
 
             if (!isInitialized) {
@@ -541,8 +541,8 @@ namespace siddiqsoft
 
         CURLcode prepareIOHandlers(CurlContextBundlePtr& ctxCurl, rest_request<>& req, std::shared_ptr<ContentType> cntnts)
         {
-            CURLcode          rc {CURLE_OK};
-            thread_local auto sl = Log.sub_scope(__func__);
+            CURLcode rc {CURLE_OK};
+            auto     sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
 
             if (!cntnts) {
                 cntnts = std::make_shared<ContentType>();
@@ -601,8 +601,8 @@ namespace siddiqsoft
          */
         CURLcode prepareStartLine(CurlContextBundlePtr& ctxCurl, rest_request<>& req)
         {
-            CURLcode          rc {CURLE_OK};
-            thread_local auto sl = Log.sub_scope(__func__);
+            CURLcode rc {CURLE_OK};
+            auto     sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
 
             // Set the protocol..
             switch (req.getProtocol()) {
@@ -681,8 +681,8 @@ namespace siddiqsoft
 
         auto prepareCurlHeaders(CurlContextBundlePtr& ctxCurl, rest_request<>& req) -> std::shared_ptr<struct curl_slist>
         {
-            CURLcode          rc = CURLE_NOT_BUILT_IN;
-            thread_local auto sl = Log.sub_scope(__func__);
+            CURLcode rc = CURLE_NOT_BUILT_IN;
+            auto     sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
 
             // Always capture the structure to ensure we do not lose track and cleanup as and when needed
             if (auto curlHeaders = curl_slist_append(NULL, "X-restcl-v2:"); curlHeaders != NULL) {
@@ -746,7 +746,7 @@ namespace siddiqsoft
 
         void extractContents(std::shared_ptr<ContentType> cntnt, rest_response<>& resp)
         {
-            thread_local auto sl = Log.sub_scope(__func__);
+            auto sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
 
             try {
                 // Fixup the content data..type and length
@@ -776,9 +776,9 @@ namespace siddiqsoft
 
         void extractStartLine(CurlContextBundlePtr& ctxCurl, rest_response<>& dest)
         {
-            CURLcode          rc {CURLE_OK};
-            long              sc {0};
-            thread_local auto sl = Log.sub_scope(__func__);
+            CURLcode rc {CURLE_OK};
+            long     sc {0};
+            auto     sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
 
             if (rc = curl_easy_getinfo((*ctxCurl).curlHandle(), CURLINFO_RESPONSE_CODE, &sc); rc == CURLE_OK) {
                 long vc {0};

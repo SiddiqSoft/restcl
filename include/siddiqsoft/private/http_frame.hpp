@@ -580,7 +580,7 @@ namespace siddiqsoft
                 content = std::move(src);
             }
             catch (std::exception& e) {
-                gRCL.sub_scope("http_frame").exp(e, "{} - Exception", __func__);
+                gRCL.sub_scope(std::format("{}:{}", "http_frame", __LINE__)).exp(e, "{} - Exception", __func__);
             }
             return *this;
         }

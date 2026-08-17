@@ -80,12 +80,13 @@ namespace siddiqsoft
         std::atomic_bool done     = false;
         std::atomic_bool passTest = false;
         auto             wrc      = GetRESTClient();
+        auto             sl0      = Log.sub_scope(std::format("{}:{}", "test1a", __LINE__), siddiqsoft::LogLevel::trace);
 
         wrc->configure({{"connectTimeout", 3000}, // timeout for the connect phase
                         {"timeout", 5000},        // timeout for the overall IO phase
                         {"trace", false}})
                 .sendAsync("https://www.siddiqsoft.com/"_GET, [&](const auto& req, std::expected<rest_response<>, int> resp) {
-                    auto sl = Log.sub_scope("callback", siddiqsoft::LogLevel::trace);
+                    auto sl = sl0.sub_scope(std::format("{}:{}", "callback", __LINE__), siddiqsoft::LogLevel::trace);
 
                     nlohmann::json doc(req);
 
@@ -310,6 +311,8 @@ namespace siddiqsoft
                                {"timeout", 5000}         // timeout for the overall IO phase
                        })
                 .sendAsync("https://localhost:65535/"_GET,
+                           [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+                               auto sl = gRCL.sub_scope(std::format("{}:{}", "test_restcl", __LINE__), siddiqsoft::LogLevel::trace);
                            [&](const auto& req, std::expected<rest_response<>, int> resp) {
                                auto sl = gRCL.sub_scope("test_restcl", siddiqsoft::LogLevel::trace);
                                nlohmann::json doc(req);
