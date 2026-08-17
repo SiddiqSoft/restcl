@@ -283,7 +283,7 @@ namespace siddiqsoft
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   // Log.err("passTest: {}  Got error: {} --{}", passTest.load(), resp.error(), curl_easy_strerror((CURLcode)resp.error()));
+                                   Log.err("Got error: {} -- {}", resp.error(), strerror(resp.error()));
                                }
                                done = true;
                                done.notify_all();
@@ -311,7 +311,7 @@ namespace siddiqsoft
                                nlohmann::json doc(req);
 
                                // Checks the implementation of the json implementation
-                               Log.trace("From callback Serialized json: {}", req);
+                               sl.trace("From callback Serialized json: {}", req);
                                if (resp.has_value() && resp->success()) {
                                    sl.trace( "Response\n{}", *resp);
                                }
@@ -323,7 +323,7 @@ namespace siddiqsoft
                                else {
                                    // We MUST get a connection failure; the site does not exist!
                                    passTest = true;
-                                   sl.warn( "passTest: {}  Got error: {} -- {}", passTest.load(), resp.error(), curl_easy_strerror((CURLcode)resp.error()));
+                                   sl.warn("Connection failure; site does not exist! {} -- {}", resp.error(), strerror(resp.error()));
                                }
                                done = true;
                                done.notify_all();
