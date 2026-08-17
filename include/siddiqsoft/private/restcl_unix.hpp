@@ -549,8 +549,6 @@ namespace siddiqsoft
                 return rc;
             }
             else {
-                sl.trace("Setting writefunction data..............................");
-
                 if (rc = curl_easy_setopt((*ctxCurl).curlHandle(), CURLOPT_WRITEDATA, cntnts.get()); rc != CURLE_OK) {
                     sl.err("Failed setting writefunction data! rc:{}", curl_easy_strerror(rc));
                     return rc;
@@ -672,10 +670,6 @@ namespace siddiqsoft
                 default: sl.err("UNSUPPORTED verb: {} to {}", req.getMethod(), req.getHost()); break;
             }
 
-            if (_config.observe([](const auto& d) noexcept { return d.value("trace", false); })) {
-                sl.info("Completed: {} to {}", req.getMethod(), req.getHost());
-            }
-
             return rc;
         }
 
@@ -724,8 +718,11 @@ namespace siddiqsoft
                         }
                     }
                 }
+                catch (std::exception& ex) {
+                    sl.exp(ex, "Exception while preparing headers for request: {}", req.getUri().string());
+                }
                 catch (...) {
-                    sl.err("Exception while preparing headers for request: {}", req.getUri().string());
+                    sl.err("Unknown Exception while preparing headers for request: {}", req.getUri().string());
                 }
 
                 if (curlHeaders != NULL) {
@@ -799,7 +796,7 @@ namespace siddiqsoft
             }
 
             if (rc != CURLE_OK) {
-                sl.trace("rc:{}  sc:{}  content-length:{}", curl_easy_strerror(rc), sc, dest.getContent()->length);
+                sl.trace("extractStartLine failure - rc:{}  sc:{}  content-length:{}", curl_easy_strerror(rc), sc, dest.getContent()->length);
             }
         }
 
