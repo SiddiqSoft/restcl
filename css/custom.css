@@ -1,37 +1,115 @@
-/* Custom styling matching json.nlohmann.me aesthetic */
+/* Custom styles for restcl documentation */
+
 :root {
-  --md-text-font: "Roboto", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
-  --md-code-font: "JetBrains Mono", SFMono-Regular, Consolas, Menlo, monospace;
+  --md-font-main: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --md-font-code: "JetBrains Mono", SFMono-Regular, Consolas, Menlo, monospace;
 }
 
-/* Enhancements for tables */
+/* Base typography */
+body, input {
+  font-family: var(--md-font-main);
+}
+
+code, kbd, pre {
+  font-family: var(--md-font-code);
+}
+
+/* Badge Container Styling */
+.badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.badge-container img {
+  margin: 0;
+}
+
+/* Table styling with shadows and subtle borders */
 .md-typeset table:not([class]) {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border-radius: 6px;
   overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1em;
+  margin-bottom: 1.5em;
+  width: 100%;
 }
 
 .md-typeset table:not([class]) th {
-  background-color: var(--md-primary-fg-color);
-  color: var(--md-primary-bg-color);
+  background-color: var(--md-primary-bg-color, #3f51b5);
+  color: var(--md-primary-fg-color, #ffffff);
   font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-align: left;
 }
 
-/* Badge styling */
-.badge-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background-color: rgba(63, 81, 181, 0.25);
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset table:not([class]) td {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--md-default-fg-color--lightest, #e0e0e0);
+}
+
+.md-typeset table:not([class]) tr:hover td {
+  background-color: var(--md-accent-fg-color--transparent, rgba(63, 81, 181, 0.05));
+}
+
+/* Enhanced Code Blocks */
+.md-typeset pre > code {
+  border-radius: 6px;
+  font-size: 0.875em;
+  line-height: 1.5;
+}
+
+.md-typeset .highlight {
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Hero & Card Grid enhancements */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
   margin-bottom: 1.5rem;
 }
 
-/* Code block tweaks */
-.md-typeset pre > code {
-  border-radius: 6px;
+.card {
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  background-color: var(--md-default-bg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Admonition tweaks */
-.md-typeset .admonition {
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.card h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--md-primary-fg-color);
+}
+
+/* Admonition Refinements */
+.md-typeset .admonition,
+.md-typeset details {
   border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Permalinks */
+.md-typeset .headerlink {
+  transition: opacity 0.2s ease;
 }

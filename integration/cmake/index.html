@@ -50,8 +50,8 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"JetBrains Mono"}</style>
       
     
     
@@ -1592,7 +1592,7 @@
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="err">..</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="err">..</span>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="nb">CPMAddPackage</span><span class="p">(</span><span class="s2">&quot;gh:SiddiqSoft/restcl#2.3.8&quot;</span><span class="p">)</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="nb">CPMAddPackage</span><span class="p">(</span><span class="s2">"gh:SiddiqSoft/restcl#2.3.8"</span><span class="p">)</span>
 </span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="nb">target_link_libraries</span><span class="p">(</span><span class="o">${</span><span class="nv">PROJECT_NAME</span><span class="o">}</span><span class="w"> </span><span class="s">INTERFACE</span><span class="w"> </span><span class="s">restcl::restcl</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
@@ -1614,7 +1614,7 @@
 <h2 id="build-options-debug-tracing">Build Options &amp; Debug Tracing<a class="headerlink" href="#build-options-debug-tracing" title="Permanent link">&para;</a></h2>
 <p><code>restcl</code> provides a build option <code>restcl_DEBUG_TRACE</code> to enable payload trace logging for HTTP requests and responses.</p>
 <div class="language-cmake highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c"># Enable debug payload tracing in CMake</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">set</span><span class="p">(</span><span class="s">restcl_DEBUG_TRACE</span><span class="w"> </span><span class="s">ON</span><span class="w"> </span><span class="s">CACHE</span><span class="w"> </span><span class="s">BOOL</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="s">FORCE</span><span class="p">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">set</span><span class="p">(</span><span class="s">restcl_DEBUG_TRACE</span><span class="w"> </span><span class="s">ON</span><span class="w"> </span><span class="s">CACHE</span><span class="w"> </span><span class="s">BOOL</span><span class="w"> </span><span class="s2">""</span><span class="w"> </span><span class="s">FORCE</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="options-matrix">Options Matrix<a class="headerlink" href="#options-matrix" title="Permanent link">&para;</a></h3>
 <table>
@@ -1634,7 +1634,7 @@
 <tr>
 <td style="text-align: left;"><code>restcl_DEBUG_TRACE</code></td>
 <td style="text-align: left;"><code>OFF</code></td>
-<td style="text-align: left;">Enable HTTP verb, header, and payload trace logging to <code>std::cerr</code>.</td>
+<td style="text-align: left;">Enable HTTP verb, header, and payload trace logging via <code>ScopeTrace</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -1765,7 +1765,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.3.13-2"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.4.1"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

@@ -50,8 +50,8 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"JetBrains Mono"}</style>
       
     
     
@@ -1395,13 +1395,13 @@
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p>Construct HTTP requests directly from string literals using expressive suffixes like <code>_GET</code>, <code>_POST</code>, <code>_PUT</code>, and <code>_DELETE</code>.</p>
-<div class="language-cpp highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">auto</span><span class="w"> </span><span class="n">req</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;https://api.example.com/items&quot;</span><span class="n">_GET</span><span class="p">;</span>
+<div class="language-cpp highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">auto</span><span class="w"> </span><span class="n">req</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"https://api.example.com/items"</span><span class="n">_GET</span><span class="p">;</span>
 </span></code></pre></div>
 <p><a href="literals/">Read more about User-Defined Literals :octicons-arrow-right-24:</a></p>
 </div>
 <div class="tabbed-block">
 <p>First-class integration with <code>nlohmann::json</code>. Requests and responses structure headers, parameters, and content body seamlessly as JSON objects.</p>
-<div class="language-cpp highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">req</span><span class="p">.</span><span class="n">setContent</span><span class="p">({</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;key&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;value&quot;</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;count&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">42</span><span class="p">}</span><span class="w"> </span><span class="p">});</span>
+<div class="language-cpp highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">req</span><span class="p">.</span><span class="n">setContent</span><span class="p">({</span><span class="w"> </span><span class="p">{</span><span class="s">"key"</span><span class="p">,</span><span class="w"> </span><span class="s">"value"</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="s">"count"</span><span class="p">,</span><span class="w"> </span><span class="mi">42</span><span class="p">}</span><span class="w"> </span><span class="p">});</span>
 </span></code></pre></div>
 <p><a href="json_metaphor/">Read more about JSON Metaphor :octicons-arrow-right-24:</a></p>
 </div>
@@ -1548,7 +1548,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.3.13-2"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "navigation.tracking", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "2.4.1"}</script>
     
     
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
