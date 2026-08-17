@@ -66,9 +66,9 @@ namespace siddiqsoft
     [[nodiscard]] static auto GetRESTClient(const nlohmann::json& cfg = {}, basic_callbacktype&& cb = {})
     {
 #if defined(__linux__) || defined(__APPLE__)
-        return HttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype&&>(cb));
+        return HttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype>(cb));
 #elif (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
-        return WinHttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype&&>(cb));
+        return WinHttpRESTClient::CreateInstance(cfg, std::forward<basic_callbacktype>(cb));
 #else
 #error "Platform not supported"
 #endif
