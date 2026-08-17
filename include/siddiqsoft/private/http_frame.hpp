@@ -44,13 +44,13 @@
 
 namespace siddiqsoft
 {
-    static constexpr auto    HTTP_RESPONSE_REGEX = ctll::fixed_string {"(HTTP.*)\\s(\\d+)\\s([^\\r\\n]*)\\r\\n"};
-    static const std::string HTTP_NEWLINE {"\r\n"};
-    static const std::string ELEM_NEWLINE_LF {"\n"};
-    static const std::string ELEM_SEPERATOR {": "};
-    static const std::string HTTP_EMPTY_STRING {};
-    static const std::string HTTP_END_OF_HEADERS {"\r\n\r\n"};
-    static const std::string HTTP_PROTOCOLPREFIX {"HTTP/"};
+    static constexpr auto      HTTP_RESPONSE_REGEX = ctll::fixed_string {"(HTTP.*)\\s(\\d+)\\s([^\\r\\n]*)\\r\\n"};
+    constexpr std::string_view HTTP_NEWLINE {"\r\n"};
+    constexpr std::string_view ELEM_NEWLINE_LF {"\n"};
+    constexpr std::string_view ELEM_SEPERATOR {": "};
+    constexpr std::string_view HTTP_EMPTY_STRING {};
+    constexpr std::string_view HTTP_END_OF_HEADERS {"\r\n\r\n"};
+    constexpr std::string_view HTTP_PROTOCOLPREFIX {"HTTP/"};
 
     enum class HttpProtocolVersionType
     {
