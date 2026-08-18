@@ -138,7 +138,7 @@ namespace siddiqsoft
                 }
             }
             catch (std::exception& ex) {
-                gRCL.sub_scope("rest_response").exp(ex, "{} - {} : {}", __func__, key, value);
+                gRCL.sub_scope(std::format("{}:{}", "rest_response", __LINE__)).exp(ex, "{} - {} : {}", __func__, key, value);
                 throw;
             }
 
@@ -269,7 +269,7 @@ namespace siddiqsoft
                 }
             }
             catch (std::exception& ex) {
-                gRCL.sub_scope("rest_response").exp(ex, "parse - while processing frame (ll:{})\n{}", lastLine, srcBuffer);
+                gRCL.sub_scope(std::format("{}:{}", "rest_response", __LINE__)).exp(ex, "parse - while processing frame (ll:{})\n{}", lastLine, srcBuffer);
                 throw;
             }
 

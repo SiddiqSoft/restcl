@@ -81,7 +81,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE nlohmann_json::nlohmann_json)
 CPMAddPackage("gh:hanickadot/compile-time-regular-expressions#v3.11.0")
 target_link_libraries(${PROJECT_NAME} INTERFACE ctre::ctre)
 
-CPMAddPackage("gh:SiddiqSoft/ScopeTrace#0.50.1")
+CPMAddPackage("gh:SiddiqSoft/ScopeTrace#0.51.2")
 target_link_libraries(${PROJECT_NAME} INTERFACE ScopeTrace::ScopeTrace)
 
 CPMAddPackage("gh:SiddiqSoft/SplitUri#3.0.3")

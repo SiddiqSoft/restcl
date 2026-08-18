@@ -60,7 +60,6 @@
 
 namespace siddiqsoft
 {
-    static auto Log = gRCL.sub_scope("restcl_win");
 #pragma region WinInet error code map
     static std::map<uint32_t, std::string_view> WinInetErrorCodes {
             {12001, std::string_view("ERROR_INTERNET_OUT_OF_HANDLES: No more handles could be generated at this time.")},
@@ -221,6 +220,7 @@ namespace siddiqsoft
     protected:
         std::string  UserAgent {"siddiqsoft.restcl/2"};
         std::wstring UserAgentW {L"siddiqsoft.restcl/2"};
+        ScopeTrace Log = siddiqsoft::ScopeTrace::GetInstance().sub_scope("WinHttpRESTClient");
 
 #if defined(RESTCL_ENABLE_TEST_HOOKS)
     public:
@@ -275,7 +275,7 @@ namespace siddiqsoft
         }
 
     public:
-        ~WinHttpRESTClient() { }
+        ~WinHttpRESTClient(){}
 
 
     public:
@@ -319,7 +319,7 @@ namespace siddiqsoft
                         if (!WinHttpSetOption(
                                     newSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&decompression, sizeof(decompression)))
                         {
-                            Log.err("{} Failed set decompression flag; err:{}", __func__, GetLastError());
+                            Log.err("Failed set decompression flag; err:{}", GetLastError());
                         }
                     }
                 }
@@ -365,7 +365,7 @@ namespace siddiqsoft
             }
 
             if (!callbackToUse)
-                throw std::invalid_argument("Async operation requires you to handle the response; register callback via "
+                Log.err_throw<std::invalid_argument>("Async operation requires you to handle the response; register callback via "
                                             "configure() or provide callback at point of invocation.");
 
             auto config    = _config.snapshot();
@@ -598,14 +598,17 @@ namespace siddiqsoft
                         return resp;
                     }
                     else {
+                        Log.warn("Error during the receive phase: {}", dwError);
                         return std::unexpected {static_cast<int>(dwError)};
                     }
                 }
                 else {
+                    Log.warn("Error during the send/query phase: dwError={}", dwError);
                     return std::unexpected {static_cast<int>(hr)};
                 }
             }
             else {
+                Log.warn("Error during the connect phase: hr={}", static_cast<int>(hr));
                 return std::unexpected {static_cast<int>(hr)};
             }
         }
@@ -616,7 +619,6 @@ namespace siddiqsoft
         {
             std::shared_ptr<WinHttpRESTClient> rcl(new WinHttpRESTClient(cfg, std::forward<basic_callbacktype&&>(cb)));
 
-            Log.debug("{} - New WinHttpRESTClient Instance..id:{}", __FUNCTION__, rcl->id);
             return rcl;
         }
     };

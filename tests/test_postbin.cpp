@@ -49,10 +49,12 @@ namespace siddiqsoft
 {
     static std::string SessionBinId {};
 
-        auto sl = Log.sub_scope("test_postbin", siddiqsoft::LogLevel::trace);
 
     class PostBin : public ::testing::Test
     {
+    public:
+        ScopeTrace sl = siddiqsoft::ScopeTrace::GetInstance().sub_scope({}, siddiqsoft::LogLevel::trace);
+        
     protected:
         void SetUp() override
         {

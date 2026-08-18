@@ -67,6 +67,9 @@ namespace siddiqsoft
             myCurlInstance = LibCurlSingleton::GetInstance();
 #endif
         }
+
+    public:
+        ScopeTrace Log = siddiqsoft::ScopeTrace::GetInstance().sub_scope({},siddiqsoft::LogLevel::trace);
     };
 
 #if (defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64))
@@ -146,13 +149,10 @@ namespace siddiqsoft
         Log.trace("{} - Configuring the REST client for GET google.com\n", __func__);
         Log.trace("{} - Sending GET request to google.com\n", __func__);
         wrc->sendAsync("https://www.google.com/"_GET,
-                       [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+                       [&](const auto& req, std::expected<rest_response<>, int> resp) {
                            if (resp && resp->success()) {
                                passTest = true;
-                               Log.trace(
-                                          "{} - Response\n{}\n-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n",
-                                          __func__,
-                                          nlohmann::json(*resp).dump());
+                               Log.trace("- Response\n{}", nlohmann::json(*resp).dump());
                            }
                            else if (resp.has_value()) {
                                auto [ec, emsg] = resp->status();
@@ -179,7 +179,7 @@ namespace siddiqsoft
 
         wrc->configure({{"userAgent", std::format("siddiqsoft.restcl.tests/1.0 (Windows NT; x64; s:{})", __func__)}})
                 .sendAsync("https://duckduckgo.com"_GET,
-                           [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+                           [&](const auto& req, std::expected<rest_response<>, int> resp) {
                                if (resp && resp->success()) {
                                    passTest = true;
                                    // nlohmann::json doc(*resp);
@@ -215,11 +215,11 @@ namespace siddiqsoft
 
         postRequest.setContent({{"Hello", "World"}, {"Welcome", "From"}, {"Source", {__LINE__, __COUNTER__}}});
 
-        wrc->sendAsync(std::move(postRequest), [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
+        wrc->sendAsync(std::move(postRequest), [&](const auto& req, std::expected<rest_response<>, int> resp) {
             if (resp.has_value() && resp->success()) {
                 passTest = 1;
                 // nlohmann::json doc(*resp);
-                // Log.trace("{} - POSITIVE Response\n{}", __func__, doc.dump());
+                Log.trace("- POSITIVE Response\n{}", static_cast<nlohmann::json>(*resp).dump());
             }
             else if (resp.has_value()) {
                 nlohmann::json doc(*resp);
@@ -227,7 +227,6 @@ namespace siddiqsoft
                 auto [ec, emsg] = resp->status();
                 passTest        = ((ec == 12002) || (ec == 12029) || (ec == 400)) ? 1 : -1;
                 Log.err("{} - Got error: {} -- `{}`..\n{}", __func__, ec, emsg, doc.dump());
-                // Log.err("{} - Got error:\n{}", __func__, doc.dump());
             }
             else {
                 passTest = -1;

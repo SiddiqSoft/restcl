@@ -47,6 +47,8 @@ namespace siddiqsoft
 {
     using namespace restcl_literals;
 
+    inline auto Log = siddiqsoft::ScopeTrace::GetInstance().sub_scope({},siddiqsoft::LogLevel::trace);
+
     TEST(Serializers, test_GET)
     {
         auto srt = "https://www.siddiqsoft.com/"_GET;
