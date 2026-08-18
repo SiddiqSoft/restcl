@@ -229,7 +229,7 @@ namespace siddiqsoft
             {
                 content->body.append(reinterpret_cast<char*>(contents), size * nmemb);
 
-#if defined(cosmos_DEBUG_TRACE)
+#if defined(restcl_DEBUG_TRACE)
                 sl.trace("Invoked (reading content); size:{}  nmemb:{}  readFromCurl:{}  \n", size, nmemb, size * nmemb);
 #endif
                 return size * nmemb;
@@ -243,7 +243,7 @@ namespace siddiqsoft
         {
             thread_local auto sl = ScopeTrace::GetInstance().sub_scope(__func__);
 
-#if
+#if defined(restcl_DEBUG_TRACE)
             sl.trace("Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
                      static_cast<void*>(libCurlBuffer),
                      size,
@@ -272,7 +272,7 @@ namespace siddiqsoft
                         content->remainingSize -= dataSizeToCopyToLibCurl;
                     }
 
-#if defined(cosmos_DEBUG_TRACE)
+#if defined(restcl_DEBUG_TRACE)
                     sl.trace("Invoked (sending content); size:{}  nmemb:{}  sizeToSendToLibCurlBuffer:{}  "
                              "remainingSize:{}  offset:{}  dataSizeToCopyToLibCurl:{}",
                              size,
