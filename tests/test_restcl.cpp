@@ -311,8 +311,6 @@ namespace siddiqsoft
                                {"timeout", 5000}         // timeout for the overall IO phase
                        })
                 .sendAsync("https://localhost:65535/"_GET,
-                           [&passTest, &done](const auto& req, std::expected<rest_response<>, int> resp) {
-                               auto sl = gRCL.sub_scope(std::format("{}:{}", "test_restcl", __LINE__), siddiqsoft::LogLevel::trace);
                            [&](const auto& req, std::expected<rest_response<>, int> resp) {
                                auto sl = gRCL.sub_scope("test_restcl", siddiqsoft::LogLevel::trace);
                                nlohmann::json doc(req);
