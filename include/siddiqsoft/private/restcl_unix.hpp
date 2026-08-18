@@ -152,7 +152,7 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackAttempt {0};
         std::atomic_uint64_t callbackFailed {0};
         std::atomic_uint64_t callbackCompleted {0};
-        ScopeTrace Log = siddiqsoft::ScopeTrace::GetInstance().sub_scope("HttpRESTClient");
+        ScopeTrace           Log = siddiqsoft::ScopeTrace::GetInstance().sub_scope("HttpRESTClient");
 
     private:
         basic_callbacktype                      _callback {};
@@ -190,7 +190,7 @@ namespace siddiqsoft
 
         /// @brief Adds asynchrony to the library via the simple_pool utility
         siddiqsoft::simple_pool<RestPoolArgsType<char>> pool {[&](RestPoolArgsType<char>&& arg) -> void {
-            auto sl = Log.sub_scope(std::format("{}:{}", "simple_pool/lambda", __LINE__));
+            thread_local auto sl = ScopeTrace::GetInstance().sub_scope(__func__);
 
             // This function is invoked any time we have an item
             // The arg is moved here and belongs to use. Once this
@@ -222,7 +222,7 @@ namespace siddiqsoft
          */
         static size_t onReceiveCallback(void* contents, size_t size, size_t nmemb, void* contentPtr)
         {
-            auto sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
+            thread_local auto sl = ScopeTrace::GetInstance().sub_scope(__func__);
 
             if (ContentType* content {reinterpret_cast<ContentType*>(contentPtr)};
                 contents && (contentPtr != nullptr) && (size > 0))
@@ -239,7 +239,7 @@ namespace siddiqsoft
 
         static size_t onSendCallback(char* libCurlBuffer, size_t size, size_t nmemb, void* contentPtr)
         {
-            auto sl = Log.sub_scope(std::format("{}:{}", __func__, __LINE__));
+            thread_local auto sl = ScopeTrace::GetInstance().sub_scope(__func__);
 
             sl.trace("Invoked; libCurlBuffer:{}, size:{}, nmemb:{}, contentPtr:{}..........................>>>..>>.>.",
                      static_cast<void*>(libCurlBuffer),
@@ -330,7 +330,10 @@ namespace siddiqsoft
         }
 
     public:
-        ~HttpRESTClient() { Log.sub_scope(std::format("{}:{}", __func__, __LINE__)).trace("Cleanup:\n{}", nlohmann::json(*this).dump()); }
+        ~HttpRESTClient()
+        {
+            Log.sub_scope(std::format("{}:{}", __func__, __LINE__)).trace("Cleanup:\n{}", nlohmann::json(*this).dump());
+        }
 
         /**
          * @brief Performs ONETIME configuration of the underlying provider (LibCURL)

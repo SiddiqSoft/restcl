@@ -12,7 +12,8 @@
 
 namespace siddiqsoft
 {
-
+    inline auto Log = ScopeTrace::GetInstance().sub_scope("test_libcurl_helpers");
+    
     TEST(libcurl_helpers, test_init)
     {
         // configure
