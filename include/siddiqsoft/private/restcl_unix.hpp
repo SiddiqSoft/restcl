@@ -63,8 +63,6 @@
 
 namespace siddiqsoft
 {
-    static auto Log = gRCL.sub_scope("restcl_unix");
-
     /// @brief Encapsulates libcurl error codes from various libcurl APIs
     /// @details Provides unified error handling for different libcurl error types:
     ///          - CURLcode: Easy interface errors
@@ -154,6 +152,7 @@ namespace siddiqsoft
         std::atomic_uint64_t callbackAttempt {0};
         std::atomic_uint64_t callbackFailed {0};
         std::atomic_uint64_t callbackCompleted {0};
+        ScopeTrace Log = siddiqsoft::ScopeTrace::GetInstance().sub_scope("HttpRESTClient");
 
     private:
         basic_callbacktype                      _callback {};
