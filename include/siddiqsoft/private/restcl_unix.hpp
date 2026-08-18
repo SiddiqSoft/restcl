@@ -699,8 +699,6 @@ namespace siddiqsoft
                     for (auto& [k, v] : req.getHeaders().items()) {
                         if (k == "Content-Length" || k == "content-length") continue;
 
-                        sl.trace("Setting the header....{} = {}", k, v.dump());
-
                         if (v.is_string()) {
                             if (auto val = v.get<std::string>(); !val.empty() && (val.length() > 0)) {
                                 // Only add non-empty string contents..otherwise will treat it as a remove header
